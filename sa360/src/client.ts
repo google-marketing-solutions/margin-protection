@@ -89,6 +89,8 @@ newRule<ParamMap extends Record<keyof ParamMap, ParamDefinition>>(
     readonly name: string = ruleDefinition.name;
     readonly params = ruleDefinition.params;
     readonly helper = ruleDefinition.helper ?? '';
+//Auto-added to unblock TS5.0 migration
+// @ts-ignore(go/ts50upgrade): This syntax requires an imported helper named '__setFunctionName' which does not exist in 'tslib'. Consider upgrading your version of 'tslib'.
     static definition = ruleDefinition;
 
     constructor(readonly client: ClientInterface, settingsArray: readonly string[][]) {
