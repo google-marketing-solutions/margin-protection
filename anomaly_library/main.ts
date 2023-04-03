@@ -31,9 +31,14 @@ export interface RuleGetter {
   getValues(): Value[];
 
   /**
+   * Value objects include index specified at write-time.
+   */
+  getValueObject(): Values;
+
+  /**
    * Saves all values in storage, overwriting previous history.
    */
-  saveValues(values: Value[]): void;
+  saveValues(values: Values): void;
 }
 
 /**
@@ -81,7 +86,7 @@ export interface RuleInstructions<ThresholdType> {
  * > threshold(5)(10)
  * true
  */
-export type Threshold<ThresholdType> = (thresholdValue: ThresholdType) => (value: string) => boolean;
+export type Threshold<ThresholdType, RuleType extends Rule = Rule> = (thresholdValue: ThresholdType, rule: RuleType) => (value: string) => boolean;
 
 /**
  * The return value of a Rule.
@@ -93,6 +98,10 @@ export interface Value {
   fields?: Readonly<{[key: string]: string}>;
 }
 
+export interface Values {
+  [key: string]: Value;
+}
+
 /**
  * Generates an e-mail alert, then updates the alertedAt timestamp.
  *
@@ -102,8 +111,8 @@ export interface Value {
  */
 export function sendEmailAlert(
     rule: Rule, message: MailAdvancedParameters): void {
-  const values = rule.getValues();
-  const anomalies = values.filter(value => value.anomalous && !value.alertedAt);
+  const values = rule.getValueObject();
+  const anomalies = Object.values(values).filter(value => value.anomalous && !value.alertedAt);
 
   if (anomalies.length === 0) {
     return;
@@ -131,8 +140,8 @@ export function sendEmailAlert(
 /**
  * Parse a JSON string version of a `Value` and return it.
  */
-export function unpack(property: string|null): Value[] {
-  return JSON.parse(property ?? '[]') as Value[];
+export function unpack(property: string|null): Values {
+  return JSON.parse(property ?? '{}') as Values;
 }
 
 
@@ -147,9 +156,12 @@ export function getValueByUniqueKey(ruleName: string, properties = new PropertyW
 export function getRule(uniqueKey: string, properties = new PropertyWrapper()): RuleGetter {
   return {
     getValues(): Value[] {
-      return unpack(properties.getProperty(uniqueKey));
+      return Object.values(getValueByUniqueKey(uniqueKey));
     },
-    saveValues(values: Value[]) {
+    getValueObject(): Values {
+      return getValueByUniqueKey(uniqueKey);
+    },
+    saveValues(values: Values) {
       properties.setProperty(uniqueKey, JSON.stringify(values));
     }
   };

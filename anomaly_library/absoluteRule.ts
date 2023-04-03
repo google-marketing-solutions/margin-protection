@@ -21,7 +21,7 @@
  */
 
 
-import {PropertyWrapper, Rule, RuleInstructions, Threshold, unpack, Value} from 'anomaly_library/main';
+import {PropertyWrapper, Rule, RuleInstructions, Threshold, unpack, Value, Values} from 'anomaly_library/main';
 
 /**
  * Checks for any anomalies based on a fixed `Threshold`.
@@ -39,11 +39,11 @@ export class AbsoluteRule<ThresholdType> implements Rule {
    */
   constructor(
       instructions: RuleInstructions<ThresholdType>,
-      threshold: Threshold<ThresholdType>,
+      threshold: Threshold<ThresholdType, AbsoluteRule<ThresholdType>>,
   ) {
     this.uniqueKey = instructions.uniqueKey;
     // default is arbitrary - assuming hourly checks this is 4 days of data.
-    this.valueIsInBounds = threshold(instructions.thresholdValue);
+    this.valueIsInBounds = threshold(instructions.thresholdValue, this);
   }
 
   createValue(v: string|number, fields?: {[fieldName: string]: string}): Value {
@@ -55,12 +55,16 @@ export class AbsoluteRule<ThresholdType> implements Rule {
     };
   }
 
-  saveValues(values: Value[]) {
+  saveValues(values: Values) {
     this.properties.setProperty(
         this.uniqueKey, JSON.stringify(values));
   }
 
   getValues(): Value[] {
+    return Object.values(this.getValueObject());
+  }
+
+  getValueObject(): Values {
     return unpack(
         this.properties.getProperty(this.uniqueKey));
   }

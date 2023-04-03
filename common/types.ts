@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-import {RuleGetter, Value} from 'anomaly_library/main';
+import {RuleGetter, Values} from 'anomaly_library/main';
 
 /**
  * A rule callback is created to enable efficient API calls.
@@ -26,7 +26,7 @@ import {RuleGetter, Value} from 'anomaly_library/main';
 export type Callback<Params extends Record<keyof Params, ParamDefinition>> =
     (client: BaseClientInterface, settings: Settings<Record<keyof Params, string>>) => () => {
       rule: RuleGetter;
-      values: Value[];
+      values: Values;
     };
 
 /**
