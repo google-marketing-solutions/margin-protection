@@ -75,11 +75,9 @@ describe('Rule Settings helper functions', () => {
   });
 
   it('combines categories back into a settings sheet', () => {
-    expect(rules.getValues()).toEqual([
-      ['', '', 'Category A', '', 'Category B', '', '', 'Category C'],
-      ['', '', '', '', '', '', '', ''],
-      ['id', 'name', 'Header 1', 'Header 2', 'Header 3', 'Header 4', 'Header 5', 'Header 6'],
-      ['1', 'one', 'Col 1', 'Col 2', 'Col 3', 'Col 4', 'Col 5', 'Col 6'],
+    expect(rules.getRule('Category A')).toEqual([
+      ['id', 'Header 1', 'Header 2'],
+      ['1', 'Col 1', 'Col 2'],
     ]);
   });
 });

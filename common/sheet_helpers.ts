@@ -137,7 +137,8 @@ export class RuleRange {
    */
   getValues(): string[][] {
     const values =
-        Object.entries(this.rules).reduce((prev, [category, range]) => {
+        Object.entries(this.rules).reduce((prev, [category, rangeRaw]) => {
+          const range = rangeRaw.filter(row => row && row.length);
           const length = range.length ? range[0].length : 0;
           const offset = prev[0].length;
           prev[0] = prev[0].concat(
@@ -147,11 +148,16 @@ export class RuleRange {
           prev[1] = category === 'none' ? ['', ''] : prev[1].concat(
               Array.from<string>({length}).fill('').map((cell, idx) =>
                   idx === 0 ? this.client.ruleStore[prev[0][idx + offset]].helper ?? '' : ''));
-          for (let r = 0; r < Object.keys(this.rowIndex).length; r++) {
-            prev[r + 2] =
-                (prev[r + 2] = prev[r + 2] || [])
-                    .concat((range[r] ?? Array.from<string>({length}).fill('')));
-          }
+
+          Object.values(this.rowIndex)
+              .sort((x: number, y: number) => x - y)
+              .forEach((value, r) => {
+                prev[r + 2] =
+                    (prev[r + 2] = prev[r + 2] || [])
+                        .concat(
+                            (range[value] ??
+                                Array.from<string>({length}).fill('')));
+              });
           return prev;
         }, [[], []] as string[][]);
 
