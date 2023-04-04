@@ -16,10 +16,20 @@
  */
 
 import {BaseClientInterface} from '../../common/types';
+import {CampaignReport} from './sa360';
 
 /**
  * Extends the base client interface with SA360-specific features.
  */
-export interface ClientInterface extends BaseClientInterface {
+export interface ClientInterface extends BaseClientInterface<ClientInterface> {
+  getCampaignReport(): Promise<CampaignReport>;
+  settings: ClientArgs;
+}
 
+/**
+ * An agency ID and, optionally, an advertiser ID to narrow down.
+ */
+export interface ClientArgs {
+  agencyId: string;
+  advertiserId?: string;
 }

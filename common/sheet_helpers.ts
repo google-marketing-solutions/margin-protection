@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-import {BaseClientInterface, ParamDefinition, RuleDefinition, SettingMapInterface} from './types';
+import {BaseClientInterface, ParamDefinition, RecordInfo, RuleDefinition, SettingMapInterface} from './types';
 
 /**
  * Provides a useful data structure to get campaign ID settings.
@@ -99,12 +99,12 @@ function makeCampaignIndexedSettings(headers: string[], currentSettings: string[
  * The range has two headers: Header 1 is category/rule names, and
  * header 2 is the name of the rule setting to be changed.
  */
-export class RuleRange {
+export abstract class AbstractRuleRange<C extends BaseClientInterface<C>> {
   private readonly rowIndex: Record<string, number> = {};
   private readonly columnOrders: Record<string, Record<string, number>> = {};
   private readonly rules: Record<string, string[][]> & Record<'none', string[][]> = {'none': [[]]};
 
-  constructor(range: string[][], private readonly client: BaseClientInterface) {
+  constructor(range: string[][], protected readonly client: BaseClientInterface<C>) {
     let start = 0;
     let col: number;
     for (col = 0; col < range[0].length; col++) {
@@ -172,7 +172,9 @@ export class RuleRange {
     if (!this.rules[ruleName] || !this.rules[ruleName].length) {
       return [];
     }
-    return Object.values(this.rowIndex).filter((unused, index) => this.rules['none'][index]).map((unused, index) => {
+    return Object.values(this.rowIndex).filter(
+        (unused, index) => this.rules['none'][index] && this.rules[ruleName][index]
+    ).map((unused, index) => {
       return [this.rules['none'][index][0], ...this.rules[ruleName][index]];
     });
   }
@@ -183,19 +185,19 @@ export class RuleRange {
     }
   }
 
-  fillRuleValues<Params>(rule:
-      Pick<RuleDefinition<Record<string, ParamDefinition>>, 'name'|'params'|'defaults'>) {
+  async fillRuleValues<Params>(rule:
+      Pick<RuleDefinition<Record<keyof Params, ParamDefinition>>, 'name'|'params'|'defaults'>) {
 
     if (!rule.defaults) {
       throw new Error('Missing default values definition in fillRow');
     }
 
     const headersByIndex: {[index: number]: string} = {};
-    const paramsByHeader: {[index: string]: string} = {};
+    const paramsByHeader: {[index: string]: keyof Params} = {};
     const indexByHeader: {[header: string]: number} = {};
     Object.entries<ParamDefinition>(rule.params).forEach(([key, {label}], index) => {
       headersByIndex[index] = label;
-      paramsByHeader[label] = key;
+      paramsByHeader[label] = key as keyof Params;
       indexByHeader[label] = index;
     });
     this.columnOrders[rule.name] = this.columnOrders[rule.name] || indexByHeader;
@@ -214,20 +216,21 @@ export class RuleRange {
               currentSettings['default'][headersByIndex[index]] ?? rule.defaults[paramsByHeader[headersByIndex[index]]] :
               rule.defaults[paramsByHeader[headersByIndex[index]]]
       ));
-
-    for (const campaign of this.client.getAllCampaigns()) {
-      this.setRow(rule.name, campaign.campaignId,
+    for (const campaign of await this.getRows()) {
+      this.setRow(rule.name, campaign.id,
           Array.from({length})
               .map(
                   (unused, index) =>
-                      currentSettings && currentSettings[campaign.campaignId] ?
-                          currentSettings[campaign.campaignId][headersByIndex[index]] ??
+                      currentSettings && currentSettings[campaign.id] ?
+                          currentSettings[campaign.displayName][headersByIndex[index]] ??
                           '' :
                           '')
       );
-      this.setRow('none', campaign.campaignId, [campaign.campaignId, campaign.campaignName]);
+      this.setRow('none', campaign.id, [campaign.id , campaign.displayName]);
     }
   }
+
+  abstract getRows(): Promise<RecordInfo[]>;
 }
 
 /**

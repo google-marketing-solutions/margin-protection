@@ -16,15 +16,16 @@
  */
 
 import {getRule} from 'anomaly_library/main';
-import {transformToParamValues} from 'common/sheet_helpers';
-import {ClientInterface} from 'sa360/src/types';
-import {CampaignInfo, ClientArgs, IDType, ParamDefinition, RuleDefinition, RuleExecutor, RuleUtilities, Settings} from 'common/types';
+import {transformToParamValues, AbstractRuleRange} from 'common/sheet_helpers';
+import {ClientInterface, ClientArgs} from 'sa360/src/types';
+import {RecordInfo, ParamDefinition, RuleDefinition, RuleExecutor, RuleUtilities, Settings} from 'common/types';
+import {CampaignReport} from './sa360';
 
 /**
  * Parameters for a rule, with `this` methods from {@link RuleUtilities}.
  */
 type RuleParams<Params extends Record<keyof Params, ParamDefinition>> =
-    RuleDefinition<Params>&ThisType<RuleExecutor<Params>&RuleUtilities>;
+    RuleDefinition<Params>&ThisType<RuleExecutor<Params, ClientInterface>&RuleUtilities>;
 
 /**
  * Contains a `RuleContainer` along with information to instantiate it.
@@ -57,7 +58,7 @@ export interface RuleStoreEntry<
  * An executable rule.
  */
 export interface RuleExecutorClass<P extends Record<keyof P, P[keyof P]>> {
-  new(client: ClientInterface, settings: readonly string[][]): RuleExecutor<P>;
+  new(client: ClientInterface, settings: readonly string[][]): RuleExecutor<P, ClientInterface>;
   definition: RuleDefinition<P>;
 }
 
@@ -83,7 +84,7 @@ export interface RuleExecutorClass<P extends Record<keyof P, P[keyof P]>> {
 export function
 newRule<ParamMap extends Record<keyof ParamMap, ParamDefinition>>(
     ruleDefinition: RuleParams<ParamMap>): RuleExecutorClass<ParamMap> {
-  const ruleClass = class {
+  const ruleClass = class implements RuleExecutor<ParamMap, ClientInterface> {
     readonly uniqueKeyPrefix: string = '';
     readonly settings: Settings<Record<keyof ParamMap, string>>;
     readonly name: string = ruleDefinition.name;
@@ -93,13 +94,14 @@ newRule<ParamMap extends Record<keyof ParamMap, ParamDefinition>>(
 // @ts-ignore(go/ts50upgrade): This syntax requires an imported helper named '__setFunctionName' which does not exist in 'tslib'. Consider upgrading your version of 'tslib'.
     static definition = ruleDefinition;
 
-    constructor(readonly client: ClientInterface, settingsArray: readonly string[][]) {
+    constructor(
+        readonly client: ClientInterface, settingsArray: readonly string[][]) {
       this.uniqueKeyPrefix = ruleDefinition.uniqueKeyPrefix;
       this.settings = transformToParamValues(settingsArray, this.params);
     }
 
-    run() {
-      return ruleDefinition.callback.bind(this)(this.client, this.settings);
+    async run() {
+      return await ruleDefinition.callback.bind(this)();
     }
 
     getRule() {
@@ -107,7 +109,7 @@ newRule<ParamMap extends Record<keyof ParamMap, ParamDefinition>>(
     }
 
     getUniqueKey() {
-      return `${ruleDefinition.uniqueKeyPrefix}-${this.client.idType === IDType.AGENCY ? 'P': 'A'}${this.client.id}`;
+      return `${ruleDefinition.uniqueKeyPrefix}-${this.client.settings.agencyId}-${this.client.settings.advertiserId ?? 'a'}`;
     }
 
     /**
@@ -117,9 +119,8 @@ newRule<ParamMap extends Record<keyof ParamMap, ParamDefinition>>(
      * {@link Client.validate} which serves the same purpose but is able to
      * combine rules.
      */
-    validate() {
-      const thresholdResult = this.run();
-      const threshold = thresholdResult();
+    async validate() {
+      const threshold = await this.run();
       threshold.rule.saveValues(threshold.values);
     }
   };
@@ -131,28 +132,23 @@ newRule<ParamMap extends Record<keyof ParamMap, ParamDefinition>>(
 /**
  * Wrapper client around the DV360 API for testability and effiency.
  *
- * Any methods that are added as wrappers to the API should pool requests, either
- * through caching or some other method.
+ * Any methods that are added as wrappers to the API should pool requests,
+ * either through caching or some other method.
  */
 export class Client implements ClientInterface {
-  readonly idType: IDType;
-  readonly id: string;
   readonly ruleStore:
-      {[ruleName: string]: RuleExecutor<Record<string, ParamDefinition>>;};
+      {[ruleName: string]: RuleExecutor<Record<string, ParamDefinition>, ClientInterface>;};
+  private campaignReport: CampaignReport|undefined = undefined;
 
-  constructor(settings: Omit<ClientArgs, 'idType'|'id'> & {advertiserId: string});
-  constructor(settings: Omit<ClientArgs, 'idType'|'id'> & {agencyId: string});
-  constructor(settings: ClientArgs);
-  constructor(settings: Omit<ClientArgs, 'idType'|'id'> & Partial<Pick<ClientArgs, 'idType'|'id'>> &
-              {advertiserId?: string, agencyId?: string}) {
-    if (!settings.advertiserId && !settings.agencyId && (!settings.id || settings.idType === undefined)) {
-      throw new Error(
-          'Unexpected lack of a agencyID and advertiserID. Choose one.');
-    }
-    this.idType = settings.idType ?? settings.advertiserId ? IDType.ADVERTISER : IDType.AGENCY;
-    this.id = settings.id ??
-        (settings.advertiserId ? settings.advertiserId : settings.agencyId ?? '');
+  constructor(readonly settings: ClientArgs) {
     this.ruleStore = {};
+  }
+
+  async getCampaignReport(): Promise<CampaignReport> {
+    if (!this.campaignReport) {
+      this.campaignReport = await CampaignReport.buildReport(this.settings);
+    }
+    return this.campaignReport;
   }
 
   /**
@@ -179,31 +175,26 @@ export class Client implements ClientInterface {
    * by the client. It relies on a rule changing state using the anomaly
    * library.
    */
-  validate() {
+  async validate() {
     const thresholds: Function[] = Object.values(this.ruleStore).reduce((prev, rule) => {
-      return [...prev, rule.run()];
+      return [...prev, rule.run.bind(rule)];
     }, [] as Function[]);
     for (const thresholdCallable of thresholds) {
-      const threshold = thresholdCallable();
+      const threshold = await thresholdCallable();
       threshold.rule.saveValues(threshold.values);
     }
   }
 
-  getAllCampaigns(): CampaignInfo[] {
+  async getAllCampaigns(): Promise<RecordInfo[]> {
     const cache = CacheService.getScriptCache();
-    const cacheName = `campaigns-${this.idType}-${this.id}`;
+    const cacheName = `campaigns-${this.settings.agencyId}-${this.settings.advertiserId ?? 'a'}`;
 
     const campaigns = cache.get(cacheName);
     if (campaigns) {
-      return JSON.parse(campaigns) as CampaignInfo[];
+      return JSON.parse(campaigns) as RecordInfo[];
     }
-    const result = this.idType === IDType.ADVERTISER ?
-      this.getAllCampaignsForAdvertiser(this.id) :
-      this.getAllAdvertisersForAgency().reduce(
-        (arr, advertiserId) =>
-            arr.concat(this.getAllCampaignsForAdvertiser(advertiserId)),
-        [] as CampaignInfo[]);
-
+    const campaignReport = await this.getCampaignReport();
+    const result = campaignReport.getCampaigns();
     cache.put(cacheName, JSON.stringify(result), 60);
 
     return result;
@@ -221,8 +212,8 @@ export class Client implements ClientInterface {
     return result;
   }
 
-  getAllCampaignsForAdvertiser(advertiserId: string): CampaignInfo[] {
-    const result: CampaignInfo[] = [];
+  getAllCampaignsForAdvertiser(advertiserId: string): RecordInfo[] {
+    const result: RecordInfo[] = [];
 
     return result;
   }

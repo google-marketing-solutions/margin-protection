@@ -17,6 +17,9 @@
 
 /** @fileoverview DAO for the SA360 Reporting API */
 
+import {RecordInfo} from '../../common/types';
+import {ClientArgs} from './types';
+
 /**
  * The API version, exposed for testing.
  */
@@ -26,7 +29,14 @@ export const SA360_API_VERSION = 'v2';
  * The API URL, exposed for testing.
  */
 export const SA360_URL = 'www.googleapis.com/doubleclicksearch';
-const indexes = ['account', 'accountId', 'advertiserId', 'campaignId', 'campaign', 'campaignStatus', 'clicks', 'cost', 'impr', 'ctr', 'adWordsConversions', 'adWordsConversionValue', 'dailyBudget', 'monthlyBudget', 'effectiveBidStrategy'] as const;
+const indexes = [
+  'account', 'accountId', 'advertiserId', 'campaignId', 'campaign',
+  'campaignStatus', 'clicks', 'cost', 'impr', 'ctr', 'adWordsConversions',
+  'adWordsConversionValue', 'dailyBudget', 'monthlyBudget',
+  'effectiveBidStrategy'
+] as const;
+export type IndexType = typeof indexes[number];
+type ReportRecord = {[Property in IndexType]: string};
 
 interface ApiParams {
   agencyId: string;
@@ -37,12 +47,24 @@ interface ApiParams {
  * SA360 campaign-based report.
  */
 export class CampaignReport {
-  private constructor(readonly report: {[campaignId: string]: {[key: string]: string}}) {
-  }
+  protected constructor(readonly report:
+                          {[campaignId: string]: ReportRecord}) {}
 
-  static async buildReport(params: {agencyId: string, advertiserId?: string}) {
+  static async buildReport(params: ClientArgs) {
     const builder = new CampaignReportBuilder(params);
     return new CampaignReport(await builder.build());
+  }
+
+  getCampaigns(): RecordInfo[] {
+    const foundCampaignIds = new Set<string>();
+    return Object.values(this.report).reduce((prev, reportRecord) => {
+      if (reportRecord.campaignId in foundCampaignIds) {
+        return prev;
+      }
+      foundCampaignIds.add(reportRecord.campaignId);
+      prev.push({id: reportRecord.campaignId, advertiserId: reportRecord.advertiserId, displayName: reportRecord.campaign});
+      return prev;
+    }, [] as RecordInfo[]);
   }
 }
 
@@ -67,8 +89,9 @@ class CampaignReportBuilder {
   }
 
   fetchReportId() {
-    const advertiserId =
-        this.params.advertiserId ? {advertiserId: this.params.advertiserId} : {};
+    const advertiserId = this.params.advertiserId ?
+        {advertiserId: this.params.advertiserId} :
+        {};
     const payload = {
       reportScope: {
         agencyId: this.params.agencyId,
@@ -85,7 +108,8 @@ class CampaignReportBuilder {
     };
     const response =
         JSON.parse(
-            UrlFetchApp.fetch(this.getQueryUrl('reports'), this.apiParams({payload}))
+            UrlFetchApp
+                .fetch(this.getQueryUrl('reports'), this.apiParams({payload}))
                 .getContentText()) as {id: string};
     return response.id;
   }
@@ -101,9 +125,11 @@ class CampaignReportBuilder {
 
     return new Promise<string[]>((resolve) => {
       const interval = setInterval(() => {
-        response =
-            JSON.parse(UrlFetchApp.fetch(this.getQueryUrl(`reports/${reportId}`), this.apiParams())
-                           .getContentText()) as
+        response = JSON.parse(UrlFetchApp
+                                  .fetch(
+                                      this.getQueryUrl(`reports/${reportId}`),
+                                      this.apiParams())
+                                  .getContentText()) as
             {files: Array<{url: string}>, isReportReady: boolean};
         if (response.isReportReady) {
           clearInterval(interval);
@@ -117,8 +143,7 @@ class CampaignReportBuilder {
     const reports = urls.reduce((prev, url, idx) => {
       const report =
           UrlFetchApp.fetch(url, this.apiParams()).getContentText().split('\n');
-      const headers = report[0].split(',');
-      type IndexType = typeof indexes[number];
+      const headers = report[0].split(',') as IndexType[];
       const indexMap = Object.fromEntries(indexes.map(
                            (columnName, idx) => [columnName, idx])) as
           {[Property in IndexType]: number};
@@ -126,11 +151,11 @@ class CampaignReportBuilder {
         const columns: string[] = row.split(',');
         const campaignId = columns[indexMap.campaignId];
         prev[campaignId] = Object.fromEntries(
-            columns.map((column, idx) => [headers[idx], column]));
+            columns.map((column, idx) => [headers[idx], column])) as Record<IndexType, string>;
       }
 
       return prev;
-    }, {} as {[campaignId: string]: {[key: string]: string}});
+    }, {} as {[campaignId: string]: ReportRecord});
 
     return reports;
   }

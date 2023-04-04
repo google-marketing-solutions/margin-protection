@@ -15,8 +15,8 @@
  * limitations under the License.
  */
 
-import {RuleRange, SettingMap, transformToParamValues} from '../sheet_helpers';
-import {BaseClientInterface, IDType} from '../types';
+import {AbstractRuleRange, SettingMap, transformToParamValues} from '../sheet_helpers';
+import {BaseClientInterface, RecordInfo} from '../types';
 
 describe('2-D array', () => {
   let array2d: string[][];
@@ -82,13 +82,23 @@ describe('Rule Settings helper functions', () => {
   });
 });
 
-function generateTestClient(params: {idType?: IDType, id?: string}): BaseClientInterface {
+interface TestClientInterface extends BaseClientInterface<TestClientInterface> {
+  id: string;
+  getAllCampaigns(): Promise<RecordInfo[]>;
+}
+
+function generateTestClient(params: {id?: string}): TestClientInterface {
   return {
-    idType: params.idType ?? IDType.ADVERTISER,
     id: params.id ?? '1',
     ruleStore: {},
-    getAllCampaigns() {
+    async getAllCampaigns() {
       return [];
     }
   };
+}
+
+class RuleRange extends AbstractRuleRange<TestClientInterface> {
+  async getRows() {
+    return [{id: '1', displayName: 'Campaign 1', advertiserId: '1'}]
+  }
 }

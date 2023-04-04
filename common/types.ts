@@ -24,10 +24,10 @@ import {RuleGetter, Values} from 'anomaly_library/main';
  * they enable efficient pooling of API resources.
  */
 export type Callback<Params extends Record<keyof Params, ParamDefinition>> =
-    (client: BaseClientInterface, settings: Settings<Record<keyof Params, string>>) => () => {
+    () => Promise<{
       rule: RuleGetter;
       values: Values;
-    };
+    }>;
 
 /**
  * Provides a useful data structure to get campaign ID settings.
@@ -48,20 +48,10 @@ export type Settings<Params> =
 /**
  * Defines a client object, which is responsible for wrapping.
  */
-export interface BaseClientInterface {
-  readonly idType: IDType;
-  readonly id: string;
+export interface BaseClientInterface<C extends BaseClientInterface<C>> {
   readonly ruleStore:
-      {[ruleName: string]: RuleExecutor<Record<string, ParamDefinition>>;};
-  getAllCampaigns(): CampaignInfo[];
-}
-
-/**
- * Represents a {@link Client} class that can return a {@link BaseClientInterface}.
- */
-export interface ClientConstructor {
-  new(settings: Omit<ClientArgs, 'idType'|'id'>&{advertiserId: string}): BaseClientInterface;
-  new(settings: Omit<ClientArgs, 'idType'|'id'>&{agencyId: string}): BaseClientInterface;
+      {[ruleName: string]: RuleExecutor<Record<string, ParamDefinition>, C>;};
+  getAllCampaigns(): Promise<RecordInfo[]>;
 }
 
 /**
@@ -86,7 +76,9 @@ export interface RuleUtilities {
  * Actionable object to run a rule.
  */
 export interface RuleExecutor<
-    P extends Record<keyof P, ParamDefinition>> extends RuleUtilities {
+    P extends Record<keyof P, ParamDefinition>, C extends BaseClientInterface<C>> extends RuleUtilities {
+  client: C;
+  settings: Settings<Record<keyof P, string>>;
   uniqueKeyPrefix: string;
   run: Function;
   validate(): void;
@@ -96,45 +88,12 @@ export interface RuleExecutor<
 }
 
 /**
- * Defines the type of ID set on the client.
- *
- * Can only be one of advertiser or agency.
- */
-export enum IDType {
-  ADVERTISER = 1,
-  // Agency and Partner are the same thing for different platforms
-  // (SA360 and DV360, respectively).
-  PARTNER = 2,
-  AGENCY = 2,
-}
-
-/**
- * Defines parameters used in a report.
- */
-export interface QueryReportParams {
-  idType: IDType;
-  id: Readonly<string>;
-  insertionOrderId: Readonly<string>;
-  startDate: Readonly<Date>;
-  endDate: Readonly<Date>;
-}
-
-
-/**
- * Parameter definitions to pass to a `Client` constructor.
- */
-export interface ClientArgs {
-  idType: IDType;
-  id: Readonly<string>;
-}
-
-/**
  * The type-enforced parameters required to create a rule with `newRule`.
  */
 export interface RuleDefinition<
     Params extends Record<keyof Params, ParamDefinition>> {
   name: string;
-  params: {[Property in keyof Params]: ParamDefinition};
+  params: Params;
   uniqueKeyPrefix: string;
   defaults: {[Property in keyof Params]: string};
   helper?: string;
@@ -144,9 +103,9 @@ export interface RuleDefinition<
 /**
  * Extracts pertinent information from a campaign.
  */
-export interface CampaignInfo {
+export interface RecordInfo {
   advertiserId: string;
-  campaignId: string;
-  campaignName: string;
+  id: string;
+  displayName: string;
 }
 
