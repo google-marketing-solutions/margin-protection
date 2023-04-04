@@ -153,8 +153,8 @@ export class Client implements ClientInterface {
   private campaignTargetReport: CampaignTargetReport|undefined;
   private adGroupReport: AdGroupReport|undefined;
   private adGroupTargetReport: AdGroupTargetReport|undefined;
-  private campaigns: RecordInfo[] = [];
-  private adGroups: RecordInfo[] = [];
+  private campaigns: RecordInfo[] | undefined;
+  private adGroups: RecordInfo[] | undefined;
 
   constructor(readonly settings: ClientArgs) {
     this.ruleStore = {};

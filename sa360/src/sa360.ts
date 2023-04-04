@@ -178,7 +178,7 @@ interface Filter {
  * Classes that extend this are responsible for building an SA360 report.
  */
 export abstract class ReportBuilder<Columns extends AllowedColumns> {
-  static step = 10_000_000;
+  static step = 100_000;
 
   constructor(protected readonly params: ApiParams) {}
 
@@ -204,26 +204,39 @@ export abstract class ReportBuilder<Columns extends AllowedColumns> {
   }
 
   async build() {
-    const { id, byteCount } = this.fetchReportId();
-    const reportUrls = await this.fetchReportUrl(id);
-    return this.aggregateReports(reportUrls, byteCount);
+    for (let i = 0; i < 5; i++) {
+      try {
+        const id = this.fetchReportId();
+        const reportUrls = await this.fetchReportUrl(id);
+        return this.aggregateReports(reportUrls);
+      } catch (e) {
+        console.error(e);
+        console.info(`Trying again, attempt ${i + 2}/5`);
+      }
+    }
+
+    throw new Error('Failed to fetch a report after five tries.');
   }
 
-  async fetchReportUrl(reportId: string): Promise<string[]> {
-    let response: {files: Array<{url: string}>, isReportReady: boolean};
+  async fetchReportUrl(reportId: string): Promise<Array<{url: string, byteCount: string}>> {
+    let response: {files: Array<{url: string, byteCount: string}>, isReportReady: boolean};
 
-    return new Promise<string[]>((resolve, fail) => {
-      while (true) {
+    return new Promise((resolve, fail) => {
+      for (let i = 0; i < 3; i++) {
+        const msecs = 1000 * 2 ** (i + 1);
+        console.info(`sleeping for ${msecs/1000} seconds before fetching report...`);
+        Utilities.sleep(msecs);
         response = JSON.parse(fetch(
                 this.getQueryUrl(`reports/${reportId}`),
                 this.apiParams())
             .getContentText()) as
-            {files: Array<{url: string}>, isReportReady: boolean};
+            {files: Array<{url: string, byteCount: string}>, isReportReady: boolean};
         if (response.isReportReady) {
-          resolve(response.files.map(file => file.url));
+          console.info('done');
+          resolve(response.files);
           return;
         }
-        Utilities.sleep(1000);
+        console.info('Report not ready.');
       }
     });
   }
@@ -253,18 +266,21 @@ export abstract class ReportBuilder<Columns extends AllowedColumns> {
    * Reports can easily exhaust memory, so they are read in chunks and
    * concatenated together to make things easier.
    */
-  aggregateReports(urls: string[], byteCount: number) {
-    const reports = urls.reduce((prev, url) => {
+  aggregateReports(urls: Array<{url: string, byteCount: string}>) {
+    const reports = urls.reduce((prev, {url, byteCount}) => {
+      const byteCountInt = Number(byteCount);
       let partialRow: string = '';
       let headers: Array<ColumnType<Columns>> | undefined;
-      for (let i = 0; i < Math.ceil(byteCount / ReportBuilder.step); i++) {
+      const batches = Math.ceil(Number(byteCountInt) / ReportBuilder.step);
+      for (let i = 0; i < batches; i++) {
+        console.log(`getting data from URL: ${i+1}/${batches}`);
         const report =
             fetch(url, this.apiParams({
-                  contentType: 'text/plain',
-                  headers: {
-                    'Range': `bytes=${ReportBuilder.step * i + 1}-${Math.min(byteCount, ReportBuilder.step * (i + 1))}`
-                  }
-                }))
+              contentType: 'text/plain',
+              headers: {
+                'Range': `bytes=${ReportBuilder.step * i}-${Math.min(byteCountInt, ReportBuilder.step * (i + 1)) - 1}`
+              }
+            }))
                 .getContentText()
                 .split('\n');
         // get the last row which will be blank at the end of the file.
@@ -280,7 +296,7 @@ export abstract class ReportBuilder<Columns extends AllowedColumns> {
         }
 
         const indexMap = Object.fromEntries(headers.map(
-                             (columnName, idx) => [columnName, idx])) as
+            (columnName, idx) => [columnName, idx])) as
             {[Property in ColumnType<Columns>]: number};
         for (const row of report) {
           const columns: string[] = row.split(',');
@@ -312,6 +328,8 @@ export abstract class ReportBuilder<Columns extends AllowedColumns> {
         {advertiserId: this.params.advertiserId} :
         {};
     const filters = this.getFilters() ?? {};
+    const date = new Date(Date.now());
+    const startDate = `${date.toISOString().split('T')[0]}`;
     const payload = JSON.stringify({
       reportScope: {
         agencyId: this.params.agencyId,
@@ -320,7 +338,7 @@ export abstract class ReportBuilder<Columns extends AllowedColumns> {
       reportType: this.getReportType(),
       columns: this.getColumns().map(columnName => ({columnName})),
       statisticsCurrency: 'agency',
-      timeRange: {startDate: '2022-10-01', endDate: '2022-10-31'},
+      timeRange: {startDate, endDate: startDate},
       maxRowsPerFile: 100_000_000,
       downloadFormat: 'csv',
       ...{filters},
@@ -329,7 +347,7 @@ export abstract class ReportBuilder<Columns extends AllowedColumns> {
         JSON.parse(
             fetch(this.getQueryUrl('reports'), this.apiParams({payload}))
                 .getContentText()) as {id: string, byteCount: number};
-    return { id: response.id, byteCount: Number(response.byteCount) };
+    return response.id;
   }
 }
 

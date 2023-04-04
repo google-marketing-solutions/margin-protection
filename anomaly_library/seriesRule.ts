@@ -22,6 +22,10 @@ type RuleInjector = (rule: LockedSeriesRule) => (value: string) => boolean;
 /**
  * Checks for any anomalies based on whether a setting has changed.
  *
+ * Important: This class is expensive to duplicate as its state is cumbersome
+ * to build. Save the objects and re-use them to dramatically cut down on
+ * resource usage.
+ *
  * This "locks" a setting in place the first time it's set. Any subsequent
  * write will compare keys to see if changes have been made. Any changes will
  * result in an anomalous recording.
@@ -76,9 +80,11 @@ export class LockedSeriesRule implements Rule {
   }
 }
 
+
 /**
  * Tracks and alerts on status changes.
  */
 export function neverChangeAfterSet(instructions: RuleInstructions) {
-  return new LockedSeriesRule(instructions, (rule) => (value) => value === LockedSeriesRule.NO_CHANGES);
+  return new LockedSeriesRule(
+      instructions, (rule) => (value) => value === LockedSeriesRule.NO_CHANGES);
 }

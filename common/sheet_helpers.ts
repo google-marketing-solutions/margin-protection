@@ -146,6 +146,9 @@ export abstract class AbstractRuleRange<C extends BaseClientInterface<C, Granula
             return prev;
           }
           const length = range.length ? range[0].length : 0;
+          if (!length) {
+            return prev;
+          }
           const offset = prev[0].length;
           prev[0] = prev[0].concat(
               Array.from({length}).fill(category === 'none' ? '' : category) as
