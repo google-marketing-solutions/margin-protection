@@ -20,6 +20,7 @@ import {transformToParamValues, AbstractRuleRange} from 'common/sheet_helpers';
 import {ClientInterface, ClientArgs} from 'sa360/src/types';
 import {RecordInfo, ParamDefinition, RuleDefinition, RuleExecutor, RuleUtilities, Settings} from 'common/types';
 import {CampaignReport} from './sa360';
+import {AdGroupReport} from 'sa360/src/sa360';
 
 /**
  * Parameters for a rule, with `this` methods from {@link RuleUtilities}.
@@ -138,7 +139,8 @@ newRule<ParamMap extends Record<keyof ParamMap, ParamDefinition>>(
 export class Client implements ClientInterface {
   readonly ruleStore:
       {[ruleName: string]: RuleExecutor<Record<string, ParamDefinition>, ClientInterface>;};
-  private campaignReport: CampaignReport|undefined = undefined;
+  private campaignReport: CampaignReport|undefined;
+  private adGroupReport: AdGroupReport|undefined;
 
   constructor(readonly settings: ClientArgs) {
     this.ruleStore = {};
@@ -149,6 +151,14 @@ export class Client implements ClientInterface {
       this.campaignReport = await CampaignReport.buildReport(this.settings);
     }
     return this.campaignReport;
+  }
+
+  async getAdGroupReport(): Promise<AdGroupReport> {
+    if (!this.adGroupReport) {
+      this.adGroupReport = await AdGroupReport.buildReport(this.settings);
+    }
+
+    return this.adGroupReport;
   }
 
   /**
@@ -216,5 +226,14 @@ export class Client implements ClientInterface {
     const result: RecordInfo[] = [];
 
     return result;
+  }
+}
+
+/**
+ * SA360 rule settings splits.
+ */
+export class RuleRange extends AbstractRuleRange<ClientInterface> {
+  async getRows() {
+      return this.client.getAllCampaigns();
   }
 }

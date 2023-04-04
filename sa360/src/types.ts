@@ -16,13 +16,14 @@
  */
 
 import {BaseClientInterface} from '../../common/types';
-import {CampaignReport} from './sa360';
+import {AdGroupReport, CampaignReport} from 'sa360/src/sa360';
 
 /**
  * Extends the base client interface with SA360-specific features.
  */
 export interface ClientInterface extends BaseClientInterface<ClientInterface> {
   getCampaignReport(): Promise<CampaignReport>;
+  getAdGroupReport(): Promise<AdGroupReport>;
   settings: ClientArgs;
 }
 

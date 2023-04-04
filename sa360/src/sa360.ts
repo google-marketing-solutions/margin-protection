@@ -40,7 +40,15 @@ export const campaignColumns = [
   'effectiveBidStrategy'
 ] as const;
 
-type AllowedColumns = typeof campaignColumns;
+/**
+ * Ad Group report columns.
+ */
+export const adGroupColumns = [
+  'account', 'accountId', 'advertiserId', 'campaignId', 'adGroupId', 'adGroup',
+  'adGroupStatus',
+] as const;
+
+type AllowedColumns = typeof campaignColumns | typeof adGroupColumns;
 
 /**
  * Generic index type for object definitions of columns.
@@ -57,6 +65,12 @@ export type ReportRecord<Index extends AllowedColumns> = {
 interface ApiParams {
   agencyId: string;
   advertiserId?: string;
+}
+
+class Report<T extends AllowedColumns> {
+  protected constructor(readonly report:
+                            {[campaignId: string]: ReportRecord<T>}) {}
+
 }
 
 /**
@@ -81,6 +95,16 @@ export class CampaignReport {
       prev.push({id: reportRecord.campaignId, advertiserId: reportRecord.advertiserId, displayName: reportRecord.campaign});
       return prev;
     }, [] as RecordInfo[]);
+  }
+}
+
+/**
+ * SA360 Ad group-based report.
+ */
+export class AdGroupReport extends Report<typeof adGroupColumns> {
+  static async buildReport(params: ClientArgs) {
+    const builder = new AdGroupReportBuilder(params);
+    return new AdGroupReport(await builder.build());
   }
 }
 
@@ -156,7 +180,7 @@ abstract class ReportBuilder<Columns extends AllowedColumns> {
           UrlFetchApp.fetch(url, this.apiParams()).getContentText().split('\n');
       const headers = report[0].split(',') as Array<ColumnType<Columns>>;
       const indexMap = Object.fromEntries(headers.map(
-          (columnName, idx) => [columnName, idx])) as
+                           (columnName, idx) => [columnName, idx])) as
           {[Property in ColumnType<Columns>]: number};
       for (const row of report.slice(1)) {
         const columns: string[] = row.split(',');
@@ -217,11 +241,25 @@ class CampaignReportBuilder extends ReportBuilder<typeof campaignColumns> {
     return map.campaignId;
   }
 
-  protected override getColumns(): typeof campaignColumns {
+  protected override getColumns(): typeof campaignColumns{
     return campaignColumns;
   }
 
-  protected override getReportType(): string {
+  protected override getReportType(): string{
     return 'campaign';
+  }
+}
+
+class AdGroupReportBuilder extends ReportBuilder<typeof adGroupColumns> {
+  protected override getKey(map: Record<ColumnType<typeof adGroupColumns>, number>): number {
+    return map.adGroupId;
+  }
+
+  protected override getColumns(): typeof adGroupColumns {
+    return adGroupColumns;
+  }
+
+  protected override getReportType(): string{
+    return 'adGroup';
   }
 }
