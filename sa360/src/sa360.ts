@@ -31,6 +31,9 @@ export const SA360_API_VERSION = 'v2';
  */
 export const SA360_URL = 'www.googleapis.com/doubleclicksearch';
 
+
+const DAY_IN_SECONDS = 60 * 60 * 24 * 1000;
+
 /**
  * Campaign report columns.
  */
@@ -169,9 +172,11 @@ export class CampaignTargetReport extends Report<typeof campaignTargetColumns> {
 interface Filter {
   column: {
     columnName: string;
+    startDate?: string;
+    endDate?: string;
   };
-  operator: string;
-  values: string[];
+  operator: 'equals'|'greaterThan'|'lessThan';
+  values: Array<string|number>;
 }
 
 /**
@@ -365,6 +370,20 @@ class CampaignReportBuilder extends ReportBuilder<typeof campaignColumns> {
   }
 }
 
+function getFilterForAdGroup(): Filter[] {
+  const date = new Date();
+  const date90daysAgo = new Date(Date.now() - DAY_IN_SECONDS * 90);
+  return [{
+    column: {
+      columnName: 'impr',
+      startDate: Utilities.formatDate(date90daysAgo, 'GMT', 'yyyy-MM-dd'),
+      endDate: Utilities.formatDate(date, 'GMT', 'yyyy-MM-dd'),
+    },
+    operator: 'greaterThan',
+    values: [90],
+  }];
+}
+
 class AdGroupReportBuilder extends ReportBuilder<typeof adGroupColumns> {
   protected override getKey(map: Record<ColumnType<typeof adGroupColumns>, number>): number {
     return map.adGroupId;
@@ -376,6 +395,10 @@ class AdGroupReportBuilder extends ReportBuilder<typeof adGroupColumns> {
 
   protected override getReportType(): string{
     return 'adGroup';
+  }
+
+  override getFilters(): Filter[] {
+    return getFilterForAdGroup();
   }
 }
 
@@ -407,6 +430,10 @@ class AdGroupTargetReportBuilder extends
       row[headers[i]] = row[headers[i]] === undefined ? `${row['adGroupTargetId']}:${column}` :
           `${row[headers[i]]},${row['adGroupTargetId']}:${column}`;
     }
+  }
+
+  override getFilters(): Filter[] {
+    return getFilterForAdGroup();
   }
 }
 
