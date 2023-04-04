@@ -25,7 +25,7 @@ import {campaignStatusRule, adGroupStatusRule, adGroupTargetRule} from 'sa360/sr
 import {ParamDefinition, RuleGranularity} from 'common/types';
 
 import Sheet = GoogleAppsScript.Spreadsheet.Sheet;
-import {getOrCreateSheet} from 'common/sheet_helpers';
+import {getOrCreateSheet, HELPERS} from 'common/sheet_helpers';
 import {ClientArgs} from 'sa360/src/types';
 import {locationChange} from './rules';
 
@@ -207,6 +207,7 @@ export async function preLaunchQa() {
   sheet.getRange('A:Z').clearDataValidations();
   sheet.clear();
   sheet.getRange(1, 1, valueArray.length, valueArray[0].length).setValues(valueArray);
+  HELPERS.applyAnomalyFilter(sheet.getRange(2, 1, valueArray.length - 1, valueArray[0].length), 4);
 }
 
 /**

@@ -251,3 +251,15 @@ export function getOrCreateSheet(sheetName: string) {
   const active = SpreadsheetApp.getActive();
   return active.getSheetByName(sheetName) || active.insertSheet(sheetName);
 }
+
+/**
+ * Helpers that can be stubbed in tests for migrations.
+ */
+export const HELPERS = {
+  applyAnomalyFilter(range: GoogleAppsScript.Spreadsheet.Range, column: number) {
+    const criteria = SpreadsheetApp.newFilterCriteria().whenTextEqualTo('TRUE');
+    const filter = range.getSheet().getFilter();
+    filter && filter.remove();
+    range.createFilter().setColumnFilterCriteria(4, criteria.build());
+  }
+};
