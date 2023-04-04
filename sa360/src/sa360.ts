@@ -19,6 +19,7 @@
 
 import {RecordInfo} from '../../common/types';
 import {ClientArgs} from './types';
+import Payload = GoogleAppsScript.URL_Fetch.Payload;
 
 /**
  * The API version, exposed for testing.
@@ -190,14 +191,14 @@ abstract class ReportBuilder<Columns extends AllowedColumns> {
   /**
    * Provides sensible defaults to build a `UrlFetchApp` params object.
    */
-  apiParams(requestParams?: {payload: unknown}) {
+  apiParams({payload, contentType = 'application/json'}: {payload?: Payload, contentType?: string} = {}) {
     const token = ScriptApp.getOAuthToken();
-    const baseParams = {
-      'contentType': 'application/json',
-      'headers':
+    return {
+      payload,
+      contentType,
+      headers:
           {'Authorization': `Bearer ${token}`, 'Accept': 'application/json'},
     };
-    return Object.assign({}, baseParams, requestParams || {});
   }
 
   async build() {
@@ -209,18 +210,19 @@ abstract class ReportBuilder<Columns extends AllowedColumns> {
   async fetchReportUrl(reportId: string): Promise<string[]> {
     let response: {files: Array<{url: string}>, isReportReady: boolean};
 
-    return new Promise<string[]>((resolve) => {
-      const interval = setInterval(() => {
+    return new Promise<string[]>((resolve, fail) => {
+      while (true) {
         response = JSON.parse(fetch(
                 this.getQueryUrl(`reports/${reportId}`),
                 this.apiParams())
             .getContentText()) as
             {files: Array<{url: string}>, isReportReady: boolean};
         if (response.isReportReady) {
-          clearInterval(interval);
           resolve(response.files.map(file => file.url));
+          return;
         }
-      }, 1000);
+        Utilities.sleep(1000);
+      }
     });
   }
 
@@ -246,7 +248,7 @@ abstract class ReportBuilder<Columns extends AllowedColumns> {
   aggregateReports(urls: string[]) {
     const reports = urls.reduce((prev, url) => {
       const report =
-          fetch(url, this.apiParams()).getContentText().split('\n');
+          fetch(url, this.apiParams({contentType: 'text/plain'})).getContentText().trim().split('\n');
       const headers = report[0].split(',') as Array<ColumnType<Columns>>;
       const indexMap = Object.fromEntries(headers.map(
                            (columnName, idx) => [columnName, idx])) as
@@ -283,9 +285,7 @@ abstract class ReportBuilder<Columns extends AllowedColumns> {
     const payload = JSON.stringify({
       reportScope: {
         agencyId: this.params.agencyId,
-        ...{
-          advertiserId
-        }
+        ...advertiserId,
       },
       reportType: this.getReportType(),
       columns: this.getColumns().map(columnName => ({columnName})),

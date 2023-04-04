@@ -194,22 +194,14 @@ export function notActiveAfterPausedNDays(
    */
   return new AbsoluteRule(instructions, (thresholdValue) => (value) => {
     const valuesList = toCampaignData(value);
-    let clockStarted = false;
     let maxConsecutiveFalse = -1;
     for (let i = 0; i < valuesList.length; i++) {
       const v = valuesList[i];
-      if (v[0] === 'Active') {
-        clockStarted = true;
-      } else if (v[0] === 'Paused') {
-        if (!clockStarted) {
-          continue;
-        }
+      if (v[0] === 'Paused') {
         maxConsecutiveFalse = Math.max(maxConsecutiveFalse, v[1]);
       }
     }
-    return clockStarted && maxConsecutiveFalse < 0 ||
-        maxConsecutiveFalse <= thresholdValue ||
-        valuesList[valuesList.length - 1][0] !== 'Active';
+    return maxConsecutiveFalse <= thresholdValue || valuesList[valuesList.length - 1][0] !== 'Active';
   });
 }
 

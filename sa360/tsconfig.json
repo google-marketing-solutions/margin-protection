@@ -8,7 +8,6 @@
     "target": "es2020",
     "lib": ["esnext", "dom"],
     "noImplicitThis": true,
-    "noImplicitAny": true,
     "paths": {
       "anomaly_library": ["anomaly_library"],
       "common": ["common"]
