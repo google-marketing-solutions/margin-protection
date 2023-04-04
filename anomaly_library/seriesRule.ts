@@ -66,29 +66,6 @@ export class LockedSeriesRule implements Rule {
     return Object.values(this.getValueObject());
   }
 
-  /**
-   * Convenience method creates human-readable messages.
-   *
-   * Tracks any changes and, if none, sets "No Changes" as the value.
-   *
-   * @param id The same ID that's passed in as the object value for {@link Values}.
-   * @param values A key/value pair object with the unique key as key.
-   * @param fields Extra metadata that's used in reporting.
-   */
-  createValueMessage(id: string, values: {[key: string]: string}, fields?: {[key: string]: string}): Value {
-    const originalRaw = this.getValueObject()[id]?.internal as {original: {[key: string]: string}} | undefined;
-    const original = originalRaw?.original ?? values;
-    const newValues = [];
-
-    for (const key of Object.keys(values)) {
-      if (!original[key] || original[key] === values[key]) {
-        continue;
-      }
-      newValues.push(`${key}: ${original[key]} -> ${values[key]}`);
-    }
-    return this.createValue(newValues.join(', ') || LockedSeriesRule.NO_CHANGES, fields, {original});
-  }
-
   createValue<I>(value: string, fields?: {[key: string]: string}, internal?: I): Value<I> {
     return {
       value,

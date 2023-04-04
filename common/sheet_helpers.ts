@@ -104,9 +104,12 @@ export abstract class AbstractRuleRange<C extends BaseClientInterface<C>> {
   private readonly columnOrders: Record<string, Record<string, number>> = {};
   private readonly rules: Record<string, string[][]> & Record<'none', string[][]> = {'none': [[]]};
 
-  constructor(range: string[][], protected readonly client: BaseClientInterface<C>) {
+  constructor(range: string[][], protected readonly client: C, readonly headers: string[] = ['ID', 'default']) {
     let start = 0;
     let col: number;
+    for (let i = 0; i < headers.length; i++) {
+      this.rowIndex[headers[i]] = i;
+    }
     for (col = 0; col < range[0].length; col++) {
       if (range[0][col]) {
         const ruleRange = range.map(r => [r[0], ...r.slice(start, col)]).slice(1);
@@ -173,8 +176,8 @@ export abstract class AbstractRuleRange<C extends BaseClientInterface<C>> {
       return [];
     }
     return Object.values(this.rowIndex).filter(
-        (unused, index) => this.rules['none'][index] && this.rules[ruleName][index]
-    ).map((unused, index) => {
+        (index) => this.rules['none'][index] && this.rules[ruleName][index]
+    ).sort((a, b) => a - b).map((index) => {
       return [this.rules['none'][index][0], ...this.rules[ruleName][index]];
     });
   }

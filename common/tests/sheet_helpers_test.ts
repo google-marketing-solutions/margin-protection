@@ -57,7 +57,7 @@ describe('Rule Settings helper functions', () => {
         'Header 5', 'Header 6'
       ],
       ['1', 'one', 'Col 1', 'Col 2', 'Col 3', 'Col 4', 'Col 5', 'Col 6'],
-    ], client);
+    ], client, ['id']);
     for (const rule of ['', 'Category A', 'Category B', 'Category C']) {
       // getValues() expects a rule to be in the ruleStore for the helper value.
       client.ruleStore[rule] = {helper: ''} as unknown as

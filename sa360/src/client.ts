@@ -19,8 +19,8 @@ import {getRule} from 'anomaly_library/main';
 import {transformToParamValues, AbstractRuleRange} from 'common/sheet_helpers';
 import {ClientInterface, ClientArgs} from 'sa360/src/types';
 import {RecordInfo, ParamDefinition, RuleDefinition, RuleExecutor, RuleUtilities, Settings} from 'common/types';
-import {CampaignReport} from './sa360';
-import {AdGroupReport} from 'sa360/src/sa360';
+import {AdGroupReport, AdGroupTargetReport, CampaignReport} from './sa360';
+import {CampaignTargetReport} from 'sa360/src/sa360';
 
 /**
  * Parameters for a rule, with `this` methods from {@link RuleUtilities}.
@@ -140,7 +140,9 @@ export class Client implements ClientInterface {
   readonly ruleStore:
       {[ruleName: string]: RuleExecutor<Record<string, ParamDefinition>, ClientInterface>;};
   private campaignReport: CampaignReport|undefined;
+  private campaignTargetReport: CampaignTargetReport|undefined;
   private adGroupReport: AdGroupReport|undefined;
+  private adGroupTargetReport: AdGroupTargetReport|undefined;
 
   constructor(readonly settings: ClientArgs) {
     this.ruleStore = {};
@@ -153,12 +155,27 @@ export class Client implements ClientInterface {
     return this.campaignReport;
   }
 
+  async getCampaignTargetReport(): Promise<CampaignTargetReport> {
+    if (!this.campaignTargetReport) {
+      this.campaignTargetReport = await CampaignTargetReport.buildReport(this.settings);
+    }
+    return this.campaignTargetReport;
+  }
+
   async getAdGroupReport(): Promise<AdGroupReport> {
     if (!this.adGroupReport) {
       this.adGroupReport = await AdGroupReport.buildReport(this.settings);
     }
 
     return this.adGroupReport;
+  }
+
+  async getAdGroupTargetReport(): Promise<AdGroupTargetReport> {
+    if (!this.adGroupTargetReport) {
+      this.adGroupTargetReport = await AdGroupTargetReport.buildReport(this.settings);
+    }
+
+    return this.adGroupTargetReport;
   }
 
   /**

@@ -48,7 +48,18 @@ export const adGroupColumns = [
   'adGroupStatus',
 ] as const;
 
-type AllowedColumns = typeof campaignColumns | typeof adGroupColumns;
+export const adGroupTargetColumns = [
+  'adGroupId', 'adGroupTargetId', 'campaignId', 'genderTargetGenderType',
+  'genderTargetBidModifier', 'ageTargetAgeRange', 'ageTargetBidModifier',
+  'engineRemarketingList', 'engineRemarketingListBidModifier',
+] as const;
+
+export const campaignTargetColumns = [
+  'campaignId', 'campaignTargetId', 'locationTargetName',
+  'locationTargetBidModifier',
+] as const;
+
+type AllowedColumns = typeof campaignColumns | typeof adGroupColumns | typeof adGroupTargetColumns | typeof campaignTargetColumns;
 
 /**
  * Generic index type for object definitions of columns.
@@ -105,6 +116,34 @@ export class AdGroupReport extends Report<typeof adGroupColumns> {
   static async buildReport(params: ClientArgs) {
     const builder = new AdGroupReportBuilder(params);
     return new AdGroupReport(await builder.build());
+  }
+}
+
+/**
+ * SA360 Ad-group targets checker.
+ *
+ * This classes not contain the typical report data, and `report` will be empty.
+ * Instead, use `adGroupMap` to get a map of ad group IDs to a set of age,
+ * gender and remarketing target values and bid modifiers. These can be used to
+ * measure change without any other context.
+ */
+export class AdGroupTargetReport extends Report<typeof adGroupTargetColumns> {
+  static async buildReport(params: ClientArgs) {
+    const builder = new AdGroupTargetReportBuilder(params);
+    return new AdGroupTargetReport(await builder.build());
+  }
+}
+
+/**
+ * SA360 Campaign targets checker.
+ *
+ * This is used to check location targets, as ad group target reports do not
+ * produce this information even though it's available.
+ */
+export class CampaignTargetReport extends Report<typeof campaignTargetColumns> {
+  static async buildReport(params: ClientArgs) {
+    const builder = new CampaignTargetReportBuilder(params);
+    return new CampaignTargetReport(await builder.build());
   }
 }
 
@@ -174,6 +213,25 @@ abstract class ReportBuilder<Columns extends AllowedColumns> {
     });
   }
 
+  /**
+   * Mutates a row in a report.
+   *
+   * This breakout method allows child classes to modify how a report is
+   * aggregated, which is importnt for sparse reports like ad targeting.
+   *
+   * @param obj The value to mutate
+   * @param id The ID to write or update based on {@link getKey}.
+   * @param headers An array of headers.
+   * @param columns An array of columns (index-matched to the headers).
+   * @protected
+   */
+  protected mutateRow(
+      obj: {[p: string]: ReportRecord<Columns>}, id: string, headers: string[],
+      columns: string[]) {
+    obj[id] = Object.fromEntries(
+        columns.map((column, idx) => [headers[idx], column])) as Record<ColumnType<Columns>, string>;
+  }
+
   aggregateReports(urls: string[]) {
     const reports = urls.reduce((prev, url) => {
       const report =
@@ -184,9 +242,8 @@ abstract class ReportBuilder<Columns extends AllowedColumns> {
           {[Property in ColumnType<Columns>]: number};
       for (const row of report.slice(1)) {
         const columns: string[] = row.split(',');
-        const campaignId = columns[this.getKey(indexMap)];
-        prev[campaignId] = Object.fromEntries(
-            columns.map((column, idx) => [headers[idx], column])) as Record<ColumnType<Columns>, string>;
+        const id = columns[this.getKey(indexMap)];
+        this.mutateRow(prev, id, headers, columns);
       }
 
       return prev;
@@ -263,3 +320,72 @@ class AdGroupReportBuilder extends ReportBuilder<typeof adGroupColumns> {
     return 'adGroup';
   }
 }
+
+class AdGroupTargetReportBuilder  extends ReportBuilder<typeof adGroupTargetColumns> {
+  protected override getKey(map: Record<ColumnType<typeof adGroupTargetColumns>, number>): number {
+    return map.adGroupId;
+  }
+
+  protected override getColumns() {
+    return adGroupTargetColumns;
+  }
+
+  protected override getReportType() {
+    return 'adGroupTarget';
+  }
+
+  protected override mutateRow(
+      obj: {[p: string]: ReportRecord<typeof adGroupTargetColumns>}, id: string,
+      headers: string[], columns: string[]) {
+    const {row, filteredColumns} = getFilteredColumns(obj, id, headers, columns);
+    for (const [i, column] of filteredColumns) {
+      if (['adGroupId', 'campaignId', 'adGroupTargetId'].indexOf(headers[i]) >=
+          0) {
+        row[headers[i]] = column;
+        continue;
+      }
+      row[headers[i]] = row[headers[i]] === undefined ? `${row['adGroupTargetId']}:${column}` :
+          `${row[headers[i]]},${row['adGroupTargetId']}:${column}`;
+    }
+  }
+}
+
+class CampaignTargetReportBuilder extends ReportBuilder<typeof campaignTargetColumns> {
+  protected getColumns(): typeof campaignTargetColumns {
+    return campaignTargetColumns;
+  }
+
+  protected getKey(map: Record<ColumnType<typeof campaignTargetColumns>, number>): number {
+    return map.campaignId;
+  }
+
+  protected getReportType(): string {
+    return 'campaignTarget';
+  }
+
+  protected override mutateRow(
+      obj: {[p: string]: ReportRecord<typeof campaignTargetColumns>}, id: string,
+      headers: string[], columns: string[]) {
+    const {row, filteredColumns} = getFilteredColumns(obj, id, headers, columns);
+    for (const [i, column] of filteredColumns) {
+      if (['campaignId', 'campaignTargetId'].indexOf(headers[i]) >=
+          0) {
+        row[headers[i]] = column;
+        continue;
+      }
+      row[headers[i]] = row[headers[i]] === undefined ? `${row['campaignTargetId']}:${column}` :
+          `${row[headers[i]]},${row['campaignTargetId']}:${column}`;
+    }
+  }
+
+}
+
+function getFilteredColumns(obj: { [p: string]: Record<string, string> }, id: string, headers: string[], columns: string[]) {
+  const row = (obj[id] = obj[id] ||
+      Object.fromEntries(headers.map(header => [header, undefined]))) as
+      Record<string, string|undefined>;
+  const filteredColumns =
+      columns.map<[number, string]>((c, j) => [j, c]).filter(c => c[1]);
+  return {row, filteredColumns};
+}
+
