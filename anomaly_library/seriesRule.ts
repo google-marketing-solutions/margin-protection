@@ -34,7 +34,6 @@ export class LockedSeriesRule implements Rule {
   private readonly uniqueKey: string;
   private readonly properties = new PropertyWrapper();
   readonly valueIsInBounds: (value: string) => boolean;
-  private storedValue: Values | undefined;
   static NO_CHANGES = 'No Changes';
 
   /**
@@ -55,15 +54,10 @@ export class LockedSeriesRule implements Rule {
 
   saveValues(values: Values) {
     this.properties.setProperty(this.uniqueKey, JSON.stringify(values));
-    this.storedValue = values;
   }
 
   getValueObject() {
-    if (!this.storedValue) {
-      this.storedValue = JSON.parse(this.properties.getProperty(this.uniqueKey) ?? '{}') as Values;
-    }
-
-    return this.storedValue;
+    return JSON.parse(this.properties.getProperty(this.uniqueKey) ?? '{}') as Values;
   }
 
   getValues(): Value[] {
@@ -86,5 +80,7 @@ export class LockedSeriesRule implements Rule {
  */
 export function neverChangeAfterSet(instructions: RuleInstructions) {
   return new LockedSeriesRule(
-      instructions, (rule) => (value) => value === LockedSeriesRule.NO_CHANGES);
+      instructions,
+      (rule) => (value) => value === LockedSeriesRule.NO_CHANGES
+  );
 }

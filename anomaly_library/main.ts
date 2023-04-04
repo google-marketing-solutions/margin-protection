@@ -181,12 +181,17 @@ export function getRule(uniqueKey: string, properties = new PropertyWrapper()): 
  */
 export class PropertyWrapper {
   private readonly properties = PropertiesService.getScriptProperties();
+  private static readonly cache: {[key: string]: string} = {};
 
   setProperty(key: string, value: string) {
     this.properties.setProperty(key, compress(value));
+    PropertyWrapper.cache[key] = value;
   }
 
   getProperty(key: string) {
+    if (PropertyWrapper.cache[key]) {
+      return PropertyWrapper.cache[key];
+    }
     const property = this.properties.getProperty(key);
     return property ? extract(property) : null;
   }
