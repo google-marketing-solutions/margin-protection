@@ -177,7 +177,9 @@ interface Filter {
 /**
  * Classes that extend this are responsible for building an SA360 report.
  */
-abstract class ReportBuilder<Columns extends AllowedColumns> {
+export abstract class ReportBuilder<Columns extends AllowedColumns> {
+  static step = 10_000_000;
+
   constructor(protected readonly params: ApiParams) {}
 
   getFilters(): undefined | Filter[] {
@@ -191,20 +193,20 @@ abstract class ReportBuilder<Columns extends AllowedColumns> {
   /**
    * Provides sensible defaults to build a `UrlFetchApp` params object.
    */
-  apiParams({payload, contentType = 'application/json'}: {payload?: Payload, contentType?: string} = {}) {
+  apiParams({payload, contentType = 'application/json', headers={}}: {payload?: Payload, contentType?: string, headers?: {[key: string]: string}} = {}) {
     const token = ScriptApp.getOAuthToken();
     return {
       payload,
       contentType,
       headers:
-          {'Authorization': `Bearer ${token}`, 'Accept': 'application/json'},
+          {'Authorization': `Bearer ${token}`, 'Accept': 'application/json', ...headers},
     };
   }
 
   async build() {
-    const queryId = this.fetchReportId();
-    const reportUrls = await this.fetchReportUrl(queryId);
-    return this.aggregateReports(reportUrls);
+    const { id, byteCount } = this.fetchReportId();
+    const reportUrls = await this.fetchReportUrl(id);
+    return this.aggregateReports(reportUrls, byteCount);
   }
 
   async fetchReportUrl(reportId: string): Promise<string[]> {
@@ -245,18 +247,46 @@ abstract class ReportBuilder<Columns extends AllowedColumns> {
         columns.map((column, idx) => [headers[idx], column])) as Record<ColumnType<Columns>, string>;
   }
 
-  aggregateReports(urls: string[]) {
+  /**
+   * Reads a report in one or more batches of bytes.
+   *
+   * Reports can easily exhaust memory, so they are read in chunks and
+   * concatenated together to make things easier.
+   */
+  aggregateReports(urls: string[], byteCount: number) {
     const reports = urls.reduce((prev, url) => {
-      const report =
-          fetch(url, this.apiParams({contentType: 'text/plain'})).getContentText().trim().split('\n');
-      const headers = report[0].split(',') as Array<ColumnType<Columns>>;
-      const indexMap = Object.fromEntries(headers.map(
-                           (columnName, idx) => [columnName, idx])) as
-          {[Property in ColumnType<Columns>]: number};
-      for (const row of report.slice(1)) {
-        const columns: string[] = row.split(',');
-        const id = columns[this.getKey(indexMap)];
-        this.mutateRow(prev, id, headers, columns);
+      let partialRow: string = '';
+      let headers: Array<ColumnType<Columns>> | undefined;
+      for (let i = 0; i < Math.ceil(byteCount / ReportBuilder.step); i++) {
+        const report =
+            fetch(url, this.apiParams({
+                  contentType: 'text/plain',
+                  headers: {
+                    'Range': `bytes=${ReportBuilder.step * i + 1}-${Math.min(byteCount, ReportBuilder.step * (i + 1))}`
+                  }
+                }))
+                .getContentText()
+                .split('\n');
+        // get the last row which will be blank at the end of the file.
+
+        report[0] = partialRow + (report[0] ?? '');
+        partialRow = report.pop() as string;
+        if (!report.length) {
+          report[0] = partialRow;
+          continue;
+        }
+        if (!headers) {
+          headers = report.shift()!.split(',') as Array<ColumnType<Columns>>;
+        }
+
+        const indexMap = Object.fromEntries(headers.map(
+                             (columnName, idx) => [columnName, idx])) as
+            {[Property in ColumnType<Columns>]: number};
+        for (const row of report) {
+          const columns: string[] = row.split(',');
+          const id = columns[this.getKey(indexMap)];
+          this.mutateRow(prev, id, headers, columns);
+        }
       }
 
       return prev;
@@ -298,8 +328,8 @@ abstract class ReportBuilder<Columns extends AllowedColumns> {
     const response =
         JSON.parse(
             fetch(this.getQueryUrl('reports'), this.apiParams({payload}))
-                .getContentText()) as {id: string};
-    return response.id;
+                .getContentText()) as {id: string, byteCount: number};
+    return { id: response.id, byteCount: Number(response.byteCount) };
   }
 }
 
@@ -331,8 +361,10 @@ class AdGroupReportBuilder extends ReportBuilder<typeof adGroupColumns> {
   }
 }
 
-class AdGroupTargetReportBuilder  extends ReportBuilder<typeof adGroupTargetColumns> {
-  protected override getKey(map: Record<ColumnType<typeof adGroupTargetColumns>, number>): number {
+class AdGroupTargetReportBuilder extends
+    ReportBuilder<typeof adGroupTargetColumns> {
+  protected override getKey(
+      map: Record<ColumnType<typeof adGroupTargetColumns>, number>): number {
     return map.adGroupId;
   }
 

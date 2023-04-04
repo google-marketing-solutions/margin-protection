@@ -179,6 +179,35 @@ export const adGroupTargetRule = newRule({
   },
 });
 
+export const locationChange = newRule({
+  name: 'Geo Location Change',
+  params: {},
+  defaults: {},
+  uniqueKeyPrefix: 'locationChange',
+  granularity: RuleGranularity.CAMPAIGN,
+  valueFormat: { label: 'Change' },
+  async callback() {
+    const uniqueKey: string = this.getUniqueKey();
+    const rules: {[adGroupId: string]: Rule} = {};
+    const rule = this.getRule();
+    const values: Values = {};
+
+    const campaignTargetReport = await this.client.getCampaignTargetReport();
+    for (const reportRow of Object.values(campaignTargetReport.report)) {
+      const locationValue = humanReadableStatuses(
+          reportRow.locationTargetName,
+          reportRow.locationTargetBidModifier,
+      );
+      values[reportRow.campaignId] = createValueMessage(
+          rules[reportRow.campaignId] ??= neverChangeAfterSet({uniqueKey}),
+          reportRow.campaignId, {'location': locationValue}, {
+            'Campaign ID': reportRow.campaignId,
+          });
+    }
+    return { rule, values };
+  },
+});
+
 /**
  * Given a series, this rule is anomalous when 'Active', 'Paused'*N, 'Active' is
  * true.
@@ -239,7 +268,6 @@ export function maybeAddToStatusCount(
     valueArray.records.push([campaignStatus, 1]);
   }
 }
-
 
 /**
  * Convenience method creates human-readable messages.

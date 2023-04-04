@@ -27,6 +27,7 @@ import {ParamDefinition, RuleGranularity} from 'common/types';
 import Sheet = GoogleAppsScript.Spreadsheet.Sheet;
 import {getOrCreateSheet} from 'common/sheet_helpers';
 import {ClientArgs} from 'sa360/src/types';
+import {locationChange} from './rules';
 
 /**
  * The name of the settings sheet (before granularity).
@@ -52,6 +53,7 @@ export const ENABLED_RULES: Array<RuleExecutorClass<Record<string, ParamDefiniti
     campaignStatusRule,
     adGroupStatusRule,
     adGroupTargetRule,
+    locationChange,
 ];
 
 /**
