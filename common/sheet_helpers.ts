@@ -99,12 +99,12 @@ function makeCampaignIndexedSettings(headers: string[], currentSettings: string[
  * The range has two headers: Header 1 is category/rule names, and
  * header 2 is the name of the rule setting to be changed.
  */
-export abstract class AbstractRuleRange<C extends BaseClientInterface<C>> {
+export abstract class AbstractRuleRange<C extends BaseClientInterface<C, Granularity>, Granularity extends {[Property in keyof Granularity]: Granularity}> {
   private readonly rowIndex: Record<string, number> = {};
   private readonly columnOrders: Record<string, Record<string, number>> = {};
   private readonly rules: Record<string, string[][]> & Record<'none', string[][]> = {'none': [[]]};
 
-  constructor(range: string[][], protected readonly client: C, readonly headers: string[] = ['ID', 'default']) {
+  constructor(range: string[][], protected readonly client: C, headers: string[] = ['ID', 'default']) {
     let start = 0;
     let col: number;
     for (let i = 0; i < headers.length; i++) {
@@ -138,28 +138,33 @@ export abstract class AbstractRuleRange<C extends BaseClientInterface<C>> {
    *    header1,header2,header3,header4,header5,header6,header7
    *    none1,none2,cata1,cata2,catb1,catb2,catb3
    */
-  getValues(): string[][] {
+  getValues(ruleGranularity?: Granularity): string[][] {
     const values =
         Object.entries(this.rules).reduce((prev, [category, rangeRaw]) => {
           const range = rangeRaw.filter(row => row && row.length);
+          if (ruleGranularity && (category === 'none' || this.client.ruleStore[category].granularity !== ruleGranularity)) {
+            return prev;
+          }
           const length = range.length ? range[0].length : 0;
           const offset = prev[0].length;
           prev[0] = prev[0].concat(
               Array.from({length}).fill(category === 'none' ? '' : category) as
-              string[]);
+                  string[]);
 
-          prev[1] = category === 'none' ? ['', ''] : prev[1].concat(
-              Array.from<string>({length}).fill('').map((cell, idx) =>
-                  idx === 0 ? this.client.ruleStore[prev[0][idx + offset]].helper ?? '' : ''));
-
+          prev[1] = category === 'none' ?
+              ['', ''] :
+              prev[1].concat(Array.from<string>({length}).fill('').map(
+                  (cell, idx) => idx === 0 ?
+                      this.client.ruleStore[prev[0][idx + offset]].helper ??
+                      '' :
+                      ''));
           Object.values(this.rowIndex)
               .sort((x: number, y: number) => x - y)
               .forEach((value, r) => {
                 prev[r + 2] =
                     (prev[r + 2] = prev[r + 2] || [])
-                        .concat(
-                            (range[value] ??
-                                Array.from<string>({length}).fill('')));
+                        .concat((
+                            range[r] ?? Array.from<string>({length}).fill('')));
               });
           return prev;
         }, [[], []] as string[][]);
@@ -189,7 +194,7 @@ export abstract class AbstractRuleRange<C extends BaseClientInterface<C>> {
   }
 
   async fillRuleValues<Params>(rule:
-      Pick<RuleDefinition<Record<keyof Params, ParamDefinition>>, 'name'|'params'|'defaults'>) {
+      Pick<RuleDefinition<Record<keyof Params, ParamDefinition>, Granularity>, 'name'|'params'|'defaults'|'granularity'>) {
 
     if (!rule.defaults) {
       throw new Error('Missing default values definition in fillRow');
@@ -219,21 +224,21 @@ export abstract class AbstractRuleRange<C extends BaseClientInterface<C>> {
               currentSettings['default'][headersByIndex[index]] ?? rule.defaults[paramsByHeader[headersByIndex[index]]] :
               rule.defaults[paramsByHeader[headersByIndex[index]]]
       ));
-    for (const campaign of await this.getRows()) {
-      this.setRow(rule.name, campaign.id,
+    for (const record of await this.getRows(rule.granularity)) {
+      this.setRow(rule.name, record.id,
           Array.from({length})
               .map(
                   (unused, index) =>
-                      currentSettings && currentSettings[campaign.id] ?
-                          currentSettings[campaign.displayName][headersByIndex[index]] ??
+                      currentSettings && currentSettings[record.id] ?
+                          currentSettings[record.id][headersByIndex[index]] ??
                           '' :
                           '')
       );
-      this.setRow('none', campaign.id, [campaign.id , campaign.displayName]);
+      this.setRow('none', record.id, [record.id , record.displayName]);
     }
   }
 
-  abstract getRows(): Promise<RecordInfo[]>;
+  abstract getRows(granularity: Granularity): Promise<RecordInfo[]>;
 }
 
 /**

@@ -19,6 +19,7 @@ import {AbsoluteRule} from 'anomaly_library/absoluteRule';
 import {Rule, ThresholdRuleInstructions, Value, Values} from 'anomaly_library/main';
 import {LockedSeriesRule, neverChangeAfterSet} from 'anomaly_library/seriesRule';
 
+import {RuleGranularity} from './types';
 import {newRule} from './client';
 
 const ONE_DAY = 60 * 60 * 24;
@@ -56,6 +57,8 @@ export const campaignStatusRule = newRule({
   defaults: {
     daysInactive: '0',
   },
+  granularity: RuleGranularity.CAMPAIGN,
+  valueFormat: { label: 'Invalid' },
   name: 'Campaign Status Active after Inactive',
   uniqueKeyPrefix: 'campaignStatusCheck',
   async callback() {
@@ -116,22 +119,21 @@ export const adGroupStatusRule = newRule({
   params: {},
   defaults: {},
   uniqueKeyPrefix: 'adGroupStatusChange',
+  granularity: RuleGranularity.AD_GROUP,
+  valueFormat: { label: 'Change' },
   async callback() {
-    const uniqueKey: string = this.getUniqueKey();
+    const uniqueKey = this.getUniqueKey();
     const rules: {[adGroupId: string]: Rule} = {};
     const rule = this.getRule();
     const values: Values = {};
 
-    const campaignReport = await this.client.getAdGroupReport();
-    for (const [adGroupId, reportRow] of Object.entries(
-             campaignReport.report)) {
-      values[adGroupId] = createValueMessage(
-          (rules[adGroupId] ?? neverChangeAfterSet({uniqueKey})), adGroupId,
-          {'Status': reportRow.adGroupStatus}, {
-            'Campaign ID': reportRow.campaignId,
-            'Ad Group ID': reportRow.adGroupId,
-            'Ad Group': reportRow.adGroup,
-          });
+    const adGroupReport = await this.client.getAdGroupReport();
+    for (const [adGroupId, reportRow] of Object.entries(adGroupReport.report)) {
+      values[adGroupId] = createValueMessage((rules[adGroupId] ?? neverChangeAfterSet({uniqueKey})), adGroupId, {'Status': reportRow.adGroupStatus}, {
+        'Campaign ID': reportRow.campaignId,
+        'Ad Group ID': reportRow.adGroupId,
+        'Ad Group': reportRow.adGroup,
+      });
     }
     return {rule, values};
   },
@@ -145,8 +147,10 @@ export const adGroupTargetRule = newRule({
   params: {},
   defaults: {},
   uniqueKeyPrefix: 'adGroupTargetChange',
+  granularity: RuleGranularity.AD_GROUP,
+  valueFormat: { label: 'Change' },
   async callback() {
-    const uniqueKey: string = this.getUniqueKey();
+    const uniqueKey = this.getUniqueKey();
     const rules: {[adGroupId: string]: Rule} = {};
     const rule = this.getRule();
     const values: Values = {};

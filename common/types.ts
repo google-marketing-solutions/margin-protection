@@ -27,7 +27,7 @@ export type Callback<Params extends Record<keyof Params, ParamDefinition>> =
     () => Promise<{
       rule: RuleGetter;
       values: Values;
-    }>;
+    }> & ThisType<Params>;
 
 /**
  * Provides a useful data structure to get campaign ID settings.
@@ -48,9 +48,9 @@ export type Settings<Params> =
 /**
  * Defines a client object, which is responsible for wrapping.
  */
-export interface BaseClientInterface<C extends BaseClientInterface<C>> {
+export interface BaseClientInterface<C extends BaseClientInterface<C, Granularity>, Granularity extends {[Property in keyof Granularity]: Granularity}> {
   readonly ruleStore:
-      {[ruleName: string]: RuleExecutor<Record<string, ParamDefinition>, C>;};
+      {[ruleName: string]: RuleExecutor<Record<string, ParamDefinition>, C, Granularity>;};
   getAllCampaigns(): Promise<RecordInfo[]>;
 }
 
@@ -73,31 +73,44 @@ export interface RuleUtilities {
 }
 
 /**
+ * Determines how a rule is changed (e.g. at the campaign or ad group level).
+ *
+ * This includes any and all types of granularity for any and all products.
+ * Use the granularity you'd like to appear on your settings page.
+ */
+export enum RuleGranularity {
+  CAMPAIGN = 'Campaign',
+  AD_GROUP = 'Ad Group',
+}
+
+/**
  * Actionable object to run a rule.
  */
 export interface RuleExecutor<
-    P extends Record<keyof P, ParamDefinition>, C extends BaseClientInterface<C>> extends RuleUtilities {
+    P extends Record<keyof P, ParamDefinition>, C extends BaseClientInterface<C, G>, G extends {[Property in keyof G]: G}> extends
+    RuleUtilities, Omit<RuleDefinition<P, G>, 'callback'|'defaults'|'granularity'> {
   client: C;
   settings: Settings<Record<keyof P, string>>;
-  uniqueKeyPrefix: string;
   run: Function;
   validate(): void;
-  name: string;
-  params: Record<string, ParamDefinition>;
   helper: string;
+  granularity: G;
 }
 
 /**
  * The type-enforced parameters required to create a rule with `newRule`.
  */
 export interface RuleDefinition<
-    Params extends Record<keyof Params, ParamDefinition>> {
+    Params extends Record<keyof Params, ParamDefinition>, Granularity extends {[Property in keyof Granularity]: Granularity}> {
   name: string;
-  params: Params;
+  callback: Callback<Params>;
+  granularity: Granularity;
+  params: {[Property in keyof Params]: ParamDefinition};
   uniqueKeyPrefix: string;
   defaults: {[Property in keyof Params]: string};
   helper?: string;
-  callback: Callback<Params>;
+  /** The name of the "value" column in the anomaly detector, for reporting. */
+  valueFormat: {label: string; numberFormat?: string};
 }
 
 /**

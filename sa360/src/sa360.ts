@@ -117,6 +117,18 @@ export class AdGroupReport extends Report<typeof adGroupColumns> {
     const builder = new AdGroupReportBuilder(params);
     return new AdGroupReport(await builder.build());
   }
+
+  getAdGroups(): RecordInfo[] {
+    const foundAdGroupIds = new Set<string>();
+    return Object.values(this.report).reduce((prev, reportRecord) => {
+      if (reportRecord.adGroupId in foundAdGroupIds) {
+        return prev;
+      }
+      foundAdGroupIds.add(reportRecord.adGroupId);
+      prev.push({id: reportRecord.adGroupId, advertiserId: reportRecord.advertiserId, displayName: reportRecord.adGroup});
+      return prev;
+    }, [] as RecordInfo[]);
+  }
 }
 
 /**
@@ -199,8 +211,7 @@ abstract class ReportBuilder<Columns extends AllowedColumns> {
 
     return new Promise<string[]>((resolve) => {
       const interval = setInterval(() => {
-        response = JSON.parse(UrlFetchApp
-            .fetch(
+        response = JSON.parse(fetch(
                 this.getQueryUrl(`reports/${reportId}`),
                 this.apiParams())
             .getContentText()) as
@@ -235,7 +246,7 @@ abstract class ReportBuilder<Columns extends AllowedColumns> {
   aggregateReports(urls: string[]) {
     const reports = urls.reduce((prev, url) => {
       const report =
-          UrlFetchApp.fetch(url, this.apiParams()).getContentText().split('\n');
+          fetch(url, this.apiParams()).getContentText().split('\n');
       const headers = report[0].split(',') as Array<ColumnType<Columns>>;
       const indexMap = Object.fromEntries(headers.map(
                            (columnName, idx) => [columnName, idx])) as
@@ -269,7 +280,7 @@ abstract class ReportBuilder<Columns extends AllowedColumns> {
         {advertiserId: this.params.advertiserId} :
         {};
     const filters = this.getFilters() ?? {};
-    const payload = {
+    const payload = JSON.stringify({
       reportScope: {
         agencyId: this.params.agencyId,
         ...{
@@ -283,11 +294,10 @@ abstract class ReportBuilder<Columns extends AllowedColumns> {
       maxRowsPerFile: 100_000_000,
       downloadFormat: 'csv',
       ...{filters},
-    };
+    });
     const response =
         JSON.parse(
-            UrlFetchApp
-                .fetch(this.getQueryUrl('reports'), this.apiParams({payload}))
+            fetch(this.getQueryUrl('reports'), this.apiParams({payload}))
                 .getContentText()) as {id: string};
     return response.id;
   }
@@ -389,3 +399,7 @@ function getFilteredColumns(obj: { [p: string]: Record<string, string> }, id: st
   return {row, filteredColumns};
 }
 
+function fetch(url: string, params: GoogleAppsScript.URL_Fetch.URLFetchRequestOptions) {
+  console.log(`fetching ${url}`);
+  return UrlFetchApp.fetch(url, params);
+}

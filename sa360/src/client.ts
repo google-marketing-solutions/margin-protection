@@ -16,9 +16,11 @@
  */
 
 import {getRule} from 'anomaly_library/main';
-import {transformToParamValues, AbstractRuleRange} from 'common/sheet_helpers';
-import {ClientInterface, ClientArgs} from 'sa360/src/types';
-import {RecordInfo, ParamDefinition, RuleDefinition, RuleExecutor, RuleUtilities, Settings} from 'common/types';
+import {AbstractRuleRange, transformToParamValues} from 'common/sheet_helpers';
+import {ParamDefinition, RecordInfo, RuleDefinition, RuleExecutor, RuleUtilities, Settings} from 'common/types';
+import {ClientArgs, ClientInterface} from 'sa360/src/types';
+
+import {RuleGranularity} from './types';
 import {AdGroupReport, AdGroupTargetReport, CampaignReport} from './sa360';
 import {CampaignTargetReport} from 'sa360/src/sa360';
 
@@ -26,7 +28,8 @@ import {CampaignTargetReport} from 'sa360/src/sa360';
  * Parameters for a rule, with `this` methods from {@link RuleUtilities}.
  */
 type RuleParams<Params extends Record<keyof Params, ParamDefinition>> =
-    RuleDefinition<Params>&ThisType<RuleExecutor<Params, ClientInterface>&RuleUtilities>;
+    RuleDefinition<Params, RuleGranularity>&
+    ThisType<RuleExecutor<Params, ClientInterface, RuleGranularity>&RuleUtilities>;
 
 /**
  * Contains a `RuleContainer` along with information to instantiate it.
@@ -59,8 +62,9 @@ export interface RuleStoreEntry<
  * An executable rule.
  */
 export interface RuleExecutorClass<P extends Record<keyof P, P[keyof P]>> {
-  new(client: ClientInterface, settings: readonly string[][]): RuleExecutor<P, ClientInterface>;
-  definition: RuleDefinition<P>;
+  new(client: ClientInterface,
+      settings: readonly string[][]): RuleExecutor<P, ClientInterface, RuleGranularity>;
+  definition: RuleDefinition<P, RuleGranularity>;
 }
 
 /**
@@ -85,14 +89,16 @@ export interface RuleExecutorClass<P extends Record<keyof P, P[keyof P]>> {
 export function
 newRule<ParamMap extends Record<keyof ParamMap, ParamDefinition>>(
     ruleDefinition: RuleParams<ParamMap>): RuleExecutorClass<ParamMap> {
-  const ruleClass = class implements RuleExecutor<ParamMap, ClientInterface> {
+  const ruleClass = class implements RuleExecutor<ParamMap, ClientInterface, RuleGranularity> {
     readonly uniqueKeyPrefix: string = '';
     readonly settings: Settings<Record<keyof ParamMap, string>>;
     readonly name: string = ruleDefinition.name;
     readonly params = ruleDefinition.params;
     readonly helper = ruleDefinition.helper ?? '';
-//Auto-added to unblock TS5.0 migration
-// @ts-ignore(go/ts50upgrade): This syntax requires an imported helper named '__setFunctionName' which does not exist in 'tslib'. Consider upgrading your version of 'tslib'.
+    // Auto-added to unblock TS5.0 migration
+    // @ts-ignore(go/ts50upgrade): This syntax requires an imported helper named '__setFunctionName' which does not exist in 'tslib'. Consider upgrading your version of 'tslib'.
+    readonly granularity: RuleGranularity = ruleDefinition.granularity;
+    readonly valueFormat = ruleDefinition.valueFormat;
     static definition = ruleDefinition;
 
     constructor(
@@ -110,7 +116,9 @@ newRule<ParamMap extends Record<keyof ParamMap, ParamDefinition>>(
     }
 
     getUniqueKey() {
-      return `${ruleDefinition.uniqueKeyPrefix}-${this.client.settings.agencyId}-${this.client.settings.advertiserId ?? 'a'}`;
+      return `${ruleDefinition.uniqueKeyPrefix}-${
+          this.client.settings.agencyId}-${
+          this.client.settings.advertiserId ?? 'a'}`;
     }
 
     /**
@@ -137,12 +145,16 @@ newRule<ParamMap extends Record<keyof ParamMap, ParamDefinition>>(
  * either through caching or some other method.
  */
 export class Client implements ClientInterface {
-  readonly ruleStore:
-      {[ruleName: string]: RuleExecutor<Record<string, ParamDefinition>, ClientInterface>;};
+  readonly ruleStore: {
+    [ruleName: string]:
+        RuleExecutor<Record<string, ParamDefinition>, ClientInterface, RuleGranularity>;
+  };
   private campaignReport: CampaignReport|undefined;
   private campaignTargetReport: CampaignTargetReport|undefined;
   private adGroupReport: AdGroupReport|undefined;
   private adGroupTargetReport: AdGroupTargetReport|undefined;
+  private campaigns: RecordInfo[] = [];
+  private adGroups: RecordInfo[] = [];
 
   constructor(readonly settings: ClientArgs) {
     this.ruleStore = {};
@@ -172,7 +184,8 @@ export class Client implements ClientInterface {
 
   async getAdGroupTargetReport(): Promise<AdGroupTargetReport> {
     if (!this.adGroupTargetReport) {
-      this.adGroupTargetReport = await AdGroupTargetReport.buildReport(this.settings);
+      this.adGroupTargetReport =
+          await AdGroupTargetReport.buildReport(this.settings);
     }
 
     return this.adGroupTargetReport;
@@ -203,9 +216,10 @@ export class Client implements ClientInterface {
    * library.
    */
   async validate() {
-    const thresholds: Function[] = Object.values(this.ruleStore).reduce((prev, rule) => {
-      return [...prev, rule.run.bind(rule)];
-    }, [] as Function[]);
+    const thresholds: Function[] =
+        Object.values(this.ruleStore).reduce((prev, rule) => {
+          return [...prev, rule.run.bind(rule)];
+        }, [] as Function[]);
     for (const thresholdCallable of thresholds) {
       const threshold = await thresholdCallable();
       threshold.rule.saveValues(threshold.values);
@@ -213,18 +227,19 @@ export class Client implements ClientInterface {
   }
 
   async getAllCampaigns(): Promise<RecordInfo[]> {
-    const cache = CacheService.getScriptCache();
-    const cacheName = `campaigns-${this.settings.agencyId}-${this.settings.advertiserId ?? 'a'}`;
-
-    const campaigns = cache.get(cacheName);
-    if (campaigns) {
-      return JSON.parse(campaigns) as RecordInfo[];
+    if (!this.campaigns) {
+      const campaignReport = await this.getCampaignReport();
+      this.campaigns = campaignReport.getCampaigns();
     }
-    const campaignReport = await this.getCampaignReport();
-    const result = campaignReport.getCampaigns();
-    cache.put(cacheName, JSON.stringify(result), 60);
+    return this.campaigns;
+  }
 
-    return result;
+  async getAllAdGroups(): Promise<RecordInfo[]> {
+    if (!this.adGroups) {
+      const adGroupReport = await this.getAdGroupReport();
+      this.adGroups = adGroupReport.getAdGroups();
+    }
+    return this.adGroups;
   }
 
   getAllAdvertisersForAgency(): string[] {
@@ -249,8 +264,12 @@ export class Client implements ClientInterface {
 /**
  * SA360 rule settings splits.
  */
-export class RuleRange extends AbstractRuleRange<ClientInterface> {
-  async getRows() {
+export class RuleRange extends AbstractRuleRange<ClientInterface, RuleGranularity> {
+  async getRows(ruleGranularity: RuleGranularity) {
+    if (ruleGranularity === RuleGranularity.CAMPAIGN) {
       return this.client.getAllCampaigns();
+    } else {
+      return this.client.getAllAdGroups();
+    }
   }
 }

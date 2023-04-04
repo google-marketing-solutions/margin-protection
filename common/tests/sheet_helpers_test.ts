@@ -82,7 +82,11 @@ describe('Rule Settings helper functions', () => {
   });
 });
 
-interface TestClientInterface extends BaseClientInterface<TestClientInterface> {
+enum Granularity {
+  DEFAULT='default',
+}
+
+interface TestClientInterface extends BaseClientInterface<TestClientInterface, Granularity> {
   id: string;
   getAllCampaigns(): Promise<RecordInfo[]>;
 }
@@ -97,8 +101,8 @@ function generateTestClient(params: {id?: string}): TestClientInterface {
   };
 }
 
-class RuleRange extends AbstractRuleRange<TestClientInterface> {
-  async getRows() {
-    return [{id: '1', displayName: 'Campaign 1', advertiserId: '1'}]
-  }
+class RuleRange extends AbstractRuleRange<TestClientInterface, Granularity> {
+    async getRows() {
+         return [{id: '1', displayName: 'Campaign 1', advertiserId: '1'}];
+    }
 }

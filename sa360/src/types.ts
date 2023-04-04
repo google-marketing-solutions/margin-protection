@@ -17,15 +17,17 @@
 
 import {BaseClientInterface} from '../../common/types';
 import {AdGroupReport, AdGroupTargetReport, CampaignReport, CampaignTargetReport} from 'sa360/src/sa360';
+import {RecordInfo} from 'common/types';
 
 /**
  * Extends the base client interface with SA360-specific features.
  */
-export interface ClientInterface extends BaseClientInterface<ClientInterface> {
+export interface ClientInterface extends BaseClientInterface<ClientInterface, RuleGranularity> {
   getCampaignReport(): Promise<CampaignReport>;
   getCampaignTargetReport(): Promise<CampaignTargetReport>;
   getAdGroupReport(): Promise<AdGroupReport>;
   getAdGroupTargetReport(): Promise<AdGroupTargetReport>;
+  getAllAdGroups(): Promise<RecordInfo[]>;
   settings: ClientArgs;
 }
 
@@ -35,4 +37,9 @@ export interface ClientInterface extends BaseClientInterface<ClientInterface> {
 export interface ClientArgs {
   agencyId: string;
   advertiserId?: string;
+}
+
+export enum RuleGranularity {
+  CAMPAIGN = 'Campaign',
+  AD_GROUP = 'Ad Group',
 }
