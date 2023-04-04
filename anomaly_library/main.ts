@@ -68,10 +68,16 @@ export interface Rule extends RuleGetter {
 }
 
 /**
- * A set of instructions to pass to a `Rule` implementation.
+ * Rule parameters to pass to a `Rule` implementation.
  */
-export interface RuleInstructions<ThresholdType> {
+export interface RuleInstructions {
   uniqueKey: Readonly<string>;
+}
+
+/**
+ * A rule instruction that includes a threshold value.
+ */
+export interface ThresholdRuleInstructions<ThresholdType> extends RuleInstructions {
   thresholdValue: Readonly<ThresholdType>;
 }
 
@@ -91,11 +97,12 @@ export type Threshold<ThresholdType, RuleType extends Rule = Rule> = (thresholdV
 /**
  * The return value of a Rule.
  */
-export interface Value {
+export interface Value<InternalType=unknown> {
   value: Readonly<string>;
   anomalous: Readonly<boolean>;
   alertedAt?: Readonly<number>;
   fields?: Readonly<{[key: string]: string}>;
+  internal?: Readonly<InternalType>;
 }
 
 export interface Values {

@@ -21,7 +21,7 @@
  */
 
 
-import {PropertyWrapper, Rule, RuleInstructions, Threshold, unpack, Value, Values} from 'anomaly_library/main';
+import {PropertyWrapper, Rule, Threshold, ThresholdRuleInstructions, unpack, Value, Values} from 'anomaly_library/main';
 
 /**
  * Checks for any anomalies based on a fixed `Threshold`.
@@ -38,7 +38,7 @@ export class AbsoluteRule<ThresholdType> implements Rule {
    * Object constructor
    */
   constructor(
-      instructions: RuleInstructions<ThresholdType>,
+      instructions: ThresholdRuleInstructions<ThresholdType>,
       threshold: Threshold<ThresholdType, AbsoluteRule<ThresholdType>>,
   ) {
     this.uniqueKey = instructions.uniqueKey;
@@ -77,7 +77,7 @@ export class AbsoluteRule<ThresholdType> implements Rule {
  * // If you want to alert whenever a value equals zero
  * equalTo({uniqueKey: 'notZero'})
  */
-export function equalTo(instructions: RuleInstructions<number>) {
+export function equalTo(instructions: ThresholdRuleInstructions<number>) {
   return new AbsoluteRule(instructions, (thresholdValue) => (value) => Number(value) === thresholdValue);
 }
 
@@ -87,7 +87,7 @@ export function equalTo(instructions: RuleInstructions<number>) {
  * @example
  * notEqualTo({thresholdValue: 0, uniqueKey: 'zero'})
  */
-export function notEqualTo(instructions: RuleInstructions<number>) {
+export function notEqualTo(instructions: ThresholdRuleInstructions<number>) {
   return new AbsoluteRule(instructions, (thresholdValue) => (value) => Number(value) !== thresholdValue);
 }
 
@@ -97,7 +97,7 @@ export function notEqualTo(instructions: RuleInstructions<number>) {
  * @example
  * greaterThanOrEqualTo({thresholdValue: 0, uniqueKey: 'positiveOrZero'})
  */
-export function greaterThanOrEqualTo(instructions: RuleInstructions<number>) {
+export function greaterThanOrEqualTo(instructions: ThresholdRuleInstructions<number>) {
   return new AbsoluteRule(instructions, thresholdValue => value => Number(value) >= thresholdValue);
 }
 
@@ -107,7 +107,7 @@ export function greaterThanOrEqualTo(instructions: RuleInstructions<number>) {
  * @example
  * greaterThan({thresholdValue: 0, uniqueKey: 'positive'})
  */
-export function greaterThan(instructions: RuleInstructions<number>) {
+export function greaterThan(instructions: ThresholdRuleInstructions<number>) {
   return new AbsoluteRule(instructions, thresholdValue => value => Number(value) > thresholdValue);
 }
 
@@ -117,7 +117,7 @@ export function greaterThan(instructions: RuleInstructions<number>) {
  * @example
  * lessThanOrEqualTo({thresholdValue: 0, uniqueKey: 'negativeOrZero'})
  */
-export function lessThanOrEqualTo(instructions: RuleInstructions<number>) {
+export function lessThanOrEqualTo(instructions: ThresholdRuleInstructions<number>) {
   return new AbsoluteRule(instructions, thresholdValue => value => Number(value) <= thresholdValue);
 }
 
@@ -127,7 +127,7 @@ export function lessThanOrEqualTo(instructions: RuleInstructions<number>) {
  * @example
  * lessThan({thresholdValue: 0, uniqueKey: 'negative'})
  */
-export function lessThan(instructions: RuleInstructions<number>) {
+export function lessThan(instructions: ThresholdRuleInstructions<number>) {
   return new AbsoluteRule(instructions, thresholdValue => value => Number(value) < thresholdValue);
 }
 
@@ -143,6 +143,6 @@ export interface ThresholdRange {
  * Ensures a value is in a range between `RuleInstructions#thresholdValue.min` and `RuleInstructions#thresholdValue.max`
  * @param instructions
  */
-export function inRange(instructions: RuleInstructions<ThresholdRange>) {
+export function inRange(instructions: ThresholdRuleInstructions<ThresholdRange>) {
   return new AbsoluteRule(instructions, thresholdValue => value => Number(value) >= thresholdValue.min && Number(value) <= thresholdValue.max);
 }

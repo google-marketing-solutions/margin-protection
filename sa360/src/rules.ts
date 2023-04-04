@@ -16,9 +16,10 @@
  */
 
 import {AbsoluteRule} from 'anomaly_library/absoluteRule';
-import {Rule, RuleInstructions, Value, Values} from 'anomaly_library/main';
+import {Rule, ThresholdRuleInstructions, Values} from 'anomaly_library/main';
 
 import {newRule} from './client';
+import {campaignColumns, ReportRecord} from './sa360';
 
 const ONE_DAY = 60 * 60 * 24;
 
@@ -70,33 +71,14 @@ export const campaignStatusRule = newRule({
     const campaignReport = await this.client.getCampaignReport();
     const now = Date.now();
     for (const [campaignId, reportRow] of Object.entries(campaignReport.report)) {
-      const valueArray = oldValues[campaignId] ?? { records: [], lastUpdated: now } as CampaignStatusData;
+      const valueArray: CampaignStatusData = oldValues[campaignId] ?? { records: [], lastUpdated: now };
       const moreThanOneDayOldStatus = now - valueArray.lastUpdated >= ONE_DAY;
       const thresholdValue = Number(this.settings.getOrDefault(campaignId).daysInactive);
-      if (valueArray.records.length && valueArray.records[valueArray.records.length - 1][0] === reportRow.campaignStatus) {
-        // only add a value if the last status is more than one day old.
-        if (moreThanOneDayOldStatus) {
-          ++valueArray.records[valueArray.records.length - 1][1];
-        }
-      } else {
-        // remove the last value and replace it if the value is less than one
-        // day old.
-        if (!moreThanOneDayOldStatus && valueArray.records.length) {
-          if (valueArray.records[valueArray.records.length - 1][1] === 0) {
-            valueArray.records.pop();
-          } else {
-            --valueArray.records[valueArray.records.length - 1][1];
-          }
-        }
-        valueArray.records.push([reportRow.campaignStatus, 1]);
-        if (valueArray.records[0][0] !== 'Active') {
-          valueArray.records.shift();
-        }
-        // cull statuses with active/inactive/active under threshold
-        for (let i = 0; i < valueArray.records.length; i++) {
-          if (valueArray.records[i][0] === 'Active' && valueArray.records[i + 2] && valueArray.records[i + 1][0] === 'Paused' && valueArray.records[i + 1][1] <= thresholdValue && valueArray.records[i + 2][0] === 'Active') {
-            valueArray.records.splice(i, 2);
-          }
+      maybeAddToStatusCount(valueArray, reportRow.campaignStatus, moreThanOneDayOldStatus);
+      // cull statuses with active/inactive/active under threshold
+      for (let i = 0; i < valueArray.records.length; i++) {
+        if (valueArray.records[i][0] === 'Active' && valueArray.records[i + 2] && valueArray.records[i + 1][0] === 'Paused' && valueArray.records[i + 1][1] <= thresholdValue && valueArray.records[i + 2][0] === 'Active') {
+          valueArray.records.splice(i, 2);
         }
       }
       values[campaignId] = (rules[campaignId] ??= notActiveAfterPausedNDays({uniqueKey, thresholdValue})).createValue(fromCampaignData(valueArray.records), {
@@ -116,7 +98,7 @@ export const campaignStatusRule = newRule({
  * If 1 is never seen, if 1 is the only thing seen, or if 1 is only >N times,
  * then this is not an error.
  */
-export function notActiveAfterPausedNDays(instructions: RuleInstructions<number>) {
+export function notActiveAfterPausedNDays(instructions: ThresholdRuleInstructions<number>) {
   /**
    * @param thresholdValue The number of times a false value should be seen to make this anomalous.
    */
@@ -138,3 +120,36 @@ export function notActiveAfterPausedNDays(instructions: RuleInstructions<number>
     return clockStarted && maxConsecutiveFalse < 0 || maxConsecutiveFalse <= thresholdValue || valuesList[valuesList.length - 1][0] !== 'Active';
   });
 }
+
+/**
+ * Conditionally updates a campaign status count.
+ *
+ * 1. If the last status is the same as this status, and it was last seen today
+ *    then do nothing. If it was last seen a day ago or longer, add one day to
+ *    the last status.
+ * 2. If the last status is different from this status, and it has been less
+ *    than a day since the last status update, then remove the decrement the
+ *    last status. If it's been more than a day, don't decrement the last
+ *    status. Add the new status in a new array.
+ */
+export function maybeAddToStatusCount(valueArray: CampaignStatusData, campaignStatus: string, moreThanOneDayOldStatus: boolean) {
+  const lastStatusSameAsThisStatus = valueArray.records.length && valueArray.records[valueArray.records.length - 1][0] === campaignStatus;
+  if (lastStatusSameAsThisStatus) {
+    // only add a value if the last status is more than one day old.
+    if (moreThanOneDayOldStatus) {
+      ++valueArray.records[valueArray.records.length - 1][1];
+    }
+  } else {
+    // remove the last value and replace it if the value is less than one
+    // day old.
+    if (!moreThanOneDayOldStatus && valueArray.records.length) {
+      if (--valueArray.records[valueArray.records.length - 1][1] === 0) {
+        valueArray.records.pop();
+        ++valueArray.records[valueArray.records.length - 1][1];
+        return;
+      }
+    }
+    valueArray.records.push([campaignStatus, 1]);
+  }
+}
+
