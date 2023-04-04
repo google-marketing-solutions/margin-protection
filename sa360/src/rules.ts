@@ -17,6 +17,7 @@
 
 import {AbsoluteRule} from 'anomaly_library/absoluteRule';
 import {Rule, ThresholdRuleInstructions, Values} from 'anomaly_library/main';
+import {LockedSeriesRule, neverChangeAfterSet} from 'anomaly_library/seriesRule';
 
 import {newRule} from './client';
 import {campaignColumns, ReportRecord} from './sa360';
@@ -93,6 +94,32 @@ export const campaignStatusRule = newRule({
 });
 
 /**
+ * Anomalous if an ad group has its status change.
+ */
+export const adGroupStatusRule = newRule({
+  name: 'Ad Group Status Change',
+  params: {},
+  defaults: {},
+  uniqueKeyPrefix: 'adGroupStatusChange',
+  async callback() {
+    const uniqueKey: string = this.getUniqueKey();
+    const rules: {[adGroupId: string]: Rule} = {};
+    const rule = this.getRule();
+    const values: Values = {};
+
+    const campaignReport = await this.client.getAdGroupReport();
+    for (const [adGroupId, reportRow] of Object.entries(campaignReport.report)) {
+      values[adGroupId] = ((rules[adGroupId] ??= neverChangeAfterSet({uniqueKey})) as LockedSeriesRule).createValueMessage(adGroupId,{'Status': reportRow.adGroupStatus}, {
+        'Campaign ID': reportRow.campaignId,
+        'Ad Group ID': reportRow.adGroupId,
+        'Ad Group': reportRow.adGroup,
+      });
+    }
+    return { rule, values };
+  },
+});
+
+/**
  * Given a series, this rule is anomalous when 'Active', 'Paused'*N, 'Active' is true.
  *
  * If 1 is never seen, if 1 is the only thing seen, or if 1 is only >N times,
@@ -152,4 +179,3 @@ export function maybeAddToStatusCount(valueArray: CampaignStatusData, campaignSt
     valueArray.records.push([campaignStatus, 1]);
   }
 }
-
