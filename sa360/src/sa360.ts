@@ -380,7 +380,7 @@ function getFilterForAdGroup(): Filter[] {
       endDate: Utilities.formatDate(date, 'GMT', 'yyyy-MM-dd'),
     },
     operator: 'greaterThan',
-    values: [90],
+    values: [0],
   }];
 }
 
