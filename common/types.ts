@@ -48,10 +48,21 @@ export type Settings<Params> =
 /**
  * Defines a client object, which is responsible for wrapping.
  */
-export interface BaseClientInterface<C extends BaseClientInterface<C, Granularity>, Granularity extends {[Property in keyof Granularity]: Granularity}> {
+export interface BaseClientInterface<
+    C extends BaseClientInterface<C, G, A>,
+    G extends RuleGranularity<G>,
+    A extends BaseClientArgs<C, G, A>> {
+  readonly settings: A;
   readonly ruleStore:
-      {[ruleName: string]: RuleExecutor<Record<string, ParamDefinition>, C, Granularity>;};
+      {[ruleName: string]: RuleExecutor<C, G, A, Record<string, ParamDefinition>>};
   getAllCampaigns(): Promise<RecordInfo[]>;
+  getRule(ruleName: string): RuleExecutor<C, G, A, Record<string, ParamDefinition>>;
+  getUniqueKey(prefix: string): string;
+  validate(): Promise<void>;
+
+  addRule<Params extends Record<keyof Params, ParamDefinition>>(
+      rule: RuleExecutorClass<C, G, A, Params>,
+      settingsArray: readonly string[][]): C;
 }
 
 /**
@@ -78,16 +89,16 @@ export interface RuleUtilities {
  * This includes any and all types of granularity for any and all products.
  * Use the granularity you'd like to appear on your settings page.
  */
-export enum RuleGranularity {
-  CAMPAIGN = 'Campaign',
-  AD_GROUP = 'Ad Group',
-}
+export type RuleGranularity<G> = {[Property in keyof G]: G};
 
 /**
  * Actionable object to run a rule.
  */
 export interface RuleExecutor<
-    P extends Record<keyof P, ParamDefinition>, C extends BaseClientInterface<C, G>, G extends {[Property in keyof G]: G}> extends
+    C extends BaseClientInterface<C, G, A>,
+    G extends {[Property in keyof G]: G},
+    A extends BaseClientArgs<C, G, A>,
+    P extends Record<keyof P, ParamDefinition>> extends
     RuleUtilities, Omit<RuleDefinition<P, G>, 'callback'|'defaults'|'granularity'> {
   client: C;
   settings: Settings<Record<keyof P, string>>;
@@ -101,13 +112,14 @@ export interface RuleExecutor<
  * The type-enforced parameters required to create a rule with `newRule`.
  */
 export interface RuleDefinition<
-    Params extends Record<keyof Params, ParamDefinition>, Granularity extends {[Property in keyof Granularity]: Granularity}> {
+    P extends Record<keyof P, ParamDefinition>,
+    G extends RuleGranularity<G>> {
   name: string;
-  callback: Callback<Params>;
-  granularity: Granularity;
-  params: {[Property in keyof Params]: ParamDefinition};
+  callback: Callback<P>;
+  granularity: G;
+  params: {[Property in keyof P]: ParamDefinition};
   uniqueKeyPrefix: string;
-  defaults: {[Property in keyof Params]: string};
+  defaults: {[Property in keyof P]: string};
   helper?: string;
   /** The name of the "value" column in the anomaly detector, for reporting. */
   valueFormat: {label: string; numberFormat?: string};
@@ -122,3 +134,65 @@ export interface RecordInfo {
   displayName: string;
 }
 
+/**
+ * Represents a client-specific set of client arguments to initialize a client.
+ */
+export interface BaseClientArgs <
+    C extends BaseClientInterface<C, G, A>,
+    G extends RuleGranularity<G>,
+    A extends BaseClientArgs<C, G, A>> {
+}
+
+/**
+ * A rule class that can instantiate a {@link RuleExecutor} object.
+ */
+export interface RuleExecutorClass<C extends BaseClientInterface<C, G, A>,
+    G extends RuleGranularity<G>,
+    A extends BaseClientArgs<C, G, A>,
+    P extends Record<keyof P, P[keyof P]>> {
+  new(client: C,
+      settings: readonly string[][]): RuleExecutor<C, G, A, P>;
+  definition: RuleDefinition<P, G>;
+}
+
+/**
+ * Contains a `RuleContainer` along with information to instantiate it.
+ *
+ * This interface enables type integrity between a rule and its settings.
+ *
+ * This is not directly callable. Use {@link newRule} to generate a
+ * {@link RuleExecutorClass}.
+ *
+ * @param Params a key/value pair where the key is the function parameter name
+ *   and the value is the human-readable name. The latter can include spaces and
+ *   special characters.
+ */
+export interface RuleStoreEntry<
+    C extends BaseClientInterface<C, G, A>,
+    G extends RuleGranularity<G>,
+    A extends BaseClientArgs<C, G, A>,
+    P extends
+        Record<keyof ParamDefinition, ParamDefinition[keyof ParamDefinition]>> {
+  /**
+   * Contains a rule's metadata.
+   */
+  rule: RuleExecutorClass<C, G, A, P>;
+
+  /**
+   * Content in the form of {advertiserId: {paramKey: paramValue}}.
+   *
+   * This is the information that is passed into a `Rule` on instantiation.
+   */
+  settings: Settings<P>;
+}
+
+/**
+ * Parameters for a rule, with `this` methods from {@link RuleUtilities}.
+ */
+export type RuleParams<
+    C extends BaseClientInterface<C, G, A>,
+    G extends RuleGranularity<G>,
+    A extends BaseClientArgs<C, G, A>,
+    P extends Record<keyof P, ParamDefinition>> =
+    RuleDefinition<P, G>&
+    ThisType<RuleExecutor<C, G, A, P>&RuleUtilities>;

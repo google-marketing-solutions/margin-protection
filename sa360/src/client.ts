@@ -15,128 +15,23 @@
  * limitations under the License.
  */
 
-import {getRule} from 'anomaly_library/main';
-import {AbstractRuleRange, transformToParamValues} from 'common/sheet_helpers';
-import {ParamDefinition, RecordInfo, RuleDefinition, RuleExecutor, RuleUtilities, Settings} from 'common/types';
+import {AbstractRuleRange} from 'common/sheet_helpers';
+import {ParamDefinition, RecordInfo, RuleExecutor, RuleExecutorClass, RuleParams} from 'common/types';
+import {CampaignTargetReport} from 'sa360/src/sa360';
 import {ClientArgs, ClientInterface} from 'sa360/src/types';
 
-import {RuleGranularity} from './types';
 import {AdGroupReport, AdGroupTargetReport, CampaignReport} from './sa360';
-import {CampaignTargetReport} from 'sa360/src/sa360';
+import {RuleGranularity} from './types';
+import {newRuleBuilder} from 'common/client_helpers';
 
 /**
- * Parameters for a rule, with `this` methods from {@link RuleUtilities}.
+ * A new rule in SA360.
  */
-type RuleParams<Params extends Record<keyof Params, ParamDefinition>> =
-    RuleDefinition<Params, RuleGranularity>&
-    ThisType<RuleExecutor<Params, ClientInterface, RuleGranularity>&RuleUtilities>;
-
-/**
- * Contains a `RuleContainer` along with information to instantiate it.
- *
- * This interface enables type integrity between a rule and its settings.
- *
- * This is not directly callable. Use {@link newRule} to generate a
- * {@link RuleExecutorClass}.
- *
- * @param Params a key/value pair where the key is the function parameter name
- *   and the value is the human-readable name. The latter can include spaces and
- *   special characters.
- */
-export interface RuleStoreEntry<
-    Params extends
-        Record<keyof ParamDefinition, ParamDefinition[keyof ParamDefinition]>> {
-  /**
-   * Contains a rule's metadata.
-   */
-  rule: RuleExecutorClass<Params>;
-  /**
-   * Content in the form of {advertiserId: {paramKey: paramValue}}.
-   *
-   * This is the information that is passed into a `Rule` on instantiation.
-   */
-  settings: Settings<Params>;
-}
-
-/**
- * An executable rule.
- */
-export interface RuleExecutorClass<P extends Record<keyof P, P[keyof P]>> {
-  new(client: ClientInterface,
-      settings: readonly string[][]): RuleExecutor<P, ClientInterface, RuleGranularity>;
-  definition: RuleDefinition<P, RuleGranularity>;
-}
-
-/**
- * Creates new rule with the metadata needed to generate settings.
- *
- * Wrapping in this function gives us access to all methods in {@link
- * RuleUtilities} as part of `this` in our `callback`.
- *
- * Example:
- *
- * ```
- * newRule({
- *   //...
- *   callback(client, settings) {
- *     const rule = this.getRule(); // the `RuleGetter`
- *     const rule = rule.getValues();
- *     //...
- *   }
- * });
- * ```
- */
-export function
-newRule<ParamMap extends Record<keyof ParamMap, ParamDefinition>>(
-    ruleDefinition: RuleParams<ParamMap>): RuleExecutorClass<ParamMap> {
-  const ruleClass = class implements RuleExecutor<ParamMap, ClientInterface, RuleGranularity> {
-    readonly uniqueKeyPrefix: string = '';
-    readonly settings: Settings<Record<keyof ParamMap, string>>;
-    readonly name: string = ruleDefinition.name;
-    readonly params = ruleDefinition.params;
-    readonly helper = ruleDefinition.helper ?? '';
-    // Auto-added to unblock TS5.0 migration
-    // @ts-ignore(go/ts50upgrade): This syntax requires an imported helper named '__setFunctionName' which does not exist in 'tslib'. Consider upgrading your version of 'tslib'.
-    readonly granularity: RuleGranularity = ruleDefinition.granularity;
-    readonly valueFormat = ruleDefinition.valueFormat;
-    static definition = ruleDefinition;
-
-    constructor(
-        readonly client: ClientInterface, settingsArray: readonly string[][]) {
-      this.uniqueKeyPrefix = ruleDefinition.uniqueKeyPrefix;
-      this.settings = transformToParamValues(settingsArray, this.params);
-    }
-
-    async run() {
-      return await ruleDefinition.callback.bind(this)();
-    }
-
-    getRule() {
-      return getRule(this.getUniqueKey());
-    }
-
-    getUniqueKey() {
-      return `${ruleDefinition.uniqueKeyPrefix}-${
-          this.client.settings.agencyId}-${
-          this.client.settings.advertiserId ?? 'a'}`;
-    }
-
-    /**
-     * Executes each the rule once per call to this method.
-     *
-     * This should not be used when checking multiple rules. Instead, use
-     * {@link Client.validate} which serves the same purpose but is able to
-     * combine rules.
-     */
-    async validate() {
-      const threshold = await this.run();
-      threshold.rule.saveValues(threshold.values);
-    }
-  };
-
-  Object.defineProperty(ruleClass, 'name', {value: ruleDefinition.name});
-  return ruleClass;
-}
+export const newRule = newRuleBuilder<
+    ClientInterface,
+    RuleGranularity,
+    ClientArgs
+    >() as <P extends Record<keyof P, ParamDefinition>>(p: RuleParams<ClientInterface, RuleGranularity, ClientArgs, P>) => RuleExecutorClass<ClientInterface, RuleGranularity, ClientArgs, P>;
 
 /**
  * Wrapper client around the DV360 API for testability and effiency.
@@ -147,7 +42,7 @@ newRule<ParamMap extends Record<keyof ParamMap, ParamDefinition>>(
 export class Client implements ClientInterface {
   readonly ruleStore: {
     [ruleName: string]:
-        RuleExecutor<Record<string, ParamDefinition>, ClientInterface, RuleGranularity>;
+        RuleExecutor<ClientInterface, RuleGranularity, ClientArgs, Record<string, ParamDefinition>>;
   };
   private campaignReport: CampaignReport|undefined;
   private campaignTargetReport: CampaignTargetReport|undefined;
@@ -199,7 +94,7 @@ export class Client implements ClientInterface {
    *
    */
   addRule<Params extends Record<keyof Params, ParamDefinition>>(
-      rule: RuleExecutorClass<Params>, settingsArray: readonly string[][]) {
+      rule: RuleExecutorClass<ClientInterface, RuleGranularity, ClientArgs, Params>, settingsArray: readonly string[][]) {
     this.ruleStore[rule.definition.name] = new rule(this, settingsArray);
     return this;
   }
@@ -250,7 +145,6 @@ export class Client implements ClientInterface {
       return JSON.parse(advertisers) as string[];
     }
 
-
     return result;
   }
 
@@ -259,12 +153,18 @@ export class Client implements ClientInterface {
 
     return result;
   }
+
+  getUniqueKey(prefix: string) {
+    return `${prefix}-${
+        this.settings.agencyId}-${
+        this.settings.advertiserId ?? 'a'}`;
+  }
 }
 
 /**
  * SA360 rule settings splits.
  */
-export class RuleRange extends AbstractRuleRange<ClientInterface, RuleGranularity> {
+export class RuleRange extends AbstractRuleRange<ClientInterface, RuleGranularity, ClientArgs> {
   async getRows(ruleGranularity: RuleGranularity) {
     if (ruleGranularity === RuleGranularity.CAMPAIGN) {
       return this.client.getAllCampaigns();

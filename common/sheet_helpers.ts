@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-import {BaseClientInterface, ParamDefinition, RecordInfo, RuleDefinition, SettingMapInterface} from './types';
+import {BaseClientArgs, BaseClientInterface, ParamDefinition, RecordInfo, RuleDefinition, RuleGranularity, SettingMapInterface} from './types';
 
 /**
  * Provides a useful data structure to get campaign ID settings.
@@ -101,12 +101,15 @@ function makeCampaignIndexedSettings(headers: string[], currentSettings: string[
  * The range has two headers: Header 1 is category/rule names, and
  * header 2 is the name of the rule setting to be changed.
  */
-export abstract class AbstractRuleRange<C extends BaseClientInterface<C, Granularity>, Granularity extends {[Property in keyof Granularity]: Granularity}> {
+export abstract class AbstractRuleRange<
+    C extends BaseClientInterface<C, G, A>,
+    G extends RuleGranularity<G>,
+    A extends BaseClientArgs<C, G, A>> {
   private readonly rowIndex: Record<string, number> = {};
   private readonly columnOrders: Record<string, Record<string, number>> = {};
   private readonly rules: Record<string, string[][]> & Record<'none', string[][]> = {'none': [[]]};
 
-  constructor(range: string[][], protected readonly client: C, headers: string[] = ['ID', 'default']) {
+  constructor(range: string[][], readonly client: C, headers: string[] = ['ID', 'default']) {
     let start = 0;
     let col: number;
     for (let i = 0; i < headers.length; i++) {
@@ -140,7 +143,7 @@ export abstract class AbstractRuleRange<C extends BaseClientInterface<C, Granula
    *    header1,header2,header3,header4,header5,header6,header7
    *    none1,none2,cata1,cata2,catb1,catb2,catb3
    */
-  getValues(ruleGranularity?: Granularity): string[][] {
+  getValues(ruleGranularity?: G): string[][] {
     const values =
         Object.entries(this.rules).reduce((prev, [category, rangeRaw]) => {
           const range = rangeRaw.filter(row => row && row.length);
@@ -199,7 +202,7 @@ export abstract class AbstractRuleRange<C extends BaseClientInterface<C, Granula
   }
 
   async fillRuleValues<Params>(rule:
-      Pick<RuleDefinition<Record<keyof Params, ParamDefinition>, Granularity>, 'name'|'params'|'defaults'|'granularity'>) {
+      Pick<RuleDefinition<Record<keyof Params, ParamDefinition>, G>, 'name'|'params'|'defaults'|'granularity'>) {
 
     if (!rule.defaults) {
       throw new Error('Missing default values definition in fillRow');
@@ -243,7 +246,7 @@ export abstract class AbstractRuleRange<C extends BaseClientInterface<C, Granula
     }
   }
 
-  abstract getRows(granularity: Granularity): Promise<RecordInfo[]>;
+  abstract getRows(granularity: G): Promise<RecordInfo[]>;
 }
 
 /**

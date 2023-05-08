@@ -20,13 +20,13 @@
  */
 
 import {getRule, Value, Values} from 'anomaly_library/main';
-import {Client, RuleExecutorClass, RuleRange} from 'sa360/src/client';
+import {Client, RuleRange} from 'sa360/src/client';
 import {campaignStatusRule, adGroupStatusRule, adGroupTargetRule} from 'sa360/src/rules';
-import {ParamDefinition, RuleGranularity} from 'common/types';
+import {ParamDefinition, RuleExecutorClass} from 'common/types';
 
 import Sheet = GoogleAppsScript.Spreadsheet.Sheet;
 import {getOrCreateSheet, HELPERS} from 'common/sheet_helpers';
-import {ClientArgs} from 'sa360/src/types';
+import {ClientArgs, ClientInterface, RuleGranularity} from 'sa360/src/types';
 import {locationChange} from './rules';
 
 /**
@@ -49,7 +49,7 @@ const FOLDER = 'application/vnd.google-apps.folder';
  *
  * Comment/uncomment rules here to disable/enable them, respectively.
  */
-export const ENABLED_RULES: Array<RuleExecutorClass<Record<string, ParamDefinition>>> = [
+export const ENABLED_RULES: Array<RuleExecutorClass<ClientInterface, RuleGranularity, ClientArgs, Record<string, ParamDefinition>>> = [
     campaignStatusRule,
     adGroupStatusRule,
     adGroupTargetRule,
@@ -79,10 +79,10 @@ export async function initializeRules(client: Client) {
   const numberOfHeaders = 3;
 
   const sheets = ENABLED_RULES.reduce((prev, rule) => {
-    (prev[rule.definition.granularity.toString()] ??= [] as Array<RuleExecutorClass<Record<string, ParamDefinition>>>)
+    (prev[rule.definition.granularity.toString()] ??= [] as Array<RuleExecutorClass<ClientInterface, RuleGranularity, ClientArgs, Record<string, ParamDefinition>>>)
         .push(rule);
     return prev;
-  }, {} as Record<string, Array<RuleExecutorClass<Record<string, ParamDefinition>>>>);
+  }, {} as Record<string, Array<RuleExecutorClass<ClientInterface, RuleGranularity, ClientArgs, Record<string, ParamDefinition>>>>);
 
   for (const [sheetName, ruleClasses] of Object.entries(sheets)) {
     const ruleSheet = getOrCreateSheet(`${RULE_SETTINGS_SHEET} - ${sheetName}`);

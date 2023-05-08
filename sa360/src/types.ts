@@ -22,7 +22,7 @@ import {RecordInfo} from 'common/types';
 /**
  * Extends the base client interface with SA360-specific features.
  */
-export interface ClientInterface extends BaseClientInterface<ClientInterface, RuleGranularity> {
+export interface ClientInterface extends BaseClientInterface<ClientInterface, RuleGranularity, ClientArgs> {
   getCampaignReport(): Promise<CampaignReport>;
   getCampaignTargetReport(): Promise<CampaignTargetReport>;
   getAdGroupReport(): Promise<AdGroupReport>;
