@@ -15,9 +15,9 @@
  * limitations under the License.
  */
 
-import {Value, Values, getRule} from 'anomaly_library/main';
+import {getRule, Value, Values} from 'anomaly_library/main';
 
-import {BaseClientArgs, BaseClientInterface, FrontEndArgs, ParamDefinition, RecordInfo, RuleDefinition, RuleExecutorClass, RuleGranularity, RuleRangeInterface, SettingMapInterface} from './types';
+import {AppsScriptFunctions, BaseClientArgs, BaseClientInterface, FrontEndArgs, ParamDefinition, RecordInfo, RuleDefinition, RuleExecutor, RuleExecutorClass, RuleGranularity, RuleParams, RuleRangeInterface, RuleUtilities, SettingMapInterface, Settings} from './types';
 
 const FOLDER = 'application/vnd.google-apps.folder';
 
@@ -137,12 +137,12 @@ export abstract class AbstractRuleRange<C extends BaseClientInterface<C, G, A>, 
     this.setRule(range[0][start] || 'none', ruleRange);
   }
 
-  setRow(category: string, campaignId: string, column: string[]): void {
-    if (campaignId === "") {
+  setRow(category: string, id: string, column: string[]): void {
+    if (id === "") {
       return;
     }
-    this.rowIndex[campaignId] = this.rowIndex[campaignId] ?? Object.keys(this.rowIndex).length;
-    (this.rules[category] = this.rules[category] || [])[this.rowIndex[campaignId]] = column;
+    this.rowIndex[id] = this.rowIndex[id] ?? Object.keys(this.rowIndex).length;
+    (this.rules[category] = this.rules[category] || [])[this.rowIndex[id]] = column;
   }
 
   getValues(ruleGranularity?: G): string[][] {
@@ -205,7 +205,6 @@ export abstract class AbstractRuleRange<C extends BaseClientInterface<C, G, A>, 
 
   async fillRuleValues<Params>(rule:
       Pick<RuleDefinition<Record<keyof Params, ParamDefinition>, G>, 'name'|'params'|'defaults'|'granularity'>) {
-
     if (!rule.defaults) {
       throw new Error('Missing default values definition in fillRow');
     }
@@ -223,7 +222,7 @@ export abstract class AbstractRuleRange<C extends BaseClientInterface<C, G, A>, 
     const currentSettings = makeCampaignIndexedSettings(ruleValues[0] ? ruleValues[0].slice(1) : [], ruleValues);
     const length = Object.keys(rule.params).length;
 
-    this.setRow('none', 'ID', ['ID', 'Campaign Name']);
+    this.setRow('none', 'ID', ['ID', `${rule.granularity} Name`]);
     this.setRow(rule.name, 'ID', [...Object.values(headersByIndex)]);
     this.setRow('none', 'default', ['default', '']);
     this.setRow(
@@ -234,6 +233,7 @@ export abstract class AbstractRuleRange<C extends BaseClientInterface<C, G, A>, 
               currentSettings['default'][headersByIndex[index]] ?? rule.defaults[paramsByHeader[headersByIndex[index]]] :
               rule.defaults[paramsByHeader[headersByIndex[index]]]
       ));
+    const inSystem = new Set<string>(['ID', 'default']);
     for (const record of await this.getRows(rule.granularity)) {
       this.setRow(rule.name, record.id,
           Array.from({length})
@@ -245,6 +245,12 @@ export abstract class AbstractRuleRange<C extends BaseClientInterface<C, G, A>, 
                           '')
       );
       this.setRow('none', record.id, [record.id , record.displayName]);
+      inSystem.add(record.id);
+    }
+    for (const row of Object.keys(this.rowIndex)) {
+      if (!inSystem.has(row)) {
+        delete this.rowIndex[row];
+      }
     }
   }
 
@@ -263,6 +269,9 @@ export function getOrCreateSheet(sheetName: string) {
  * Helpers that can be stubbed in tests for migrations.
  */
 export const HELPERS = {
+  insertRows(range: GoogleAppsScript.Spreadsheet.Range) {
+    range.insertCells(SpreadsheetApp.Dimension.ROWS);
+  },
   applyAnomalyFilter(range: GoogleAppsScript.Spreadsheet.Range, column: number) {
     const criteria = SpreadsheetApp.newFilterCriteria().whenTextEqualTo('TRUE');
     const filter = range.getSheet().getFilter();
@@ -293,7 +302,8 @@ export abstract class AppsScriptFrontEnd<
     C extends BaseClientInterface<C, G, A>,
     G extends RuleGranularity<G>,
     A extends BaseClientArgs<C, G, A>> {
-  protected readonly client: C;
+  readonly client: C;
+  readonly rules: ReadonlyArray<RuleExecutorClass<C, G, A>>;
 
   constructor(private readonly injectedArgs: FrontEndArgs<C, G, A>) {
     const clientArgs = this.getIdentity();
@@ -301,6 +311,7 @@ export abstract class AppsScriptFrontEnd<
       throw new Error('Cannot initialize front-end without client ID(s)');
     }
     this.client = new injectedArgs.clientClass(clientArgs);
+    this.rules = injectedArgs.rules;
   }
 
   /**
@@ -309,7 +320,7 @@ export abstract class AppsScriptFrontEnd<
    * Schedule this function using `client.launchMonitor()` at your preferred
    * cadence.
    */
-  onOpen() {
+  async onOpen() {
     const subMenus: Array<{name: string, functionName: string}> = [
       {name: 'Sync Campaigns', functionName: 'initializeSheets'},
       {name: 'Pre-Launch QA', functionName: 'preLaunchQa'},
@@ -512,7 +523,8 @@ export abstract class AppsScriptFrontEnd<
   exportAsCsv(ruleName: string, matrix: string[][]) {
     const file = Utilities.newBlob(this.matrixToCsv(matrix));
     const folder = this.getOrCreateFolder('launch_monitor');
-    const filename = `${ruleName}_${new Date(Date.now()).toISOString()}`;
+    const label: string = this.getRangeByName('LABEL').getValue();
+    const filename = `${label ? label + '_' : ''}${ruleName}_${new Date(Date.now()).toISOString()}`;
     Drive.Files!.insert(
         {
           parents: [{id: folder}],
@@ -524,18 +536,31 @@ export abstract class AppsScriptFrontEnd<
   }
 
   getOrCreateFolder(folderName: string) {
-    const folders = Drive.Files!
-                        .list({
-                          q: `title="launch_monitor" and mimeType="${
-                              FOLDER}" and not trashed`
-                        })
-                        .items;
+    const driveId = SpreadsheetApp.getActive().getRangeByName('DRIVE_ID');
+    if (!driveId) {
+      throw new Error('Missing a named range `DRIVE_ID`. Please copy the rules sheet from the original template and try again.');
+    }
+    const parents = [driveId.getValue()].filter(value => value).map(value => ({id: value}));
+
+    const driveIdValue = driveId.getValue();
+    const baseArgs = {
+      q: `title="launch_monitor" and mimeType="${FOLDER}" and not trashed`,
+      orderBy: 'createdTime',
+    };
+    const args = driveIdValue ? {
+      ...baseArgs,
+      driveId,
+      corpora: 'drive',
+      includeItemsFromAllDrives: true,
+      supportsAllDrives: true,
+      supportsTeamDrive: true,
+    } : baseArgs;
+    const folders = Drive.Files!.list(args).items;
     let folder;
     if (folders && folders.length) {
       folder = folders[0].id;
     } else {
-      folder =
-          Drive.Files!.insert({title: 'launch_monitor', mimeType: FOLDER}).id;
+      folder = Drive.Files!.insert({title: 'launch_monitor', mimeType: FOLDER, parents }).id;
     }
     console.log('folder', folder);
     return folder;
@@ -597,14 +622,14 @@ export abstract class AppsScriptFrontEnd<
       getTemplateSetting('ID').setValue(advertiserId);
     }
 
-    this.migrate(this.client);
+    this.migrate();
     await this.initializeRules();
   }
 
   /**
    * Handle migrations for Google Sheets (sheets getting added/removed).
    */
-  migrate(client: C): number {
+  migrate(): number {
     const sheetVersion = Number(
         PropertiesService.getScriptProperties().getProperty('sheet_version'));
     let numberOfMigrations = 0;
@@ -615,7 +640,7 @@ export abstract class AppsScriptFrontEnd<
 
     for (const [version, migration] of Object.entries(this.injectedArgs.migrations)) {
       if (Number(version) > sheetVersion) {
-        migration(client);
+        migration(this.client);
         // write manually each time because we want incremental migrations if
         // anything fails.
         PropertiesService.getScriptProperties().setProperty(
@@ -632,3 +657,148 @@ export abstract class AppsScriptFrontEnd<
 
   abstract maybeSendEmailAlert(): void;
 }
+
+/**
+ * Creates new rule with the metadata needed to generate settings.
+ *
+ * Wrapping in this function gives us access to all methods in {@link
+    * RuleUtilities} as part of `this` in our `callback`.
+ *
+ * Example:
+ *
+ * ```
+ * newRule({
+ *   //...
+ *   callback(client, settings) {
+ *     const rule = this.getRule(); // the `RuleGetter`
+ *     const rule = rule.getValues();
+ *     //...
+ *   }
+ * });
+ * ```
+ */
+export function
+newRuleBuilder<
+    C extends BaseClientInterface<C, G, A>,
+    G extends RuleGranularity<G>,
+    A extends BaseClientArgs<C, G, A>>(): <P extends Record<keyof P, ParamDefinition>>(p: RuleParams<C, G, A, P>) => RuleExecutorClass<C, G, A, P> {
+  return function
+  newRule<P extends Record<keyof P, ParamDefinition>>(
+      ruleDefinition: RuleParams<C, G, A, P>):
+      RuleExecutorClass<C, G, A, P> {
+    const ruleClass = class implements RuleExecutor<C, G, A, P> {
+      readonly uniqueKeyPrefix: string = '';
+      readonly settings: Settings<Record<keyof P, string>>;
+      readonly name: string = ruleDefinition.name;
+      readonly params = ruleDefinition.params;
+      readonly helper = ruleDefinition.helper ?? '';
+      // Auto-added to unblock TS5.0 migration
+      // @ts-ignore(go/ts50upgrade): This syntax requires an imported helper
+      // named
+      // '__setFunctionName' which does not exist in 'tslib'. Consider upgrading
+      // your version of 'tslib'.
+      readonly granularity: RuleGranularity = ruleDefinition.granularity;
+      readonly valueFormat = ruleDefinition.valueFormat;
+      static definition = ruleDefinition;
+
+      constructor(readonly client: C, settingsArray: readonly string[][]) {
+        this.uniqueKeyPrefix = ruleDefinition.uniqueKeyPrefix;
+        this.settings = transformToParamValues(settingsArray, this.params);
+      }
+
+      async run() {
+        return await ruleDefinition.callback.bind(this)();
+      }
+
+      getRule() {
+        return getRule(this.getUniqueKey());
+      }
+
+      getUniqueKey() {
+        return this.client.getUniqueKey(ruleDefinition.uniqueKeyPrefix);
+      }
+
+      /**
+       * Executes this rule once per call to this method.
+       *
+       * This should not be used when checking multiple rules. Instead, use
+       * {@link Client.validate} which serves the same purpose but is able to
+       * combine rules.
+       */
+      async validate() {
+        const threshold = await this.run();
+        threshold.rule.saveValues(threshold.values);
+      }
+    };
+
+    Object.defineProperty(ruleClass, 'name', {value: ruleDefinition.name});
+    return ruleClass;
+  };
+}
+
+// Lazy load frontend.
+function load<C extends BaseClientInterface<C, G, A>, G extends RuleGranularity<G>, A extends BaseClientArgs<C, G, A>, F extends AppsScriptFrontEnd<C, G, A>>(bindingFunction: () => F, fnName: 'onOpen'|'initializeSheets'|'preLaunchQa'|'launchMonitor') {
+  return async () => {
+    const frontend = bindingFunction();
+    switch(fnName) {
+      case 'onOpen': return frontend.onOpen();
+      case 'initializeSheets': return frontend.initializeSheets();
+      case 'preLaunchQa': return frontend.preLaunchQa();
+      case 'launchMonitor': return frontend.launchMonitor();
+    }
+  }
+}
+
+function applyBinding<C extends BaseClientInterface<C, G, A>,
+    G extends RuleGranularity<G>, A extends
+    BaseClientArgs<C, G, A>,
+    F extends AppsScriptFrontEnd<C, G, A>>(
+    frontEndCaller: () => F): () => F {
+  return () => {
+    const frontend = frontEndCaller();
+    toExport.onOpen = frontend.onOpen.bind(frontend);
+    toExport.initializeSheets = frontend.initializeSheets.bind(frontend);
+    toExport.preLaunchQa = frontend.preLaunchQa.bind(frontend);
+    toExport.launchMonitor = frontend.launchMonitor.bind(frontend);
+
+    return frontend;
+  };
+}
+
+/**
+ * Primary entry point for an Apps Script implementation.
+ * @param bindingFunction A callable that late binds {@link toExport} to the
+ *   correct functions from a frontend. A correct implementation of this
+ *   function will initialize a {@link AppsScriptFrontEnd} class and assign
+ *   all functions the first time it's called.
+ */
+export function lazyLoadApp<C extends BaseClientInterface<C, G, A>, G extends RuleGranularity<G>, A extends BaseClientArgs<C, G, A>, F extends AppsScriptFrontEnd<C, G, A>>(frontEndCaller: () => F): () => F {
+  const binders = applyBinding<C, G, A, F>(frontEndCaller);
+  toExport.onOpen = load<C, G, A, F>(binders, 'onOpen');
+  toExport.initializeSheets = load<C, G, A, F>(binders, 'initializeSheets');
+  toExport.preLaunchQa = load<C, G, A, F>(binders, 'preLaunchQa');
+  toExport.launchMonitor = load<C, G, A, F>(binders, 'launchMonitor');
+
+  return binders;
+}
+
+/***
+ * A list of modules we need in the global scope for AppsScript to function.
+ */
+export const toExport: Record<AppsScriptFunctions, Function> = {
+  onOpen: () => {},
+  initializeSheets: () => {},
+  preLaunchQa: () => {},
+  launchMonitor: () => {},
+};
+
+/**
+ * A list of modules we need in the global scope for Apps Script to function.
+ *
+ * Used by webpack for exporting.
+ */
+export const global: Partial<typeof toExport> = {};
+global.onOpen = toExport.onOpen;
+global.initializeSheets = toExport.initializeSheets;
+global.preLaunchQa = toExport.preLaunchQa;
+global.launchMonitor = toExport.launchMonitor;

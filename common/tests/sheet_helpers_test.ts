@@ -15,8 +15,11 @@
  * limitations under the License.
  */
 
-import {AbstractRuleRange, SettingMap, transformToParamValues} from '../sheet_helpers';
-import {BaseClientInterface, ParamDefinition, RecordInfo, RuleExecutorClass} from '../types';
+import {SettingMap, transformToParamValues} from '../sheet_helpers';
+import {RuleExecutorClass} from '../types';
+
+import {Granularity, RuleRange, TestClientArgs, TestClientInterface} from './helpers';
+import {ParamDefinition} from 'common/types';
 
 describe('2-D array', () => {
   let array2d: string[][];
@@ -38,7 +41,8 @@ describe('2-D array', () => {
   });
 
   it('triggers an error if empty', () => {
-    const error = new Error('Expected a grid with row and column headers of at least size 2');
+    const error = new Error(
+        'Expected a grid with row and column headers of at least size 2');
     expect(() => transformToParamValues([], params)).toThrow(error);
     expect(() => transformToParamValues([[]], params)).toThrow(error);
     expect(() => transformToParamValues([['']], params)).toThrow(error);
@@ -50,14 +54,16 @@ describe('Rule Settings helper functions', () => {
 
   const client = generateTestClient({id: '1'});
   beforeEach(() => {
-    rules = new RuleRange([
-      ['', '', 'Category A', '', 'Category B', '', '', 'Category C'],
-      [
-        'id', 'name', 'Header 1', 'Header 2', 'Header 3', 'Header 4',
-        'Header 5', 'Header 6'
-      ],
-      ['1', 'one', 'Col 1', 'Col 2', 'Col 3', 'Col 4', 'Col 5', 'Col 6'],
-    ], client, ['id']);
+    rules = new RuleRange(
+        [
+          ['', '', 'Category A', '', 'Category B', '', '', 'Category C'],
+          [
+            'id', 'name', 'Header 1', 'Header 2', 'Header 3', 'Header 4',
+            'Header 5', 'Header 6'
+          ],
+          ['1', 'one', 'Col 1', 'Col 2', 'Col 3', 'Col 4', 'Col 5', 'Col 6'],
+        ],
+        client, ['id']);
     for (const rule of ['', 'Category A', 'Category B', 'Category C']) {
       // getValues() expects a rule to be in the ruleStore for the helper value.
       client.ruleStore[rule] = {helper: ''} as unknown as
@@ -66,12 +72,15 @@ describe('Rule Settings helper functions', () => {
   });
 
   it('break down a settings sheet into the correct categories', () => {
-    expect((rules as unknown as {rules: Record<string, string[][]>}).rules).toEqual({
-      'none': [['id', 'name'], ['1', 'one']],
-      'Category A': [['Header 1', 'Header 2'], ['Col 1', 'Col 2']],
-      'Category B': [['Header 3', 'Header 4', 'Header 5'], ['Col 3', 'Col 4', 'Col 5']],
-      'Category C': [['Header 6'], ['Col 6']],
-    });
+    expect((rules as unknown as {rules: Record<string, string[][]>}).rules)
+        .toEqual({
+          'none': [['id', 'name'], ['1', 'one']],
+          'Category A': [['Header 1', 'Header 2'], ['Col 1', 'Col 2']],
+          'Category B': [
+            ['Header 3', 'Header 4', 'Header 5'], ['Col 3', 'Col 4', 'Col 5']
+          ],
+          'Category C': [['Header 6'], ['Col 6']],
+        });
   });
 
   it('combines categories back into a settings sheet', () => {
@@ -115,15 +124,6 @@ describe('SettingMap#getOrDefault', () => {
   });
 });
 
-enum Granularity {
-  DEFAULT='default',
-}
-
-interface TestClientInterface extends BaseClientInterface<TestClientInterface, Granularity, TestConfig> {
-  id: string;
-  getAllCampaigns(): Promise<RecordInfo[]>;
-}
-
 function generateTestClient(params: {id?: string}): TestClientInterface {
   return {
     id: params.id ?? '1',
@@ -137,7 +137,7 @@ function generateTestClient(params: {id?: string}): TestClientInterface {
     validate() {
       throw new Error('Not implemented.');
     },
-    addRule(rule) {
+    addRule: <P extends Record<keyof P, ParamDefinition>>(rule: RuleExecutorClass<TestClientInterface, Granularity, TestClientArgs, {}>): TestClientInterface => {
       throw new Error('Not implemented.');
     },
     settings: {},
@@ -145,14 +145,4 @@ function generateTestClient(params: {id?: string}): TestClientInterface {
       throw new Error('Not implemented.');
     },
   };
-}
-
-interface TestConfig {
-  TEST: string;
-}
-
-class RuleRange extends AbstractRuleRange<TestClientInterface, Granularity, TestConfig> {
-    async getRows() {
-         return [{id: '1', displayName: 'Campaign 1', advertiserId: '1'}];
-    }
 }

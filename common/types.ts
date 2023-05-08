@@ -49,7 +49,7 @@ export type Settings<Params> =
  * Defines a client object, which is responsible for wrapping.
  */
 export interface BaseClientInterface<C extends BaseClientInterface<C, G, A>, G extends RuleGranularity<G>, A extends BaseClientArgs<C, G, A>> {
-  readonly settings: BaseClientArgs<C, G, A>;
+  readonly settings: A;
   readonly ruleStore:
       {[ruleName: string]: RuleExecutor<C, G, A, Record<string, ParamDefinition>>};
   getAllCampaigns(): Promise<RecordInfo[]>;
@@ -58,7 +58,7 @@ export interface BaseClientInterface<C extends BaseClientInterface<C, G, A>, G e
   validate(): Promise<void>;
 
   addRule<Params extends Record<keyof Params, ParamDefinition>>(
-      rule: RuleExecutorClass<C, G, Params>,
+      rule: RuleExecutorClass<C, G, A, Params>,
       settingsArray: readonly string[][]): C;
 }
 
@@ -70,14 +70,6 @@ export interface ParamDefinition {
   /** A Google-Sheets formula for validating a column, e.g. "=TRUE". */
   validationFormulas?: string[];
   numberFormat?: string;
-}
-
-/**
- * Methods that are used on rule wrappers to get context.
- */
-export interface RuleUtilities {
-  getRule(): RuleGetter;
-  getUniqueKey(): string;
 }
 
 /**
@@ -103,6 +95,27 @@ export interface RuleExecutor<
   validate(): void;
   helper: string;
   granularity: G;
+}
+
+/**
+ * Methods that are used on rule wrappers to get context.
+ */
+export interface RuleUtilities {
+  getRule(): RuleGetter;
+  getUniqueKey(): string;
+}
+
+/**
+ * An executable rule.
+ */
+export interface RuleExecutorClass<
+    C extends BaseClientInterface<C, G, A>,
+    G extends RuleGranularity<G>,
+    A extends BaseClientArgs<C, G, A>,
+    P extends Record<keyof P, P[keyof P]> = Record<string, ParamDefinition>> {
+  new(client: C,
+      settings: readonly string[][]): RuleExecutor<C, G, A, P>;
+  definition: RuleDefinition<P, G>;
 }
 
 /**
@@ -214,7 +227,7 @@ export interface FrontEndArgs<
     G extends RuleGranularity<G>,
     A extends BaseClientArgs<C, G, A>> {
   readonly ruleRangeClass: { new(sheet: readonly string[][], client: C): RuleRangeInterface<C, G, A> },
-  rules: Array<RuleExecutorClass<C, G, Record<string, ParamDefinition>>>,
+  rules: Array<RuleExecutorClass<C, G, A, Record<string, ParamDefinition>>>,
   readonly clientClass: { new(clientArgs: A): C },
   readonly version: number;
   readonly migrations: Record<number, (client: C) => void>;
@@ -230,3 +243,8 @@ export type RuleParams<
     P extends Record<keyof P, ParamDefinition>> =
     RuleDefinition<P, G>&
     ThisType<RuleExecutor<C, G, A, P>&RuleUtilities>;
+
+/**
+ * A list of available and required Apps Script functions for Launch Monitor.
+ */
+export type AppsScriptFunctions = 'onOpen'|'initializeSheets'|'preLaunchQa'|'launchMonitor';

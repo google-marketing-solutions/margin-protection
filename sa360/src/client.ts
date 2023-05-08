@@ -15,11 +15,10 @@
  * limitations under the License.
  */
 
-import {AbstractRuleRange} from 'common/sheet_helpers';
+import {AbstractRuleRange, newRuleBuilder} from 'common/sheet_helpers';
 import {ParamDefinition, RecordInfo, RuleExecutor, RuleExecutorClass, RuleParams} from 'common/types';
 import {AdGroupReport, AdGroupTargetReport, CampaignReport, CampaignTargetReport} from 'sa360/src/api';
 import {ClientArgs, ClientInterface, RuleGranularity} from 'sa360/src/types';
-import {newRuleBuilder} from 'common/client_helpers';
 
 export const newRule =
     newRuleBuilder<ClientInterface, RuleGranularity, ClientArgs>() as
@@ -27,15 +26,6 @@ export const newRule =
             p: RuleParams<ClientInterface, RuleGranularity, ClientArgs, P>) =>
             RuleExecutorClass<ClientInterface, RuleGranularity, ClientArgs, P>;
 
-/**
- * A constant representing a named spreadsheet range, 'EMAIL_LIST'
- */
-export const EMAIL_LIST_RANGE = 'EMAIL_LIST';
-
-/**
- * A constant representing a named spreadsheet range, 'LABEL' for CSV exports
- */
-export const LABEL_RANGE = 'LABEL';
 /**
  * Wrapper client around the DV360 API for testability and efficiency.
  *
