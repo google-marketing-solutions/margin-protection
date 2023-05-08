@@ -109,6 +109,19 @@ export interface RuleExecutor<
 }
 
 /**
+ * An executable rule.
+ */
+export interface RuleExecutorClass<
+    C extends BaseClientInterface<C, G, A>,
+    G extends RuleGranularity<G>,
+    A extends BaseClientArgs<C, G, A>,
+    P extends Record<keyof P, P[keyof P]> = Record<string, ParamDefinition>> {
+  new(client: C,
+      settings: readonly string[][]): RuleExecutor<C, G, A, P>;
+  definition: RuleDefinition<P, G>;
+}
+
+/**
  * The type-enforced parameters required to create a rule with `newRule`.
  */
 export interface RuleDefinition<
@@ -146,7 +159,8 @@ export interface BaseClientArgs <
 /**
  * A rule class that can instantiate a {@link RuleExecutor} object.
  */
-export interface RuleExecutorClass<C extends BaseClientInterface<C, G, A>,
+export interface RuleExecutorClass<
+    C extends BaseClientInterface<C, G, A>,
     G extends RuleGranularity<G>,
     A extends BaseClientArgs<C, G, A>,
     P extends Record<keyof P, P[keyof P]>> {

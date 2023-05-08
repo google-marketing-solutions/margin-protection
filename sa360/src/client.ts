@@ -15,38 +15,47 @@
  * limitations under the License.
  */
 
-import {AbstractRuleRange} from 'common/sheet_helpers';
+import {newRuleBuilder} from 'common/client_helpers';
+import {sendEmailAlert} from 'anomaly_library/main';
+import {AbstractRuleRange, getTemplateSetting} from 'common/sheet_helpers';
 import {ParamDefinition, RecordInfo, RuleExecutor, RuleExecutorClass, RuleParams} from 'common/types';
 import {AdGroupReport, AdGroupTargetReport, CampaignReport, CampaignTargetReport} from 'sa360/src/api';
 import {ClientArgs, ClientInterface, RuleGranularity} from 'sa360/src/types';
-import {newRuleBuilder} from 'common/client_helpers';
+
+export const newRule =
+    newRuleBuilder<ClientInterface, RuleGranularity, ClientArgs>() as
+    <P extends Record<keyof P, ParamDefinition>>(
+        p: RuleParams<ClientInterface, RuleGranularity, ClientArgs, P>) =>
+        RuleExecutorClass<ClientInterface, RuleGranularity, ClientArgs, P>;
 
 /**
- * A new rule in SA360.
+ * A constant representing a named spreadsheet range, 'EMAIL_LIST'
  */
-export const newRule = newRuleBuilder<
-    ClientInterface,
-    RuleGranularity,
-    ClientArgs
-    >() as <P extends Record<keyof P, ParamDefinition>>(p: RuleParams<ClientInterface, RuleGranularity, ClientArgs, P>) => RuleExecutorClass<ClientInterface, RuleGranularity, ClientArgs, P>;
+export const EMAIL_LIST_RANGE = 'EMAIL_LIST';
 
 /**
- * Wrapper client around the DV360 API for testability and effiency.
+ * A constant representing a named spreadsheet range, 'LABEL' for CSV exports
+ */
+export const LABEL_RANGE = 'LABEL';
+
+/**
+ * Wrapper client around the DV360 API for testability and efficiency.
  *
  * Any methods that are added as wrappers to the API should pool requests,
  * either through caching or some other method.
  */
 export class Client implements ClientInterface {
   readonly ruleStore: {
-    [ruleName: string]:
-        RuleExecutor<ClientInterface, RuleGranularity, ClientArgs, Record<string, ParamDefinition>>;
+    [ruleName: string]: RuleExecutor<
+        ClientInterface, RuleGranularity, ClientArgs,
+        Record<string, ParamDefinition>>;
   };
   private campaignReport: CampaignReport|undefined;
   private campaignTargetReport: CampaignTargetReport|undefined;
   private adGroupReport: AdGroupReport|undefined;
   private adGroupTargetReport: AdGroupTargetReport|undefined;
-  private campaigns: RecordInfo[] | undefined;
-  private adGroups: RecordInfo[] | undefined;
+  private campaigns: RecordInfo[]|undefined;
+  private adGroups: RecordInfo[]|undefined;
 
   constructor(readonly settings: ClientArgs) {
     this.ruleStore = {};
@@ -61,7 +70,8 @@ export class Client implements ClientInterface {
 
   async getCampaignTargetReport(): Promise<CampaignTargetReport> {
     if (!this.campaignTargetReport) {
-      this.campaignTargetReport = await CampaignTargetReport.buildReport(this.settings);
+      this.campaignTargetReport =
+          await CampaignTargetReport.buildReport(this.settings);
     }
     return this.campaignTargetReport;
   }
@@ -91,7 +101,9 @@ export class Client implements ClientInterface {
    *
    */
   addRule<Params extends Record<keyof Params, ParamDefinition>>(
-      rule: RuleExecutorClass<ClientInterface, RuleGranularity, ClientArgs, Params>, settingsArray: readonly string[][]) {
+      rule: RuleExecutorClass<
+          ClientInterface, RuleGranularity, ClientArgs, Params>,
+      settingsArray: readonly string[][]) {
     this.ruleStore[rule.definition.name] = new rule(this, settingsArray);
     return this;
   }
@@ -152,16 +164,27 @@ export class Client implements ClientInterface {
   }
 
   getUniqueKey(prefix: string) {
-    return `${prefix}-${
-        this.settings.agencyId}-${
+    return `${prefix}-${this.settings.agencyId}-${
         this.settings.advertiserId ?? 'a'}`;
+  }
+
+  maybeSendEmailAlert() {
+    const to =
+        getTemplateSetting(EMAIL_LIST_RANGE).getValue();
+    const label = getTemplateSetting(LABEL_RANGE).getValue();
+    sendEmailAlert(
+        Object.values(this.ruleStore).map(rule => rule.getRule()), {
+          to,
+          subject: `Anomalies found for ${label}`,
+        });
   }
 }
 
 /**
  * SA360 rule settings splits.
  */
-export class RuleRange extends AbstractRuleRange<ClientInterface, RuleGranularity, ClientArgs> {
+export class RuleRange extends
+    AbstractRuleRange<ClientInterface, RuleGranularity, ClientArgs> {
   async getRows(ruleGranularity: RuleGranularity) {
     if (ruleGranularity === RuleGranularity.CAMPAIGN) {
       return this.client.getAllCampaigns();

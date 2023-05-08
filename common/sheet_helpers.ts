@@ -268,3 +268,16 @@ export const HELPERS = {
     range.createFilter().setColumnFilterCriteria(4, criteria.build());
   }
 };
+
+/**
+ * Retrieves a named range, if it exists. Otherwise, it throws an error.
+ */
+export function getTemplateSetting(rangeName: string): GoogleAppsScript.Spreadsheet.Range {
+  const range = SpreadsheetApp.getActive().getRangeByName(rangeName);
+  if (!range) {
+    throw new Error(`The sheet has an error. A named range '${rangeName}' that should exist does not.`);
+  }
+
+  return range;
+}
+

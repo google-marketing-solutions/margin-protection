@@ -117,22 +117,26 @@ export interface Values {
  * Because this is user-facing, tests are strongly encouraged.
  */
 export function sendEmailAlert(
-    rule: Rule, message: MailAdvancedParameters): void {
-  const values = rule.getValueObject();
-  const anomalies = Object.values(values).filter(value => value.anomalous && !value.alertedAt);
-
-  if (anomalies.length === 0) {
-    return;
-  }
-
-  const anomalyList = anomalies.map(value => {
-    return `- ${value.value} for ${value.fields}`;
-  });
+    rules: RuleGetter[], message: MailAdvancedParameters): void {
   const alertTime = Date.now();
+  let anomalies: Value[] = [];
+  for (const rule of rules) {
+    const values = rule.getValueObject();
+    anomalies = anomalies.concat(Object.values(values).filter(
+        value => value.anomalous && !value.alertedAt));
 
-  if (!message.body) {
-    message.body =
-        `The following errors were found: \n${anomalyList.join('\n')}`;
+    if (anomalies.length === 0) {
+      return;
+    }
+
+    const anomalyList = anomalies.map(value => {
+      return `- ${value.value} for ${value.fields}`;
+    });
+
+    if (!message.body) {
+      message.body =
+          `The following errors were found: \n${anomalyList.join('\n')}`;
+    }
   }
 
   MailApp.sendEmail(message);
@@ -140,8 +144,6 @@ export function sendEmailAlert(
   for (const anomaly of anomalies) {
     anomaly.alertedAt = alertTime;
   }
-
-  rule.saveValues(values);
 }
 
 /**

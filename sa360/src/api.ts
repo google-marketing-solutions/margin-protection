@@ -464,7 +464,6 @@ class CampaignTargetReportBuilder extends ReportBuilder<typeof campaignTargetCol
           `${row[headers[i]]},${row['campaignTargetId']}:${column}`;
     }
   }
-
 }
 
 function getFilteredColumns(obj: { [p: string]: Record<string, string> }, id: string, headers: string[], columns: string[]) {

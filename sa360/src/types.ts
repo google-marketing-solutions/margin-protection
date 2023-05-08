@@ -15,9 +15,8 @@
  * limitations under the License.
  */
 
-import {BaseClientInterface} from '../../common/types';
+import {BaseClientArgs, BaseClientInterface, RecordInfo} from 'common/types';
 import {AdGroupReport, AdGroupTargetReport, CampaignReport, CampaignTargetReport} from 'sa360/src/api';
-import {RecordInfo} from 'common/types';
 
 /**
  * Extends the base client interface with SA360-specific features.
@@ -34,7 +33,7 @@ export interface ClientInterface extends BaseClientInterface<ClientInterface, Ru
 /**
  * An agency ID and, optionally, an advertiser ID to narrow down.
  */
-export interface ClientArgs {
+export interface ClientArgs extends BaseClientArgs<ClientInterface, RuleGranularity, ClientArgs> {
   agencyId: string;
   advertiserId?: string;
 }
