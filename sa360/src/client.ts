@@ -17,11 +17,8 @@
 
 import {AbstractRuleRange} from 'common/sheet_helpers';
 import {ParamDefinition, RecordInfo, RuleExecutor, RuleExecutorClass, RuleParams} from 'common/types';
-import {CampaignTargetReport} from 'sa360/src/sa360';
-import {ClientArgs, ClientInterface} from 'sa360/src/types';
-
-import {AdGroupReport, AdGroupTargetReport, CampaignReport} from './sa360';
-import {RuleGranularity} from './types';
+import {AdGroupReport, AdGroupTargetReport, CampaignReport, CampaignTargetReport} from 'sa360/src/api';
+import {ClientArgs, ClientInterface, RuleGranularity} from 'sa360/src/types';
 import {newRuleBuilder} from 'common/client_helpers';
 
 /**

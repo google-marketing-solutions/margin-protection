@@ -16,7 +16,7 @@
  */
 
 import {BaseClientInterface} from '../../common/types';
-import {AdGroupReport, AdGroupTargetReport, CampaignReport, CampaignTargetReport} from 'sa360/src/sa360';
+import {AdGroupReport, AdGroupTargetReport, CampaignReport, CampaignTargetReport} from 'sa360/src/api';
 import {RecordInfo} from 'common/types';
 
 /**
