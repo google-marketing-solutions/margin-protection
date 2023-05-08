@@ -1,0 +1,13 @@
+{
+  "compilerOptions": {
+    "baseUrl": "./",
+    "outDir": "dv360_api",
+    "skipLibCheck": true,
+    "module": "esnext",
+    "moduleResolution": "classic",
+    "target": "es2020",
+    "lib": ["esnext", "dom"]
+  },
+  "include": ["app/**/*", "anomaly_library/**/*", "dv360_api/*.ts", "outs.d.ts"],
+  "exclude": ["node_modules/**/*", "dist/**/*"]
+}

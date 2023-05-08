@@ -18,9 +18,9 @@
 import {AbsoluteRule} from 'anomaly_library/absoluteRule';
 import {Rule, ThresholdRuleInstructions, Value, Values} from 'anomaly_library/main';
 import {LockedSeriesRule, neverChangeAfterSet} from 'anomaly_library/seriesRule';
+import {newRule} from 'sa360/src/client';
 
 import {RuleGranularity} from './types';
-import {newRule} from './client';
 
 const ONE_DAY = 60 * 60 * 24;
 
