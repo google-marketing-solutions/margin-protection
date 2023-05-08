@@ -27,7 +27,6 @@
 import {lazyLoadApp} from 'common/sheet_helpers';
 import {ClientArgs, ClientInterface, RuleGranularity} from 'sa360/src/types';
 import {Client, RuleRange} from 'sa360/src/client';
-import {adGroupStatusRule, adGroupTargetRule, campaignStatusRule, locationChange} from 'sa360/src/rules';
 
 import {migrations, SearchAdsFrontEnd} from './frontend';
 
@@ -43,10 +42,6 @@ function getFrontEnd() {
   return new SearchAdsFrontEnd({
     ruleRangeClass: RuleRange,
     rules: [
-      campaignStatusRule,
-      adGroupStatusRule,
-      adGroupTargetRule,
-      locationChange,
     ],
     version: CURRENT_SHEET_VERSION,
     clientClass: Client,
