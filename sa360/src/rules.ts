@@ -55,7 +55,7 @@ export const campaignStatusRule = newRule({
     },
   },
   defaults: {
-    daysInactive: '0',
+    daysInactive: '60',
   },
   granularity: RuleGranularity.CAMPAIGN,
   valueFormat: { label: 'Invalid' },

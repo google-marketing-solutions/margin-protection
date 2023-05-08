@@ -25,20 +25,22 @@ import {BaseClientInterface, ParamDefinition, RecordInfo, RuleDefinition, Settin
  */
 export class SettingMap<P extends {[Property in keyof P]: P[keyof P]}> implements SettingMapInterface<P> {
   private readonly map: Map<string, P>;
+  private readonly keys: string[];
 
   constructor(values: Array<[string, P]>) {
     this.map = new Map(values);
+    this.keys = Object.keys(values[0][1]);
   }
 
   getOrDefault(campaignId: string): P {
-    const value = this.map.get(campaignId);
-    const campaignSettings = value ? value : this.map.get('default');
-    if (!campaignSettings) {
-      throw new Error(
-          `Missing settings for ${campaignId} and no default settings`);
-    }
-
-    return campaignSettings;
+    const defaultValue =
+        this.map.get('default') || {} as Record<string, string>;
+    const campaignValue =
+        this.map.get(campaignId) || {} as Record<string, string>;
+    return this.keys.reduce((prev, key) => {
+      prev[key] = (!(key in campaignValue) || campaignValue[key] === '' ? defaultValue[key] : campaignValue[key]) ?? '';
+      return prev;
+    }, {} as Record<string, string>) as unknown as P;
   }
 }
 

@@ -284,7 +284,7 @@ function populateRuleResultsInSheets(client: Client) {
     }
     const unfilteredMatrix = getMatrixOfResults(rule.valueFormat.label, values);
     const matrix = unfilteredMatrix.filter(
-        row => row.length === Object.keys(rule.params).length);
+        row => row.length === unfilteredMatrix[0].length);
     if (matrix.length !== unfilteredMatrix.length) {
       console.error(`Dropped ${unfilteredMatrix.length - matrix.length} malformed records.`);
     }

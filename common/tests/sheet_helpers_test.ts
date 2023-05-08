@@ -82,6 +82,39 @@ describe('Rule Settings helper functions', () => {
   });
 });
 
+describe('SettingMap#getOrDefault', () => {
+  it('returns value', () => {
+    const settingMap = new SettingMap([
+      ['default', {rule1: 'A'}],
+      ['1', {rule1: 'C'}],
+    ]);
+    expect(settingMap.getOrDefault('1').rule1).toEqual('C');
+  });
+
+  it('returns defaults when value is blank', () => {
+    const settingMap = new SettingMap([
+      ['default', {rule1: 'A'}],
+      ['1', {rule1: ''}],
+    ]);
+    expect(settingMap.getOrDefault('1').rule1).toEqual('A');
+  });
+
+  it('returns value when value is 0', () => {
+    const settingMap = new SettingMap([
+      ['default', {rule1: 'A'}],
+      ['1', {rule1: '0'}],
+    ]);
+    expect(settingMap.getOrDefault('1').rule1).toEqual('0');
+  });
+
+  it('returns blank when default is undefined and value is blank', () => {
+    const settingMap = new SettingMap([
+      ['1', {rule1: ''}],
+    ]);
+    expect(settingMap.getOrDefault('1').rule1).toEqual('');
+  });
+});
+
 enum Granularity {
   DEFAULT='default',
 }
