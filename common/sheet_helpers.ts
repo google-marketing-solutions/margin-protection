@@ -15,7 +15,21 @@
  * limitations under the License.
  */
 
-import {BaseClientArgs, BaseClientInterface, ParamDefinition, RecordInfo, RuleDefinition, RuleGranularity, SettingMapInterface} from './types';
+import {Value, Values, getRule} from 'anomaly_library/main';
+
+import {BaseClientArgs, BaseClientInterface, FrontEndArgs, ParamDefinition, RecordInfo, RuleDefinition, RuleExecutorClass, RuleGranularity, RuleRangeInterface, SettingMapInterface} from './types';
+
+const FOLDER = 'application/vnd.google-apps.folder';
+
+/**
+ * The name of the rule settings sheet (before granularity).
+ */
+export const RULE_SETTINGS_SHEET = 'Rule Settings';
+
+/**
+ * The name of the general settings sheet.
+ */
+export const GENERAL_SETTINGS_SHEET = 'General/Settings';
 
 /**
  * Provides a useful data structure to get campaign ID settings.
@@ -101,15 +115,12 @@ function makeCampaignIndexedSettings(headers: string[], currentSettings: string[
  * The range has two headers: Header 1 is category/rule names, and
  * header 2 is the name of the rule setting to be changed.
  */
-export abstract class AbstractRuleRange<
-    C extends BaseClientInterface<C, G, A>,
-    G extends RuleGranularity<G>,
-    A extends BaseClientArgs<C, G, A>> {
+export abstract class AbstractRuleRange<C extends BaseClientInterface<C, G, A>, G extends RuleGranularity<G>, A extends BaseClientArgs<C, G, A>> implements RuleRangeInterface<C, G, A> {
   private readonly rowIndex: Record<string, number> = {};
   private readonly columnOrders: Record<string, Record<string, number>> = {};
   private readonly rules: Record<string, string[][]> & Record<'none', string[][]> = {'none': [[]]};
 
-  constructor(range: string[][], readonly client: C, headers: string[] = ['ID', 'default']) {
+  constructor(range: readonly string[][], protected readonly client: C, headers: string[] = ['ID', 'default']) {
     let start = 0;
     let col: number;
     for (let i = 0; i < headers.length; i++) {
@@ -134,15 +145,6 @@ export abstract class AbstractRuleRange<
     (this.rules[category] = this.rules[category] || [])[this.rowIndex[campaignId]] = column;
   }
 
-  /**
-   * Given a 2-d array formatted like a rule sheet, create a {@link RuleRange}.
-   *
-   * A rule sheet contains the following structure:
-   *
-   *    ,,Category A,,Category B,,
-   *    header1,header2,header3,header4,header5,header6,header7
-   *    none1,none2,cata1,cata2,catb1,catb2,catb3
-   */
   getValues(ruleGranularity?: G): string[][] {
     const values =
         Object.entries(this.rules).reduce((prev, [category, rangeRaw]) => {
@@ -281,3 +283,352 @@ export function getTemplateSetting(rangeName: string): GoogleAppsScript.Spreadsh
   return range;
 }
 
+/**
+ * The front-end for Apps Script UIs. This is extensible for customer use-cases.
+ *
+ * While the default application should cover base needs, customers may want to
+ * program custom rules or use Firebase for increased storage space.
+ */
+export abstract class AppsScriptFrontEnd<
+    C extends BaseClientInterface<C, G, A>,
+    G extends RuleGranularity<G>,
+    A extends BaseClientArgs<C, G, A>> {
+  protected readonly client: C;
+
+  constructor(private readonly injectedArgs: FrontEndArgs<C, G, A>) {
+    const clientArgs = this.getIdentity();
+    if (!clientArgs) {
+      throw new Error('Cannot initialize front-end without client ID(s)');
+    }
+    this.client = new injectedArgs.clientClass(clientArgs);
+  }
+
+  /**
+   * The primary interface.
+   *
+   * Schedule this function using `client.launchMonitor()` at your preferred
+   * cadence.
+   */
+  onOpen() {
+    const subMenus: Array<{name: string, functionName: string}> = [
+      {name: 'Sync Campaigns', functionName: 'initializeSheets'},
+      {name: 'Pre-Launch QA', functionName: 'preLaunchQa'},
+    ];
+    SpreadsheetApp.getActive().addMenu('SA360 Launch Monitor', subMenus);
+  }
+
+  /**
+   * Creates the sheets for the spreadsheet if they don't exist already.
+   *
+   * If they do exist, merges data from the existing and adds any new rules
+   * that aren't already there.
+   */
+  async initializeRules() {
+    const numberOfHeaders = 3;
+    const sheets = this.injectedArgs.rules.reduce((prev, rule) => {
+      (prev[rule.definition.granularity.toString()] ??=
+           [] as Array<RuleExecutorClass<C, G, A>>)
+          .push(rule);
+      return prev;
+    }, {} as Record<string, Array<RuleExecutorClass<C, G, A>>>);
+
+    for (const [sheetName, ruleClasses] of Object.entries(sheets)) {
+      const ruleSheet =
+          getOrCreateSheet(`${RULE_SETTINGS_SHEET} - ${sheetName}`);
+      ruleSheet.getRange('A:Z').clearDataValidations();
+      const rules = new this.injectedArgs.ruleRangeClass(ruleSheet.getDataRange().getValues(), this.client);
+      let currentOffset = numberOfHeaders +
+          1;  // includes campaignID and campaign name (1-based index).
+      const offsets: Record<string, number> = {};
+
+      for (const rule of ruleClasses) {
+        await rules.fillRuleValues(rule.definition);
+        const ruleValues = rules.getRule(rule.definition.name);
+        this.client.addRule(
+            rule,
+            ruleValues,
+        );
+        offsets[rule.definition.name] = currentOffset - 1;
+        currentOffset += ruleValues[0].length - 1;
+      }
+      const values = rules.getValues();
+      ruleSheet.clear();
+      ruleSheet.getRange(1, 1, values.length, values[0].length)
+          .setValues(values);
+      for (const rule of ruleClasses) {
+        Object.values(rule.definition.params).forEach((param, idx) => {
+          this.addValidation(ruleSheet, param, offsets[rule.definition.name] + idx);
+        });
+      }
+      ruleSheet.getBandings().forEach(b => {b.remove()});
+      ruleSheet.getDataRange().breakApart();
+      ruleSheet.getDataRange().applyRowBanding(
+          SpreadsheetApp.BandingTheme.BLUE);
+
+      let lastStart = 3;
+      for (const offset of Object.values(offsets)) {
+        if (offset > lastStart) {
+          ruleSheet.getRange(1, lastStart, 1, offset - lastStart).merge();
+          ruleSheet.getRange(2, lastStart, 1, offset - lastStart).merge();
+          lastStart = offset;
+        }
+      }
+    }
+  }
+
+  /** Adds the validation at the desired column. */
+  addValidation(
+      sheet: GoogleAppsScript.Spreadsheet.Sheet,
+      {validationFormulas, numberFormat}:
+          Pick<ParamDefinition, 'validationFormulas'|'numberFormat'>,
+      column: number) {
+    if (!validationFormulas || !validationFormulas.length) {
+      return;
+    }
+    const validationBuilder = SpreadsheetApp.newDataValidation();
+    for (const validationFormula of validationFormulas) {
+      validationBuilder.requireFormulaSatisfied(validationFormula);
+    }
+    const range = sheet.getRange(4, column, sheet.getLastRow() - 3, 1);
+    range.setDataValidation(validationBuilder.build());
+    if (numberFormat) {
+      range.setNumberFormat(numberFormat);
+    }
+  }
+
+  abstract getIdentity(): A | null;
+
+  /**
+   * Runs rules for all campaigns/insertion orders and returns a scorecard.
+   */
+  async preLaunchQa() {
+    const identity = this.getIdentity();
+    if (!identity) {
+      throw new Error(
+          'Missing Advertiser ID - Please fill this out before continuing.');
+    }
+
+    const report: {[rule: string]: {[campaignId: string]: Value}} = {};
+    await this.initializeRules();
+    const thresholds: Array<[string, Promise<{values: Values}>]> =
+        Object.values(this.client.ruleStore).map((rule) => {
+          return [rule.name, rule.run()];
+        });
+
+    for (const [ruleName, threshold] of thresholds) {
+      const {values} = await threshold;
+
+      for (const value of Object.values(values)) {
+        const fieldKey =
+            Object.entries(value.fields ?? [['', 'all']])
+                .map(([key, value]) => key ? `${key}: ${value}` : '')
+                .join(', ');
+        report[ruleName] = report[ruleName] || {};
+        // overwrite with the latest `Value` until there's nothing left.
+        report[ruleName][fieldKey] = value;
+      }
+    }
+
+    const sheet = getOrCreateSheet('Pre-Launch QA Results');
+    const lastUpdated =
+        [`Last Updated ${new Date(Date.now()).toISOString()}`, '', '', ''];
+    const headers = ['Rule', 'Field', 'Value', 'Anomaly'];
+    const valueArray = [
+      lastUpdated,
+      headers,
+      ...Object.entries(report).flatMap(
+          ([key, values]):
+              string[][] => {
+                return Object.entries(values).map(
+                    ([fieldKey, value]):
+                        string[] => {
+                          return [
+                            key, fieldKey, String(value.value),
+                            String(value.anomalous)
+                          ];
+                        },
+                );
+              }),
+    ];
+    sheet.getRange('A:Z').clearDataValidations();
+    sheet.clear();
+    sheet.getRange(1, 1, valueArray.length, valueArray[0].length)
+        .setValues(valueArray);
+    HELPERS.applyAnomalyFilter(
+        sheet.getRange(2, 1, valueArray.length - 1, valueArray[0].length), 4);
+  }
+
+  /**
+   * Runs an hourly, tracked validation stage.
+   *
+   * This should be run on a schedule. It's intentionally not exposed to the
+   * UI as a menu because it would interfere with the scheduled runs.
+   */
+  async launchMonitor() {
+    await this.initializeSheets();
+    await this.initializeRules();
+    await this.client.validate();
+    this.populateRuleResultsInSheets();
+    this.maybeSendEmailAlert();
+  }
+
+  /**
+   * Given an array of rules, returns a 2-d array representation.
+   */
+  getMatrixOfResults(valueLabel: string, values: Value[]):
+      string[][] {
+    const headers = Object.keys(values[0]);
+    const matrix = [[
+      valueLabel, headers[1], ...Object.keys(values[0].fields || {}).map(String)
+    ]];
+    for (const value of values) {
+      const row = Object.values(value);
+      matrix.push([
+        ...row.slice(0, 2).map(String),
+        ...Object.values(row[2] || []).map(String)
+      ]);
+    }
+    return matrix;
+  }
+
+  /**
+   * Converts a 2-d array to a CSV.
+   *
+   * Exported for testing.
+   */
+  matrixToCsv(matrix: string[][]): string {
+    // note - the arrays we're using get API data, not user input. Not
+    // anticipating anything that complicated, but we're adding tests to be
+    // sure.
+    return matrix
+        .map(row => row.map(col => `"${col.replaceAll('"', '"""')}"`).join(','))
+        .join('\n');
+  }
+
+  /**
+   * Exports rules as a CSV.
+   *
+   */
+  exportAsCsv(ruleName: string, matrix: string[][]) {
+    const file = Utilities.newBlob(this.matrixToCsv(matrix));
+    const folder = this.getOrCreateFolder('launch_monitor');
+    const filename = `${ruleName}_${new Date(Date.now()).toISOString()}`;
+    Drive.Files!.insert(
+        {
+          parents: [{id: folder}],
+          title: `${filename}.csv`,
+          mimeType: 'text/plain'
+        },
+        file);
+    console.log(`Exported CSV launch_monitor/${filename} to Google Drive`);
+  }
+
+  getOrCreateFolder(folderName: string) {
+    const folders = Drive.Files!
+                        .list({
+                          q: `title="launch_monitor" and mimeType="${
+                              FOLDER}" and not trashed`
+                        })
+                        .items;
+    let folder;
+    if (folders && folders.length) {
+      folder = folders[0].id;
+    } else {
+      folder =
+          Drive.Files!.insert({title: 'launch_monitor', mimeType: FOLDER}).id;
+    }
+    console.log('folder', folder);
+    return folder;
+  }
+
+  populateRuleResultsInSheets() {
+    for (const rule of Object.values(this.client.ruleStore)) {
+      const sheet = getOrCreateSheet(`${rule.name} - Results`);
+      const uniqueKey = rule.getUniqueKey();
+      const values = Object.values(getRule(uniqueKey).getValues());
+      if (values.length < 1) {
+        console.warn(`No rules for ${uniqueKey}`);
+        continue;
+      }
+      const unfilteredMatrix =
+          this.getMatrixOfResults(rule.valueFormat.label, values);
+      const matrix = unfilteredMatrix.filter(
+          row => row.length === unfilteredMatrix[0].length);
+      if (matrix.length !== unfilteredMatrix.length) {
+        console.error(`Dropped ${
+            unfilteredMatrix.length - matrix.length} malformed records.`);
+      }
+      sheet.clear();
+      sheet.getRange(1, 1, matrix.length, matrix[0].length).setValues(matrix);
+      if (rule.valueFormat.numberFormat) {
+        sheet.getRange(2, 1, matrix.length - 1, 1)
+            .setNumberFormat(rule.valueFormat.numberFormat);
+      }
+      if (getTemplateSetting('LAUNCH_MONITOR_OPTION').getValue() ===
+          'CSV Back-Up') {
+        this.exportAsCsv(rule.name, matrix);
+      }
+    }
+  }
+
+  getRangeByName(name: string) {
+    const range = SpreadsheetApp.getActive().getRangeByName(name);
+    if (!range) {
+      throw new Error(`Missing an expected range '${
+          name}'. You may need to get a new version of this sheet from the template.`);
+    }
+
+    return range;
+  }
+
+  displaySetupModal() {
+  }
+
+  /**
+   * Validates settings sheets exist and that they are up-to-date.
+   */
+  async initializeSheets() {
+    if (!this.getIdentity()) {
+      let advertiserId = '';
+
+      while (!advertiserId) {
+        this.displaySetupModal();
+      }
+      getTemplateSetting('ID').setValue(advertiserId);
+    }
+
+    this.migrate(this.client);
+    await this.initializeRules();
+  }
+
+  /**
+   * Handle migrations for Google Sheets (sheets getting added/removed).
+   */
+  migrate(client: C): number {
+    const sheetVersion = Number(
+        PropertiesService.getScriptProperties().getProperty('sheet_version'));
+    let numberOfMigrations = 0;
+    if (!sheetVersion) {
+      PropertiesService.getScriptProperties().setProperty(
+          'sheet_version', String(this.injectedArgs.version));
+    }
+
+    for (const [version, migration] of Object.entries(this.injectedArgs.migrations)) {
+      if (Number(version) > sheetVersion) {
+        migration(client);
+        // write manually each time because we want incremental migrations if
+        // anything fails.
+        PropertiesService.getScriptProperties().setProperty(
+            'sheet_version', version);
+        ++numberOfMigrations;
+      }
+    }
+    if (sheetVersion !== this.injectedArgs.version) {
+      PropertiesService.getScriptProperties().setProperty(
+          'sheet_version', String(this.injectedArgs.version));
+    }
+    return numberOfMigrations;
+  }
+
+  abstract maybeSendEmailAlert(): void;
+}

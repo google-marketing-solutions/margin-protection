@@ -48,11 +48,8 @@ export type Settings<Params> =
 /**
  * Defines a client object, which is responsible for wrapping.
  */
-export interface BaseClientInterface<
-    C extends BaseClientInterface<C, G, A>,
-    G extends RuleGranularity<G>,
-    A extends BaseClientArgs<C, G, A>> {
-  readonly settings: A;
+export interface BaseClientInterface<C extends BaseClientInterface<C, G, A>, G extends RuleGranularity<G>, A extends BaseClientArgs<C, G, A>> {
+  readonly settings: BaseClientArgs<C, G, A>;
   readonly ruleStore:
       {[ruleName: string]: RuleExecutor<C, G, A, Record<string, ParamDefinition>>};
   getAllCampaigns(): Promise<RecordInfo[]>;
@@ -61,7 +58,7 @@ export interface BaseClientInterface<
   validate(): Promise<void>;
 
   addRule<Params extends Record<keyof Params, ParamDefinition>>(
-      rule: RuleExecutorClass<C, G, A, Params>,
+      rule: RuleExecutorClass<C, G, Params>,
       settingsArray: readonly string[][]): C;
 }
 
@@ -96,10 +93,10 @@ export type RuleGranularity<G> = {[Property in keyof G]: G};
  */
 export interface RuleExecutor<
     C extends BaseClientInterface<C, G, A>,
-    G extends {[Property in keyof G]: G},
+    G extends RuleGranularity<G>,
     A extends BaseClientArgs<C, G, A>,
-    P extends Record<keyof P, ParamDefinition>> extends
-    RuleUtilities, Omit<RuleDefinition<P, G>, 'callback'|'defaults'|'granularity'> {
+    P extends Record<keyof P, ParamDefinition>> extends RuleUtilities,
+    Omit<RuleDefinition<P, G>, 'callback'|'defaults'|'granularity'> {
   client: C;
   settings: Settings<Record<keyof P, string>>;
   run: Function;
@@ -109,24 +106,10 @@ export interface RuleExecutor<
 }
 
 /**
- * An executable rule.
- */
-export interface RuleExecutorClass<
-    C extends BaseClientInterface<C, G, A>,
-    G extends RuleGranularity<G>,
-    A extends BaseClientArgs<C, G, A>,
-    P extends Record<keyof P, P[keyof P]> = Record<string, ParamDefinition>> {
-  new(client: C,
-      settings: readonly string[][]): RuleExecutor<C, G, A, P>;
-  definition: RuleDefinition<P, G>;
-}
-
-/**
  * The type-enforced parameters required to create a rule with `newRule`.
  */
 export interface RuleDefinition<
-    P extends Record<keyof P, ParamDefinition>,
-    G extends RuleGranularity<G>> {
+    P extends Record<keyof P, ParamDefinition>, G extends RuleGranularity<G>> {
   name: string;
   callback: Callback<P>;
   granularity: G;
@@ -152,7 +135,7 @@ export interface RecordInfo {
  */
 export interface BaseClientArgs <
     C extends BaseClientInterface<C, G, A>,
-    G extends RuleGranularity<G>,
+    G extends RuleGranularity <G>,
     A extends BaseClientArgs<C, G, A>> {
 }
 
@@ -163,7 +146,7 @@ export interface RuleExecutorClass<
     C extends BaseClientInterface<C, G, A>,
     G extends RuleGranularity<G>,
     A extends BaseClientArgs<C, G, A>,
-    P extends Record<keyof P, P[keyof P]>> {
+    P extends Record<keyof P, P[keyof P]> = Record<string, ParamDefinition>> {
   new(client: C,
       settings: readonly string[][]): RuleExecutor<C, G, A, P>;
   definition: RuleDefinition<P, G>;
@@ -198,6 +181,43 @@ export interface RuleStoreEntry<
    * This is the information that is passed into a `Rule` on instantiation.
    */
   settings: Settings<P>;
+}
+
+export interface RuleRangeInterface<C extends BaseClientInterface<C, G, A>, G extends RuleGranularity<G>, A extends BaseClientArgs<C, G, A>> {
+  setRow(category: string, campaignId: string, column: string[]): void;
+
+  /**
+   * Given a 2-d array formatted like a rule sheet, create a {@link RuleRange}.
+   *
+   * A rule sheet contains the following structure:
+   *
+   *    ,,Category A,,Category B,,
+   *    header1,header2,header3,header4,header5,header6,header7
+   *    none1,none2,cata1,cata2,catb1,catb2,catb3
+   */
+  getValues(ruleGranularity?: G): string[][];
+
+  getRule(ruleName: string): string[][];
+  getRule(ruleName: string): string[][];
+  fillRuleValues<Params>(rule: Pick<RuleDefinition<Record<keyof Params, ParamDefinition>, G>, 'name'|'params'|'defaults'|'granularity'>): Promise<void>;
+  getRows(granularity: G): Promise<RecordInfo[]>;
+}
+
+/**
+ * Arguments to pass to all front-ends.
+ *
+ * This is used to inject arguments into implementations, which determines
+ * how the client gets executed.
+ */
+export interface FrontEndArgs<
+    C extends BaseClientInterface<C, G, A>,
+    G extends RuleGranularity<G>,
+    A extends BaseClientArgs<C, G, A>> {
+  readonly ruleRangeClass: { new(sheet: readonly string[][], client: C): RuleRangeInterface<C, G, A> },
+  rules: Array<RuleExecutorClass<C, G, Record<string, ParamDefinition>>>,
+  readonly clientClass: { new(clientArgs: A): C },
+  readonly version: number;
+  readonly migrations: Record<number, (client: C) => void>;
 }
 
 /**

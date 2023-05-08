@@ -15,10 +15,8 @@
  * limitations under the License.
  */
 
-import {SettingMap, transformToParamValues} from '../sheet_helpers';
-import {ParamDefinition, RuleExecutorClass} from '../types';
-
-import {RuleRange, TestClientArgs, TestClientInterface} from './helpers';
+import {AbstractRuleRange, SettingMap, transformToParamValues} from '../sheet_helpers';
+import {BaseClientInterface, ParamDefinition, RecordInfo, RuleExecutorClass} from '../types';
 
 describe('2-D array', () => {
   let array2d: string[][];
@@ -121,6 +119,11 @@ enum Granularity {
   DEFAULT='default',
 }
 
+interface TestClientInterface extends BaseClientInterface<TestClientInterface, Granularity, TestConfig> {
+  id: string;
+  getAllCampaigns(): Promise<RecordInfo[]>;
+}
+
 function generateTestClient(params: {id?: string}): TestClientInterface {
   return {
     id: params.id ?? '1',
@@ -134,7 +137,7 @@ function generateTestClient(params: {id?: string}): TestClientInterface {
     validate() {
       throw new Error('Not implemented.');
     },
-    addRule: <P extends Record<keyof P, ParamDefinition>>(rule: RuleExecutorClass<TestClientInterface, Granularity, TestClientArgs, {}>): TestClientInterface => {
+    addRule(rule) {
       throw new Error('Not implemented.');
     },
     settings: {},
@@ -142,4 +145,14 @@ function generateTestClient(params: {id?: string}): TestClientInterface {
       throw new Error('Not implemented.');
     },
   };
+}
+
+interface TestConfig {
+  TEST: string;
+}
+
+class RuleRange extends AbstractRuleRange<TestClientInterface, Granularity, TestConfig> {
+    async getRows() {
+         return [{id: '1', displayName: 'Campaign 1', advertiserId: '1'}];
+    }
 }

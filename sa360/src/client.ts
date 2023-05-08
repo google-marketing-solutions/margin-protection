@@ -15,18 +15,17 @@
  * limitations under the License.
  */
 
-import {newRuleBuilder} from 'common/client_helpers';
-import {sendEmailAlert} from 'anomaly_library/main';
-import {AbstractRuleRange, getTemplateSetting} from 'common/sheet_helpers';
+import {AbstractRuleRange} from 'common/sheet_helpers';
 import {ParamDefinition, RecordInfo, RuleExecutor, RuleExecutorClass, RuleParams} from 'common/types';
 import {AdGroupReport, AdGroupTargetReport, CampaignReport, CampaignTargetReport} from 'sa360/src/api';
 import {ClientArgs, ClientInterface, RuleGranularity} from 'sa360/src/types';
+import {newRuleBuilder} from 'common/client_helpers';
 
 export const newRule =
     newRuleBuilder<ClientInterface, RuleGranularity, ClientArgs>() as
-    <P extends Record<keyof P, ParamDefinition>>(
-        p: RuleParams<ClientInterface, RuleGranularity, ClientArgs, P>) =>
-        RuleExecutorClass<ClientInterface, RuleGranularity, ClientArgs, P>;
+        <P extends Record<keyof P, ParamDefinition>>(
+            p: RuleParams<ClientInterface, RuleGranularity, ClientArgs, P>) =>
+            RuleExecutorClass<ClientInterface, RuleGranularity, ClientArgs, P>;
 
 /**
  * A constant representing a named spreadsheet range, 'EMAIL_LIST'
@@ -37,7 +36,6 @@ export const EMAIL_LIST_RANGE = 'EMAIL_LIST';
  * A constant representing a named spreadsheet range, 'LABEL' for CSV exports
  */
 export const LABEL_RANGE = 'LABEL';
-
 /**
  * Wrapper client around the DV360 API for testability and efficiency.
  *
@@ -47,8 +45,7 @@ export const LABEL_RANGE = 'LABEL';
 export class Client implements ClientInterface {
   readonly ruleStore: {
     [ruleName: string]: RuleExecutor<
-        ClientInterface, RuleGranularity, ClientArgs,
-        Record<string, ParamDefinition>>;
+        ClientInterface, RuleGranularity, ClientArgs, Record<string, ParamDefinition>>;
   };
   private campaignReport: CampaignReport|undefined;
   private campaignTargetReport: CampaignTargetReport|undefined;
@@ -112,6 +109,11 @@ export class Client implements ClientInterface {
     return this.ruleStore[ruleName];
   }
 
+  getUniqueKey(prefix: string) {
+    return `${prefix}-${this.settings.agencyId}-${
+        this.settings.advertiserId ?? 'a'}`;
+  }
+
   /**
    * Executes each added callable rule once per call to this method.
    *
@@ -153,7 +155,6 @@ export class Client implements ClientInterface {
     if (advertisers) {
       return JSON.parse(advertisers) as string[];
     }
-
     return result;
   }
 
@@ -161,22 +162,6 @@ export class Client implements ClientInterface {
     const result: RecordInfo[] = [];
 
     return result;
-  }
-
-  getUniqueKey(prefix: string) {
-    return `${prefix}-${this.settings.agencyId}-${
-        this.settings.advertiserId ?? 'a'}`;
-  }
-
-  maybeSendEmailAlert() {
-    const to =
-        getTemplateSetting(EMAIL_LIST_RANGE).getValue();
-    const label = getTemplateSetting(LABEL_RANGE).getValue();
-    sendEmailAlert(
-        Object.values(this.ruleStore).map(rule => rule.getRule()), {
-          to,
-          subject: `Anomalies found for ${label}`,
-        });
   }
 }
 
