@@ -16,7 +16,7 @@
  */
 
 import {sendEmailAlert} from 'anomaly_library/main';
-import {AppsScriptFrontEnd, getOrCreateSheet, getTemplateSetting, RULE_SETTINGS_SHEET} from 'common/sheet_helpers';
+import {addSettingWithDescription, AppsScriptFrontEnd, getOrCreateSheet, getTemplateSetting, RULE_SETTINGS_SHEET} from 'common/sheet_helpers';
 import {ClientArgs, ClientInterface} from 'sa360/src/types';
 
 import {RuleGranularity} from './types';
@@ -31,6 +31,7 @@ const AGENCY_ID = 'AGENCY_ID';
 const ADVERTISER_ID = 'ADVERTISER_ID';
 const EMAIL_LIST_RANGE = 'EMAIL_LIST';
 const LABEL_RANGE = 'LABEL';
+const DRIVE_ID_RANGE = 'DRIVE_ID';
 
 /**
  * A list of migrations with version as key and a migration script as the
@@ -80,6 +81,26 @@ export const migrations: Record<number, (client: ClientInterface) => void> = {
     active.setNamedRange(
         EMAIL_LIST_RANGE,
         generalSettingsSheet.getRange('B7:C7').merge());
+  },
+  '1.3': (client: ClientInterface) => {
+    const active = SpreadsheetApp.getActive();
+    const generalSettingsSheet = active.getSheetByName(GENERAL_SETTINGS_SHEET);
+    if (!generalSettingsSheet) {
+      return;
+    }
+    const driveIdRange = active.getRangeByName(DRIVE_ID_RANGE);
+    if (driveIdRange) {
+      return;
+    }
+    const range = generalSettingsSheet.getRange('A8:C8').insertCells(
+        SpreadsheetApp.Dimension.ROWS);
+    addSettingWithDescription(generalSettingsSheet, 'A8', [
+      'Google Drive Folder ID',
+      'The ID of the Drive folder destination\n(copy in folder URL after \'/folders/\' and before the \'?\')',
+    ]);
+    active.setNamedRange(
+        DRIVE_ID_RANGE,
+        generalSettingsSheet.getRange('B8:C8').merge());
   },
 };
 

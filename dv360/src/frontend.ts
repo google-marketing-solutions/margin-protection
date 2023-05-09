@@ -17,11 +17,12 @@
 
 import {sendEmailAlert} from 'anomaly_library/main';
 import {AppsScriptFrontEnd, getOrCreateSheet, getTemplateSetting} from 'common/sheet_helpers';
-import {ClientArgs, ClientInterface} from 'dv360/src/types';
 import {RuleRange} from 'dv360/src/client';
+import {ClientArgs, ClientInterface} from 'dv360/src/types';
+
+import {addSettingWithDescription, HELPERS} from '../../common/sheet_helpers';
 
 import {IDType, RuleGranularity} from './types';
-import {HELPERS} from '../../common/sheet_helpers';
 
 const ENTITY_ID = 'ENTITY_ID';
 const ID_TYPE = 'ID_TYPE';
@@ -87,30 +88,11 @@ export const migrations: Record<number, (client: ClientInterface) => void> = {
     active.setNamedRange('REPORT_LABEL', reportLabel);
     active.setNamedRange('DRIVE_ID', driveId);
 
-    const bold = SpreadsheetApp.newTextStyle().setBold(true).build();
-    const small = SpreadsheetApp.newTextStyle().setFontSize(8).setItalic(true).build();
-
-    function addSettingWithDescription(rangeName: string, text: [headline: string, description: string]) {
-      sheet.getRange(rangeName).setRichTextValue(
-          SpreadsheetApp
-              .newRichTextValue()
-              .setText(text.join('\n'))
-              .setTextStyle(
-                  0, text[0].length, bold
-              )
-              .setTextStyle(
-                  text[0].length,
-                  text[0].length + text[1].length,
-                  small
-              )
-              .build()
-      );
-    }
-    addSettingWithDescription('A6', [
+    addSettingWithDescription(sheet, 'A6', [
       'Report Label',
       'A human readable label for exported reports\n(e.g. customer name)',
     ]);
-    addSettingWithDescription('A7', [
+    addSettingWithDescription(sheet, 'A7', [
       'Drive ID',
       'The ID of the Drive folder destination\n(copy in folder URL after \'/folders/\' and before the \'?\')',
     ]);

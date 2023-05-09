@@ -540,27 +540,26 @@ export abstract class AppsScriptFrontEnd<
     if (!driveId) {
       throw new Error('Missing a named range `DRIVE_ID`. Please copy the rules sheet from the original template and try again.');
     }
-    const parents = [driveId.getValue()].filter(value => value).map(value => ({id: value}));
 
-    const driveIdValue = driveId.getValue();
-    const baseArgs = {
-      q: `title="launch_monitor" and mimeType="${FOLDER}" and not trashed`,
+    const file: GoogleAppsScript.Drive.Schema.File|undefined = Drive.Files!.get(driveId.getValue());
+    if (file && file.id) {
+      if (file.mimeType !== FOLDER) {
+        throw new Error('The selected Google Drive file ID is not a folder. Please delete and/or add a folder ID');
+      }
+      return file.id;
+    }
+
+    const args = {
+      q: `title="${folderName}" and mimeType="${FOLDER}" and not trashed`,
       orderBy: 'createdTime',
     };
-    const args = driveIdValue ? {
-      ...baseArgs,
-      driveId,
-      corpora: 'drive',
-      includeItemsFromAllDrives: true,
-      supportsAllDrives: true,
-      supportsTeamDrive: true,
-    } : baseArgs;
     const folders = Drive.Files!.list(args).items;
     let folder;
     if (folders && folders.length) {
       folder = folders[0].id;
     } else {
-      folder = Drive.Files!.insert({title: 'launch_monitor', mimeType: FOLDER, parents }).id;
+      folder = Drive.Files!.insert({title: folderName, mimeType: FOLDER }).id;
+      driveId.setValue(folder);
     }
     console.log('folder', folder);
     return folder;
@@ -780,6 +779,33 @@ export function lazyLoadApp<C extends BaseClientInterface<C, G, A>, G extends Ru
   toExport.launchMonitor = load<C, G, A, F>(binders, 'launchMonitor');
 
   return binders;
+}
+
+/**
+ * Create a well-formatted setting with a bold headline and a small description.
+ *
+ * Uses rich-text to put the info into a single cell.
+ * @param sheet The spreadsheet to change.
+ * @param rangeName The range to adjust (A1 notation).
+ * @param text A tuple. The first value is the headline and the second the description.
+ */
+export function addSettingWithDescription(sheet: GoogleAppsScript.Spreadsheet.Sheet, rangeName: string, text: [headline: string, description: string]) {
+  const bold = SpreadsheetApp.newTextStyle().setBold(true).build();
+  const small = SpreadsheetApp.newTextStyle().setFontSize(8).setItalic(true).build();
+  sheet.getRange(rangeName).setRichTextValue(
+      SpreadsheetApp
+          .newRichTextValue()
+          .setText(text.join('\n'))
+          .setTextStyle(
+              0, text[0].length, bold
+          )
+          .setTextStyle(
+              text[0].length,
+              text[0].length + text[1].length,
+              small
+          )
+          .build()
+  );
 }
 
 /***
