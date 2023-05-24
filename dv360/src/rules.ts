@@ -185,10 +185,16 @@ export const budgetPacingPercentageRule = newRule({
             'BUDGET_UNIT_CURRENCY') {
           continue;
         }
+// TODO: go/ts50upgrade - Auto-added to unblock TS5.0 migration
+//   TS2365: Operator '<' cannot be applied to types 'never' and 'Date'.
+// @ts-ignore
         earliestStartDate = earliestStartDate && earliestStartDate < startDate ?
             earliestStartDate :
             startDate;
         latestEndDate =
+// TODO: go/ts50upgrade - Auto-added to unblock TS5.0 migration
+//   TS2365: Operator '<' cannot be applied to types 'never' and 'Date'.
+// @ts-ignore
             latestEndDate && latestEndDate < endDate ? latestEndDate : endDate;
         results.push({
           campaignId: insertionOrder.getCampaignId(),
