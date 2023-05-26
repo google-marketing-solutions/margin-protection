@@ -24,7 +24,7 @@
  * END-INTERNAL
  */
 
-import {lazyLoadApp} from 'common/sheet_helpers';
+import {lazyLoadApp, toExport} from 'common/sheet_helpers';
 import {ClientArgs, ClientInterface, RuleGranularity} from 'sa360/src/types';
 import {Client, RuleRange} from 'sa360/src/client';
 
@@ -50,3 +50,8 @@ function getFrontEnd() {
 }
 
 lazyLoadApp<ClientInterface, RuleGranularity, ClientArgs, SearchAdsFrontEnd>(getFrontEnd);
+
+global.onOpen = toExport.onOpen;
+global.initializeSheets = toExport.initializeSheets;
+global.launchMonitor = toExport.launchMonitor;
+global.preLaunchQa = toExport.preLaunchQa;

@@ -19,12 +19,12 @@
  * @fileoverview Contains rules tailored for the current client.
  */
 
-import {AssignedTargetingOption, InsertionOrder} from 'google3/third_party/gps_building_blocks/ts/dv360_api_lib/src/dv360_resources';
-import {InsertionOrderBudgetSegment, TARGETING_TYPE} from 'google3/third_party/gps_building_blocks/ts/dv360_api_lib/src/dv360_types';
+import {AssignedTargetingOption, InsertionOrder} from 'dv360_api/dv360_resources';
+import {InsertionOrderBudgetSegment, TARGETING_TYPE} from 'dv360_api/dv360_types';
 import {equalTo, inRange, lessThanOrEqualTo} from 'anomaly_library/absoluteRule';
 import {Rule, Values} from 'anomaly_library/main';
 
-import {Settings} from '../../common/types';
+import {Settings} from 'common/types';
 
 import {getDate, newRule} from './client';
 import {ClientInterface, RuleGranularity} from './types';

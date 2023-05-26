@@ -17,7 +17,7 @@
 
 /** @fileoverview DAO for the SA360 Reporting API */
 
-import {RecordInfo} from '../../common/types';
+import {RecordInfo} from 'common/types';
 import {ClientArgs} from './types';
 import Payload = GoogleAppsScript.URL_Fetch.Payload;
 

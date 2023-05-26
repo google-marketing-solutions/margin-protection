@@ -20,7 +20,7 @@ import {AppsScriptFrontEnd, getOrCreateSheet, getTemplateSetting} from 'common/s
 import {RuleRange} from 'dv360/src/client';
 import {ClientArgs, ClientInterface} from 'dv360/src/types';
 
-import {addSettingWithDescription, HELPERS} from '../../common/sheet_helpers';
+import {addSettingWithDescription, HELPERS} from 'common/sheet_helpers';
 
 import {IDType, RuleGranularity} from './types';
 

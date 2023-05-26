@@ -110,6 +110,17 @@ export interface Values {
 }
 
 /**
+ * Generates an email body given a list of possibly anomalous values.
+ */
+export function emailAlertBody(values: Value[]) {
+  const anomalyList = values.filter(values => values.anomalous).map(value => {
+    return `- ${value.value} for ${value.fields}`;
+  });
+
+  return `The following errors were found: \n${anomalyList.join('\n')}`;
+}
+
+/**
  * Generates an e-mail alert, then updates the alertedAt timestamp.
  *
  * Note: This comes with a default message body. If you add your own, then
@@ -128,14 +139,8 @@ export function sendEmailAlert(
     if (anomalies.length === 0) {
       return;
     }
-
-    const anomalyList = anomalies.map(value => {
-      return `- ${value.value} for ${value.fields}`;
-    });
-
     if (!message.body) {
-      message.body =
-          `The following errors were found: \n${anomalyList.join('\n')}`;
+      message.body = emailAlertBody(anomalies);
     }
   }
 

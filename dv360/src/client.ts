@@ -15,12 +15,12 @@
  * limitations under the License.
  */
 
-import {Advertisers, AssignedTargetingOptions, Campaigns, InsertionOrders} from 'google3/third_party/gps_building_blocks/ts/dv360_api_lib/src/dv360';
-import {Advertiser, Campaign, InsertionOrder} from 'google3/third_party/gps_building_blocks/ts/dv360_api_lib/src/dv360_resources';
-import {RawApiDate} from 'google3/third_party/gps_building_blocks/ts/dv360_api_lib/src/dv360_types';
+import {Advertisers, AssignedTargetingOptions, Campaigns, InsertionOrders} from 'dv360_api/dv360';
+import {Advertiser, Campaign, InsertionOrder} from 'dv360_api/dv360_resources';
+import {RawApiDate} from 'dv360_api/dv360_types';
 
-import {AbstractRuleRange, newRuleBuilder} from '../../common/sheet_helpers';
-import {ParamDefinition, RecordInfo, RuleDefinition, RuleExecutor, RuleExecutorClass, RuleUtilities, Settings} from '../../common/types';
+import {AbstractRuleRange, newRuleBuilder} from 'common/sheet_helpers';
+import {ParamDefinition, RecordInfo, RuleDefinition, RuleExecutor, RuleExecutorClass, RuleUtilities, Settings} from 'common/types';
 
 import {BudgetReport, BudgetReportInterface, ImpressionReport} from './api';
 import {ClientArgs, ClientInterface, IDType, QueryReportParams, RuleGranularity} from './types';

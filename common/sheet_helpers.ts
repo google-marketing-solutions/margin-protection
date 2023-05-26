@@ -277,7 +277,7 @@ export const HELPERS = {
     const filter = range.getSheet().getFilter();
     filter && filter.remove();
     range.createFilter().setColumnFilterCriteria(4, criteria.build());
-  }
+  },
 };
 
 /**

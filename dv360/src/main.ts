@@ -19,7 +19,7 @@
  * @fileoverview Apps Script handlers.
  */
 
-import {lazyLoadApp} from '../../common/sheet_helpers';
+import {lazyLoadApp, toExport} from 'common/sheet_helpers';
 
 import {Client, RuleRange} from './client';
 import {DisplayVideoFrontEnd, migrations} from './frontend';
@@ -61,4 +61,12 @@ export function getFrontEnd() {
  *
  * Exported for testing.
  */
-lazyLoadApp<ClientInterface, RuleGranularity, ClientArgs, DisplayVideoFrontEnd>(getFrontEnd);
+lazyLoadApp<ClientInterface, RuleGranularity, ClientArgs, DisplayVideoFrontEnd>(
+    getFrontEnd);
+
+// BEGIN GOOGLE-INERNAL
+const global: Partial<typeof toExport> = {};
+global.onOpen = toExport.onOpen;
+global.initializeSheets = toExport.initializeSheets;
+global.launchMonitor = toExport.launchMonitor;
+global.preLaunchQa = toExport.preLaunchQa;

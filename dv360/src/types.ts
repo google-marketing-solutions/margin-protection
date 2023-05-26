@@ -15,8 +15,8 @@
  * limitations under the License.
  */
 
-import {Advertisers, AssignedTargetingOptions, Campaigns, InsertionOrders} from 'google3/third_party/gps_building_blocks/ts/dv360_api_lib/src/dv360';
-import {InsertionOrder} from 'google3/third_party/gps_building_blocks/ts/dv360_api_lib/src/dv360_resources';
+import {Advertisers, AssignedTargetingOptions, Campaigns, InsertionOrders} from 'dv360_api/dv360';
+import {InsertionOrder} from 'dv360_api/dv360_resources';
 import {BaseClientArgs, BaseClientInterface} from 'common/types';
 
 import {ReportConstructor} from './client';

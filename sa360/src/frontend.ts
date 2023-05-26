@@ -29,8 +29,14 @@ export const GENERAL_SETTINGS_SHEET = 'General/Settings';
 
 const AGENCY_ID = 'AGENCY_ID';
 const ADVERTISER_ID = 'ADVERTISER_ID';
-const EMAIL_LIST_RANGE = 'EMAIL_LIST';
-const LABEL_RANGE = 'LABEL';
+/**
+ * Used to figure out the list of email addresses to send emails to.
+ */
+export const EMAIL_LIST_RANGE = 'EMAIL_LIST';
+/**
+ * Used to distinguish between different reports (e.g. advertiser name)
+ */
+export const LABEL_RANGE = 'LABEL';
 const DRIVE_ID_RANGE = 'DRIVE_ID';
 
 /**
@@ -92,10 +98,10 @@ export const migrations: Record<number, (client: ClientInterface) => void> = {
     if (driveIdRange) {
       return;
     }
-    const range = generalSettingsSheet.getRange('A8:C8').insertCells(
+    generalSettingsSheet.getRange('A8:C8').insertCells(
         SpreadsheetApp.Dimension.ROWS);
     addSettingWithDescription(generalSettingsSheet, 'A8', [
-      'Google Drive Folder ID',
+      'Reporting - Google Drive Folder ID',
       'The ID of the Drive folder destination\n(copy in folder URL after \'/folders/\' and before the \'?\')',
     ]);
     active.setNamedRange(
