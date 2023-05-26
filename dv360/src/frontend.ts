@@ -41,7 +41,7 @@ const ADVERTISER_ID = 'ADVERTISER_ID';
  * A list of migrations with version as key and a migration script as the
  * value.
  */
-export const migrations: Record<number, (frontend: DisplayVideoFrontEnd) => void> = {
+export const migrations: Record<string, (frontend: DisplayVideoFrontEnd) => void> = {
   '1.1': (frontend) => {
     const active = SpreadsheetApp.getActive();
     const ruleSettingsSheet = active.getSheetByName('Rule Settings');

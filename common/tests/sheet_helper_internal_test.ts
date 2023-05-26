@@ -33,7 +33,7 @@ describe('Check globals', async () => {
         ruleRangeClass: RuleRange,
         rules: [
         ],
-        version: 1.0,
+        version: '1.0',
         clientClass: Client,
         migrations: {},
         properties,
@@ -126,3 +126,48 @@ function scaffoldSheetWithNamedRanges() {
     SpreadsheetApp.getActive().getRangeByName(constName)!.setValue(value);
   }
 }
+
+describe('Test migration order', () => {
+  const list: string[] = [];
+
+  function setFrontEnd({expectedVersion, currentVersion}: {expectedVersion: string, currentVersion: string}) {
+    PropertiesService.getScriptProperties().setProperty('sheet_version', currentVersion);
+    return lazyLoadApp<TestClientInterface, Granularity, TestClientArgs, FakeFrontEnd>((properties) => {
+      return new FakeFrontEnd({
+        ruleRangeClass: RuleRange,
+        rules: [
+        ],
+        version: expectedVersion,
+        clientClass: Client,
+        migrations: {
+          '3.0': () => list.push('3.0'),
+          '2.1.4': () => list.push('2.1.4'),
+          '2.0': () => list.push('2.0'),
+          '2.1.0': () => list.push('2.1.0'),
+          '2.2.0': () => list.push('2.2.0'),
+        },
+        properties,
+      });
+    })(new AppsScriptPropertyStore());
+  }
+
+  beforeEach(() => {
+    setUp();
+  });
+
+  afterEach(() => {
+    list.splice(0, list.length);
+  });
+
+  it('migrates all', () => {
+    const frontend = setFrontEnd({expectedVersion: '5.0', currentVersion: '1.0'});
+    frontend.migrate();
+    expect(list).toEqual(['2.0', '2.1.0', '2.1.4', '2.2.0', '3.0'])
+  });
+
+  it('partially migrates', () => {
+    const frontend = setFrontEnd({expectedVersion: '5.0', currentVersion: '2.1.0'});
+    frontend.migrate();
+    expect(list).toEqual(['2.1.4', '2.2.0', '3.0'])
+  });
+});

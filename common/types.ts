@@ -231,16 +231,16 @@ export interface RuleRangeInterface<
  * This is used to inject arguments into implementations, which determines
  * how the client gets executed.
  */
-export interface FrontEndArgs<C extends BaseClientInterface<C, G, A>,
-                                        G extends RuleGranularity<G>, A extends
-                                  BaseClientArgs<C, G, A>,
-                                  F extends AppsScriptFrontEnd<C, G, A, F>> {
-  readonly ruleRangeClass:
-      {new(sheet: readonly string[][], client: C): RuleRangeInterface<C, G, A>},
-      rules: Array<RuleExecutorClass<C, G, A, Record<string, ParamDefinition>>>,
-      readonly clientClass: {new(clientArgs: A, properties: PropertyStore): C},
-      readonly version: number;
-  readonly migrations: Record<number, (frontend: F) => void>;
+export interface FrontEndArgs<
+    C extends BaseClientInterface<C, G, A>,
+    G extends RuleGranularity<G>,
+    A extends BaseClientArgs<C, G, A>,
+    F extends AppsScriptFrontEnd<C, G, A, F>> {
+  readonly ruleRangeClass: { new(sheet: readonly string[][], client: C): RuleRangeInterface<C, G, A> },
+  readonly rules: ReadonlyArray<RuleExecutorClass<C, G, A, Record<string, ParamDefinition>>>,
+  readonly clientClass: { new(clientArgs: A, properties: PropertyStore): C },
+  readonly version: string;
+  readonly migrations: Record<string, (frontend: F) => void>;
   readonly properties: PropertyStore;
 }
 

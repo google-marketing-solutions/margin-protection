@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-import {SettingMap, transformToParamValues} from '../sheet_helpers';
+import {SettingMap, sortMigrations, transformToParamValues} from '../sheet_helpers';
 import {RuleExecutorClass} from '../types';
 
 import {Granularity, RuleRange, TestClientArgs, TestClientInterface} from './helpers';
@@ -122,6 +122,25 @@ describe('SettingMap#getOrDefault', () => {
       ['1', {rule1: ''}],
     ]);
     expect(settingMap.getOrDefault('1').rule1).toEqual('');
+  });
+});
+
+describe('sortMigrations', () => {
+  it('sorts migrations as expected', () => {
+    expect(
+        ['0.6', '1.2', '1.0'].sort(sortMigrations)
+    ).toEqual(['0.6', '1.0', '1.2']);
+  });
+
+  it('manages incremental versions', () => {
+    expect(
+        ['0.6.1', '0.6', '1.0'].sort(sortMigrations)
+    ).toEqual(['0.6', '0.6.1', '1.0']);
+  });
+
+  it('works with objects', () => {
+    expect(Object.entries({'0.1': 'b', '0.0.1': 'a'}).sort((e1, e2) => sortMigrations(e1[0], e2[0])))
+        .toEqual([['0.0.1', 'a'], ['0.1', 'b']]);
   });
 });
 

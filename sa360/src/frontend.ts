@@ -44,7 +44,7 @@ const DRIVE_ID_RANGE = 'DRIVE_ID';
  * A list of migrations with version as key and a migration script as the
  * value.
  */
-export const migrations: Record<number, (frontend: SearchAdsFrontEnd) => void> = {
+export const migrations: Record<string, (frontend: SearchAdsFrontEnd) => void> = {
   '1.1': (frontend) => {
     const active = SpreadsheetApp.getActive();
     const ruleSettingsSheet = active.getSheetByName(RULE_SETTINGS_SHEET);

@@ -668,17 +668,19 @@ export abstract class AppsScriptFrontEnd<
    * Handle migrations for Google Sheets (sheets getting added/removed).
    */
   migrate(): number {
-    const sheetVersion = Number(
-        PropertiesService.getScriptProperties().getProperty('sheet_version'));
+    const sheetVersion =
+        PropertiesService.getScriptProperties().getProperty('sheet_version') ?? '0';
     let numberOfMigrations = 0;
     if (!sheetVersion) {
       PropertiesService.getScriptProperties().setProperty(
-          'sheet_version', String(this.injectedArgs.version));
+          'sheet_version', this.injectedArgs.version);
     }
 
-    for (const [version, migration] of Object.entries(
-             this.injectedArgs.migrations)) {
-      if (Number(version) > sheetVersion) {
+    const migrations = Object.entries(this.injectedArgs.migrations)
+        .sort((t1, t2) => sortMigrations(t1[0], t2[0]));
+
+    for (const [version, migration] of migrations) {
+      if (sortMigrations(version, sheetVersion) > 0) {
         migration(this as unknown as F);
         // write manually each time because we want incremental migrations if
         // anything fails.
@@ -818,7 +820,7 @@ function applyBinding<
 
 /**
  * Primary entry point for an Apps Script implementation.
- * @param bindingFunction A callable that late binds {@link toExport} to the
+ * @param frontEndCaller A callable that late binds {@link toExport} to the
  *   correct functions from a frontend. A correct implementation of this
  *   function will initialize a {@link AppsScriptFrontEnd} class and assign
  *   all functions the first time it's called.
@@ -871,6 +873,25 @@ export const toExport: Record<AppsScriptFunctions, Function> = {
   preLaunchQa: () => {},
   launchMonitor: () => {},
 };
+
+/**
+ * Given two string semver values, checks to see which one is larger.
+ *
+ * Given '1.2.1' and '1.1.0', the result will be 0.1.1, which would sort the
+ * second value as higher than the first value.
+ *
+ * @param ver1 A semver value
+ * @param ver2 A semver value
+ */
+export function sortMigrations(ver1: string, ver2: string) {
+  const keys1 = ver1.split('.').map(Number);
+  const keys2 = ver2.split('.').map(Number);
+  let difference = 0;
+  for (let i = 0; i < Math.max(keys1.length, keys2.length); i++) {
+    difference += ((keys1[i] ?? 0) - (keys2[i] ?? 0)) / (10**i);
+  }
+  return difference;
+}
 
 /**
  * A list of modules we need in the global scope for Apps Script to function.
