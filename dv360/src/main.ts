@@ -25,6 +25,7 @@ import {Client, RuleRange} from './client';
 import {DisplayVideoFrontEnd, migrations} from './frontend';
 import {budgetPacingDaysAheadRule, budgetPacingPercentageRule, dailyBudgetRule, geoTargetRule, impressionsByGeoTarget} from './rules';
 import {ClientArgs, ClientInterface, RuleGranularity} from './types';
+import {PropertyStore} from 'anomaly_library/main';
 
 /**
  * The sheet version the app currently has.
@@ -40,7 +41,7 @@ export const CURRENT_SHEET_VERSION = 1.3;
  *
  * Broken out for testability.
  */
-export function getFrontEnd() {
+export function getFrontEnd(properties: PropertyStore) {
   return new DisplayVideoFrontEnd({
     ruleRangeClass: RuleRange,
     rules: [
@@ -53,6 +54,7 @@ export function getFrontEnd() {
     version: CURRENT_SHEET_VERSION,
     clientClass: Client,
     migrations,
+    properties,
   });
 }
 

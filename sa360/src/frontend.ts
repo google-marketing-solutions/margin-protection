@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-import {getRule, PropertyWrapper, sendEmailAlert} from 'anomaly_library/main';
+import {AppsScriptPropertyStore, sendEmailAlert} from 'anomaly_library/main';
 import {addSettingWithDescription, AppsScriptFrontEnd, getOrCreateSheet, getTemplateSetting, RULE_SETTINGS_SHEET, toExport} from 'common/sheet_helpers';
 import {RuleRange} from 'sa360/src/client';
 import {ClientArgs, ClientInterface} from 'sa360/src/types';
@@ -44,8 +44,8 @@ const DRIVE_ID_RANGE = 'DRIVE_ID';
  * A list of migrations with version as key and a migration script as the
  * value.
  */
-export const migrations: Record<number, (client: ClientInterface) => void> = {
-  '1.1': (client: ClientInterface) => {
+export const migrations: Record<number, (frontend: SearchAdsFrontEnd) => void> = {
+  '1.1': (frontend) => {
     const active = SpreadsheetApp.getActive();
     const ruleSettingsSheet = active.getSheetByName(RULE_SETTINGS_SHEET);
     if (!ruleSettingsSheet) {
@@ -55,7 +55,7 @@ export const migrations: Record<number, (client: ClientInterface) => void> = {
     let ioValues: string[][] = [[]];
 
     const ruleRange =
-        new RuleRange(ruleSettingsSheet.getDataRange().getValues(), client);
+        new RuleRange(ruleSettingsSheet.getDataRange().getValues(), frontend.client);
     campaignValues = ruleRange.getValues(RuleGranularity.CAMPAIGN);
     ioValues = ruleRange.getValues(RuleGranularity.AD_GROUP);
     active.deleteSheet(ruleSettingsSheet);
@@ -66,7 +66,7 @@ export const migrations: Record<number, (client: ClientInterface) => void> = {
         .getRange(1, 1, ioValues.length, ioValues[0].length)
         .setValues(ioValues);
   },
-  '1.2': (client: ClientInterface) => {
+  '1.2': (frontend) => {
     const active = SpreadsheetApp.getActive();
     const generalSettingsSheet = active.getSheetByName(GENERAL_SETTINGS_SHEET);
     if (!generalSettingsSheet) {
@@ -87,7 +87,7 @@ export const migrations: Record<number, (client: ClientInterface) => void> = {
     active.setNamedRange(
         EMAIL_LIST_RANGE, generalSettingsSheet.getRange('B7:C7').merge());
   },
-  '1.3': (client: ClientInterface) => {
+  '1.3': (frontend) => {
     const active = SpreadsheetApp.getActive();
     const generalSettingsSheet = active.getSheetByName(GENERAL_SETTINGS_SHEET);
     if (!generalSettingsSheet) {
@@ -106,20 +106,19 @@ export const migrations: Record<number, (client: ClientInterface) => void> = {
     active.setNamedRange(
         DRIVE_ID_RANGE, generalSettingsSheet.getRange('B8:C8').merge());
   },
-  '1.4': () => {
+  '1.4': (frontend) => {
     const active = SpreadsheetApp.getActive();
     const generalSettingsSheet = active.getSheetByName(GENERAL_SETTINGS_SHEET);
     if (!generalSettingsSheet) {
       return;
     }
-    const propNames =
-        Object.keys(PropertiesService.getScriptProperties().getProperties());
-    const properties = new PropertyWrapper();
-    for (const propName of propNames) {
+    const properties: Array<[key: string, value: string]> =
+        Object.entries(frontend.client.properties.getProperties());
+    for (const [propName, property] of properties) {
       if (propName.startsWith('adGroupTargetChange') ||
           propName.startsWith('locationChange')) {
         const rule =
-            JSON.parse(properties.getProperty(propName) ?? '{}') as Record<
+            JSON.parse(property) as Record<
                 string,
                 {value: string, internal: {original: Record<string, Record<string, string>>}}>;
         for (const key of Object.keys(rule)) {
@@ -135,7 +134,7 @@ export const migrations: Record<number, (client: ClientInterface) => void> = {
                 }));
           }
         }
-        properties.setProperty(
+        frontend.client.properties.setProperty(
             propName,
             JSON.stringify(rule),
         );

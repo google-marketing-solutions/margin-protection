@@ -72,6 +72,7 @@ export interface Rule extends RuleGetter {
  */
 export interface RuleInstructions {
   uniqueKey: Readonly<string>;
+  propertyStore: PropertyStore;
 }
 
 /**
@@ -158,22 +159,16 @@ export function unpack(property: string|null): Values {
   return JSON.parse(property ?? '{}') as Values;
 }
 
-
-/** Convenience method to retrieve a `Value` from storage. */
-export function getValueByUniqueKey(ruleName: string, properties = new PropertyWrapper()) {
-  return unpack(properties.getProperty(ruleName));
-}
-
 /**
  * Wrapper for `getValueByUniqueKey` that meets the `RuleGetter` interface.
  */
-export function getRule(uniqueKey: string, properties = new PropertyWrapper()): RuleGetter {
+export function getRule(uniqueKey: string, properties: PropertyStore = new AppsScriptPropertyStore()): RuleGetter {
   return {
     getValues(): Value[] {
-      return Object.values(getValueByUniqueKey(uniqueKey));
+      return Object.values(unpack(properties.getProperty(uniqueKey)));
     },
     getValueObject(): Values {
-      return getValueByUniqueKey(uniqueKey);
+      return unpack(properties.getProperty(uniqueKey));
     },
     saveValues(values: Values) {
       properties.setProperty(uniqueKey, JSON.stringify(values));
@@ -186,21 +181,32 @@ export function getRule(uniqueKey: string, properties = new PropertyWrapper()): 
  *
  * This class uses `gzip` to stay within storage quotas for PropertiesService.
  */
-export class PropertyWrapper {
-  private readonly properties = PropertiesService.getScriptProperties();
+export class AppsScriptPropertyStore implements PropertyStore {
   private static readonly cache: {[key: string]: string} = {};
+
+  constructor(
+      private readonly properties = PropertiesService.getScriptProperties(),
+  ) {
+  }
 
   setProperty(key: string, value: string) {
     this.properties.setProperty(key, compress(value));
-    PropertyWrapper.cache[key] = value;
+    AppsScriptPropertyStore.cache[key] = value;
   }
 
   getProperty(key: string) {
-    if (PropertyWrapper.cache[key]) {
-      return PropertyWrapper.cache[key];
+    if (AppsScriptPropertyStore.cache[key]) {
+      return AppsScriptPropertyStore.cache[key];
     }
     const property = this.properties.getProperty(key);
     return property ? extract(property) : null;
+  }
+
+  getProperties() {
+    return Object.fromEntries(
+        Object.entries(this.properties.getProperties()).map(([k, v]) =>
+       [k, extract(v)]
+    ));
   }
 }
 
@@ -220,4 +226,13 @@ function extract(content: string): string {
   const decode = Utilities.base64Decode(content);
   const blob = Utilities.newBlob(decode, 'application/x-gzip');
   return Utilities.ungzip(blob).getDataAsString();
+}
+
+/**
+ * An abstraction for retrieving properties.
+ */
+export interface PropertyStore {
+  setProperty(propertyName: string, value: string): void;
+  getProperty(propertyName: string): string | null;
+  getProperties(): Record<string, string>;
 }

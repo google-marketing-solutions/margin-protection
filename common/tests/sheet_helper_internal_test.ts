@@ -21,13 +21,14 @@ import {AppsScriptFrontEnd, global, HELPERS, lazyLoadApp, toExport} from '../she
 
 import {Client, Granularity, RuleRange, TestClientArgs, TestClientInterface} from './helpers';
 import {AppsScriptFunctions} from '../types';
+import {AppsScriptPropertyStore} from 'anomaly_library/main';
 
 describe('Check globals', async () => {
   let frontend: FakeFrontEnd;
 
   beforeEach(() => {
     setUp();
-    frontend = lazyLoadApp<TestClientInterface, Granularity, TestClientArgs, FakeFrontEnd>(() => {
+    frontend = lazyLoadApp<TestClientInterface, Granularity, TestClientArgs, FakeFrontEnd>((properties) => {
       return new FakeFrontEnd({
         ruleRangeClass: RuleRange,
         rules: [
@@ -35,8 +36,9 @@ describe('Check globals', async () => {
         version: 1.0,
         clientClass: Client,
         migrations: {},
+        properties,
       });
-    })();
+    })(new AppsScriptPropertyStore());
   });
 
   it('exists in `toExport`', () => {

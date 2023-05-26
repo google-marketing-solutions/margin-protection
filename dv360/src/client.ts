@@ -18,6 +18,7 @@
 import {Advertisers, AssignedTargetingOptions, Campaigns, InsertionOrders} from 'dv360_api/dv360';
 import {Advertiser, Campaign, InsertionOrder} from 'dv360_api/dv360_resources';
 import {RawApiDate} from 'dv360_api/dv360_types';
+import {PropertyStore, Rule, RuleInstructions} from 'anomaly_library/main';
 
 import {AbstractRuleRange, newRuleBuilder} from 'common/sheet_helpers';
 import {ParamDefinition, RecordInfo, RuleDefinition, RuleExecutor, RuleExecutorClass, RuleUtilities, Settings} from 'common/types';
@@ -102,21 +103,32 @@ export class Client implements ClientInterface {
     return this;
   }
 
-  constructor(settings: Omit<ClientArgs, 'idType'|'id'>&{advertiserId: string});
-  constructor(settings: Omit<ClientArgs, 'idType'|'id'> & {partnerId: string});
-  constructor(settings: ClientArgs);
-  constructor(settings: Omit<ClientArgs, 'idType'|'id'> & Partial<Pick<ClientArgs, 'idType'|'id'>> &
-              {advertiserId?: string, partnerId?: string}) {
-    if (!settings.advertiserId && !settings.partnerId && (!settings.id || settings.idType === undefined)) {
+  constructor(
+      settings: Omit<ClientArgs, 'idType'|'id'>&{advertiserId: string},
+      properties: PropertyStore);
+  constructor(
+      settings: Omit<ClientArgs, 'idType'|'id'>&{partnerId: string},
+      properties: PropertyStore);
+  constructor(settings: ClientArgs, properties: PropertyStore);
+  constructor(
+      settings: Omit<ClientArgs, 'idType'|'id'>&
+      Partial<Pick<ClientArgs, 'idType'|'id'>>&
+      {advertiserId?: string, partnerId?: string},
+      readonly properties: PropertyStore) {
+    if (!settings.advertiserId && !settings.partnerId &&
+        (!settings.id || settings.idType === undefined)) {
       throw new Error(
           'Unexpected lack of a partnerID and advertiserID. Choose one.');
     }
     this.settings = {
       advertisers: settings.advertisers || Advertisers,
-      assignedTargetingOptions: settings.assignedTargetingOptions || AssignedTargetingOptions,
-      idType: settings.idType ?? (settings.advertiserId ? IDType.ADVERTISER : IDType.PARTNER),
+      assignedTargetingOptions:
+          settings.assignedTargetingOptions || AssignedTargetingOptions,
+      idType: settings.idType ??
+          (settings.advertiserId ? IDType.ADVERTISER : IDType.PARTNER),
       id: settings.id ??
-          (settings.advertiserId ? settings.advertiserId : settings.partnerId ?? ''),
+          (settings.advertiserId ? settings.advertiserId :
+                                   settings.partnerId ?? ''),
       campaigns: settings.campaigns || Campaigns,
       insertionOrders: settings.insertionOrders || InsertionOrders,
       budgetReport: settings.budgetReport || BudgetReport,
@@ -162,19 +174,20 @@ export class Client implements ClientInterface {
 
   async getAllCampaigns() {
     if (!this.storedCampaigns.length) {
-      const campaignsWithSegments = this.getAllInsertionOrders().reduce((prev, io) => {
-        prev.add(io.getCampaignId());
-        return prev;
-      }, new Set<string>());
+      const campaignsWithSegments =
+          this.getAllInsertionOrders().reduce((prev, io) => {
+            prev.add(io.getCampaignId());
+            return prev;
+          }, new Set<string>());
 
       const result = this.settings.idType === IDType.ADVERTISER ?
-          this.getAllCampaignsForAdvertiser(this.settings.id).filter(
-              campaign => campaignsWithSegments.has(campaign.id)) :
+          this.getAllCampaignsForAdvertiser(this.settings.id)
+              .filter(campaign => campaignsWithSegments.has(campaign.id)) :
           this.getAllAdvertisersForPartner().reduce(
-              (arr, advertiserId) =>
-                  arr.concat(this.getAllCampaignsForAdvertiser(advertiserId).filter(
-                      campaign => campaignsWithSegments.has(campaign.id))
-                  ),
+              (arr, advertiserId) => arr.concat(
+                  this.getAllCampaignsForAdvertiser(advertiserId)
+                      .filter(
+                          campaign => campaignsWithSegments.has(campaign.id))),
               [] as RecordInfo[]);
       this.storedCampaigns = result;
     }
@@ -231,18 +244,16 @@ export class Client implements ClientInterface {
         if (!id) {
           throw new Error('Campaign ID is missing.');
         }
-        result.push({
-          advertiserId,
-          id,
-          displayName: campaign.getDisplayName()!
-        });
+        result.push(
+            {advertiserId, id, displayName: campaign.getDisplayName()!});
       }
     });
 
     return result;
   }
 
-  getBudgetReport({startDate, endDate}: {startDate: Date; endDate: Date;}): BudgetReportInterface {
+  getBudgetReport({startDate, endDate}: {startDate: Date; endDate: Date;}):
+      BudgetReportInterface {
     if (!this.savedBudgetReport) {
       this.savedBudgetReport = new this.settings.budgetReport({
         idType: this.settings.idType,
@@ -255,8 +266,14 @@ export class Client implements ClientInterface {
   }
 
   getUniqueKey(prefix: string) {
-    return `${prefix}-${
-        this.settings.idType === IDType.PARTNER ? 'P' : 'A'}${this.settings.id}`;
+    return `${prefix}-${this.settings.idType === IDType.PARTNER ? 'P' : 'A'}${
+        this.settings.id}`;
+  }
+
+  newRule(
+      rule: (rule: RuleInstructions) => Rule,
+      instructions: Omit<RuleInstructions, 'propertyStore'>) {
+    return rule({...instructions, propertyStore: this.properties});
   }
 }
 
@@ -277,9 +294,12 @@ export class RuleRange extends
     if (ruleGranularity === RuleGranularity.CAMPAIGN) {
       return this.client.getAllCampaigns();
     } else {
-      return this.client.getAllInsertionOrders().map(io => ({
-        advertiserId: io.getAdvertiserId(), id: io.getId()!, displayName: io.getDisplayName()!,
-      }));
+      return this.client.getAllInsertionOrders().map(
+          io => ({
+            advertiserId: io.getAdvertiserId(),
+            id: io.getId()!,
+            displayName: io.getDisplayName()!,
+          }));
     }
   }
 }

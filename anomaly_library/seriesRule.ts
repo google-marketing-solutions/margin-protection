@@ -15,7 +15,8 @@
  * limitations under the License.
  */
 
-import {PropertyWrapper, Rule, RuleInstructions, Value, Values} from './main';
+import {Rule, RuleInstructions, Value, Values} from './main';
+import {PropertyStore} from 'anomaly_library/main';
 
 type RuleInjector = (rule: LockedSeriesRule) => (value: string) => boolean;
 
@@ -32,7 +33,7 @@ type RuleInjector = (rule: LockedSeriesRule) => (value: string) => boolean;
  */
 export class LockedSeriesRule implements Rule {
   private readonly uniqueKey: string;
-  private readonly properties = new PropertyWrapper();
+  private readonly properties: PropertyStore;
   readonly valueIsInBounds: (value: string) => boolean;
   static NO_CHANGES = 'No Changes';
 
@@ -49,6 +50,7 @@ export class LockedSeriesRule implements Rule {
       threshold: RuleInjector,
   ) {
     this.uniqueKey = instructions.uniqueKey;
+    this.properties = instructions.propertyStore;
     this.valueIsInBounds = threshold(this);
   }
 

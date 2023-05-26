@@ -41,8 +41,8 @@ const ADVERTISER_ID = 'ADVERTISER_ID';
  * A list of migrations with version as key and a migration script as the
  * value.
  */
-export const migrations: Record<number, (client: ClientInterface) => void> = {
-  '1.1': (client: ClientInterface) => {
+export const migrations: Record<number, (frontend: DisplayVideoFrontEnd) => void> = {
+  '1.1': (frontend) => {
     const active = SpreadsheetApp.getActive();
     const ruleSettingsSheet = active.getSheetByName('Rule Settings');
     if (!ruleSettingsSheet) {
@@ -52,7 +52,7 @@ export const migrations: Record<number, (client: ClientInterface) => void> = {
     let ioValues: string[][] = [[]];
 
     const ruleRange =
-        new RuleRange(ruleSettingsSheet.getDataRange().getValues(), client);
+        new RuleRange(ruleSettingsSheet.getDataRange().getValues(), frontend.client);
     campaignValues = ruleRange.getValues(RuleGranularity.CAMPAIGN);
     ioValues = ruleRange.getValues(RuleGranularity.INSERTION_ORDER);
     active.deleteSheet(ruleSettingsSheet);
@@ -63,7 +63,7 @@ export const migrations: Record<number, (client: ClientInterface) => void> = {
         .getRange(1, 1, ioValues.length, ioValues[0].length)
         .setValues(ioValues);
   },
-  '1.2': (client: ClientInterface) => {
+  '1.2': (frontend) => {
     // encrypt rules
     const properties = PropertiesService.getScriptProperties().getProperties();
     const newProperties = {...properties};

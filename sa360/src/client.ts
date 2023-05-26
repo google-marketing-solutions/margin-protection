@@ -15,6 +15,7 @@
  * limitations under the License.
  */
 
+import {PropertyStore, Rule, RuleInstructions} from 'anomaly_library/main';
 import {AbstractRuleRange, newRuleBuilder} from 'common/sheet_helpers';
 import {ParamDefinition, RecordInfo, RuleExecutor, RuleExecutorClass, RuleParams} from 'common/types';
 import {AdGroupReport, AdGroupTargetReport, CampaignReport, CampaignTargetReport} from 'sa360/src/api';
@@ -22,9 +23,9 @@ import {ClientArgs, ClientInterface, RuleGranularity} from 'sa360/src/types';
 
 export const newRule =
     newRuleBuilder<ClientInterface, RuleGranularity, ClientArgs>() as
-        <P extends Record<keyof P, ParamDefinition>>(
-            p: RuleParams<ClientInterface, RuleGranularity, ClientArgs, P>) =>
-            RuleExecutorClass<ClientInterface, RuleGranularity, ClientArgs, P>;
+    <P extends Record<keyof P, ParamDefinition>>(
+        p: RuleParams<ClientInterface, RuleGranularity, ClientArgs, P>) =>
+        RuleExecutorClass<ClientInterface, RuleGranularity, ClientArgs, P>;
 
 /**
  * Wrapper client around the DV360 API for testability and efficiency.
@@ -35,7 +36,8 @@ export const newRule =
 export class Client implements ClientInterface {
   readonly ruleStore: {
     [ruleName: string]: RuleExecutor<
-        ClientInterface, RuleGranularity, ClientArgs, Record<string, ParamDefinition>>;
+        ClientInterface, RuleGranularity, ClientArgs,
+        Record<string, ParamDefinition>>;
   };
   private campaignReport: CampaignReport|undefined;
   private campaignTargetReport: CampaignTargetReport|undefined;
@@ -44,7 +46,8 @@ export class Client implements ClientInterface {
   private campaigns: RecordInfo[]|undefined;
   private adGroups: RecordInfo[]|undefined;
 
-  constructor(readonly settings: ClientArgs) {
+  constructor(
+      readonly settings: ClientArgs, readonly properties: PropertyStore) {
     this.ruleStore = {};
   }
 
@@ -136,22 +139,6 @@ export class Client implements ClientInterface {
       this.adGroups = adGroupReport.getAdGroups();
     }
     return this.adGroups;
-  }
-
-  getAllAdvertisersForAgency(): string[] {
-    const cache = CacheService.getScriptCache();
-    const result: string[] = [];
-    const advertisers = cache.get('advertisers');
-    if (advertisers) {
-      return JSON.parse(advertisers) as string[];
-    }
-    return result;
-  }
-
-  getAllCampaignsForAdvertiser(advertiserId: string): RecordInfo[] {
-    const result: RecordInfo[] = [];
-
-    return result;
   }
 }
 

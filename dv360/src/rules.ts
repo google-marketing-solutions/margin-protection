@@ -83,7 +83,7 @@ export const geoTargetRule = newRule({
   },
   async callback() {
     const uniqueKey = this.getUniqueKey();
-    const rule = equalTo({uniqueKey, thresholdValue: 1});
+    const rule = equalTo({uniqueKey, thresholdValue: 1, propertyStore: this.client.properties});
     const values: Values = {};
 
     for (const {advertiserId, id, displayName} of await this.client
@@ -173,7 +173,7 @@ export const budgetPacingPercentageRule = newRule({
     const todayDate = new Date(today);
     for (const insertionOrder of this.client.getAllInsertionOrders()) {
       const {insertionOrderId, displayName} =
-          getPacingVariables(insertionOrder, this.settings, rules, uniqueKey);
+          getPacingVariables(this.client, insertionOrder, this.settings, rules, uniqueKey);
       for (const budgetSegment of
           insertionOrder.getInsertionOrderBudgetSegments()) {
         const startDate = getDate(budgetSegment.dateRange.startDate);
@@ -251,6 +251,7 @@ export const budgetPacingPercentageRule = newRule({
 });
 
 function getPacingVariables<P extends Record<'min'|'max', string>>(
+    client: ClientInterface,
     insertionOrder: InsertionOrder, settings: Settings<P>,
     rules: {[p: string]: Rule}, uniqueKey: string) {
   const insertionOrderId = insertionOrder.getId()!;
@@ -262,6 +263,7 @@ function getPacingVariables<P extends Record<'min'|'max', string>>(
         min: Number(campaignSettings.min),
         max: Number(campaignSettings.max),
       },
+      propertyStore: client.properties,
     });
   }
   const displayName = insertionOrder.getDisplayName();
@@ -320,7 +322,7 @@ export const budgetPacingDaysAheadRule = newRule({
         continue;
       }
       const {insertionOrderId, displayName} =
-          getPacingVariables(insertionOrder, this.settings, rules, uniqueKey);
+          getPacingVariables(this.client, insertionOrder, this.settings, rules, uniqueKey);
       for (const budgetSegment of
           insertionOrder.getInsertionOrderBudgetSegments()) {
         const startDate = getDate(budgetSegment.dateRange.startDate);
@@ -428,7 +430,8 @@ export const dailyBudgetRule = newRule({
           thresholdValue: {
             min: Number(campaignSettings.min),
             max: Number(campaignSettings.max),
-          }
+          },
+          propertyStore: this.client.properties,
         });
       }
       const displayName = insertionOrder.getDisplayName();
@@ -559,7 +562,11 @@ export const impressionsByGeoTarget = newRule({
         .entries(result)) {
       const campaignSettings = this.settings.getOrDefault(insertionOrderId);
       const impressions = impressionReport.getImpressionPercentOutsideOfGeos(insertionOrderId, campaignSettings.countries.split(',').map((country: string) => country.trim()));
-      const rule = lessThanOrEqualTo({thresholdValue: Number(campaignSettings.maxOutside), uniqueKey: this.getUniqueKey()});
+      const rule = lessThanOrEqualTo({
+        thresholdValue: Number(campaignSettings.maxOutside),
+        uniqueKey: this.getUniqueKey(),
+        propertyStore: this.client.properties,
+      });
       values[insertionOrderId] = (rule.createValue(impressions.toString(), {
         'Insertion Order ID': insertionOrderId,
         'Display Name': displayName,

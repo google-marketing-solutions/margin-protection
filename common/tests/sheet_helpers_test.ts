@@ -20,6 +20,7 @@ import {RuleExecutorClass} from '../types';
 
 import {Granularity, RuleRange, TestClientArgs, TestClientInterface} from './helpers';
 import {ParamDefinition} from 'common/types';
+import {FakePropertyStore} from 'anomaly_library/testing/mock_apps_script';
 
 describe('2-D array', () => {
   let array2d: string[][];
@@ -144,5 +145,6 @@ function generateTestClient(params: {id?: string}): TestClientInterface {
     getUniqueKey(prefix: string) {
       throw new Error('Not implemented.');
     },
+    properties: new FakePropertyStore(),
   };
 }

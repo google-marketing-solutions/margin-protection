@@ -27,6 +27,7 @@
 import {lazyLoadApp, toExport} from 'common/sheet_helpers';
 import {ClientArgs, ClientInterface, RuleGranularity} from 'sa360/src/types';
 import {Client, RuleRange} from 'sa360/src/client';
+import {PropertyStore} from 'anomaly_library/main';
 
 import {migrations, SearchAdsFrontEnd} from './frontend';
 
@@ -41,7 +42,7 @@ export const CURRENT_SHEET_VERSION = 1.3;
 /**
  * Generate a front-end object for lazy loading.
  */
-export function getFrontEnd() {
+export function getFrontEnd(properties: PropertyStore) {
   return new SearchAdsFrontEnd({
     ruleRangeClass: RuleRange,
     rules: [
@@ -49,6 +50,7 @@ export function getFrontEnd() {
     version: CURRENT_SHEET_VERSION,
     clientClass: Client,
     migrations,
+    properties,
   });
 }
 

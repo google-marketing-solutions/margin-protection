@@ -21,7 +21,7 @@
  */
 
 
-import {PropertyWrapper, Rule, Threshold, ThresholdRuleInstructions, unpack, Value, Values} from 'anomaly_library/main';
+import {PropertyStore, Rule, Threshold, ThresholdRuleInstructions, unpack, Value, Values} from 'anomaly_library/main';
 
 /**
  * Checks for any anomalies based on a fixed `Threshold`.
@@ -31,8 +31,8 @@ import {PropertyWrapper, Rule, Threshold, ThresholdRuleInstructions, unpack, Val
  */
 export class AbsoluteRule<ThresholdType> implements Rule {
   private readonly uniqueKey: string;
-  private readonly properties = new PropertyWrapper();
   readonly valueIsInBounds: (value: string) => boolean;
+  private readonly properties: PropertyStore;
 
   /**
    * Object constructor
@@ -42,6 +42,7 @@ export class AbsoluteRule<ThresholdType> implements Rule {
       threshold: Threshold<ThresholdType, AbsoluteRule<ThresholdType>>,
   ) {
     this.uniqueKey = instructions.uniqueKey;
+    this.properties = instructions.propertyStore;
     // default is arbitrary - assuming hourly checks this is 4 days of data.
     this.valueIsInBounds = threshold(instructions.thresholdValue, this);
   }
