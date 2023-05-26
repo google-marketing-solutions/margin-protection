@@ -64,8 +64,6 @@ export function getFrontEnd() {
 lazyLoadApp<ClientInterface, RuleGranularity, ClientArgs, DisplayVideoFrontEnd>(
     getFrontEnd);
 
-// BEGIN GOOGLE-INERNAL
-const global: Partial<typeof toExport> = {};
 global.onOpen = toExport.onOpen;
 global.initializeSheets = toExport.initializeSheets;
 global.launchMonitor = toExport.launchMonitor;

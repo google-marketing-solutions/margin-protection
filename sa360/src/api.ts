@@ -53,14 +53,12 @@ export const adGroupColumns = [
 ] as const;
 
 export const adGroupTargetColumns = [
-  'adGroupId', 'adGroupTargetId', 'campaignId', 'genderTargetGenderType',
-  'genderTargetBidModifier', 'ageTargetAgeRange', 'ageTargetBidModifier',
-  'engineRemarketingList', 'engineRemarketingListBidModifier',
+  'adGroupId', 'campaignId', 'genderTargetGenderType', 'ageTargetAgeRange',
+  'engineRemarketingList',
 ] as const;
 
 export const campaignTargetColumns = [
-  'campaignId', 'campaignTargetId', 'locationTargetName',
-  'locationTargetBidModifier',
+  'campaignId', 'locationTargetName',
 ] as const;
 
 type AllowedColumns = typeof campaignColumns | typeof adGroupColumns | typeof adGroupTargetColumns | typeof campaignTargetColumns;
@@ -422,13 +420,13 @@ class AdGroupTargetReportBuilder extends
       headers: string[], columns: string[]) {
     const {row, filteredColumns} = getFilteredColumns(obj, id, headers, columns);
     for (const [i, column] of filteredColumns) {
-      if (['adGroupId', 'campaignId', 'adGroupTargetId'].indexOf(headers[i]) >=
+      if (['adGroupId', 'campaignId'].indexOf(headers[i]) >=
           0) {
         row[headers[i]] = column;
         continue;
       }
-      row[headers[i]] = row[headers[i]] === undefined ? `${row['adGroupTargetId']}:${column}` :
-          `${row[headers[i]]},${row['adGroupTargetId']}:${column}`;
+      row[headers[i]] = row[headers[i]] === undefined ? column :
+          `${row[headers[i]]},${column}`;
     }
   }
 
@@ -437,7 +435,12 @@ class AdGroupTargetReportBuilder extends
   }
 }
 
-class CampaignTargetReportBuilder extends ReportBuilder<typeof campaignTargetColumns> {
+/**
+ * Builds a campaign target report.
+ *
+ * Exposed for testing. Otherwise, use {@link CampaignTargetReport.buildReport}.
+ */
+export class CampaignTargetReportBuilder extends ReportBuilder<typeof campaignTargetColumns> {
   protected getColumns(): typeof campaignTargetColumns {
     return campaignTargetColumns;
   }
@@ -455,13 +458,13 @@ class CampaignTargetReportBuilder extends ReportBuilder<typeof campaignTargetCol
       headers: string[], columns: string[]) {
     const {row, filteredColumns} = getFilteredColumns(obj, id, headers, columns);
     for (const [i, column] of filteredColumns) {
-      if (['campaignId', 'campaignTargetId'].indexOf(headers[i]) >=
+      if (['campaignId'].indexOf(headers[i]) >=
           0) {
         row[headers[i]] = column;
         continue;
       }
-      row[headers[i]] = row[headers[i]] === undefined ? `${row['campaignTargetId']}:${column}` :
-          `${row[headers[i]]},${row['campaignTargetId']}:${column}`;
+      row[headers[i]] = row[headers[i]] === undefined ? column :
+          `${row[headers[i]]},${column}`;
     }
   }
 }

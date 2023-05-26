@@ -103,7 +103,7 @@ export const migrations: Record<number, (client: ClientInterface) => void> = {
  * Front-end configuration for SA360 Apps Script.
  */
 export class DisplayVideoFrontEnd extends AppsScriptFrontEnd<
-    ClientInterface, RuleGranularity, ClientArgs> {
+    ClientInterface, RuleGranularity, ClientArgs, DisplayVideoFrontEnd> {
   override getIdentity() {
     const sheet = SpreadsheetApp.getActive();
     if (!sheet) {

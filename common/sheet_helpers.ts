@@ -301,7 +301,8 @@ export function getTemplateSetting(rangeName: string): GoogleAppsScript.Spreadsh
 export abstract class AppsScriptFrontEnd<
     C extends BaseClientInterface<C, G, A>,
     G extends RuleGranularity<G>,
-    A extends BaseClientArgs<C, G, A>> {
+    A extends BaseClientArgs<C, G, A>,
+    F extends AppsScriptFrontEnd<C, G, A, F>> {
   readonly client: C;
   readonly rules: ReadonlyArray<RuleExecutorClass<C, G, A>>;
 
@@ -736,7 +737,7 @@ newRuleBuilder<
 }
 
 // Lazy load frontend.
-function load<C extends BaseClientInterface<C, G, A>, G extends RuleGranularity<G>, A extends BaseClientArgs<C, G, A>, F extends AppsScriptFrontEnd<C, G, A>>(bindingFunction: () => F, fnName: 'onOpen'|'initializeSheets'|'preLaunchQa'|'launchMonitor') {
+function load<C extends BaseClientInterface<C, G, A>, G extends RuleGranularity<G>, A extends BaseClientArgs<C, G, A>, F extends AppsScriptFrontEnd<C, G, A, F>>(bindingFunction: () => F, fnName: 'onOpen'|'initializeSheets'|'preLaunchQa'|'launchMonitor') {
   return async () => {
     const frontend = bindingFunction();
     switch(fnName) {
@@ -751,8 +752,7 @@ function load<C extends BaseClientInterface<C, G, A>, G extends RuleGranularity<
 function applyBinding<C extends BaseClientInterface<C, G, A>,
     G extends RuleGranularity<G>, A extends
     BaseClientArgs<C, G, A>,
-    F extends AppsScriptFrontEnd<C, G, A>>(
-    frontEndCaller: () => F): () => F {
+    F extends AppsScriptFrontEnd<C, G, A, F>>(frontEndCaller: () => F): () => F {
   return () => {
     const frontend = frontEndCaller();
     toExport.onOpen = frontend.onOpen.bind(frontend);
@@ -771,7 +771,7 @@ function applyBinding<C extends BaseClientInterface<C, G, A>,
  *   function will initialize a {@link AppsScriptFrontEnd} class and assign
  *   all functions the first time it's called.
  */
-export function lazyLoadApp<C extends BaseClientInterface<C, G, A>, G extends RuleGranularity<G>, A extends BaseClientArgs<C, G, A>, F extends AppsScriptFrontEnd<C, G, A>>(frontEndCaller: () => F): () => F {
+export function lazyLoadApp<C extends BaseClientInterface<C, G, A>, G extends RuleGranularity<G>, A extends BaseClientArgs<C, G, A>, F extends AppsScriptFrontEnd<C, G, A, F>>(frontEndCaller: () => F): () => F {
   const binders = applyBinding<C, G, A, F>(frontEndCaller);
   toExport.onOpen = load<C, G, A, F>(binders, 'onOpen');
   toExport.initializeSheets = load<C, G, A, F>(binders, 'initializeSheets');

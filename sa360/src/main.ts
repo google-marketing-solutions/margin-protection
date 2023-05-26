@@ -38,7 +38,10 @@ import {migrations, SearchAdsFrontEnd} from './frontend';
  */
 export const CURRENT_SHEET_VERSION = 1.3;
 
-function getFrontEnd() {
+/**
+ * Generate a front-end object for lazy loading.
+ */
+export function getFrontEnd() {
   return new SearchAdsFrontEnd({
     ruleRangeClass: RuleRange,
     rules: [

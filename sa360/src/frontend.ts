@@ -15,12 +15,13 @@
  * limitations under the License.
  */
 
-import {sendEmailAlert} from 'anomaly_library/main';
-import {addSettingWithDescription, AppsScriptFrontEnd, getOrCreateSheet, getTemplateSetting, RULE_SETTINGS_SHEET} from 'common/sheet_helpers';
+import {getRule, PropertyWrapper, sendEmailAlert} from 'anomaly_library/main';
+import {addSettingWithDescription, AppsScriptFrontEnd, getOrCreateSheet, getTemplateSetting, RULE_SETTINGS_SHEET, toExport} from 'common/sheet_helpers';
+import {RuleRange} from 'sa360/src/client';
 import {ClientArgs, ClientInterface} from 'sa360/src/types';
 
 import {RuleGranularity} from './types';
-import {RuleRange} from 'sa360/src/client';
+
 
 /**
  * The name of the general settings sheet.
@@ -82,11 +83,9 @@ export const migrations: Record<number, (client: ClientInterface) => void> = {
       ['Comma Separated List of Emails', '', '']
     ]);
     active.setNamedRange(
-        LABEL_RANGE,
-        generalSettingsSheet.getRange('B6:C6').merge());
+        LABEL_RANGE, generalSettingsSheet.getRange('B6:C6').merge());
     active.setNamedRange(
-        EMAIL_LIST_RANGE,
-        generalSettingsSheet.getRange('B7:C7').merge());
+        EMAIL_LIST_RANGE, generalSettingsSheet.getRange('B7:C7').merge());
   },
   '1.3': (client: ClientInterface) => {
     const active = SpreadsheetApp.getActive();
@@ -105,16 +104,51 @@ export const migrations: Record<number, (client: ClientInterface) => void> = {
       'The ID of the Drive folder destination\n(copy in folder URL after \'/folders/\' and before the \'?\')',
     ]);
     active.setNamedRange(
-        DRIVE_ID_RANGE,
-        generalSettingsSheet.getRange('B8:C8').merge());
+        DRIVE_ID_RANGE, generalSettingsSheet.getRange('B8:C8').merge());
+  },
+  '1.4': () => {
+    const active = SpreadsheetApp.getActive();
+    const generalSettingsSheet = active.getSheetByName(GENERAL_SETTINGS_SHEET);
+    if (!generalSettingsSheet) {
+      return;
+    }
+    const propNames =
+        Object.keys(PropertiesService.getScriptProperties().getProperties());
+    const properties = new PropertyWrapper();
+    for (const propName of propNames) {
+      if (propName.startsWith('adGroupTargetChange') ||
+          propName.startsWith('locationChange')) {
+        const rule =
+            JSON.parse(properties.getProperty(propName) ?? '{}') as Record<
+                string,
+                {value: string, internal: {original: Record<string, Record<string, string>>}}>;
+        for (const key of Object.keys(rule)) {
+          rule[key].value = rule[key].value.split(', ').map(r => {
+            const parts = r.split(':');
+            return `${parts[0]}:${parts[2]}`;
+          }).join(', ');
+          for (const [origKey, origVal] of Object.entries(
+                   rule[key].internal.original)) {
+            rule[key].internal.original[origKey] = Object.fromEntries(
+                Object.entries(origVal).map(([k, v]) => {
+                  return [k.split(':')[1], v.replace(/\+(-?\d+(\.\d+)?)%/, '$1')];
+                }));
+          }
+        }
+        properties.setProperty(
+            propName,
+            JSON.stringify(rule),
+        );
+      }
+    }
   },
 };
 
 /**
  * Front-end configuration for SA360 Apps Script.
  */
-export class SearchAdsFrontEnd extends AppsScriptFrontEnd<
-    ClientInterface, RuleGranularity, ClientArgs> {
+export class SearchAdsFrontEnd extends
+    AppsScriptFrontEnd<ClientInterface, RuleGranularity, ClientArgs, SearchAdsFrontEnd> {
   override getIdentity() {
     const sheet = SpreadsheetApp.getActive();
     if (!sheet) {
@@ -141,8 +175,7 @@ export class SearchAdsFrontEnd extends AppsScriptFrontEnd<
   }
 
   maybeSendEmailAlert() {
-    const to =
-        getTemplateSetting(EMAIL_LIST_RANGE).getValue();
+    const to = getTemplateSetting(EMAIL_LIST_RANGE).getValue();
     const label = getTemplateSetting(LABEL_RANGE).getValue();
     sendEmailAlert(
         Object.values(this.client.ruleStore).map(rule => rule.getRule()), {

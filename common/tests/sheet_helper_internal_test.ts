@@ -21,7 +21,6 @@ import {AppsScriptFrontEnd, global, HELPERS, lazyLoadApp, toExport} from '../she
 
 import {Client, Granularity, RuleRange, TestClientArgs, TestClientInterface} from './helpers';
 import {AppsScriptFunctions} from '../types';
-import FilterCriteria = GoogleAppsScript.Spreadsheet.FilterCriteria;
 
 describe('Check globals', async () => {
   let frontend: FakeFrontEnd;
@@ -74,7 +73,7 @@ describe('Check globals', async () => {
   });
 });
 
-class FakeFrontEnd extends AppsScriptFrontEnd<TestClientInterface, Granularity, TestClientArgs> {
+class FakeFrontEnd extends AppsScriptFrontEnd<TestClientInterface, Granularity, TestClientArgs, FakeFrontEnd> {
   readonly calls: Record<AppsScriptFunctions, number> = {
     onOpen: 0,
     initializeSheets: 0,
