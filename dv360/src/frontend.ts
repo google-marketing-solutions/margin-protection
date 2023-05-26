@@ -34,9 +34,6 @@ const LABEL_RANGE = 'LABEL';
  */
 export const GENERAL_SETTINGS_SHEET = 'General/Settings';
 
-const AGENCY_ID = 'AGENCY_ID';
-const ADVERTISER_ID = 'ADVERTISER_ID';
-
 /**
  * A list of migrations with version as key and a migration script as the
  * value.

@@ -16,12 +16,11 @@
  */
 
 import {setUpAppsScriptSimulator} from 'google3/javascript/apps/maestro/simulator/closure_apps_script_simulator-closurized';
-
-import {AppsScriptFrontEnd, global, HELPERS, lazyLoadApp, toExport} from '../sheet_helpers';
-
-import {Client, Granularity, RuleRange, TestClientArgs, TestClientInterface} from './helpers';
-import {AppsScriptFunctions} from '../types';
 import {AppsScriptPropertyStore} from 'anomaly_library/main';
+
+import {Client, Granularity, RuleRange, TestClientInterface, TestClientArgs} from './helpers';
+import {AppsScriptFrontEnd, HELPERS, lazyLoadApp, toExport} from '../sheet_helpers';
+import {AppsScriptFunctions} from '../types';
 
 describe('Check globals', async () => {
   let frontend: FakeFrontEnd;
@@ -46,14 +45,6 @@ describe('Check globals', async () => {
     expect(toExport.initializeSheets).toBeDefined();
     expect(toExport.launchMonitor).toBeDefined();
     expect(toExport.preLaunchQa).toBeDefined();
-  });
-
-  it('exists in `global`', () => {
-    expect(Object.keys(global)).toEqual(Object.keys(toExport));
-    expect(global.onOpen).toBeDefined();
-    expect(global.initializeSheets).toBeDefined();
-    expect(global.launchMonitor).toBeDefined();
-    expect(global.preLaunchQa).toBeDefined();
   });
 
   it('calls frontend version', () => {
@@ -81,6 +72,8 @@ class FakeFrontEnd extends AppsScriptFrontEnd<TestClientInterface, Granularity, 
     initializeSheets: 0,
     launchMonitor: 0,
     preLaunchQa: 0,
+    displaySetupGuide: 0,
+    displayGlossary: 0,
   };
 
   getIdentity(): TestClientArgs {

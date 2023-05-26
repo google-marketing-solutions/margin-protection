@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-import {AppsScriptPropertyStore, sendEmailAlert} from 'anomaly_library/main';
+import {sendEmailAlert} from 'anomaly_library/main';
 import {addSettingWithDescription, AppsScriptFrontEnd, getOrCreateSheet, getTemplateSetting, RULE_SETTINGS_SHEET, toExport} from 'common/sheet_helpers';
 import {RuleRange} from 'sa360/src/client';
 import {ClientArgs, ClientInterface} from 'sa360/src/types';

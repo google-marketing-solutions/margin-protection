@@ -1,0 +1,62 @@
+<!--
+ Copyright 2023 Google LLC.
+
+ Licensed under the Apache License, Version 2.0 (the "License");
+ you may not use this file except in compliance with the License.
+ You may obtain a copy of the License at
+
+     http://www.apache.org/licenses/LICENSE-2.0
+
+ Unless required by applicable law or agreed to in writing, software
+ distributed under the License is distributed on an "AS IS" BASIS,
+ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ See the License for the specific language governing permissions and
+ limitations under the License.
+-->
+
+<!DOCTYPE html>
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/css/bootstrap.min.css" rel="stylesheet">
+<html lang="en">
+<head>
+  <base target="_top">
+</head>
+<h1>Glossary</h1>
+
+<h2 id="overview">Overview</h2>
+<h3>Pre-Launch QA</h3>
+<p>Before a campaign's flight start date, you can manually run Pre-Launch QA from the top menu
+  (<strong>SA360 Launch Monitor > Pre-Launch QA</strong>) from the top menu. You will receive a report
+  with any actionable items for all campaigns. You can modify the filters to find the details you
+  care about. By default, only anomalous values are shown.</p>
+
+<h3>Launch Monitor</h3>
+<p>The Launch Monitor runs hourly by default (this is a setting you can control). It will update a
+  sheet. Specify "CSV Back-up" under <strong>Launch Monitor Options</strong> if you want to store
+  your reports as a CSV automatically. They will be stored in Google Drive under a folder.</p>
+
+<h2 id="rules">Rules</h2>
+<? for (const rule of rules) { ?>
+  <h3><?= rule.name ?></h3>
+  <? if (Object.keys(rule.params).length) { ?>
+    <u>Parameters</u>
+    <ul>
+      <? for (const param of Object.values(rule.params)) { ?>
+        <li><?= param.label ?></li>
+      <? } ?>
+    </ul>
+  <? } ?>
+  <div>
+    <?= rule.description ?>
+  </div>
+  <hr />
+<? } ?>
+
+<style>
+  h2 {
+    border-bottom: 1px solid black;
+  }
+  h3 {
+    font-size: 1.1em;
+    padding-top: 0.5em;
+  }
+</style>

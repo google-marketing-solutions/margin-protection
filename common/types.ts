@@ -15,8 +15,9 @@
  * limitations under the License.
  */
 
-import {PropertyStore, RuleGetter, Values} from 'anomaly_library/main';
-import {AppsScriptFrontEnd} from 'common/sheet_helpers';
+import {Rule, RuleInstructions, RuleGetter, ThresholdRuleInstructions, Values} from 'anomaly_library/main';
+import {PropertyStore} from 'anomaly_library/main';
+import {AppsScriptFrontEnd} from './sheet_helpers';
 
 /**
  * A rule callback is created to enable efficient API calls.
@@ -25,7 +26,10 @@ import {AppsScriptFrontEnd} from 'common/sheet_helpers';
  * they enable efficient pooling of API resources.
  */
 export type Callback<Params extends Record<keyof Params, ParamDefinition>> =
-    () => Promise<{rule: RuleGetter; values: Values;}>&ThisType<Params>;
+    () => Promise<{
+      rule: RuleGetter;
+      values: Values;
+    }> & ThisType<Params>;
 
 /**
  * Provides a useful data structure to get campaign ID settings.
@@ -33,8 +37,7 @@ export type Callback<Params extends Record<keyof Params, ParamDefinition>> =
  * Defaults to the row with campaignId: 'default' if no campaign ID override is
  * set.
  */
-export interface SettingMapInterface<
-    P extends {[Property in keyof P]: P[keyof P]}> {
+export interface SettingMapInterface<P extends {[Property in keyof P]: P[keyof P]}> {
   getOrDefault(campaignId: string): P;
 }
 
@@ -47,17 +50,13 @@ export type Settings<Params> =
 /**
  * Defines a client object, which is responsible for wrapping.
  */
-export interface BaseClientInterface<
-    C extends BaseClientInterface<C, G, A>,
-              G extends RuleGranularity<G>, A extends BaseClientArgs<C, G, A>> {
+export interface BaseClientInterface<C extends BaseClientInterface<C, G, A>, G extends RuleGranularity<G>, A extends BaseClientArgs<C, G, A>> {
   readonly settings: A;
-  readonly ruleStore: {
-    [ruleName: string]: RuleExecutor<C, G, A, Record<string, ParamDefinition>>
-  };
+  readonly ruleStore:
+      {[ruleName: string]: RuleExecutor<C, G, A, Record<string, ParamDefinition>>};
   readonly properties: PropertyStore;
   getAllCampaigns(): Promise<RecordInfo[]>;
-  getRule(ruleName: string):
-      RuleExecutor<C, G, A, Record<string, ParamDefinition>>;
+  getRule(ruleName: string): RuleExecutor<C, G, A, Record<string, ParamDefinition>>;
   getUniqueKey(prefix: string): string;
   validate(): Promise<void>;
 
@@ -82,18 +81,16 @@ export interface ParamDefinition {
  * This includes any and all types of granularity for any and all products.
  * Use the granularity you'd like to appear on your settings page.
  */
-export type RuleGranularity<G> = {
-  [Property in keyof G]: G
-};
+export type RuleGranularity<G> = {[Property in keyof G]: G};
 
 /**
  * Actionable object to run a rule.
  */
-export interface RuleExecutor<C extends BaseClientInterface<C, G, A>,
-                                        G extends RuleGranularity<G>, A extends
-                                  BaseClientArgs<C, G, A>, P extends
-                                      Record<keyof P, ParamDefinition>> extends
-    RuleUtilities,
+export interface RuleExecutor<
+    C extends BaseClientInterface<C, G, A>,
+    G extends RuleGranularity<G>,
+    A extends BaseClientArgs<C, G, A>,
+    P extends Record<keyof P, ParamDefinition>> extends RuleUtilities,
     Omit<RuleDefinition<P, G>, 'callback'|'defaults'|'granularity'> {
   client: C;
   settings: Settings<Record<keyof P, string>>;
@@ -115,18 +112,20 @@ export interface RuleUtilities {
  * An executable rule.
  */
 export interface RuleExecutorClass<
-    C extends BaseClientInterface<C, G, A>, G extends
-        RuleGranularity<G>, A extends BaseClientArgs<C, G, A>, P extends
-            Record<keyof P, P[keyof P]> = Record<string, ParamDefinition>> {
-  new(client: C, settings: readonly string[][]): RuleExecutor<C, G, A, P>;
+    C extends BaseClientInterface<C, G, A>,
+    G extends RuleGranularity<G>,
+    A extends BaseClientArgs<C, G, A>,
+    P extends Record<keyof P, P[keyof P]> = Record<string, ParamDefinition>> {
+  new(client: C,
+      settings: readonly string[][]): RuleExecutor<C, G, A, P>;
   definition: RuleDefinition<P, G>;
 }
 
 /**
  * The type-enforced parameters required to create a rule with `newRule`.
  */
-export interface RuleDefinition<P extends Record<keyof P, ParamDefinition>,
-                                          G extends RuleGranularity<G>> {
+export interface RuleDefinition<
+    P extends Record<keyof P, ParamDefinition>, G extends RuleGranularity<G>> {
   name: string;
   callback: Callback<P>;
   granularity: G;
@@ -154,19 +153,22 @@ export interface RecordInfo {
 /**
  * Represents a client-specific set of client arguments to initialize a client.
  */
-export interface BaseClientArgs<
+export interface BaseClientArgs <
     C extends BaseClientInterface<C, G, A>,
-              G extends RuleGranularity<G>, A extends BaseClientArgs<C, G, A>> {
+    G extends RuleGranularity <G>,
+    A extends BaseClientArgs<C, G, A>> {
 }
 
 /**
  * A rule class that can instantiate a {@link RuleExecutor} object.
  */
 export interface RuleExecutorClass<
-    C extends BaseClientInterface<C, G, A>, G extends
-        RuleGranularity<G>, A extends BaseClientArgs<C, G, A>, P extends
-            Record<keyof P, P[keyof P]> = Record<string, ParamDefinition>> {
-  new(client: C, settings: readonly string[][]): RuleExecutor<C, G, A, P>;
+    C extends BaseClientInterface<C, G, A>,
+    G extends RuleGranularity<G>,
+    A extends BaseClientArgs<C, G, A>,
+    P extends Record<keyof P, P[keyof P]> = Record<string, ParamDefinition>> {
+  new(client: C,
+      settings: readonly string[][]): RuleExecutor<C, G, A, P>;
   definition: RuleDefinition<P, G>;
 }
 
@@ -184,8 +186,9 @@ export interface RuleExecutorClass<
  */
 export interface RuleStoreEntry<
     C extends BaseClientInterface<C, G, A>,
-              G extends RuleGranularity<G>, A extends BaseClientArgs<C, G, A>,
-                                                      P extends
+    G extends RuleGranularity<G>,
+    A extends BaseClientArgs<C, G, A>,
+    P extends
         Record<keyof ParamDefinition, ParamDefinition[keyof ParamDefinition]>> {
   /**
    * Contains a rule's metadata.
@@ -200,9 +203,7 @@ export interface RuleStoreEntry<
   settings: Settings<P>;
 }
 
-export interface RuleRangeInterface<
-    C extends BaseClientInterface<C, G, A>,
-              G extends RuleGranularity<G>, A extends BaseClientArgs<C, G, A>> {
+export interface RuleRangeInterface<C extends BaseClientInterface<C, G, A>, G extends RuleGranularity<G>, A extends BaseClientArgs<C, G, A>> {
   setRow(category: string, campaignId: string, column: string[]): void;
 
   /**
@@ -218,10 +219,7 @@ export interface RuleRangeInterface<
 
   getRule(ruleName: string): string[][];
   getRule(ruleName: string): string[][];
-  fillRuleValues<Params>(
-      rule: Pick<
-          RuleDefinition<Record<keyof Params, ParamDefinition>, G>,
-          'name'|'params'|'defaults'|'granularity'>): Promise<void>;
+  fillRuleValues<Params>(rule: Pick<RuleDefinition<Record<keyof Params, ParamDefinition>, G>, 'name'|'params'|'defaults'|'granularity'>): Promise<void>;
   getRows(granularity: G): Promise<RecordInfo[]>;
 }
 
@@ -247,14 +245,15 @@ export interface FrontEndArgs<
 /**
  * Parameters for a rule, with `this` methods from {@link RuleUtilities}.
  */
-export type RuleParams<C extends BaseClientInterface<C, G, A>,
-                                 G extends RuleGranularity<G>, A extends
-                           BaseClientArgs<C, G, A>,
-                           P extends Record<keyof P, ParamDefinition>> =
-    RuleDefinition<P, G>&ThisType<RuleExecutor<C, G, A, P>&RuleUtilities>;
+export type RuleParams<
+    C extends BaseClientInterface<C, G, A>,
+    G extends RuleGranularity<G>,
+    A extends BaseClientArgs<C, G, A>,
+    P extends Record<keyof P, ParamDefinition>> =
+    RuleDefinition<P, G>&
+    ThisType<RuleExecutor<C, G, A, P>&RuleUtilities>;
 
 /**
  * A list of available and required Apps Script functions for Launch Monitor.
  */
-export type AppsScriptFunctions =
-    'onOpen'|'initializeSheets'|'preLaunchQa'|'launchMonitor';
+export type AppsScriptFunctions = 'onOpen'|'initializeSheets'|'preLaunchQa'|'launchMonitor'|'displaySetupGuide'|'displayGlossary';

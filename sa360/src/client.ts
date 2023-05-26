@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-import {PropertyStore, Rule, RuleInstructions} from 'anomaly_library/main';
+import {PropertyStore} from 'anomaly_library/main';
 import {AbstractRuleRange, newRuleBuilder} from 'common/sheet_helpers';
 import {ParamDefinition, RecordInfo, RuleExecutor, RuleExecutorClass, RuleParams} from 'common/types';
 import {AdGroupReport, AdGroupTargetReport, CampaignReport, CampaignTargetReport} from 'sa360/src/api';

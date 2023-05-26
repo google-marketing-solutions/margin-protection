@@ -22,7 +22,7 @@ import {AppsScriptFunctions, BaseClientArgs, BaseClientInterface, FrontEndArgs, 
 const FOLDER = 'application/vnd.google-apps.folder';
 type ScriptFunction<F> = (properties: PropertyStore) => F;
 type ScriptEntryPoints =
-    'onOpen'|'initializeSheets'|'preLaunchQa'|'launchMonitor';
+    'onOpen'|'initializeSheets'|'preLaunchQa'|'launchMonitor'|'displaySetupGuide'|'displayGlossary';
 
 /**
  * The name of the rule settings sheet (before granularity).
@@ -306,7 +306,7 @@ export const HELPERS = {
     const criteria = SpreadsheetApp.newFilterCriteria().whenTextEqualTo('TRUE');
     const filter = range.getSheet().getFilter();
     filter && filter.remove();
-    range.createFilter().setColumnFilterCriteria(4, criteria.build());
+    range.createFilter().setColumnFilterCriteria(column, criteria.build());
   },
 };
 
@@ -356,11 +356,17 @@ export abstract class AppsScriptFrontEnd<
    * cadence.
    */
   async onOpen() {
-    const subMenus: Array<{name: string, functionName: string}> = [
-      {name: 'Sync Campaigns', functionName: 'initializeSheets'},
-      {name: 'Pre-Launch QA', functionName: 'preLaunchQa'},
-    ];
-    SpreadsheetApp.getActive().addMenu('SA360 Launch Monitor', subMenus);
+    SpreadsheetApp.getUi()
+        .createMenu('SA360 Launch Monitor')
+        .addItem('Sync Campaigns', 'initializeSheets')
+        .addItem('Pre-Launch QA', 'preLaunchQa')
+        .addSeparator()
+        .addSubMenu(
+            SpreadsheetApp.getUi().createMenu('Guides')
+                .addItem('Show Setup Guide', 'displaySetupGuide')
+                .addItem('Show Glossary', 'displayGlossary')
+          )
+        .addToUi();
   }
 
   /**
@@ -520,6 +526,20 @@ export abstract class AppsScriptFrontEnd<
     this.maybeSendEmailAlert();
   }
 
+  displayGlossary() {
+    const template = HtmlService.createTemplateFromFile('html/glossary');
+    template['rules'] = this.getFrontEndDefinitions();
+    SpreadsheetApp.getUi().showSidebar(template.evaluate());
+  }
+
+  displaySetupGuide() {
+    SpreadsheetApp.getUi().showSidebar(HtmlService.createHtmlOutputFromFile('html/guide'));
+  }
+
+  getFrontEndDefinitions() {
+    return this.rules.map(rule => rule.definition);
+  }
+
   /**
    * Given an array of rules, returns a 2-d array representation.
    */
@@ -606,10 +626,14 @@ export abstract class AppsScriptFrontEnd<
   }
 
   populateRuleResultsInSheets() {
+    const ruleSheets: string[] = [];
     for (const rule of Object.values(this.client.ruleStore)) {
-      const sheet = getOrCreateSheet(`${rule.name} - Results`);
+      const ruleSheet = `${rule.name} - Results`;
+      ruleSheets.push(rule.name);
+      const sheet = getOrCreateSheet(ruleSheet);
       const uniqueKey = rule.getUniqueKey();
-      const values = Object.values(getRule(uniqueKey, this.injectedArgs.properties).getValues());
+      const values = Object.values(
+          getRule(uniqueKey, this.injectedArgs.properties).getValues());
       if (values.length < 1) {
         console.warn(`No rules for ${uniqueKey}`);
         continue;
@@ -628,11 +652,21 @@ export abstract class AppsScriptFrontEnd<
         sheet.getRange(2, 1, matrix.length - 1, 1)
             .setNumberFormat(rule.valueFormat.numberFormat);
       }
+      HELPERS.applyAnomalyFilter(
+          sheet.getRange(2, 1, matrix.length - 1, matrix[0].length), 2);
+
       if (getTemplateSetting('LAUNCH_MONITOR_OPTION').getValue() ===
           'CSV Back-Up') {
         this.exportAsCsv(rule.name, matrix);
       }
     }
+    getOrCreateSheet('Summary')
+        .getRange(1, 1, ruleSheets.length, 2)
+        .setValues(ruleSheets.map(
+            rule => [
+              rule,
+              `=COUNTIF(INDIRECT("'" &A2 & " - Results'!B:B"), TRUE)`,
+            ]));
   }
 
   getRangeByName(name: string) {
@@ -797,6 +831,12 @@ load<C extends BaseClientInterface<C, G, A>, G extends
         return frontend.preLaunchQa();
       case 'launchMonitor':
         return frontend.launchMonitor();
+      case 'displaySetupGuide':
+        frontend.displaySetupGuide();
+        return;
+      case 'displayGlossary':
+        frontend.displayGlossary();
+        return;
     }
   }
 }
@@ -837,6 +877,8 @@ lazyLoadApp<
   toExport.initializeSheets = load<C, G, A, F>(binders, 'initializeSheets');
   toExport.preLaunchQa = load<C, G, A, F>(binders, 'preLaunchQa');
   toExport.launchMonitor = load<C, G, A, F>(binders, 'launchMonitor');
+  toExport.displayGlossary = load<C, G, A, F>(binders, 'displayGlossary');
+  toExport.displaySetupGuide = load<C, G, A, F>(binders, 'displaySetupGuide');
 
   return binders;
 }
@@ -872,6 +914,8 @@ export const toExport: Record<AppsScriptFunctions, Function> = {
   initializeSheets: () => {},
   preLaunchQa: () => {},
   launchMonitor: () => {},
+  displayGlossary: () => {},
+  displaySetupGuide: () => {},
 };
 
 /**
@@ -892,14 +936,3 @@ export function sortMigrations(ver1: string, ver2: string) {
   }
   return difference;
 }
-
-/**
- * A list of modules we need in the global scope for Apps Script to function.
- *
- * Used by webpack for exporting.
- */
-export const global: Partial<typeof toExport> = {};
-global.onOpen = toExport.onOpen;
-global.initializeSheets = toExport.initializeSheets;
-global.preLaunchQa = toExport.preLaunchQa;
-global.launchMonitor = toExport.launchMonitor;

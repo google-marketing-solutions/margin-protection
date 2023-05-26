@@ -33,7 +33,7 @@ import {PropertyStore} from 'anomaly_library/main';
  * This is used to manage migrations from one version of Launch Monitor to
  * another.
  */
-export const CURRENT_SHEET_VERSION = '1.3';
+export const CURRENT_SHEET_VERSION = '1.5';
 
 
 /**
@@ -70,3 +70,5 @@ global.onOpen = toExport.onOpen;
 global.initializeSheets = toExport.initializeSheets;
 global.launchMonitor = toExport.launchMonitor;
 global.preLaunchQa = toExport.preLaunchQa;
+global.displayGlossary = toExport.displayGlossary;
+global.displaySetupGuide = toExport.displaySetupGuide;
