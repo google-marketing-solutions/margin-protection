@@ -725,6 +725,7 @@ newRuleBuilder<C extends BaseClientInterface<C, G, A>, G extends
       ruleDefinition: RuleParams<C, G, A, P>): RuleExecutorClass<C, G, A, P> {
     const ruleClass = class implements RuleExecutor<C, G, A, P> {
       readonly uniqueKeyPrefix: string = '';
+      readonly description = ruleDefinition.description;
       readonly settings: Settings<Record<keyof P, string>>;
       readonly name: string = ruleDefinition.name;
       readonly params = ruleDefinition.params;

@@ -56,6 +56,13 @@ const RULES = {
  */
 export const geoTargetRule = newRule({
   name: 'Geo Targeting',
+  description: `Checks to see if a comma separated list of geo targets is set on
+    a campaign. If in the "Geo Targets" list, an anomaly will be registered if
+    the geo target is not set in the campaign target settings. Likewise, if the
+    geo is in the "Excluded Geo Targets" list, an anomaly will be registered
+    if the geo target is not explicitly excluded. Included and excluded targets
+    must be partial matches of canonical names in
+    <a href="https://developers.google.com/google-ads/api/reference/data/geotargets">this list.</a>`,
   valueFormat: {
     label: 'Geo Targets Set?',
   },
@@ -138,6 +145,11 @@ export const geoTargetRule = newRule({
  */
 export const budgetPacingPercentageRule = newRule({
   name: 'Budget Pacing by Percent Ahead',
+  description: `For an IO, checks to see if each running budget segment is
+    pacing above or behind using the following equation:
+    (Current Spend / Time Elapsed from Flight Start) / (Budget Spend / Total Planned Flight Time) - 1.
+    If spend is pacing behind at 85% of plan, then the total will be -0.15. If
+    the spend is pacing at 115% of plan, then the total will be 1.15.`,
   valueFormat: {
     label: '% Ahead of Budget',
     numberFormat: '0.00%',
@@ -280,6 +292,13 @@ function getPacingVariables<P extends Record<'min'|'max', string>>(
  */
 export const budgetPacingDaysAheadRule = newRule({
   name: 'Budget Pacing by Days Ahead/Behind',
+  description: `<p>Counts the number of days ahead or behind an IO segment is vs.
+    plan. It uses the following formula: <code>((Budget / Plan Days) / 
+    (Spend / Time Elapsed Since Duration Start)) * Time Elapsed Since Duration Start 
+    - Time Elapsed Since Duration Start</code>.</p>
+    <p>If budget is $100 for a planned 10 days total, and $50 have been spent on
+    day one, then <code>(50/1) / (100/10) * 1 - 1 = 50 / 10 * 1 - 1 = 5 * 1 - 1 
+    = 4</code> days ahead of budget.</p>`,
   valueFormat: {
     label: 'Days Ahead/Behind',
     numberFormat: '0.0',
@@ -395,6 +414,9 @@ export const budgetPacingDaysAheadRule = newRule({
  */
 export const dailyBudgetRule = newRule({
   name: 'Budget Per Day',
+  description: `The expected daily budget of a campaign. This is a pre-launch
+    rule. It's used to ensure that the set budget and flight have the desired
+    daily output, ensuring there are no costly flight duration/budget mismatches.`,
   valueFormat: {
     label: 'Daily Budget',
     numberFormat: '0.00',
@@ -507,6 +529,10 @@ function calculateOuterBounds(
  */
 export const impressionsByGeoTarget = newRule({
   name: 'Impressions by Geo Target',
+  description: `For any insertion order, ensures that there is a maximum of 
+    X% impressions from outside of the country (2-digit country code
+    from <a href="https://developers.google.com/google-ads/api/reference/data/geotargets">
+    This list</a>)`,
   valueFormat: {
     label: '% Invalid Impressions',
     numberFormat: '0%',

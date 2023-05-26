@@ -51,6 +51,7 @@ newRuleBuilder<
       readonly uniqueKeyPrefix: string = '';
       readonly settings: Settings<Record<keyof P, string>>;
       readonly name: string = ruleDefinition.name;
+      readonly description: string = ruleDefinition.description;
       readonly params = ruleDefinition.params;
       readonly helper = ruleDefinition.helper ?? '';
       // Auto-added to unblock TS5.0 migration

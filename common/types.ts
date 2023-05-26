@@ -132,6 +132,10 @@ export interface RuleDefinition<P extends Record<keyof P, ParamDefinition>,
   granularity: G;
   params: {[Property in keyof P]: ParamDefinition};
   uniqueKeyPrefix: string;
+  /**
+   * The description is exported to a
+   */
+  description: string;
   defaults: {[Property in keyof P]: string};
   helper?: string;
   /** The name of the "value" column in the anomaly detector, for reporting. */
