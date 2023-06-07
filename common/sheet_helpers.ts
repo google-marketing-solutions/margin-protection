@@ -773,6 +773,9 @@ newRuleBuilder<C extends BaseClientInterface<C, G, A>, G extends
       // your version of 'tslib'.
       readonly granularity: RuleGranularity = ruleDefinition.granularity;
       readonly valueFormat = ruleDefinition.valueFormat;
+// TODO: go/ts50upgrade - Auto-added to unblock TS5.0 migration
+//   TS2343: This syntax requires an imported helper named '__setFunctionName' which does not exist in 'tslib'. Consider upgrading your version of 'tslib'.
+// @ts-ignore
       static definition = ruleDefinition;
 
       constructor(readonly client: C, settingsArray: readonly string[][]) {
