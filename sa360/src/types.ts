@@ -36,6 +36,12 @@ export interface ClientInterface extends BaseClientInterface<ClientInterface, Ru
 export interface ClientArgs extends BaseClientArgs<ClientInterface, RuleGranularity, ClientArgs> {
   agencyId: string;
   advertiserId?: string;
+
+  /**
+   * False = incremental pull
+   * True = pull everything
+   */
+  fullFetch?: boolean;
 }
 
 export enum RuleGranularity {

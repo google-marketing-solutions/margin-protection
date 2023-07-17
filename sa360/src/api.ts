@@ -79,6 +79,7 @@ export type ReportRecord<Index extends AllowedColumns> = {
 interface ApiParams {
   agencyId: string;
   advertiserId?: string;
+  fullFetch?: boolean;
 }
 
 class Report<T extends AllowedColumns> {
@@ -186,7 +187,7 @@ export abstract class ReportBuilder<Columns extends AllowedColumns> {
 
   constructor(protected readonly params: ApiParams) {}
 
-  getFilters(): undefined | Filter[] {
+  protected getFilters(): undefined | Filter[] {
     return;
   }
 
@@ -336,7 +337,7 @@ export abstract class ReportBuilder<Columns extends AllowedColumns> {
     const advertiserId = this.params.advertiserId ?
         {advertiserId: this.params.advertiserId} :
         {};
-    const filters = this.getFilters() ?? {};
+    const filters = this.getFilters() ?? [];
     const payload = JSON.stringify({
       reportScope: {
         agencyId: this.params.agencyId,
@@ -360,9 +361,19 @@ export abstract class ReportBuilder<Columns extends AllowedColumns> {
   protected getTimeRange(): SearchAdsTimeRange {
     const time = HELPERS.getLastReportPull() || new Date().getTime() - ONE_HOUR;
 
-    return {
-      changedAttributesSinceTimestamp: new Date(time - TEN_MINUTES).toISOString(),
-    };
+    if (!this.params.fullFetch) {
+      return {
+        changedAttributesSinceTimestamp:
+            new Date(time - TEN_MINUTES).toISOString(),
+      };
+    } else {
+      const date = new Date();
+      const dateString = `${date.getFullYear()}-${date.getUTCMonth() + 1}-${date.getDate()}`;
+      return {
+        startDate: dateString,
+        endDate: dateString,
+      };
+    }
   }
 }
 
@@ -421,6 +432,16 @@ class AdGroupTargetReportBuilder extends
 
   protected override getReportType() {
     return 'adGroupTarget';
+  }
+
+  protected override getFilters() {
+    return [
+      {
+        column: { columnName: 'campaignStatus' },
+        operator: 'equals' as const,
+        values: ['Active'],
+      }
+    ]
   }
 
   protected override mutateRow(

@@ -18,20 +18,35 @@
 import {setUpAppsScriptSimulator} from 'google3/javascript/apps/maestro/simulator/closure_apps_script_simulator-closurized';
 import {AppsScriptPropertyStore} from 'anomaly_library/main';
 
-import {Client, Granularity, RuleRange, TestClientInterface, TestClientArgs} from './helpers';
-import {AppsScriptFrontEnd, HELPERS, lazyLoadApp, toExport} from '../sheet_helpers';
+import {
+  AppsScriptFrontEnd,
+  HELPERS,
+  lazyLoadApp,
+  toExport,
+} from '../sheet_helpers';
 import {AppsScriptFunctions} from '../types';
+import {
+  Client,
+  Granularity,
+  RuleRange,
+  TestClientArgs,
+  TestClientInterface,
+} from './helpers';
 
 describe('Check globals', async () => {
   let frontend: FakeFrontEnd;
 
   beforeEach(() => {
     setUp();
-    frontend = lazyLoadApp<TestClientInterface, Granularity, TestClientArgs, FakeFrontEnd>((properties) => {
+    frontend = lazyLoadApp<
+      TestClientInterface,
+      Granularity,
+      TestClientArgs,
+      FakeFrontEnd
+    >((properties) => {
       return new FakeFrontEnd({
         ruleRangeClass: RuleRange,
-        rules: [
-        ],
+        rules: [],
         version: '1.0',
         clientClass: Client,
         migrations: {},
@@ -66,7 +81,12 @@ describe('Check globals', async () => {
   });
 });
 
-class FakeFrontEnd extends AppsScriptFrontEnd<TestClientInterface, Granularity, TestClientArgs, FakeFrontEnd> {
+class FakeFrontEnd extends AppsScriptFrontEnd<
+  TestClientInterface,
+  Granularity,
+  TestClientArgs,
+  FakeFrontEnd
+> {
   readonly calls: Record<AppsScriptFunctions, number> = {
     onOpen: 0,
     initializeSheets: 0,
@@ -115,7 +135,7 @@ function scaffoldSheetWithNamedRanges() {
     ['EMAIL_LIST', ''],
     ['LABEL', 'Acme Inc.'],
   ].entries()) {
-    const range = SpreadsheetApp.getActive().getRange(`$A$${i+1}`);
+    const range = SpreadsheetApp.getActive().getRange(`$A$${i + 1}`);
     SpreadsheetApp.getActive().setNamedRange(constName, range);
     SpreadsheetApp.getActive().getRangeByName(constName)!.setValue(value);
   }
@@ -132,13 +152,26 @@ describe('Test migration order', () => {
     '2.2.0': () => list.push('2.2.0'),
   };
 
-  function setFrontEnd({expectedVersion, currentVersion}: {expectedVersion: string, currentVersion: string}) {
-    PropertiesService.getScriptProperties().setProperty('sheet_version', currentVersion);
-    return lazyLoadApp<TestClientInterface, Granularity, TestClientArgs, FakeFrontEnd>((properties) => {
+  function setFrontEnd({
+    expectedVersion,
+    currentVersion,
+  }: {
+    expectedVersion: string;
+    currentVersion: string;
+  }) {
+    PropertiesService.getScriptProperties().setProperty(
+      'sheet_version',
+      currentVersion,
+    );
+    return lazyLoadApp<
+      TestClientInterface,
+      Granularity,
+      TestClientArgs,
+      FakeFrontEnd
+    >((properties) => {
       return new FakeFrontEnd({
         ruleRangeClass: RuleRange,
-        rules: [
-        ],
+        rules: [],
         version: expectedVersion,
         clientClass: Client,
         migrations,
@@ -156,15 +189,21 @@ describe('Test migration order', () => {
   });
 
   it('migrates all', () => {
-    const frontend = setFrontEnd({expectedVersion: '5.0', currentVersion: '1.0'});
+    const frontend = setFrontEnd({
+      expectedVersion: '5.0',
+      currentVersion: '1.0',
+    });
     frontend.migrate();
-    expect(list).toEqual(['2.0', '2.1.0', '2.1.4', '2.2.0', '3.0'])
+    expect(list).toEqual(['2.0', '2.1.0', '2.1.4', '2.2.0', '3.0']);
   });
 
   it('partially migrates', () => {
-    const frontend = setFrontEnd({expectedVersion: '5.0', currentVersion: '2.1.0'});
+    const frontend = setFrontEnd({
+      expectedVersion: '5.0',
+      currentVersion: '2.1.0',
+    });
     frontend.migrate();
-    expect(list).toEqual(['2.1.4', '2.2.0', '3.0'])
+    expect(list).toEqual(['2.1.4', '2.2.0', '3.0']);
   });
 
   it('runs when initializeSheets runs', async () => {
@@ -181,7 +220,6 @@ describe('Test migration order', () => {
   it('does not run migrations if version is up-to-date', () => {
     const frontend = setFrontEnd({expectedVersion: CURRENT_SHEET_VERSION, currentVersion: '1.0'});
     // NOTE - do not change this test. Change `CURRENT_SHEET_VERSION` instead.
-    const v = CURRENT_SHEET_VERSION;
     PropertiesService.getScriptProperties().setProperty(
         'sheet_version', String(CURRENT_SHEET_VERSION));
     const numberRun = frontend.migrate();
@@ -189,7 +227,10 @@ describe('Test migration order', () => {
   });
 
   it('migrates only to specified version cap', () => {
-    const frontend = setFrontEnd({expectedVersion: '2.1.0', currentVersion: '2.1.0'});
+    const frontend = setFrontEnd({
+      expectedVersion: '2.1.0',
+      currentVersion: '2.1.0',
+    });
     const numberOfMigrations = frontend.migrate();
     expect(list).toEqual([]);
     expect(numberOfMigrations).toEqual(0);

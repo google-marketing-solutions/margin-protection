@@ -37,7 +37,7 @@ import {migrations, SearchAdsFrontEnd} from './frontend';
  * This is used to manage migrations from one version of Launch Monitor to
  * another.
  */
-export const CURRENT_SHEET_VERSION = '1.5';
+export const CURRENT_SHEET_VERSION = '2.0';
 
 /**
  * Generate a front-end object for lazy loading.

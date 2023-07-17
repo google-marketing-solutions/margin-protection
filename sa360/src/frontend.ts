@@ -16,9 +16,10 @@
  */
 
 import {AppsScriptPropertyStore, sendEmailAlert} from 'anomaly_library/main';
-import {addSettingWithDescription, AppsScriptFrontEnd, getOrCreateSheet, getTemplateSetting, RULE_SETTINGS_SHEET, toExport} from 'common/sheet_helpers';
+import {addSettingWithDescription, AppsScriptFrontEnd, getOrCreateSheet, getTemplateSetting, HELPERS, RULE_SETTINGS_SHEET} from 'common/sheet_helpers';
 import {RuleRange} from 'sa360/src/client';
 import {ClientArgs, ClientInterface} from 'sa360/src/types';
+import {RuleExecutor, ParamDefinition} from 'common/types';
 
 import {RuleGranularity} from './types';
 
@@ -39,12 +40,14 @@ export const EMAIL_LIST_RANGE = 'EMAIL_LIST';
  */
 export const LABEL_RANGE = 'LABEL';
 const DRIVE_ID_RANGE = 'DRIVE_ID';
+const FULL_FETCH_RANGE = 'FULL_FETCH';
 
 /**
  * A list of migrations with version as key and a migration script as the
  * value.
  */
-export const migrations: Record<string, (frontend: SearchAdsFrontEnd) => void> = {
+export const migrations: Record<
+    string, (frontend: SearchAdsFrontEnd) => void> = {
   '1.1': (frontend) => {
     const active = SpreadsheetApp.getActive();
     const ruleSettingsSheet = active.getSheetByName(RULE_SETTINGS_SHEET);
@@ -142,10 +145,27 @@ export const migrations: Record<string, (frontend: SearchAdsFrontEnd) => void> =
     }
   },
   '2.0': () => {
+    if (!SpreadsheetApp.getActive().getRangeByName(FULL_FETCH_RANGE)) {
+      return;
+    }
     const properties = new AppsScriptPropertyStore();
     Object.entries(properties.getProperties()).forEach(([k, v]) => {
-      properties.setProperty(k, JSON.stringify({values: JSON.parse(v), updated: new Date(), }));
+      properties.setProperty(k, JSON.stringify({
+        values: JSON.parse(v),
+        updated: new Date(),
+      }));
     });
+    const sheet = getOrCreateSheet('General/Settings');
+    sheet.getRange('A8:C8').insertCells(
+        SpreadsheetApp.Dimension.ROWS);
+    addSettingWithDescription(sheet, 'A8', [
+      'Make next report a full run?',
+      'Full runs are slower then incremental reports, but should always be run ' +
+      'the first time to populate rules. This will get manually set back to ' +
+      'FALSE after a run.',
+    ]);
+    sheet.getRange('B8:C8').setValues([['TRUE', '']]).merge();
+    SpreadsheetApp.getActive().setNamedRange(FULL_FETCH_RANGE, sheet.getRange('B8'));
   }
 };
 
@@ -161,12 +181,14 @@ export class SearchAdsFrontEnd extends
     }
     const agencyId = sheet.getRangeByName(AGENCY_ID);
     const advertiserId = sheet.getRangeByName(ADVERTISER_ID);
+    const fullFetch = sheet.getRangeByName(FULL_FETCH_RANGE);
     if (!agencyId) {
       return null;
     }
     return {
       agencyId: agencyId.getValue(),
       advertiserId: advertiserId?.getValue(),
+      fullFetch: fullFetch?.getValue(),
     };
   }
 
@@ -187,5 +209,16 @@ export class SearchAdsFrontEnd extends
           to,
           subject: `Anomalies found for ${label}`,
         });
+  }
+
+  override async preLaunchQa() {
+    this.client.settings.fullFetch = true;
+    await super.preLaunchQa();
+  }
+  override saveSettingsBackToSheets(
+      rules: Array<RuleExecutor<ClientInterface, RuleGranularity, ClientArgs, Record<string, ParamDefinition>>>) {
+    super.saveSettingsBackToSheets(rules);
+    getTemplateSetting(FULL_FETCH_RANGE).setValue('FALSE');
+    this.client.settings.fullFetch = false;
   }
 }

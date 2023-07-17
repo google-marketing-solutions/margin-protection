@@ -485,6 +485,7 @@ export abstract class AppsScriptFrontEnd<
    * Runs rules for all campaigns/insertion orders and returns a scorecard.
    */
   async preLaunchQa() {
+    type Rule = RuleExecutor<C, G, A, Record<string, ParamDefinition>>;
     const identity = this.getIdentity();
     if (!identity) {
       throw new Error(
@@ -493,22 +494,23 @@ export abstract class AppsScriptFrontEnd<
 
     const report: {[rule: string]: {[campaignId: string]: Value}} = {};
     await this.initializeRules();
-    const thresholds: Array<[string, Promise<{values: Values}>]> =
+    const thresholds: Array<[Rule, Promise<{values: Values}>]> =
         Object.values(this.client.ruleStore).map((rule) => {
-          return [rule.name, rule.run()];
+          return [rule, rule.run()];
         });
 
-    for (const [ruleName, threshold] of thresholds) {
+    const rules: Rule[] = [];
+    for (const [rule, threshold] of thresholds) {
       const {values} = await threshold;
-
+      rules.push(rule);
       for (const value of Object.values(values)) {
         const fieldKey =
             Object.entries(value.fields ?? [['', 'all']])
                 .map(([key, value]) => key ? `${key}: ${value}` : '')
                 .join(', ');
-        report[ruleName] = report[ruleName] || {};
+        report[rule.name] = report[rule.name] || {};
         // overwrite with the latest `Value` until there's nothing left.
-        report[ruleName][fieldKey] = value;
+        report[rule.name][fieldKey] = value;
       }
     }
 
@@ -772,7 +774,7 @@ export abstract class AppsScriptFrontEnd<
   }
 
   abstract maybeSendEmailAlert(): void;
-  private saveSettingsBackToSheets(
+  protected saveSettingsBackToSheets(
       rules: Array<RuleExecutor<C, G, A, Record<string, ParamDefinition>>>) {
     const ranges = new Map<G, RuleRangeInterface<C, G, A>>();
 

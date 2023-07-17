@@ -15,13 +15,27 @@
  * limitations under the License.
  */
 
-import {FakePropertyStore, mockAppsScript} from 'anomaly_library/testing/mock_apps_script';
+import {
+  FakePropertyStore,
+  mockAppsScript,
+} from 'anomaly_library/testing/mock_apps_script';
 import {ParamDefinition} from 'common/types';
 
-import {getOrCreateSheet, HELPERS, SettingMap, sortMigrations, transformToParamValues} from '../sheet_helpers';
+import {
+  getOrCreateSheet,
+  HELPERS,
+  SettingMap,
+  sortMigrations,
+  transformToParamValues,
+} from '../sheet_helpers';
 import {RuleExecutorClass} from '../types';
 
-import {Granularity, RuleRange, TestClientArgs, TestClientInterface} from './helpers';
+import {
+  Granularity,
+  RuleRange,
+  TestClientArgs,
+  TestClientInterface,
+} from './helpers';
 
 describe('2-D array', () => {
   let array2d: string[][];
@@ -36,15 +50,18 @@ describe('2-D array', () => {
   });
 
   it('transforms into a param', () => {
-    expect(transformToParamValues(array2d, params)).toEqual(new SettingMap([
-      ['1', {rule1: 'A', rule2: 'B'}],
-      ['2', {rule1: 'C', rule2: 'D'}],
-    ]));
+    expect(transformToParamValues(array2d, params)).toEqual(
+      new SettingMap([
+        ['1', {rule1: 'A', rule2: 'B'}],
+        ['2', {rule1: 'C', rule2: 'D'}],
+      ]),
+    );
   });
 
   it('triggers an error if empty', () => {
     const error = new Error(
-        'Expected a grid with row and column headers of at least size 2');
+      'Expected a grid with row and column headers of at least size 2',
+    );
     expect(() => transformToParamValues([], params)).toThrow(error);
     expect(() => transformToParamValues([[]], params)).toThrow(error);
     expect(() => transformToParamValues([['']], params)).toThrow(error);
@@ -57,32 +74,50 @@ describe('Rule Settings helper functions', () => {
   const client = generateTestClient({id: '1'});
   beforeEach(() => {
     rules = new RuleRange(
+      [
+        ['', '', 'Category A', '', 'Category B', '', '', 'Category C'],
         [
-          ['', '', 'Category A', '', 'Category B', '', '', 'Category C'],
-          [
-            'id', 'name', 'Header 1', 'Header 2', 'Header 3', 'Header 4',
-            'Header 5', 'Header 6'
-          ],
-          ['1', 'one', 'Col 1', 'Col 2', 'Col 3', 'Col 4', 'Col 5', 'Col 6'],
+          'id',
+          'name',
+          'Header 1',
+          'Header 2',
+          'Header 3',
+          'Header 4',
+          'Header 5',
+          'Header 6',
         ],
-        client, ['id']);
+        ['1', 'one', 'Col 1', 'Col 2', 'Col 3', 'Col 4', 'Col 5', 'Col 6'],
+      ],
+      client,
+      ['id'],
+    );
     for (const rule of ['', 'Category A', 'Category B', 'Category C']) {
       // getValues() expects a rule to be in the ruleStore for the helper value.
-      client.ruleStore[rule] = {helper: '', granularity: 'default'} as unknown as
-          typeof client.ruleStore[keyof typeof client.ruleStore];
+      client.ruleStore[rule] = {
+        helper: '',
+        granularity: 'default',
+      } as unknown as (typeof client.ruleStore)[keyof typeof client.ruleStore];
     }
   });
 
   it('break down a settings sheet into the correct categories', () => {
-    expect((rules as unknown as {rules: Record<string, string[][]>}).rules)
-        .toEqual({
-          'none': [['id', 'name'], ['1', 'one']],
-          'Category A': [['Header 1', 'Header 2'], ['Col 1', 'Col 2']],
-          'Category B': [
-            ['Header 3', 'Header 4', 'Header 5'], ['Col 3', 'Col 4', 'Col 5']
-          ],
-          'Category C': [['Header 6'], ['Col 6']],
-        });
+    expect(
+      (rules as unknown as {rules: Record<string, string[][]>}).rules,
+    ).toEqual({
+      'none': [
+        ['id', 'name'],
+        ['1', 'one'],
+      ],
+      'Category A': [
+        ['Header 1', 'Header 2'],
+        ['Col 1', 'Col 2'],
+      ],
+      'Category B': [
+        ['Header 3', 'Header 4', 'Header 5'],
+        ['Col 3', 'Col 4', 'Col 5'],
+      ],
+      'Category C': [['Header 6'], ['Col 6']],
+    });
   });
 
   it('combines categories back into a settings sheet', () => {
@@ -97,10 +132,19 @@ describe('Rule Settings helper functions', () => {
     rules.writeBack(Granularity.DEFAULT);
     const range = getOrCreateSheet(`Rule Settings - default`).getDataRange();
     expect(range.getValues()).toEqual([
-        ['', '', 'Category A', '', 'Category B', '', '', 'Category C'],
-        ['', '', '', '', '', '', '', ''],
-        ['id', 'name', 'Header 1', 'Header 2', 'Header 3', 'Header 4', 'Header 5', 'Header 6'],
-        ['1', 'one', 'Col 1', 'Col 2', 'Col 3', 'Col 4', 'Col 5', 'Col 6'],
+      ['', '', 'Category A', '', 'Category B', '', '', 'Category C'],
+      ['', '', '', '', '', '', '', ''],
+      [
+        'id',
+        'name',
+        'Header 1',
+        'Header 2',
+        'Header 3',
+        'Header 4',
+        'Header 5',
+        'Header 6',
+      ],
+      ['1', 'one', 'Col 1', 'Col 2', 'Col 3', 'Col 4', 'Col 5', 'Col 6'],
     ]);
   });
 });
@@ -131,29 +175,37 @@ describe('SettingMap#getOrDefault', () => {
   });
 
   it('returns blank when default is undefined and value is blank', () => {
-    const settingMap = new SettingMap([
-      ['1', {rule1: ''}],
-    ]);
+    const settingMap = new SettingMap([['1', {rule1: ''}]]);
     expect(settingMap.getOrDefault('1').rule1).toEqual('');
   });
 });
 
 describe('sortMigrations', () => {
   it('sorts migrations as expected', () => {
-    expect(
-        ['0.6', '1.2', '1.0'].sort(sortMigrations)
-    ).toEqual(['0.6', '1.0', '1.2']);
+    expect(['0.6', '1.2', '1.0'].sort(sortMigrations)).toEqual([
+      '0.6',
+      '1.0',
+      '1.2',
+    ]);
   });
 
   it('manages incremental versions', () => {
-    expect(
-        ['0.6.1', '0.6', '1.0'].sort(sortMigrations)
-    ).toEqual(['0.6', '0.6.1', '1.0']);
+    expect(['0.6.1', '0.6', '1.0'].sort(sortMigrations)).toEqual([
+      '0.6',
+      '0.6.1',
+      '1.0',
+    ]);
   });
 
   it('works with objects', () => {
-    expect(Object.entries({'0.1': 'b', '0.0.1': 'a'}).sort((e1, e2) => sortMigrations(e1[0], e2[0])))
-        .toEqual([['0.0.1', 'a'], ['0.1', 'b']]);
+    expect(
+      Object.entries({'0.1': 'b', '0.0.1': 'a'}).sort((e1, e2) =>
+        sortMigrations(e1[0], e2[0]),
+      ),
+    ).toEqual([
+      ['0.0.1', 'a'],
+      ['0.1', 'b'],
+    ]);
   });
 });
 
@@ -165,9 +217,11 @@ describe('test HELPERS', () => {
   it('saveLastReportPull', () => {
     HELPERS.saveLastReportPull(1);
     expect(CacheService.getScriptCache().get('scriptPull')).toEqual('1');
-    const expirationInSeconds = (CacheService.getScriptCache() as unknown as {
-                                  expirationInSeconds: number | undefined
-                                }).expirationInSeconds;
+    const expirationInSeconds = (
+      CacheService.getScriptCache() as unknown as {
+        expirationInSeconds: number | undefined;
+      }
+    ).expirationInSeconds;
     expect(expirationInSeconds).toBeUndefined();
   });
 
@@ -190,7 +244,14 @@ function generateTestClient(params: {id?: string}): TestClientInterface {
     validate() {
       throw new Error('Not implemented.');
     },
-    addRule: <P extends Record<keyof P, ParamDefinition>>(rule: RuleExecutorClass<TestClientInterface, Granularity, TestClientArgs, {}>): TestClientInterface => {
+    addRule: <P extends Record<keyof P, ParamDefinition>>(
+      rule: RuleExecutorClass<
+        TestClientInterface,
+        Granularity,
+        TestClientArgs,
+        {}
+      >,
+    ): TestClientInterface => {
       throw new Error('Not implemented.');
     },
     settings: {},
