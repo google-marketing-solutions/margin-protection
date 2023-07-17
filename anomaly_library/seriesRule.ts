@@ -16,7 +16,7 @@
  */
 
 import {Rule, RuleInstructions, Value, Values} from './main';
-import {PropertyStore} from 'anomaly_library/main';
+import {PropertyStore, ValueObject} from 'anomaly_library/main';
 
 type RuleInjector = (rule: LockedSeriesRule) => (value: string) => boolean;
 
@@ -59,7 +59,8 @@ export class LockedSeriesRule implements Rule {
   }
 
   getValueObject() {
-    return JSON.parse(this.properties.getProperty(this.uniqueKey) ?? '{}') as Values;
+    return (JSON.parse(this.properties.getProperty(this.uniqueKey) ?? '') ||
+        {values: {}}) as ValueObject;
   }
 
   getValues(): Value[] {

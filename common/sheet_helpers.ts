@@ -633,7 +633,7 @@ export abstract class AppsScriptFrontEnd<
       throw new Error(
           'Missing a named range `DRIVE_ID`. Please copy the rules sheet from the original template and try again.');
     }
-    const driveId: string = parentId.getValue();
+    const driveId: string = parentId.getValue().trim();
 
     const file: GoogleAppsScript.Drive.Schema.File|undefined =
         Drive.Files!.get(driveId);
@@ -653,7 +653,7 @@ export abstract class AppsScriptFrontEnd<
       orderBy: 'createdTime',
     };
     const folders = Drive.Files!.list(args).items;
-    let folder;
+    let folder: string;
     if (folders && folders.length) {
       folder = folders[0].id as string;
     } else {
@@ -752,6 +752,9 @@ export abstract class AppsScriptFrontEnd<
                            .sort((t1, t2) => sortMigrations(t1[0], t2[0]));
 
     for (const [version, migration] of migrations) {
+      if (sortMigrations(version, this.injectedArgs.version) >= 0) {
+        break;
+      }
       if (sortMigrations(version, sheetVersion) > 0) {
         migration(this as unknown as F);
         // write manually each time because we want incremental migrations if

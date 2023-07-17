@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-import {sendEmailAlert} from 'anomaly_library/main';
+import {AppsScriptPropertyStore, sendEmailAlert} from 'anomaly_library/main';
 import {addSettingWithDescription, AppsScriptFrontEnd, getOrCreateSheet, getTemplateSetting, RULE_SETTINGS_SHEET, toExport} from 'common/sheet_helpers';
 import {RuleRange} from 'sa360/src/client';
 import {ClientArgs, ClientInterface} from 'sa360/src/types';
@@ -141,6 +141,12 @@ export const migrations: Record<string, (frontend: SearchAdsFrontEnd) => void> =
       }
     }
   },
+  '2.0': () => {
+    const properties = new AppsScriptPropertyStore();
+    Object.entries(properties.getProperties()).forEach(([k, v]) => {
+      properties.setProperty(k, JSON.stringify({values: JSON.parse(v), updated: new Date(), }));
+    });
+  }
 };
 
 /**

@@ -21,7 +21,7 @@
  */
 
 
-import {PropertyStore, Rule, Threshold, ThresholdRuleInstructions, unpack, Value, Values} from 'anomaly_library/main';
+import {PropertyStore, Rule, Threshold, ThresholdRuleInstructions, unpack, Value, ValueObject, Values} from 'anomaly_library/main';
 
 /**
  * Checks for any anomalies based on a fixed `Threshold`.
@@ -67,16 +67,16 @@ export class AbsoluteRule<ThresholdType> implements Rule {
       return obj;
     }, {} as Values);
     this.properties.setProperty(
-        this.uniqueKey, JSON.stringify(nonAnomalousValues));
+        this.uniqueKey, JSON.stringify({ values: nonAnomalousValues }));
   }
 
   getValues(): Value[] {
-    return Object.values(this.getValueObject());
+    return Object.values(this.getValueObject().values);
   }
 
-  getValueObject(): Values {
-    return unpack(
-        this.properties.getProperty(this.uniqueKey));
+  getValueObject() {
+    return (JSON.parse(this.properties.getProperty(this.uniqueKey) ?? '""') ||
+        {values: {}}) as ValueObject;
   }
 }
 

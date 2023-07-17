@@ -15,12 +15,10 @@
  * limitations under the License.
  */
 
-import {sendEmailAlert} from 'anomaly_library/main';
-import {AppsScriptFrontEnd, getOrCreateSheet, getTemplateSetting} from 'common/sheet_helpers';
+import {AppsScriptPropertyStore, sendEmailAlert} from 'anomaly_library/main';
+import {addSettingWithDescription, AppsScriptFrontEnd, getOrCreateSheet, getTemplateSetting, HELPERS} from 'common/sheet_helpers';
 import {RuleRange} from 'dv360/src/client';
 import {ClientArgs, ClientInterface} from 'dv360/src/types';
-
-import {addSettingWithDescription, HELPERS} from 'common/sheet_helpers';
 
 import {IDType, RuleGranularity} from './types';
 
@@ -93,6 +91,12 @@ export const migrations: Record<string, (frontend: DisplayVideoFrontEnd) => void
       'Drive ID',
       'The ID of the Drive folder destination\n(copy in folder URL after \'/folders/\' and before the \'?\')',
     ]);
+  },
+  '2.0': () => {
+    const properties = new AppsScriptPropertyStore();
+    Object.entries(properties.getProperties()).forEach(([k, v]) => {
+      properties.setProperty(k, JSON.stringify({values: JSON.parse(v), updated: new Date(), }));
+    });
   },
 };
 

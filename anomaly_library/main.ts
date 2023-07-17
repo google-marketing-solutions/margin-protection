@@ -33,7 +33,7 @@ export interface RuleGetter {
   /**
    * Value objects include index specified at write-time.
    */
-  getValueObject(): Values;
+  getValueObject(): ValueObject;
 
   /**
    * Saves all values in storage, overwriting previous history.
@@ -106,6 +106,11 @@ export interface Value<InternalType=unknown> {
   internal?: Readonly<InternalType>;
 }
 
+export interface ValueObject {
+  values: Values;
+  updated?: Date;
+}
+
 export interface Values {
   [key: string]: Value;
 }
@@ -133,7 +138,7 @@ export function sendEmailAlert(
   const alertTime = Date.now();
   let anomalies: Value[] = [];
   for (const rule of rules) {
-    const values = rule.getValueObject();
+    const values = rule.getValueObject().values;
     anomalies = anomalies.concat(Object.values(values).filter(
         value => value.anomalous && !value.alertedAt));
 
@@ -155,8 +160,8 @@ export function sendEmailAlert(
 /**
  * Parse a JSON string version of a `Value` and return it.
  */
-export function unpack(property: string|null): Values {
-  return JSON.parse(property ?? '{}') as Values;
+export function unpack(property: string|null): ValueObject {
+  return (JSON.parse(property ?? '""') || {values: {}}) as ValueObject;
 }
 
 /**
@@ -165,20 +170,22 @@ export function unpack(property: string|null): Values {
 export function getRule(uniqueKey: string, properties: PropertyStore = new AppsScriptPropertyStore()): RuleGetter {
   return {
     getValues(): Value[] {
-      return Object.values(unpack(properties.getProperty(uniqueKey)));
+      return Object.values(unpack(properties.getProperty(uniqueKey)).values);
     },
-    getValueObject(): Values {
+    getValueObject(): ValueObject {
       return unpack(properties.getProperty(uniqueKey));
     },
     saveValues(values: Values) {
-      const nonAnomalousValues = Object.entries(values).reduce((obj, [k, v]) => {
-        if (v.anomalous) {
-          obj[k] = v;
-        }
-        return obj;
-      }, {} as Values);
+      const nonAnomalousValues =
+          Object.entries(values).reduce((obj, [k, v]) => {
+            if (v.anomalous) {
+              obj[k] = v;
+            }
+            return obj;
+          }, {} as Values);
       properties.setProperty(
-          uniqueKey, JSON.stringify(nonAnomalousValues));
+          uniqueKey,
+          JSON.stringify({values: nonAnomalousValues, updated: new Date()}));
     }
   };
 }

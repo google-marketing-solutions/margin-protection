@@ -88,6 +88,7 @@ class FakeFrontEnd extends AppsScriptFrontEnd<TestClientInterface, Granularity, 
 
   override async initializeSheets() {
     this.calls.initializeSheets++;
+    await super.initializeSheets();
   }
 
   override async preLaunchQa() {
@@ -122,6 +123,14 @@ function scaffoldSheetWithNamedRanges() {
 
 describe('Test migration order', () => {
   const list: string[] = [];
+  const CURRENT_SHEET_VERSION = '2.2.0';
+  const migrations = {
+    '3.0': () => list.push('3.0'),
+    '2.1.4': () => list.push('2.1.4'),
+    '2.0': () => list.push('2.0'),
+    '2.1.0': () => list.push('2.1.0'),
+    '2.2.0': () => list.push('2.2.0'),
+  };
 
   function setFrontEnd({expectedVersion, currentVersion}: {expectedVersion: string, currentVersion: string}) {
     PropertiesService.getScriptProperties().setProperty('sheet_version', currentVersion);
@@ -132,13 +141,7 @@ describe('Test migration order', () => {
         ],
         version: expectedVersion,
         clientClass: Client,
-        migrations: {
-          '3.0': () => list.push('3.0'),
-          '2.1.4': () => list.push('2.1.4'),
-          '2.0': () => list.push('2.0'),
-          '2.1.0': () => list.push('2.1.0'),
-          '2.2.0': () => list.push('2.2.0'),
-        },
+        migrations,
         properties,
       });
     })(new AppsScriptPropertyStore());
@@ -162,5 +165,26 @@ describe('Test migration order', () => {
     const frontend = setFrontEnd({expectedVersion: '5.0', currentVersion: '2.1.0'});
     frontend.migrate();
     expect(list).toEqual(['2.1.4', '2.2.0', '3.0'])
+  });
+
+  it('runs when initializeSheets runs', async () => {
+    const frontend = setFrontEnd({expectedVersion: CURRENT_SHEET_VERSION, currentVersion: '1.0'});
+    scaffoldSheetWithNamedRanges();
+    spyOn(HtmlService, 'createTemplateFromFile').and.stub();
+    PropertiesService.getScriptProperties().setProperty(
+        'sheet_version', '0.1');
+    await frontend.initializeSheets();
+    expect(PropertiesService.getScriptProperties().getProperty('sheet_version'))
+        .toEqual(String(CURRENT_SHEET_VERSION));
+  });
+
+  it('does not run migrations if version is up-to-date', () => {
+    const frontend = setFrontEnd({expectedVersion: CURRENT_SHEET_VERSION, currentVersion: '1.0'});
+    // NOTE - do not change this test. Change `CURRENT_SHEET_VERSION` instead.
+    const v = CURRENT_SHEET_VERSION;
+    PropertiesService.getScriptProperties().setProperty(
+        'sheet_version', String(CURRENT_SHEET_VERSION));
+    const numberRun = frontend.migrate();
+    expect(numberRun).toEqual(0);
   });
 });
