@@ -187,4 +187,11 @@ describe('Test migration order', () => {
     const numberRun = frontend.migrate();
     expect(numberRun).toEqual(0);
   });
+
+  it('migrates only to specified version cap', () => {
+    const frontend = setFrontEnd({expectedVersion: '2.1.0', currentVersion: '2.1.0'});
+    const numberOfMigrations = frontend.migrate();
+    expect(list).toEqual([]);
+    expect(numberOfMigrations).toEqual(0);
+  });
 });
