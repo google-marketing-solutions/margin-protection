@@ -150,14 +150,19 @@ export class Client implements ClientInterface {
    * library.
    */
   async validate() {
-    const thresholds: Function[] =
+    type Executor = RuleExecutor<ClientInterface, RuleGranularity, ClientArgs, Record<string, ParamDefinition>>;
+    const thresholds: Array<[Executor, Function]> =
         Object.values(this.ruleStore).reduce((prev, rule) => {
-          return [...prev, rule.run.bind(rule)];
-        }, [] as Function[]);
-    for (const thresholdCallable of thresholds) {
+          return [...prev, [rule, rule.run.bind(rule)]];
+        }, [] as Array<[Executor, Function]>);
+    const rules: Array<Executor> = [];
+    for (const [rule, thresholdCallable] of thresholds) {
       const threshold = await thresholdCallable();
       threshold.rule.saveValues(threshold.values);
+      rules.push(rule);
     }
+
+    return rules;
   }
 
   getAllInsertionOrders(): InsertionOrder[] {

@@ -38,7 +38,16 @@ export type Callback<Params extends Record<keyof Params, ParamDefinition>> =
  * set.
  */
 export interface SettingMapInterface<P extends {[Property in keyof P]: P[keyof P]}> {
-  getOrDefault(campaignId: string): P;
+  getOrDefault(id: string): P;
+
+  /**
+   * Retrieves a map of values for the ID {@link id}.
+   *
+   * If it's missing, blank strings.
+   */
+  get(id: string): P;
+  set(id: string, value: P): void;
+  entries(): ReadonlyArray<[string, string[]]>;
 }
 
 /**
@@ -58,7 +67,7 @@ export interface BaseClientInterface<C extends BaseClientInterface<C, G, A>, G e
   getAllCampaigns(): Promise<RecordInfo[]>;
   getRule(ruleName: string): RuleExecutor<C, G, A, Record<string, ParamDefinition>>;
   getUniqueKey(prefix: string): string;
-  validate(): Promise<void>;
+  validate(): Promise<Array<RuleExecutor<C, G, A, Record<string, ParamDefinition>>>>;
 
   addRule<Params extends Record<keyof Params, ParamDefinition>>(
       rule: RuleExecutorClass<C, G, A, Params>,
@@ -75,13 +84,17 @@ export interface ParamDefinition {
   numberFormat?: string;
 }
 
+interface EnumLike {
+  toString(): string;
+}
+
 /**
  * Determines how a rule is changed (e.g. at the campaign or ad group level).
  *
  * This includes any and all types of granularity for any and all products.
  * Use the granularity you'd like to appear on your settings page.
  */
-export type RuleGranularity<G> = {[Property in keyof G]: G};
+export type RuleGranularity<G extends EnumLike> = {[Property in keyof G]: G};
 
 /**
  * Actionable object to run a rule.
@@ -221,6 +234,11 @@ export interface RuleRangeInterface<C extends BaseClientInterface<C, G, A>, G ex
   getRule(ruleName: string): string[][];
   fillRuleValues<Params>(rule: Pick<RuleDefinition<Record<keyof Params, ParamDefinition>, G>, 'name'|'params'|'defaults'|'granularity'>): Promise<void>;
   getRows(granularity: G): Promise<RecordInfo[]>;
+
+  /**
+   * Writes the values of a rule sheet back to the rule.
+   */
+  writeBack(granularity: G): void;
 }
 
 /**

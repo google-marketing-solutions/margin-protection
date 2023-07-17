@@ -56,9 +56,18 @@ export class AbsoluteRule<ThresholdType> implements Rule {
     };
   }
 
+  /**
+   * Saves values iff they are anomalous.
+   */
   saveValues(values: Values) {
+    const nonAnomalousValues = Object.entries(values).reduce((obj, [k, v]) => {
+      if (v.anomalous) {
+        obj[k] = v;
+      }
+      return obj;
+    }, {} as Values);
     this.properties.setProperty(
-        this.uniqueKey, JSON.stringify(values));
+        this.uniqueKey, JSON.stringify(nonAnomalousValues));
   }
 
   getValues(): Value[] {

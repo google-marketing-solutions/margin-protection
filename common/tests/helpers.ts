@@ -57,7 +57,7 @@ export class Client implements TestClientInterface {
   getUniqueKey(prefix: string): string {
     throw new Error('Method not implemented.');
   }
-  validate(): Promise<void> {
+  validate(): Promise<Array<RuleExecutor<TestClientInterface, Granularity, TestClientArgs, Record<string, ParamDefinition>>>> {
     throw new Error('Method not implemented.');
   }
   addRule<Params extends Record<keyof Params, ParamDefinition>>(

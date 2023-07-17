@@ -17,7 +17,7 @@
 
 import {PropertyStore} from 'anomaly_library/main';
 import {AbstractRuleRange, newRuleBuilder} from 'common/sheet_helpers';
-import {ParamDefinition, RecordInfo, RuleExecutor, RuleExecutorClass, RuleParams} from 'common/types';
+import {ParamDefinition, RecordInfo, RuleExecutor, RuleExecutorClass, RuleParams, Settings} from 'common/types';
 import {AdGroupReport, AdGroupTargetReport, CampaignReport, CampaignTargetReport} from 'sa360/src/api';
 import {ClientArgs, ClientInterface, RuleGranularity} from 'sa360/src/types';
 
@@ -115,14 +115,19 @@ export class Client implements ClientInterface {
    * library.
    */
   async validate() {
-    const thresholds: Function[] =
+    type Executor = RuleExecutor<ClientInterface, RuleGranularity, ClientArgs, Record<string, ParamDefinition>>;
+    const thresholds: Array<[Executor, Function]> =
         Object.values(this.ruleStore).reduce((prev, rule) => {
-          return [...prev, rule.run.bind(rule)];
-        }, [] as Function[]);
-    for (const thresholdCallable of thresholds) {
+          return [...prev, [rule, rule.run.bind(rule)]];
+        }, [] as Array<[Executor, Function]>);
+    const rules: Array<Executor> = [];
+    for (const [settings, thresholdCallable] of thresholds) {
       const threshold = await thresholdCallable();
       threshold.rule.saveValues(threshold.values);
+      rules.push(settings);
     }
+
+    return rules;
   }
 
   async getAllCampaigns(): Promise<RecordInfo[]> {

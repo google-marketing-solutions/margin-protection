@@ -15,12 +15,13 @@
  * limitations under the License.
  */
 
-import {SettingMap, sortMigrations, transformToParamValues} from '../sheet_helpers';
+import {FakePropertyStore, mockAppsScript} from 'anomaly_library/testing/mock_apps_script';
+import {ParamDefinition} from 'common/types';
+
+import {getOrCreateSheet, HELPERS, SettingMap, sortMigrations, transformToParamValues} from '../sheet_helpers';
 import {RuleExecutorClass} from '../types';
 
 import {Granularity, RuleRange, TestClientArgs, TestClientInterface} from './helpers';
-import {ParamDefinition} from 'common/types';
-import {FakePropertyStore} from 'anomaly_library/testing/mock_apps_script';
 
 describe('2-D array', () => {
   let array2d: string[][];
@@ -67,7 +68,7 @@ describe('Rule Settings helper functions', () => {
         client, ['id']);
     for (const rule of ['', 'Category A', 'Category B', 'Category C']) {
       // getValues() expects a rule to be in the ruleStore for the helper value.
-      client.ruleStore[rule] = {helper: ''} as unknown as
+      client.ruleStore[rule] = {helper: '', granularity: 'default'} as unknown as
           typeof client.ruleStore[keyof typeof client.ruleStore];
     }
   });
@@ -88,6 +89,18 @@ describe('Rule Settings helper functions', () => {
     expect(rules.getRule('Category A')).toEqual([
       ['id', 'Header 1', 'Header 2'],
       ['1', 'Col 1', 'Col 2'],
+    ]);
+  });
+
+  it('writes back to the spreadsheet', () => {
+    mockAppsScript();
+    rules.writeBack(Granularity.DEFAULT);
+    const range = getOrCreateSheet(`Rule Settings - default`).getDataRange();
+    expect(range.getValues()).toEqual([
+        ['', '', 'Category A', '', 'Category B', '', '', 'Category C'],
+        ['', '', '', '', '', '', '', ''],
+        ['id', 'name', 'Header 1', 'Header 2', 'Header 3', 'Header 4', 'Header 5', 'Header 6'],
+        ['1', 'one', 'Col 1', 'Col 2', 'Col 3', 'Col 4', 'Col 5', 'Col 6'],
     ]);
   });
 });
@@ -141,6 +154,26 @@ describe('sortMigrations', () => {
   it('works with objects', () => {
     expect(Object.entries({'0.1': 'b', '0.0.1': 'a'}).sort((e1, e2) => sortMigrations(e1[0], e2[0])))
         .toEqual([['0.0.1', 'a'], ['0.1', 'b']]);
+  });
+});
+
+describe('test HELPERS', () => {
+  beforeEach(() => {
+    mockAppsScript();
+  });
+
+  it('saveLastReportPull', () => {
+    HELPERS.saveLastReportPull(1);
+    expect(CacheService.getScriptCache().get('scriptPull')).toEqual('1');
+    const expirationInSeconds = (CacheService.getScriptCache() as unknown as {
+                                  expirationInSeconds: number | undefined
+                                }).expirationInSeconds;
+    expect(expirationInSeconds).toBeUndefined();
+  });
+
+  it('getLastReportPull', () => {
+    CacheService.getScriptCache().put('scriptPull', '10');
+    expect(HELPERS.getLastReportPull()).toEqual(10);
   });
 });
 

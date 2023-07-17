@@ -42,3 +42,23 @@ export enum RuleGranularity {
   CAMPAIGN = 'Campaign',
   AD_GROUP = 'Ad Group',
 }
+
+interface ChangedAttributesSinceTimestamp {
+  changedAttributesSinceTimestamp: string;
+}
+
+interface ChangedMetricsSinceTimestamp {
+  changedMetricsSinceTimestamp: string;
+}
+
+interface StartAndEndDate {
+  startDate: string;
+  endDate: string;
+}
+
+/**
+ * SA360 report time range.
+ *
+ * https://developers.google.com/search-ads/v2/reference/reports#request.timeRange
+ */
+export type SearchAdsTimeRange = StartAndEndDate | ChangedMetricsSinceTimestamp | ChangedAttributesSinceTimestamp;

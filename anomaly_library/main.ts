@@ -171,7 +171,14 @@ export function getRule(uniqueKey: string, properties: PropertyStore = new AppsS
       return unpack(properties.getProperty(uniqueKey));
     },
     saveValues(values: Values) {
-      properties.setProperty(uniqueKey, JSON.stringify(values));
+      const nonAnomalousValues = Object.entries(values).reduce((obj, [k, v]) => {
+        if (v.anomalous) {
+          obj[k] = v;
+        }
+        return obj;
+      }, {} as Values);
+      properties.setProperty(
+          uniqueKey, JSON.stringify(nonAnomalousValues));
     }
   };
 }
@@ -223,9 +230,13 @@ function compress(content: string): string {
  * The opposite of {@link compress}.
  */
 function extract(content: string): string {
-  const decode = Utilities.base64Decode(content);
-  const blob = Utilities.newBlob(decode, 'application/x-gzip');
-  return Utilities.ungzip(blob).getDataAsString();
+  try {
+    const decode = Utilities.base64Decode(content);
+    const blob = Utilities.newBlob(decode, 'application/x-gzip');
+    return Utilities.ungzip(blob).getDataAsString();
+  } catch (e) {
+    return content; // already extracted
+  }
 }
 
 /**

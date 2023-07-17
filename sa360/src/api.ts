@@ -20,6 +20,8 @@
 import {RecordInfo} from 'common/types';
 import {ClientArgs} from './types';
 import Payload = GoogleAppsScript.URL_Fetch.Payload;
+import {HELPERS} from 'common/sheet_helpers';
+import {SearchAdsTimeRange} from 'sa360/src/types';
 
 /**
  * The API version, exposed for testing.
@@ -31,17 +33,16 @@ export const SA360_API_VERSION = 'v2';
  */
 export const SA360_URL = 'www.googleapis.com/doubleclicksearch';
 
-
-const DAY_IN_SECONDS = 60 * 60 * 24 * 1000;
+const ONE_MINUTE = 60 * 1000;
+const TEN_MINUTES = ONE_MINUTE * 10;
+const ONE_HOUR = 60 * ONE_MINUTE;
 
 /**
  * Campaign report columns.
  */
 export const campaignColumns = [
   'account', 'accountId', 'advertiserId', 'campaignId', 'campaign',
-  'campaignStatus', 'clicks', 'cost', 'impr', 'ctr', 'adWordsConversions',
-  'adWordsConversionValue', 'dailyBudget', 'monthlyBudget',
-  'effectiveBidStrategy'
+  'campaignStatus', 'impr', 'date'
 ] as const;
 
 /**
@@ -49,7 +50,7 @@ export const campaignColumns = [
  */
 export const adGroupColumns = [
   'account', 'accountId', 'advertiserId', 'campaignId', 'adGroupId', 'adGroup',
-  'adGroupStatus',
+  'adGroupStatus', 'impr', 'date'
 ] as const;
 
 export const adGroupTargetColumns = [
@@ -181,7 +182,7 @@ interface Filter {
  * Classes that extend this are responsible for building an SA360 report.
  */
 export abstract class ReportBuilder<Columns extends AllowedColumns> {
-  static step = 100_000;
+  static step = 10_000_000;
 
   constructor(protected readonly params: ApiParams) {}
 
@@ -211,10 +212,14 @@ export abstract class ReportBuilder<Columns extends AllowedColumns> {
       try {
         const id = this.fetchReportId();
         const reportUrls = await this.fetchReportUrl(id);
+        const time = new Date().getTime();
+        HELPERS.saveLastReportPull(time);
         return this.aggregateReports(reportUrls);
       } catch (e) {
         console.error(e);
-        console.info(`Trying again, attempt ${i + 2}/5`);
+        if (i + 2 <= 5) {
+          console.info(`Trying again, attempt ${i + 2}/5`);
+        }
       }
     }
 
@@ -225,8 +230,8 @@ export abstract class ReportBuilder<Columns extends AllowedColumns> {
     let response: {files: Array<{url: string, byteCount: string}>, isReportReady: boolean};
 
     return new Promise((resolve, fail) => {
-      for (let i = 0; i < 3; i++) {
-        const msecs = 1000 * 2 ** (i + 1);
+      for (let i = 0; i < 4; i++) {
+        const msecs = 1000 * 3 ** (i + 1);
         console.info(`sleeping for ${msecs/1000} seconds before fetching report...`);
         Utilities.sleep(msecs);
         response = JSON.parse(fetch(
@@ -241,6 +246,7 @@ export abstract class ReportBuilder<Columns extends AllowedColumns> {
         }
         console.info('Report not ready.');
       }
+      fail('Failed to get report');
     });
   }
 
@@ -331,8 +337,6 @@ export abstract class ReportBuilder<Columns extends AllowedColumns> {
         {advertiserId: this.params.advertiserId} :
         {};
     const filters = this.getFilters() ?? {};
-    const date = new Date(Date.now());
-    const startDate = `${date.toISOString().split('T')[0]}`;
     const payload = JSON.stringify({
       reportScope: {
         agencyId: this.params.agencyId,
@@ -341,7 +345,7 @@ export abstract class ReportBuilder<Columns extends AllowedColumns> {
       reportType: this.getReportType(),
       columns: this.getColumns().map(columnName => ({columnName})),
       statisticsCurrency: 'agency',
-      timeRange: {startDate, endDate: startDate},
+      ...{ timeRange: this.getTimeRange() },
       maxRowsPerFile: 100_000_000,
       downloadFormat: 'csv',
       ...{filters},
@@ -352,6 +356,14 @@ export abstract class ReportBuilder<Columns extends AllowedColumns> {
                 .getContentText()) as {id: string, byteCount: number};
     return response.id;
   }
+
+  protected getTimeRange(): SearchAdsTimeRange {
+    const time = HELPERS.getLastReportPull() || new Date().getTime() - ONE_HOUR;
+
+    return {
+      changedAttributesSinceTimestamp: new Date(time - TEN_MINUTES).toISOString(),
+    };
+  }
 }
 
 class CampaignReportBuilder extends ReportBuilder<typeof campaignColumns> {
@@ -359,27 +371,20 @@ class CampaignReportBuilder extends ReportBuilder<typeof campaignColumns> {
     return map.campaignId;
   }
 
-  protected override getColumns(): typeof campaignColumns{
+  protected override getColumns(): typeof campaignColumns {
     return campaignColumns;
   }
 
-  protected override getReportType(): string{
+  protected override getReportType(): string {
     return 'campaign';
   }
-}
 
-function getFilterForAdGroup(): Filter[] {
-  const date = new Date();
-  const date90daysAgo = new Date(Date.now() - DAY_IN_SECONDS * 90);
-  return [{
-    column: {
-      columnName: 'impr',
-      startDate: Utilities.formatDate(date90daysAgo, 'GMT', 'yyyy-MM-dd'),
-      endDate: Utilities.formatDate(date, 'GMT', 'yyyy-MM-dd'),
-    },
-    operator: 'greaterThan',
-    values: [0],
-  }];
+  protected override getTimeRange() {
+    const date = new Date(Date.now() - ONE_HOUR * 6);
+    return {
+      changedMetricsSinceTimestamp: date.toISOString(),
+    }
+  }
 }
 
 class AdGroupReportBuilder extends ReportBuilder<typeof adGroupColumns> {
@@ -395,8 +400,11 @@ class AdGroupReportBuilder extends ReportBuilder<typeof adGroupColumns> {
     return 'adGroup';
   }
 
-  override getFilters(): Filter[] {
-    return getFilterForAdGroup();
+  protected override getTimeRange() {
+    const date = new Date(Date.now() - ONE_HOUR * 6);
+    return {
+      changedMetricsSinceTimestamp: date.toISOString(),
+    }
   }
 }
 
@@ -428,10 +436,6 @@ class AdGroupTargetReportBuilder extends
       row[headers[i]] = row[headers[i]] === undefined ? column :
           `${row[headers[i]]},${column}`;
     }
-  }
-
-  override getFilters(): Filter[] {
-    return getFilterForAdGroup();
   }
 }
 
