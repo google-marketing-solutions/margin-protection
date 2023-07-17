@@ -592,36 +592,45 @@ export abstract class AppsScriptFrontEnd<
     console.log(`Exported CSV launch_monitor/${filename} to Google Drive`);
   }
 
-  getOrCreateFolder(folderName: string) {
-    const driveId = SpreadsheetApp.getActive().getRangeByName('DRIVE_ID');
-    if (!driveId) {
+  /**
+   * Creates a folder if it doesn't exist. Optionally adds it to the Drive ID.
+   *
+   * @param folderName The name of the folder to create or use.
+   *   Should be owned by Apps Script.
+   */
+  getOrCreateFolder(folderName: string, parent?: GoogleAppsScript.Spreadsheet.Range): string {
+    const parentId = parent ?? this.getRangeByName('DRIVE_ID');
+    if (!parentId) {
       throw new Error(
           'Missing a named range `DRIVE_ID`. Please copy the rules sheet from the original template and try again.');
     }
+    const driveId: string = parentId.getValue();
 
     const file: GoogleAppsScript.Drive.Schema.File|undefined =
-        Drive.Files!.get(driveId.getValue());
+        Drive.Files!.get(driveId);
+    let parentName = '';
     if (file && file.id) {
       if (file.mimeType !== FOLDER) {
         throw new Error(
             'The selected Google Drive file ID is not a folder. Please delete and/or add a folder ID');
       }
-      return file.id;
+      parentName = file.id;
     }
 
+    const q = (parentName ? `'${parentName}' in parents and ` : '') +
+        `title="${folderName}" and mimeType="${FOLDER}" and not trashed`;
     const args = {
-      q: `title="${folderName}" and mimeType="${FOLDER}" and not trashed`,
+      q,
       orderBy: 'createdTime',
     };
     const folders = Drive.Files!.list(args).items;
     let folder;
     if (folders && folders.length) {
-      folder = folders[0].id;
+      folder = folders[0].id as string;
     } else {
-      folder = Drive.Files!.insert({title: folderName, mimeType: FOLDER}).id;
-      driveId.setValue(folder);
+      folder = Drive.Files!.insert({title: folderName, mimeType: FOLDER}).id as string;
+      parentId.setValue(folder);
     }
-    console.log('folder', folder);
     return folder;
   }
 
