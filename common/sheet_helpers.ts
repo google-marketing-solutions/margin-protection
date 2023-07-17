@@ -211,7 +211,7 @@ export abstract class AbstractRuleRange<
           prev[1] = category === 'none' ?
               ['', ''] :
               prev[1].concat(Array.from<string>({length}).fill('').map(
-                  (cell, idx) => idx === 0 ?
+                  (cell, idx) => idx === 0 && this.client.ruleStore[prev[0][idx + offset]]?
                       this.client.ruleStore[prev[0][idx + offset]].helper ??
                           '' :
                       ''));
@@ -652,14 +652,17 @@ export abstract class AppsScriptFrontEnd<
         `title="${folderName}" and mimeType="${FOLDER}" and not trashed`;
     const args = {
       q,
-      orderBy: 'createdTime',
     };
     const folders = Drive.Files!.list(args).items;
     let folder: string;
     if (folders && folders.length) {
       folder = folders[0].id as string;
     } else {
-      folder = Drive.Files!.insert({title: folderName, mimeType: FOLDER}).id as string;
+      folder = Drive.Files!.insert({
+        title: folderName,
+        mimeType: FOLDER,
+        parents: [{id: driveId}],
+      }).id as string;
       parentId.setValue(folder);
     }
     return folder;
