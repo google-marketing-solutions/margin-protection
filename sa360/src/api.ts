@@ -34,23 +34,23 @@ export const SA360_API_VERSION = 'v2';
 export const SA360_URL = 'www.googleapis.com/doubleclicksearch';
 
 const ONE_MINUTE = 60 * 1000;
-const TEN_MINUTES = ONE_MINUTE * 10;
 const ONE_HOUR = 60 * ONE_MINUTE;
+const ONE_DAY = ONE_HOUR * 24;
 
 /**
  * Campaign report columns.
  */
 export const campaignColumns = [
-  'account', 'accountId', 'advertiserId', 'campaignId', 'campaign',
-  'campaignStatus', 'impr', 'date'
+  'agency', 'agencyId', 'advertiser', 'advertiserId', 'campaignId', 'campaign',
+  'campaignStatus'
 ] as const;
 
 /**
  * Ad Group report columns.
  */
 export const adGroupColumns = [
-  'account', 'accountId', 'advertiserId', 'campaignId', 'adGroupId', 'adGroup',
-  'adGroupStatus', 'impr', 'date'
+  'agency', 'agencyId', 'advertiser', 'advertiserId', 'campaignId',
+  'adGroupId', 'adGroup', 'adGroupStatus'
 ] as const;
 
 export const adGroupTargetColumns = [
@@ -359,12 +359,12 @@ export abstract class ReportBuilder<Columns extends AllowedColumns> {
   }
 
   protected getTimeRange(): SearchAdsTimeRange {
-    const time = HELPERS.getLastReportPull() || new Date().getTime() - ONE_HOUR;
+    const time = HELPERS.getLastReportPull() || new Date().getTime() - ONE_DAY;
 
     if (!this.params.fullFetch) {
       return {
         changedAttributesSinceTimestamp:
-            new Date(time - TEN_MINUTES).toISOString(),
+            new Date(time - ONE_DAY).toISOString(),
       };
     } else {
       const date = new Date();
@@ -389,13 +389,6 @@ class CampaignReportBuilder extends ReportBuilder<typeof campaignColumns> {
   protected override getReportType(): string {
     return 'campaign';
   }
-
-  protected override getTimeRange() {
-    const date = new Date(Date.now() - ONE_HOUR * 6);
-    return {
-      changedMetricsSinceTimestamp: date.toISOString(),
-    }
-  }
 }
 
 class AdGroupReportBuilder extends ReportBuilder<typeof adGroupColumns> {
@@ -411,11 +404,14 @@ class AdGroupReportBuilder extends ReportBuilder<typeof adGroupColumns> {
     return 'adGroup';
   }
 
-  protected override getTimeRange() {
-    const date = new Date(Date.now() - ONE_HOUR * 6);
-    return {
-      changedMetricsSinceTimestamp: date.toISOString(),
-    }
+  protected override getFilters() {
+    return [
+      {
+        column: { columnName: 'campaignStatus' },
+        operator: 'equals' as const,
+        values: ['Active'],
+      }
+    ]
   }
 }
 

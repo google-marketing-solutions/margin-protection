@@ -688,7 +688,8 @@ export abstract class AppsScriptFrontEnd<
             unfilteredMatrix.length - matrix.length} malformed records.`);
       }
       sheet.clear();
-      sheet.getRange(1, 1, matrix.length, matrix[0].length).setValues(matrix);
+      //sheet.getRange(1, 1, matrix.length, matrix[0].length + 2).setValues(this.getIdentity());
+      sheet.getRange(1, 3, matrix.length, matrix[0].length + 2).setValues(matrix);
       if (rule.valueFormat.numberFormat) {
         sheet.getRange(2, 1, matrix.length - 1, 1)
             .setNumberFormat(rule.valueFormat.numberFormat);
