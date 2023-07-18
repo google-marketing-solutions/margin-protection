@@ -158,33 +158,25 @@ export abstract class AbstractRuleRange<
   private readonly columnOrders: Record<string, Record<string, number>> = {};
   private readonly rules: Record<string, string[][]>&
       Record<'none', string[][]> = {'none': [[]]};
+  private length: number = 0;
 
   constructor(
-      range: readonly string[][], protected readonly client: C,
+      range: string[][], protected readonly client: C,
       headers: string[] = ['ID', 'default']) {
-    let start = 0;
-    let col: number;
     for (let i = 0; i < headers.length; i++) {
       this.rowIndex[headers[i]] = i;
     }
-    for (col = 0; col < range[0].length; col++) {
-      if (range[0][col]) {
-        const ruleRange =
-            range.map(r => [r[0], ...r.slice(start, col)]).slice(1);
-        this.setRule(range[0][start] || 'none', ruleRange);
-        start = col;
-      }
-    }
-    const ruleRange =
-        range.map(row => [row[0], ...row.slice(start, col)]).slice(1);
-    this.setRule(range[0][start] || 'none', ruleRange);
+    this.length = Object.keys(this.rowIndex).length;
+    this.setRules(range);
   }
 
   setRow(category: string, id: string, column: string[]): void {
     if (id === '') {
       return;
     }
-    this.rowIndex[id] = this.rowIndex[id] ?? Object.keys(this.rowIndex).length;
+    if (this.rowIndex[id] === undefined) {
+      this.rowIndex[id] = ++this.length
+    }
     (this.rules[category] = this.rules[category] || [])[this.rowIndex[id]] =
         column;
   }
@@ -218,8 +210,9 @@ export abstract class AbstractRuleRange<
           Object.values(this.rowIndex)
               .sort((x: number, y: number) => x - y)
               .forEach((value, r) => {
-                prev[r + 2] =
-                    (prev[r + 2] = prev[r + 2] || [])
+                const offsetRow = r + 2;
+                prev[offsetRow] =
+                    (prev[offsetRow] = prev[offsetRow] || [])
                         .concat((
                             range[r] ?? Array.from<string>({length}).fill('')));
               });
@@ -246,9 +239,34 @@ export abstract class AbstractRuleRange<
         });
   }
 
+  /**
+   * Available for testing.
+   */
   setRule(ruleName: string, ruleValues: string[][]) {
     for (let r = 0; r < ruleValues.length; r++) {
       this.setRow(ruleName, ruleValues[r][0], ruleValues[r].slice(1));
+    }
+  }
+
+  setRules(range: string[][]) {
+    let start = 0;
+    let col = 0;
+    const thresholds: Array<[number, number]> = [];
+    for (col = 0; col < range[0].length; col++) {
+      if (range[0][col]) {
+        thresholds.push([start, col]);
+        start = col;
+      }
+    }
+    if (start !== col) {
+      thresholds.push([start, col]);
+    }
+    for (let r = 0; r < range.length; r++) {
+      for (const [start, end] of thresholds) {
+        this.setRow(
+            range[0][start] || 'none', range[r][0],
+            range[r].slice(start, end));
+      }
     }
   }
 
@@ -435,8 +453,17 @@ export abstract class AppsScriptFrontEnd<
       }
       const values = rules.getValues();
       ruleSheet.clear();
+      if (ruleSheet.getMaxRows() > values.length + 1) {
+        ruleSheet.deleteRows(
+            values.length + 1, ruleSheet.getMaxRows() - (values.length + 1));
+      }
+      if (ruleSheet.getMaxColumns() > values.length + 1) {
+        ruleSheet.deleteColumns(
+            values[0].length + 1, ruleSheet.getMaxColumns() - (values[0].length + 1));
+      }
       ruleSheet.getRange(1, 1, values.length, values[0].length)
           .setValues(values);
+      SpreadsheetApp.flush();
       for (const rule of ruleClasses) {
         Object.values(rule.definition.params).forEach((param, idx) => {
           this.addValidation(
@@ -499,10 +526,8 @@ export abstract class AppsScriptFrontEnd<
           return [rule, rule.run()];
         });
 
-    const rules: Rule[] = [];
     for (const [rule, threshold] of thresholds) {
       const {values} = await threshold;
-      rules.push(rule);
       for (const value of Object.values(values)) {
         const fieldKey =
             Object.entries(value.fields ?? [['', 'all']])
@@ -681,6 +706,9 @@ export abstract class AppsScriptFrontEnd<
       const sheet = getOrCreateSheet(ruleSheet);
       sheet.clear();
       const values = Object.values(result.values);
+      if (!values.length) {
+        continue;
+      }
       const unfilteredMatrix =
           this.getMatrixOfResults(rule.valueFormat.label, values, value => value.anomalous);
       const matrix = unfilteredMatrix.filter(
@@ -692,7 +720,7 @@ export abstract class AppsScriptFrontEnd<
         console.error(`Dropped ${
             unfilteredMatrix.length - matrix.length} malformed records.`);
       }
-      sheet.getRange(1, 3, matrix.length, matrix[0].length).setValues(matrix);
+      sheet.getRange(1, 1, matrix.length, matrix[0].length).setValues(matrix);
       if (rule.valueFormat.numberFormat) {
         sheet.getRange(2, 1, matrix.length - 1, 1)
             .setNumberFormat(rule.valueFormat.numberFormat);

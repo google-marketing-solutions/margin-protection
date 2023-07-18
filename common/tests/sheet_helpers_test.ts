@@ -102,21 +102,24 @@ describe('Rule Settings helper functions', () => {
 
   it('break down a settings sheet into the correct categories', () => {
     expect(
-      (rules as unknown as {rules: Record<string, string[][]>}).rules,
+      (rules as unknown as {rules: Record<string, Array<string[]|undefined>>}).rules,
     ).toEqual({
       'none': [
         ['id', 'name'],
+        undefined,
         ['1', 'one'],
       ],
       'Category A': [
         ['Header 1', 'Header 2'],
+        undefined,
         ['Col 1', 'Col 2'],
       ],
       'Category B': [
         ['Header 3', 'Header 4', 'Header 5'],
+        undefined,
         ['Col 3', 'Col 4', 'Col 5'],
       ],
-      'Category C': [['Header 6'], ['Col 6']],
+      'Category C': [['Header 6'], undefined, ['Col 6']],
     });
   });
 

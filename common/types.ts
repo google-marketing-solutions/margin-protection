@@ -256,7 +256,7 @@ export interface FrontEndArgs<
     G extends RuleGranularity<G>,
     A extends BaseClientArgs<C, G, A>,
     F extends AppsScriptFrontEnd<C, G, A, F>> {
-  readonly ruleRangeClass: { new(sheet: readonly string[][], client: C): RuleRangeInterface<C, G, A> },
+  readonly ruleRangeClass: { new(sheet: string[][], client: C): RuleRangeInterface<C, G, A> },
   readonly rules: ReadonlyArray<RuleExecutorClass<C, G, A, Record<string, ParamDefinition>>>,
   readonly clientClass: { new(clientArgs: A, properties: PropertyStore): C },
   readonly version: string;
