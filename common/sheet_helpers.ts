@@ -613,8 +613,9 @@ export abstract class AppsScriptFrontEnd<
   exportAsCsv(ruleName: string, matrix: string[][]) {
     const file = Utilities.newBlob(this.matrixToCsv(matrix));
     const folder = this.getOrCreateFolder('launch_monitor');
+    const sheetId = ScriptApp.getScriptId();
     const label: string = this.getRangeByName('LABEL').getValue();
-    const filename = `${label ? label + '_' : ''}${ruleName}_${
+    const filename = `${label ? label + '_' : 'report_'}${ruleName}_${sheetId}_${
         new Date(Date.now()).toISOString()}`;
     Drive.Files!.insert(
         {
@@ -678,18 +679,20 @@ export abstract class AppsScriptFrontEnd<
       const ruleSheet = `${rule.name} - Results`;
       ruleSheets.push(rule.name);
       const sheet = getOrCreateSheet(ruleSheet);
-      const values = result.values;
+      sheet.clear();
+      const values = Object.values(result.values);
       const unfilteredMatrix =
-          this.getMatrixOfResults(rule.valueFormat.label, Object.values(values), value => value.anomalous);
+          this.getMatrixOfResults(rule.valueFormat.label, values, value => value.anomalous);
       const matrix = unfilteredMatrix.filter(
           row => row.length === unfilteredMatrix[0].length);
+      if (!matrix.length || !matrix[0].length) {
+        continue;
+      }
       if (matrix.length !== unfilteredMatrix.length) {
         console.error(`Dropped ${
             unfilteredMatrix.length - matrix.length} malformed records.`);
       }
-      sheet.clear();
-      //sheet.getRange(1, 1, matrix.length, matrix[0].length + 2).setValues(this.getIdentity());
-      sheet.getRange(1, 3, matrix.length, matrix[0].length + 2).setValues(matrix);
+      sheet.getRange(1, 3, matrix.length, matrix[0].length).setValues(matrix);
       if (rule.valueFormat.numberFormat) {
         sheet.getRange(2, 1, matrix.length - 1, 1)
             .setNumberFormat(rule.valueFormat.numberFormat);

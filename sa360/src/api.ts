@@ -50,7 +50,7 @@ export const campaignColumns = [
  */
 export const adGroupColumns = [
   'agency', 'agencyId', 'advertiser', 'advertiserId', 'campaignId',
-  'adGroupId', 'adGroup', 'adGroupStatus'
+  'adGroupId', 'adGroup', 'adGroupStatus',
 ] as const;
 
 export const adGroupTargetColumns = [
