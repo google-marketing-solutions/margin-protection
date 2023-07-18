@@ -54,12 +54,14 @@ export const adGroupColumns = [
 ] as const;
 
 export const adGroupTargetColumns = [
-  'adGroupId', 'campaignId', 'genderTargetGenderType', 'ageTargetAgeRange',
+  'agency', 'agencyId', 'advertiser', 'advertiserId', 'adGroupId',
+  'campaignId', 'genderTargetGenderType', 'ageTargetAgeRange',
   'engineRemarketingList',
 ] as const;
 
 export const campaignTargetColumns = [
-  'campaignId', 'locationTargetName',
+  'agency', 'agencyId', 'advertiser', 'advertiserId', 'campaignId',
+  'locationTargetName',
 ] as const;
 
 type AllowedColumns = typeof campaignColumns | typeof adGroupColumns | typeof adGroupTargetColumns | typeof campaignTargetColumns;
@@ -445,7 +447,7 @@ class AdGroupTargetReportBuilder extends
       headers: string[], columns: string[]) {
     const {row, filteredColumns} = getFilteredColumns(obj, id, headers, columns);
     for (const [i, column] of filteredColumns) {
-      if (['adGroupId', 'campaignId'].indexOf(headers[i]) >=
+      if (['advertiserId', 'advertiser', 'agencyId', 'agency', 'adGroupId', 'campaignId'].indexOf(headers[i]) >=
           0) {
         row[headers[i]] = column;
         continue;
@@ -479,7 +481,7 @@ export class CampaignTargetReportBuilder extends ReportBuilder<typeof campaignTa
       headers: string[], columns: string[]) {
     const {row, filteredColumns} = getFilteredColumns(obj, id, headers, columns);
     for (const [i, column] of filteredColumns) {
-      if (['campaignId'].indexOf(headers[i]) >=
+      if (['advertiserId', 'advertiser', 'agencyId', 'agency', 'campaignId'].indexOf(headers[i]) >=
           0) {
         row[headers[i]] = column;
         continue;

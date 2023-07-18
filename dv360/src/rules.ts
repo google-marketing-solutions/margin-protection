@@ -128,6 +128,7 @@ export const geoTargetRule = newRule({
         targetingOptionsLength += targetingOptions.length;
       });
       values[id] = (rule.createValue(hasOnlyValidGeo ? '1' : '0', {
+        'Advertiser ID': advertiserId,
         'Campaign Name': displayName,
         'Campaign ID': id,
         'Number of Geos': String(targetingOptionsLength),
