@@ -19,9 +19,8 @@ import {Advertisers, AssignedTargetingOptions, Campaigns, InsertionOrders} from 
 import {Advertiser, Campaign, InsertionOrder} from 'dv360_api/dv360_resources';
 import {RawApiDate} from 'dv360_api/dv360_types';
 import {PropertyStore, Rule, RuleInstructions} from 'anomaly_library/main';
-
 import {AbstractRuleRange, newRuleBuilder} from 'common/sheet_helpers';
-import {ParamDefinition, RecordInfo, RuleDefinition, RuleExecutor, RuleExecutorClass, RuleUtilities, Settings} from 'common/types';
+import {Callback, ExecutorResult, ParamDefinition, RecordInfo, RuleDefinition, RuleExecutor, RuleExecutorClass, RuleUtilities, Settings} from 'common/types';
 
 import {BudgetReport, BudgetReportInterface, ImpressionReport} from './api';
 import {ClientArgs, ClientInterface, IDType, QueryReportParams, RuleGranularity} from './types';
@@ -150,19 +149,21 @@ export class Client implements ClientInterface {
    * library.
    */
   async validate() {
-    type Executor = RuleExecutor<ClientInterface, RuleGranularity, ClientArgs, Record<string, ParamDefinition>>;
+    type Executor = RuleExecutor<
+        ClientInterface, RuleGranularity, ClientArgs,
+        Record<string, ParamDefinition>>;
     const thresholds: Array<[Executor, Function]> =
         Object.values(this.ruleStore).reduce((prev, rule) => {
           return [...prev, [rule, rule.run.bind(rule)]];
         }, [] as Array<[Executor, Function]>);
-    const rules: Array<Executor> = [];
+    const rules: Record<string, Executor> = {};
+    const results: Record<string, ExecutorResult> = {};
     for (const [rule, thresholdCallable] of thresholds) {
-      const threshold = await thresholdCallable();
-      threshold.rule.saveValues(threshold.values);
-      rules.push(rule);
+      results[rule.name] = await thresholdCallable();
+      rules[rule.name] = rule;
     }
 
-    return rules;
+    return {rules, results};
   }
 
   getAllInsertionOrders(): InsertionOrder[] {

@@ -15,9 +15,17 @@
  * limitations under the License.
  */
 
-import {Rule, RuleInstructions, RuleGetter, ThresholdRuleInstructions, Values} from 'anomaly_library/main';
+import {RuleGetter, Values} from 'anomaly_library/main';
 import {PropertyStore} from 'anomaly_library/main';
 import {AppsScriptFrontEnd} from './sheet_helpers';
+
+/**
+ * The result of a rule executor once the Promise has resolved.
+ */
+export type ExecutorResult = {
+  rule: RuleGetter;
+  values: Values;
+};
 
 /**
  * A rule callback is created to enable efficient API calls.
@@ -26,10 +34,7 @@ import {AppsScriptFrontEnd} from './sheet_helpers';
  * they enable efficient pooling of API resources.
  */
 export type Callback<Params extends Record<keyof Params, ParamDefinition>> =
-    () => Promise<{
-      rule: RuleGetter;
-      values: Values;
-    }> & ThisType<Params>;
+    () => Promise<ExecutorResult> & ThisType<Params>;
 
 /**
  * Provides a useful data structure to get campaign ID settings.
@@ -67,7 +72,7 @@ export interface BaseClientInterface<C extends BaseClientInterface<C, G, A>, G e
   getAllCampaigns(): Promise<RecordInfo[]>;
   getRule(ruleName: string): RuleExecutor<C, G, A, Record<string, ParamDefinition>>;
   getUniqueKey(prefix: string): string;
-  validate(): Promise<Array<RuleExecutor<C, G, A, Record<string, ParamDefinition>>>>;
+  validate(): Promise<{rules: Record<string, RuleExecutor<C, G, A, Record<string, ParamDefinition>>>, results: Record<string, ExecutorResult>}>;
 
   addRule<Params extends Record<keyof Params, ParamDefinition>>(
       rule: RuleExecutorClass<C, G, A, Params>,
@@ -108,7 +113,6 @@ export interface RuleExecutor<
   client: C;
   settings: Settings<Record<keyof P, string>>;
   run: Function;
-  validate(): void;
   helper: string;
   granularity: G;
 }

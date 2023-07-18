@@ -24,7 +24,7 @@ import {FakePropertyStore} from 'anomaly_library/testing/mock_apps_script';
 import {AbstractRuleRange} from '../sheet_helpers';
 import {
   BaseClientArgs,
-  BaseClientInterface,
+  BaseClientInterface, Callback, ExecutorResult,
   ParamDefinition,
   RecordInfo,
   RuleExecutor,
@@ -82,16 +82,12 @@ export class Client implements TestClientInterface {
   getUniqueKey(prefix: string): string {
     throw new Error('Method not implemented.');
   }
-  validate(): Promise<
-    Array<
-      RuleExecutor<
-        TestClientInterface,
-        Granularity,
-        TestClientArgs,
-        Record<string, ParamDefinition>
-      >
-    >
-  > {
+  validate(): Promise<{
+    rules: Record<string, RuleExecutor<
+        TestClientInterface, Granularity, TestClientArgs,
+        Record<string, ParamDefinition>>>,
+    results: Record<string, ExecutorResult>
+  }> {
     throw new Error('Method not implemented.');
   }
   addRule<Params extends Record<keyof Params, ParamDefinition>>(

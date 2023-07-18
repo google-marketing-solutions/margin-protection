@@ -17,7 +17,7 @@
 
 import {AppsScriptPropertyStore, getRule, PropertyStore, Value, Values} from 'anomaly_library/main';
 
-import {AppsScriptFunctions, BaseClientArgs, BaseClientInterface, FrontEndArgs, ParamDefinition, RecordInfo, RuleDefinition, RuleExecutor, RuleExecutorClass, RuleGranularity, RuleParams, RuleRangeInterface, RuleUtilities, SettingMapInterface, Settings} from './types';
+import {AppsScriptFunctions, BaseClientArgs, BaseClientInterface, ExecutorResult, FrontEndArgs, ParamDefinition, RecordInfo, RuleDefinition, RuleExecutor, RuleExecutorClass, RuleGranularity, RuleParams, RuleRangeInterface, RuleUtilities, SettingMapInterface, Settings} from './types';
 
 const FOLDER = 'application/vnd.google-apps.folder';
 type ScriptFunction<F> = (properties: PropertyStore) => F;
@@ -550,9 +550,9 @@ export abstract class AppsScriptFrontEnd<
   async launchMonitor() {
     await this.initializeSheets();
     await this.initializeRules();
-    const rules = await this.client.validate();
-    this.saveSettingsBackToSheets(rules);
-    this.populateRuleResultsInSheets();
+    const {rules, results} = await this.client.validate();
+    this.saveSettingsBackToSheets(Object.values(rules));
+    this.populateRuleResultsInSheets(Object.values(rules), Object.values(results));
     this.maybeSendEmailAlert();
   }
 
@@ -574,12 +574,15 @@ export abstract class AppsScriptFrontEnd<
   /**
    * Given an array of rules, returns a 2-d array representation.
    */
-  getMatrixOfResults(valueLabel: string, values: Value[]): string[][] {
+  getMatrixOfResults(valueLabel: string, values: Value[], filter?: (value: Value) => boolean): string[][] {
     const headers = Object.keys(values[0]);
     const matrix = [[
       valueLabel, headers[1], ...Object.keys(values[0].fields || {}).map(String)
     ]];
     for (const value of values) {
+      if (filter && !filter(value)) {
+        continue;
+      }
       const row = Object.values(value);
       matrix.push([
         ...row.slice(0, 2).map(String),
@@ -668,21 +671,16 @@ export abstract class AppsScriptFrontEnd<
     return folder;
   }
 
-  populateRuleResultsInSheets() {
+  populateRuleResultsInSheets(rules: Array<RuleExecutor<C, G, A, Record<string, ParamDefinition>>>, results: ExecutorResult[]) {
     const ruleSheets: string[] = [];
-    for (const rule of Object.values(this.client.ruleStore)) {
+    for (const [i, result] of results.entries()) {
+      const rule = rules[i];
       const ruleSheet = `${rule.name} - Results`;
       ruleSheets.push(rule.name);
       const sheet = getOrCreateSheet(ruleSheet);
-      const uniqueKey = rule.getUniqueKey();
-      const values = Object.values(
-          getRule(uniqueKey, this.injectedArgs.properties).getValues());
-      if (values.length < 1) {
-        console.warn(`No rules for ${uniqueKey}`);
-        continue;
-      }
+      const values = result.values;
       const unfilteredMatrix =
-          this.getMatrixOfResults(rule.valueFormat.label, values);
+          this.getMatrixOfResults(rule.valueFormat.label, Object.values(values), value => value.anomalous);
       const matrix = unfilteredMatrix.filter(
           row => row.length === unfilteredMatrix[0].length);
       if (matrix.length !== unfilteredMatrix.length) {
@@ -842,9 +840,9 @@ newRuleBuilder<C extends BaseClientInterface<C, G, A>, G extends
       // your version of 'tslib'.
       readonly granularity: G = ruleDefinition.granularity;
       readonly valueFormat = ruleDefinition.valueFormat;
-// TODO: go/ts50upgrade - Auto-added to unblock TS5.0 migration
-//   TS2343: This syntax requires an imported helper named '__setFunctionName' which does not exist in 'tslib'. Consider upgrading your version of 'tslib'.
-// @ts-ignore
+      // TODO: go/ts50upgrade - Auto-added to unblock TS5.0 migration
+      //   TS2343: This syntax requires an imported helper named '__setFunctionName' which does not exist in 'tslib'. Consider upgrading your version of 'tslib'.
+      // @ts-ignore
       static definition = ruleDefinition;
 
       constructor(readonly client: C, settingsArray: readonly string[][]) {
@@ -862,18 +860,6 @@ newRuleBuilder<C extends BaseClientInterface<C, G, A>, G extends
 
       getUniqueKey() {
         return this.client.getUniqueKey(ruleDefinition.uniqueKeyPrefix);
-      }
-
-      /**
-       * Executes this rule once per call to this method.
-       *
-       * This should not be used when checking multiple rules. Instead, use
-       * {@link Client.validate} which serves the same purpose but is able to
-       * combine rules.
-       */
-      async validate() {
-        const threshold = await this.run();
-        threshold.rule.saveValues(threshold.values);
       }
     };
 
