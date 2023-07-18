@@ -552,7 +552,7 @@ export abstract class AppsScriptFrontEnd<
     await this.initializeRules();
     const {rules, results} = await this.client.validate();
     this.saveSettingsBackToSheets(Object.values(rules));
-    this.populateRuleResultsInSheets(Object.values(rules), Object.values(results));
+    this.populateRuleResultsInSheets(rules, results);
     this.maybeSendEmailAlert();
   }
 
@@ -671,10 +671,10 @@ export abstract class AppsScriptFrontEnd<
     return folder;
   }
 
-  populateRuleResultsInSheets(rules: Array<RuleExecutor<C, G, A, Record<string, ParamDefinition>>>, results: ExecutorResult[]) {
+  populateRuleResultsInSheets(rules: Record<string, RuleExecutor<C, G, A, Record<string, ParamDefinition>>>, results: Record<string, ExecutorResult>) {
     const ruleSheets: string[] = [];
-    for (const [i, result] of results.entries()) {
-      const rule = rules[i];
+    for (const [uniqueKey, result] of Object.entries(results)) {
+      const rule = rules[uniqueKey];
       const ruleSheet = `${rule.name} - Results`;
       ruleSheets.push(rule.name);
       const sheet = getOrCreateSheet(ruleSheet);
