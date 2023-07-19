@@ -1,0 +1,18 @@
+{
+  "compilerOptions": {
+    "baseUrl": "../",
+    "outDir": "googleads_api",
+    "skipLibCheck": true,
+    "module": "esnext",
+    "moduleResolution": "classic",
+    "target": "es2020",
+    "lib": ["esnext", "dom"],
+    "noImplicitThis": true,
+    "paths": {
+      "anomaly_library": ["anomaly_library"],
+      "common": ["common"]
+    }
+  },
+  "include": ["src/**/*", "../googelads_api/*.ts", "outs.d.ts"],
+  "exclude": ["node_modules/**/*", "dist/**/*", "src/tests/**/*"]
+}
