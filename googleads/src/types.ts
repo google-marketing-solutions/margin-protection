@@ -24,12 +24,29 @@ export interface ClientInterface extends
     BaseClientInterface<ClientInterface, RuleGranularity, ClientArgs> {}
 
 /**
- * An agency ID and, optionally, an advertiser ID to narrow down.
+ * Necessary Ads API request metadata
  */
 export interface ClientArgs extends
     BaseClientArgs<ClientInterface, RuleGranularity, ClientArgs> {
   developerToken: string;
-  loginCustomerId: string;
+}
+
+/**
+ * The user-provided tree of known Ads accounts to run a report against.
+ */
+export interface AccountMap {
+  /**
+   * The customer ID of the Google Ads account. The root node should always
+   * contain a login customer ID.
+   */
+  readonly customerId: string;
+  /** Expands reporting for child accounts. Overrides `children`. */
+  expand?: boolean;
+  /**
+   * Restricts reporting to a subset of child accounts. If empty, defaults to
+   * expanding all leaves, maybe just this node.
+   */
+  children?: AccountMap[];
 }
 
 /**

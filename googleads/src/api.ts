@@ -17,7 +17,7 @@
 
 /** @fileoverview DAO for the Google Ads API */
 
-import {ClientArgs} from 'googleads/src/types';
+import {AccountMap} from './types';
 
 import URLFetchRequestOptions = GoogleAppsScript.URL_Fetch.URLFetchRequestOptions;
 
@@ -32,11 +32,28 @@ export const GOOGLEADS_API_VERSION = 'v14';
  */
 export const GOOGLEADS_URL = 'googleads.googleapis.com';
 
+// Returns all leafs, even if the root account is a leaf.
+const GAQL_GET_LEAF_ACCOUNTS = `SELECT
+  customer_client.id,
+  customer_client.descriptive_name,
+  customer_client.manager,
+  customer.status
+FROM customer_client
+WHERE
+  customer_client.manager = false
+  AND customer_client.status = 'ENABLED'`;
+
 /**
  * Represents a GoogleAdsRow result.
  */
 export declare interface GoogleAdsRow {
   customer?: {id?: number};
+  customerClient?: {
+    id?: number,
+    descriptiveName?: string,
+    manager?: boolean,
+    status?: string
+  };
 }
 
 /**
@@ -58,21 +75,37 @@ export declare interface GoogleAdsSearchRequest {
 }
 
 /**
+ * Factory for Ads API instantiation.
+ */
+export class GoogleAdsApiFactory {
+  create(developerToken: string, loginCustomerId: string) {
+    return new GoogleAdsApi(developerToken, loginCustomerId);
+  }
+}
+
+/**
  * Ads API client
  */
 export class GoogleAdsApi {
-  constructor(private readonly args: ClientArgs) {}
+  private token?: string;
+
+  constructor(
+      private readonly developerToken: string,
+      private readonly loginCustomerId: string) {}
 
   private requestHeaders() {
-    const token = ScriptApp.getOAuthToken();
+    // Access tokens will probably always outlive this object
+    if (!this.token) {
+      this.token = ScriptApp.getOAuthToken();
+    }
     return {
-      'developer-token': this.args.developerToken,
-      'Authorization': `Bearer ${token}`,
-      'login-customer-id': this.args.loginCustomerId,
+      'developer-token': this.developerToken,
+      'Authorization': `Bearer ${this.token}`,
+      'login-customer-id': this.loginCustomerId,
     };
   }
 
-  * query(customerId: string, query: string) {
+  * query(customerId: string, query: string): IterableIterator<GoogleAdsRow> {
     const url = `https://${GOOGLEADS_URL}/${GOOGLEADS_API_VERSION}/customers/${
         customerId}/googleAds:search`;
     const params:
@@ -94,5 +127,68 @@ export class GoogleAdsApi {
     } while (pageToken);
   }
 }
+
+/**
+ * Traverses MCC hierarchies to generate cached reports over all leaf accounts.
+ */
+export class ReportGenerator {
+  private readonly customerIds = new Set<string>();
+
+  /**
+   * @param loginAccounts The top-level accounts to query, and expansion
+   *     instructions.
+   * @param developerToken The Google Ads developer token.
+   * @param apiFactory An injectable api client factory.
+   */
+  constructor(
+      private readonly loginAccounts: AccountMap[],
+      private readonly developerToken: string,
+      private readonly apiFactory: GoogleAdsApiFactory) {}
+
+  /**
+   * Returns all leaf account IDs for the initial login account map.
+   */
+  leafAccounts(): string[] {
+    if (!this.customerIds.size) {
+      for (const loginAccount of this.loginAccounts) {
+        const api = this.apiFactory.create(
+            this.developerToken, loginAccount.customerId);
+
+        const expand = (account: AccountMap): string[] => {
+          const rows = api.query(account.customerId, GAQL_GET_LEAF_ACCOUNTS);
+          const customerIds: string[] = [];
+          for (const row of rows) {
+            customerIds.push(String(row.customerClient!.id!));
+          }
+          return customerIds;
+        };
+
+        const traverse = (account: AccountMap): string[] => {
+          // User preference for expansion takes priority.
+          // If the user forgot to set expand and there are no children, check
+          // anyway. If this account is supposed to be a leaf, the expand query
+          // will confirm it.
+          if (account.expand || !(account.children ?? []).length) {
+            return expand(account);
+          }
+
+          // The presence of explicitly-opted-in children indicate user intent
+          // to query a partial tree.
+          const leaves: string[] = [];
+          for (const child of account.children ?? []) {
+            leaves.push(...traverse(child));
+          }
+          return leaves;
+        };
+
+        for (const leaf of traverse(loginAccount)) {
+          this.customerIds.add(leaf);
+        }
+      }
+    }
+    return [...this.customerIds];
+  }
+}
+
 
 global.GoogleAdsApi = GoogleAdsApi;
