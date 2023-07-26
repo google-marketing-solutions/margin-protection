@@ -78,8 +78,27 @@ export declare interface GoogleAdsSearchRequest {
  * Factory for Ads API instantiation.
  */
 export class GoogleAdsApiFactory {
-  create(developerToken: string, loginCustomerId: string) {
-    return new GoogleAdsApi(developerToken, loginCustomerId);
+  constructor(
+      private readonly developerToken: string,
+      private readonly credentialManager: CredentialManager) {}
+  create(loginCustomerId: string) {
+    return new GoogleAdsApi(
+        this.developerToken, loginCustomerId, this.credentialManager);
+  }
+}
+
+/**
+ * Manages access token generation.
+ */
+export class CredentialManager {
+  private token?: string;
+
+  getToken(): string {
+    // Access tokens will always outlive an Apps Script invocation
+    if (!this.token) {
+      this.token = ScriptApp.getOAuthToken();
+    }
+    return this.token;
   }
 }
 
@@ -87,20 +106,16 @@ export class GoogleAdsApiFactory {
  * Ads API client
  */
 export class GoogleAdsApi {
-  private token?: string;
-
   constructor(
       private readonly developerToken: string,
-      private readonly loginCustomerId: string) {}
+      private readonly loginCustomerId: string,
+      private readonly credentialManager: CredentialManager) {}
 
   private requestHeaders() {
-    // Access tokens will probably always outlive this object
-    if (!this.token) {
-      this.token = ScriptApp.getOAuthToken();
-    }
+    const token = this.credentialManager.getToken();
     return {
       'developer-token': this.developerToken,
-      'Authorization': `Bearer ${this.token}`,
+      'Authorization': `Bearer ${token}`,
       'login-customer-id': this.loginCustomerId,
     };
   }
@@ -137,12 +152,10 @@ export class ReportGenerator {
   /**
    * @param loginAccounts The top-level accounts to query, and expansion
    *     instructions.
-   * @param developerToken The Google Ads developer token.
    * @param apiFactory An injectable api client factory.
    */
   constructor(
       private readonly loginAccounts: AccountMap[],
-      private readonly developerToken: string,
       private readonly apiFactory: GoogleAdsApiFactory) {}
 
   /**
@@ -151,8 +164,7 @@ export class ReportGenerator {
   leafAccounts(): string[] {
     if (!this.customerIds.size) {
       for (const loginAccount of this.loginAccounts) {
-        const api = this.apiFactory.create(
-            this.developerToken, loginAccount.customerId);
+        const api = this.apiFactory.create(loginAccount.customerId);
 
         const expand = (account: AccountMap): string[] => {
           const rows = api.query(account.customerId, GAQL_GET_LEAF_ACCOUNTS);
