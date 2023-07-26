@@ -75,15 +75,23 @@ export declare interface GoogleAdsSearchRequest {
 }
 
 /**
- * Factory for Ads API instantiation.
+ * Caching factory for Ads API instantiation.
  */
 export class GoogleAdsApiFactory {
+  private readonly cache = new Map<string, GoogleAdsApi>();
+
   constructor(
       private readonly developerToken: string,
       private readonly credentialManager: CredentialManager) {}
+
   create(loginCustomerId: string) {
-    return new GoogleAdsApi(
+    let api = this.cache.get(loginCustomerId);
+    if (!api) {
+      api = new GoogleAdsApi(
         this.developerToken, loginCustomerId, this.credentialManager);
+      this.cache.set(loginCustomerId, api);
+    }
+    return api;
   }
 }
 
