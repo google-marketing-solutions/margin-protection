@@ -17,7 +17,7 @@
 
 /** @fileoverview DAO for the Google Ads API */
 
-import {AccountMap} from './types';
+import {AccountMap, CampaignReport} from './types';
 
 import URLFetchRequestOptions = GoogleAppsScript.URL_Fetch.URLFetchRequestOptions;
 
@@ -32,6 +32,9 @@ export const GOOGLEADS_API_VERSION = 'v14';
  */
 export const GOOGLEADS_URL = 'googleads.googleapis.com';
 
+// Ads API has a limit of 10k rows.
+const MAX_PAGE_SIZE = 10_000;
+
 // Returns all leafs, even if the root account is a leaf.
 const GAQL_GET_LEAF_ACCOUNTS = `SELECT
   customer_client.id,
@@ -43,11 +46,20 @@ WHERE
   customer_client.manager = false
   AND customer_client.status = 'ENABLED'`;
 
+const GAQL_GET_CAMPAIGN_REPORT = `SELECT
+  customer.id,
+  customer.descriptive_name,
+  campaign.id,
+  campaign.name,
+  campaign.status
+FROM campaign`;
+
 /**
  * Represents a GoogleAdsRow result.
  */
 export declare interface GoogleAdsRow {
-  customer?: {id?: number};
+  campaign?: {id?: number, descriptiveName?: string, status?: string};
+  customer?: {id?: number, descriptiveName?: string};
   customerClient?: {
     id?: number,
     descriptiveName?: string,
@@ -60,8 +72,8 @@ export declare interface GoogleAdsRow {
  * A response row from the query API.
  */
 export declare interface GoogleAdsSearchResponse {
-  nextPageToken: string;
-  results: GoogleAdsRow[];
+  nextPageToken?: string;
+  results?: GoogleAdsRow[];
 }
 
 /**
@@ -88,7 +100,7 @@ export class GoogleAdsApiFactory {
     let api = this.cache.get(loginCustomerId);
     if (!api) {
       api = new GoogleAdsApi(
-        this.developerToken, loginCustomerId, this.credentialManager);
+          this.developerToken, loginCustomerId, this.credentialManager);
       this.cache.set(loginCustomerId, api);
     }
     return api;
@@ -132,7 +144,7 @@ export class GoogleAdsApi {
     const url = `https://${GOOGLEADS_URL}/${GOOGLEADS_API_VERSION}/customers/${
         customerId}/googleAds:search`;
     const params:
-        GoogleAdsSearchRequest = {'pageSize': 10_000, query, customerId};
+        GoogleAdsSearchRequest = {pageSize: MAX_PAGE_SIZE, query, customerId};
     let pageToken;
     do {
       const req: URLFetchRequestOptions = {
@@ -144,7 +156,7 @@ export class GoogleAdsApi {
       const res = JSON.parse(UrlFetchApp.fetch(url, req).getContentText()) as
           GoogleAdsSearchResponse;
       pageToken = res.nextPageToken;
-      for (const row of res.results) {
+      for (const row of res.results || []) {
         yield row;
       }
     } while (pageToken);
@@ -155,7 +167,7 @@ export class GoogleAdsApi {
  * Traverses MCC hierarchies to generate cached reports over all leaf accounts.
  */
 export class ReportGenerator {
-  private readonly customerIds = new Set<string>();
+  private readonly leafToRoot = new Map<string, string>();
 
   /**
    * @param loginAccounts The top-level accounts to query, and expansion
@@ -166,14 +178,34 @@ export class ReportGenerator {
       private readonly loginAccounts: AccountMap[],
       private readonly apiFactory: GoogleAdsApiFactory) {}
 
+  campaignReports(): CampaignReport[] {
+    const report: CampaignReport[] = [];
+
+    const leafAccounts = this.leafAccounts();
+    for (const customerId of leafAccounts) {
+      const api = this.apiFactory.create(this.leafToRoot.get(customerId)!);
+      const rows = api.query(customerId, GAQL_GET_CAMPAIGN_REPORT);
+      for (const row of rows) {
+        report.push({
+          customerId,
+          customerName: row.customer?.descriptiveName ?? '',
+          id: String(row.campaign?.id ?? ''),
+          name: row.campaign?.descriptiveName ?? '',
+          status: row.campaign?.status ?? 'UNKNOWN'
+        });
+      }
+    }
+
+    return report;
+  }
+
   /**
    * Returns all leaf account IDs for the initial login account map.
    */
   leafAccounts(): string[] {
-    if (!this.customerIds.size) {
+    if (!this.leafToRoot.size) {
       for (const loginAccount of this.loginAccounts) {
         const api = this.apiFactory.create(loginAccount.customerId);
-
         const expand = (account: AccountMap): string[] => {
           const rows = api.query(account.customerId, GAQL_GET_LEAF_ACCOUNTS);
           const customerIds: string[] = [];
@@ -202,13 +234,13 @@ export class ReportGenerator {
         };
 
         for (const leaf of traverse(loginAccount)) {
-          this.customerIds.add(leaf);
+          // Clobbering is fine: we only need one way to access a given leaf.
+          this.leafToRoot.set(leaf, loginAccount.customerId);
         }
       }
     }
-    return [...this.customerIds];
+    return [...this.leafToRoot.keys()];
   }
 }
-
 
 global.GoogleAdsApi = GoogleAdsApi;

@@ -50,6 +50,17 @@ export interface AccountMap {
 }
 
 /**
+ * A report for a single campaign.
+ */
+export interface CampaignReport {
+  customerId: string;
+  customerName: string;
+  id: string;
+  name: string;
+  status: string;
+}
+
+/**
  * The level at which to apply this rule.
  */
 export enum RuleGranularity {
