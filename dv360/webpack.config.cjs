@@ -20,21 +20,21 @@ const TsConfigPathsPlugin = require('tsconfig-paths-webpack-plugin');
 
 module.exports = {
   context : __dirname,
-  entry : 'app/main.ts',
+  entry : './src/main.ts',
   output : {path : __dirname, filename : 'Code.js'},
   plugins : [new GasPlugin({autoGlobalExportsFiles : ['**/*.ts']})],
   module : {
     rules :
-        [
-          {
-            test: /\.tsx?$/,
-            use: 'ts-loader',
-            exclude: /node_modules/,
-          },
-        ],
+          [
+            {
+              test : /\.tsx?$/,
+              use : 'ts-loader',
+              exclude : /node_modules\/(?!(dv360_api)).*/,
+            },
+          ],
   },
   resolve : {
     extensions : ['.tsx', '.ts'],
-    plugins : [new TsConfigPathsPlugin()],
+    plugins : [new TsConfigPathsPlugin({configFile : './tsconfig.json'})],
   },
 };

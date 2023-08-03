@@ -1,6 +1,6 @@
 {
   "compilerOptions": {
-    "baseUrl": "./",
+    "baseUrl": "../",
     "outDir": "dv360_api",
     "skipLibCheck": true,
     "module": "esnext",

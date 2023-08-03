@@ -23,6 +23,6 @@
     "push": "yarn build --mode production && clasp push"
   },
   "dependencies": {
-    "dv360_api": "https://gitpkg.now.sh/google/gps_building_blocks/ts/dv360_api_lib/src?master"
+    "dv360_api": "https://gitpkg.now.sh/google/gps_building_blocks/ts/dv360_api_lib/src?release-v1.119.0"
   }
 }

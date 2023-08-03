@@ -27,14 +27,14 @@ module.exports = {
     rules :
           [
             {
-              test: /\.tsx?$/,
-              use: 'ts-loader',
-              exclude: /node_modules/,
+              test : /\.tsx?$/,
+              use : 'ts-loader',
+              exclude : /node_modules/,
             },
           ],
   },
   resolve : {
     extensions : ['.tsx', '.ts'],
-    plugins : [new TsConfigPathsPlugin()],
+    plugins : [new TsConfigPathsPlugin({configFile : './tsconfig.json'})],
   },
 };
