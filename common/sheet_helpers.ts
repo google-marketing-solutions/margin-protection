@@ -429,7 +429,7 @@ export abstract class AppsScriptFrontEnd<
    */
   async onOpen() {
     SpreadsheetApp.getUi()
-        .createMenu('SA360 Launch Monitor')
+        .createMenu('Launch Monitor')
         .addItem('Sync Campaigns', 'initializeSheets')
         .addItem('Pre-Launch QA', 'preLaunchQa')
         .addSeparator()
