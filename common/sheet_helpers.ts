@@ -20,6 +20,12 @@ import {AppsScriptPropertyStore, getRule, PropertyStore, Value, Values} from 'an
 import {AppsScriptFunctions, BaseClientArgs, BaseClientInterface, ExecutorResult, FrontEndArgs, ParamDefinition, RecordInfo, RuleDefinition, RuleExecutor, RuleExecutorClass, RuleGranularity, RuleParams, RuleRangeInterface, RuleUtilities, SettingMapInterface, Settings} from './types';
 
 const FOLDER = 'application/vnd.google-apps.folder';
+const HEADER_RULE_NAME_INDEX = 0;
+/**
+ * The number of headers at the top of a rule sheet.
+ */
+const SHEET_TOP_PADDING = 2;
+
 type ScriptFunction<F> = (properties: PropertyStore) => F;
 type ScriptEntryPoints = 'onOpen'|'initializeSheets'|'preLaunchQa'|
     'launchMonitor'|'displaySetupGuide'|'displayGlossary';
@@ -154,7 +160,7 @@ export abstract class AbstractRuleRange<
     C extends BaseClientInterface<C, G, A>,
               G extends RuleGranularity<G>, A extends BaseClientArgs<C, G, A>>
     implements RuleRangeInterface<C, G, A> {
-  private readonly rowIndex: Record<string, number> = {};
+  private rowIndex: Record<string, number> = {};
   private readonly columnOrders: Record<string, Record<string, number>> = {};
   private readonly rules: Record<string, string[][]>&
       Record<'none', string[][]> = {'none': [[]]};
@@ -162,9 +168,9 @@ export abstract class AbstractRuleRange<
 
   constructor(
       range: string[][], protected readonly client: C,
-      headers: string[] = ['ID', 'default']) {
-    for (let i = 0; i < headers.length; i++) {
-      this.rowIndex[headers[i]] = i;
+      constantHeaders: string[] = ['ID', 'default']) {
+    for (let i = 0; i < constantHeaders.length; i++) {
+      this.rowIndex[constantHeaders[i]] = i;
     }
     this.length = Object.keys(this.rowIndex).length;
     this.setRules(range);
@@ -182,47 +188,62 @@ export abstract class AbstractRuleRange<
   }
 
   getValues(ruleGranularity?: G): string[][] {
+    const newRowIndex = {...this.rowIndex};
+    const defaultFirstColumns = ['', ''];
+
     const values =
-        Object.entries(this.rules).reduce((prev, [category, rangeRaw]) => {
+        Object.entries(this.rules).reduce((combinedRuleRange, [category, rangeRaw]) => {
           const range = rangeRaw.filter(row => row && row.length);
           if (ruleGranularity &&
               (category !== 'none' &&
                this.client.ruleStore[category].granularity !==
                    ruleGranularity)) {
-            return prev;
+            return combinedRuleRange;
           }
-          const length = range.length ? range[0].length : 0;
-          if (!length) {
-            return prev;
+          const ruleSettingColumnCount = range.length ? range[HEADER_RULE_NAME_INDEX].length : 0;
+          if (!ruleSettingColumnCount) {
+            return combinedRuleRange;
           }
-          const offset = prev[0].length;
-          prev[0] = prev[0].concat(
-              Array.from({length}).fill(category === 'none' ? '' : category) as
+          const ruleSettingColumnOffset = combinedRuleRange[0].length;
+          combinedRuleRange[0] = combinedRuleRange[0].concat(
+              Array.from({length: ruleSettingColumnCount}).fill(category === 'none' ? '' : category) as
               string[]);
 
-          prev[1] = category === 'none' ?
-              ['', ''] :
-              prev[1].concat(Array.from<string>({length}).fill('').map(
-                  (cell, idx) => idx === 0 && this.client.ruleStore[prev[0][idx + offset]]?
-                      this.client.ruleStore[prev[0][idx + offset]].helper ??
-                          '' :
-                      ''));
-          Object.values(this.rowIndex)
-              .sort((x: number, y: number) => x - y)
-              .forEach((value, r) => {
-                const offsetRow = r + 2;
-                prev[offsetRow] =
-                    (prev[offsetRow] = prev[offsetRow] || [])
+          combinedRuleRange[1] = category === 'none' ?
+              defaultFirstColumns :
+              combinedRuleRange[1].concat(
+                  Array.from<string>({length: ruleSettingColumnCount}).fill('').map((cell, idx) => {
+                    if (idx === 0 && this.client.ruleStore[combinedRuleRange[0][idx + ruleSettingColumnOffset]]) {
+                      return this.client.ruleStore[combinedRuleRange[0][idx + ruleSettingColumnOffset]].helper;
+                    } else {
+                      return '';
+                    }
+                  }));
+          // Using the default row order can lead to some weird things like the
+          // header coming in at the end of the list if {'a': 2, 'b': 1}.
+          // Below `rowIndex` is sorted and reorganized. The resulting range
+          // will reflect the correct `rowIndex` so that order is never
+          // incorrect.
+          type IndexEntry = [entityId: string, currentPosition: number];
+          const indexEntries: IndexEntry[] = Object.entries<number>(this.rowIndex);
+          const sortedEntries = indexEntries.sort((firstVal: IndexEntry, secondVal: IndexEntry) => firstVal[1] - secondVal[1]);
+          sortedEntries
+              .forEach(([entityId, currentOrdinalValue], postSortedOrdinalValue) => {
+                const offsetRow = postSortedOrdinalValue + SHEET_TOP_PADDING;
+                combinedRuleRange[offsetRow] =
+                    (combinedRuleRange[offsetRow] = combinedRuleRange[offsetRow] || [])
                         .concat((
-                            range[r] ?? Array.from<string>({length}).fill('')));
+                            rangeRaw[currentOrdinalValue] ?? Array.from<string>({length: ruleSettingColumnCount}).fill('')));
+                newRowIndex[entityId] = offsetRow;
               });
-          return prev;
+          return combinedRuleRange;
         }, [[], []] as string[][]);
 
     for (let c = values[0].length - 1; c > 0; c--) {
       values[0][c] = values[0][c - 1] === values[0][c] ? '' : values[0][c];
     }
 
+    this.rowIndex = newRowIndex;
     return values;
   }
 
@@ -232,7 +253,7 @@ export abstract class AbstractRuleRange<
     }
     return Object.values(this.rowIndex)
         .filter(
-            (index) => this.rules['none'][index] && this.rules[ruleName][index])
+            (index) => this.rules['none'][index] !== undefined && this.rules[ruleName][index] !== undefined)
         .sort((a, b) => a - b)
         .map((index) => {
           return [this.rules['none'][index][0], ...this.rules[ruleName][index]];
@@ -355,6 +376,9 @@ export const HELPERS = {
   },
   getLastReportPull(): number {
     return Number(CacheService.getScriptCache().get(SCRIPT_PULL));
+  },
+  getSheetId() {
+    return SpreadsheetApp.getActive().getId();
   }
 };
 
@@ -574,7 +598,6 @@ export abstract class AppsScriptFrontEnd<
    */
   async launchMonitor() {
     await this.initializeSheets();
-    await this.initializeRules();
     const {rules, results} = await this.client.validate();
     this.saveSettingsBackToSheets(Object.values(rules));
     this.populateRuleResultsInSheets(rules, results);
@@ -637,8 +660,8 @@ export abstract class AppsScriptFrontEnd<
    */
   exportAsCsv(ruleName: string, matrix: string[][]) {
     const file = Utilities.newBlob(this.matrixToCsv(matrix));
-    const folder = this.getOrCreateFolder('launch_monitor');
-    const sheetId = ScriptApp.getScriptId();
+    const folder = this.getOrCreateFolder('reports');
+    const sheetId = HELPERS.getSheetId();
     const label: string = this.getRangeByName('LABEL').getValue();
     const filename = `${label ? label + '_' : 'report_'}${ruleName}_${sheetId}_${
         new Date(Date.now()).toISOString()}`;
@@ -660,9 +683,9 @@ export abstract class AppsScriptFrontEnd<
    */
   getOrCreateFolder(folderName: string, parent?: GoogleAppsScript.Spreadsheet.Range): string {
     const parentId = parent ?? this.getRangeByName('DRIVE_ID');
-    if (!parentId) {
+    if (!parentId || !parentId.getValue()) {
       throw new Error(
-          'Missing a named range `DRIVE_ID`. Please copy the rules sheet from the original template and try again.');
+          'Missing a named range and/or a value in named range `DRIVE_ID`.');
     }
     const driveId: string = parentId.getValue().trim();
 
@@ -692,7 +715,6 @@ export abstract class AppsScriptFrontEnd<
         mimeType: FOLDER,
         parents: [{id: driveId}],
       }).id as string;
-      parentId.setValue(folder);
     }
     return folder;
   }
@@ -734,9 +756,9 @@ export abstract class AppsScriptFrontEnd<
     getOrCreateSheet('Summary')
         .getRange(1, 1, ruleSheets.length, 2)
         .setValues(ruleSheets.map(
-            rule =>
+            (rule, i) =>
                 [rule,
-                 `=COUNTIF(INDIRECT("'" &A2 & " - Results'!B:B"), TRUE)`,
+                 `=COUNTIF(INDIRECT("'" & A${i+1} & " - Results'!B:B"), TRUE)`,
     ]));
   }
 
