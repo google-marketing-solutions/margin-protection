@@ -13,6 +13,6 @@
       "common": ["common"]
     }
   },
-  "include": ["src/**/*", "../sa360_api/*.ts", "outs.d.ts"],
+  "include": ["src/**/*", "../dv360_api/*.ts", "outs.d.ts"],
   "exclude": ["node_modules/**/*", "dist/**/*", "src/tests/**/*"]
 }

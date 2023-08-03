@@ -114,11 +114,6 @@ export class Client implements ClientInterface {
       Partial<Pick<ClientArgs, 'idType'|'id'>>&
       {advertiserId?: string, partnerId?: string},
       readonly properties: PropertyStore) {
-    if (!settings.advertiserId && !settings.partnerId &&
-        (!settings.id || settings.idType === undefined)) {
-      throw new Error(
-          'Unexpected lack of a partnerID and advertiserID. Choose one.');
-    }
     this.settings = {
       advertisers: settings.advertisers || Advertisers,
       assignedTargetingOptions:

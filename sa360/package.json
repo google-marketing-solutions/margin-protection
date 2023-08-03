@@ -19,7 +19,8 @@
   },
   "scripts": {
     "build": "yarn && webpack",
-    "push-dev": "yarn build --mode development --devtool source-map && clasp push",
-    "push": "yarn build --mode production && clasp push"
+    "push": "yarn build --mode development --devtool source-map && clasp push",
+    "push-dev": "yarn push",
+    "push-client": "cd client && yarn push"
   }
 }
