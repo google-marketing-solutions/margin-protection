@@ -13,14 +13,17 @@
 # limitations under the License.
 
 """Tests for main.py."""
+import datetime
+import enum
 import io
+import re
 import textwrap
 import types
+from typing import Optional
 import uuid
 
 from googleapiclient import discovery
 import pandas as pd
-import pandas.testing
 import pytest
 
 from launch_monitor.dashboard import main
@@ -50,7 +53,7 @@ def test_fill_dataframe():
       'Label': pd.Series(['label'] * 2, dtype='string'),
   }
   original = {'A': ['A1', 'A2'], 'B': ['B1', 'B2']}
-  expected_result = pd.DataFrame.from_records({
+  expected_result = pd.DataFrame({
       'Date': columns['Date'],
       'Sheet_ID': columns['Sheet_ID'],
       'Label': columns['Label'],
@@ -86,7 +89,36 @@ def test_load_data_into_pandas():
       )
   )
 
-  pandas.testing.assert_frame_equal(actual, expected)
+  pd.testing.assert_frame_equal(actual, expected)
+
+
+class TestGetLaunchMonitorFiles:
+
+  def test_happy_no_time(self):
+    drive = FakeDrive(error=False)
+    files = main.get_latest_launch_monitor_files(
+        drive, drive_id='parent_id', since=pd.NaT
+    )
+    assert len(files) == 4
+
+  def test_happy_since_time2(self):
+    drive = FakeDrive(error=False, since=Since.SECOND)
+    files = main.get_latest_launch_monitor_files(
+        drive, drive_id='parent_id', since=Since.SECOND.value
+    )
+    assert len(files) == 2
+
+  def test_sad(self):
+    drive = FakeDrive(error=True)
+
+    with pytest.raises(ValueError) as exc:
+      main.get_latest_launch_monitor_files(
+          drive, drive_id='parent_id', since=Since.SECOND.value
+      )
+
+    assert str(exc.value).startswith(
+        'No folder in drive with ID parent_id named "reports".'
+    )
 
 
 class FakeRequest:
@@ -119,3 +151,68 @@ class FakeHttp:
 
   def request(self, *unused_args, **unused_kwargs):
     return self.response, self.csv
+
+
+class Since(enum.Enum):
+  FIRST = datetime.datetime(
+      2022, 1, 1, 0, 0, 0, 0, tzinfo=datetime.timezone.utc
+  )
+  SECOND = datetime.datetime(
+      2023, 1, 1, 0, 0, 0, 0, tzinfo=datetime.timezone.utc
+  )
+
+
+class FakeDrive:
+  """Mocks a Drive API's files() method to help test main.py functionality."""
+
+  _file_list = [{'id': f'file{i}', 'name': 'File {i}'} for i in range(0, 4)]
+
+  def __init__(self, error: bool = False, since: Optional[Since] = None):
+    """Initializes a fake of a Drive API for testing.
+
+    Args:
+      error: If true, will always return an empty file list. Default false.
+      since: A datetime.datetime object limiting when a file should be retrieved
+        by. Used to mock the `" and createdTime>={createdTime}"` portion of a
+        Drive query. This is omitted if the datetime is of type pandas.NaT.
+    """
+    self._error = error
+    if since:
+      since_string = datetime.datetime.strftime(
+          since.value, '%Y-%m-%dT%H:%M:%S.%f%z'
+      )
+      self._and_time = f' and createdTime>="{since_string}"'
+    else:
+      self._and_time = ''
+    file_map = {
+        Since.FIRST: 1,
+        Since.SECOND: 2,
+    }
+    self._file_index = file_map.get(since, 0)
+
+  def files(self):
+    return FakeDrive._Files(
+        error=self._error, file_index=self._file_index, and_time=self._and_time
+    )
+
+  class _Files:
+    """Stubs files() methods for testing main.py functions."""
+
+    def __init__(self, error: bool, file_index: int, and_time: str):
+      self.error = error
+      self.file_index = file_index
+      self.and_time = and_time
+
+    def list(self, q: str):
+      """Returns the execute function for Drive.files().list()."""
+      matching = re.fullmatch(r"'([^']+)' in parents and name='reports'", q)
+
+      def execute():
+        if matching:
+          if self.error:
+            return {'files': []}
+          return {'files': [{'id': 'abc'}]}
+        elif q == f"'abc' in parents{self.and_time}":
+          return {'files': FakeDrive._file_list[self.file_index :]}
+
+      return types.SimpleNamespace(execute=execute)
