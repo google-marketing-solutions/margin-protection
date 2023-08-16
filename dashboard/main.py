@@ -13,8 +13,10 @@
 # limitations under the License.
 
 """A Cloud Function for ingesting data from Google Drive into BigQuery."""
+import dataclasses
 import datetime
 import io
+import re
 
 from googleapiclient import http
 import pandas as pd
@@ -22,26 +24,79 @@ import pandas as pd
 _DATE_FORMAT = '%Y-%m-%dT%H:%M:%S.%f%z'
 
 
-def fill_dataframe(
-    df: pd.DataFrame, date: str, sheet_id: str, label: str
-) -> pd.DataFrame:
+@dataclasses.dataclass(frozen=True, eq=True)
+class ReportName:
+  """Breaks a report filename into its component parts.
+
+  A report has metadata within it separated by underscores. This metadata
+  is used to store information in BigQuery and as a key in dicts. Passing
+  this object allows the regex matching to be done one time and leveraged
+  multiple times.
+  """
+
+  filename: str
+  category: str
+  label: str
+  rule: str
+  sheet_id: str
+  date: datetime.datetime
+
+  @classmethod
+  def with_filename(cls, filename: str):
+    """Saves the component parts of a filename in an object.
+
+    Args:
+      filename: A filename with the format {LABEL}_{RULE}_{SHEET_ID}_{DATE}.
+        Note that sometimes sheet_id has underscores in it, but the other values
+        should not.
+
+    Returns:
+      A class of type `FileName`.
+
+    Raises:
+      ValueError: If a filename doesn't meet the required format.
+    """
+
+    pattern = (
+        r'(?P<category>[^_]+)\_'
+        r'(?P<label>[^_]*)\_'  # can be blank
+        r'(?P<rule>[^_]+)\_'
+        r'(?P<sheet_id>.+?)\_'  # sheet IDs sometimes have underscores
+        r'(?P<date>\d{4}\-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}.\d{3}Z).csv'
+    )
+    matched_filename = re.fullmatch(pattern, filename)
+    if matched_filename is None:
+      raise ValueError('Invalid filename')
+    category, label, rule, sheet_id, date = matched_filename.group(
+        'category', 'label', 'rule', 'sheet_id', 'date'
+    )
+    return cls(
+        filename=filename,
+        category=category,
+        label=label,
+        rule=rule,
+        sheet_id=sheet_id,
+        date=datetime.datetime.strptime(date, _DATE_FORMAT),
+    )
+
+
+def fill_dataframe(df: pd.DataFrame, report_name: ReportName) -> pd.DataFrame:
   """Given a dataframe, prefix each row with a date, sheet ID and label.
 
   Args:
     df: A pandas DataFrame.
-    date: An ISO8601 date.
-    sheet_id: A Google Sheet ID.
-    label: A label (might be blank) to distinguish from other reports.
+    report_name: Contains the metadata found in a filename, split into parts.
 
   Returns:
     A new pandas DataFrame with prefixed columns.
   """
   dfl = len(df)
-  date = [pd.to_datetime(date, format=_DATE_FORMAT)]
+  date = [pd.to_datetime(report_name.date, format=_DATE_FORMAT)]
   df = pd.DataFrame({
       'Date': pd.Series(date * dfl, dtype='datetime64[ns, UTC]'),
-      'Sheet_ID': pd.Series([sheet_id] * dfl, dtype='string'),
-      'Label': pd.Series([label] * dfl, dtype='string'),
+      'Category': pd.Series([report_name.category] * dfl, dtype='string'),
+      'Sheet_ID': pd.Series([report_name.sheet_id] * dfl, dtype='string'),
+      'Label': pd.Series([report_name.label] * dfl, dtype='string'),
   }).join(df)
   df.columns = [_normalize(column) for column in df.columns]
   return df

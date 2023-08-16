@@ -49,12 +49,14 @@ def test_fill_dataframe():
   )
   columns = {
       'Date': [date] * 2,
+      'Category': pd.Series(['category'] * 2, dtype='string'),
       'Sheet_ID': pd.Series(['sheet_id'] * 2, dtype='string'),
       'Label': pd.Series(['label'] * 2, dtype='string'),
   }
   original = {'A': ['A1', 'A2'], 'B': ['B1', 'B2']}
   expected_result = pd.DataFrame({
       'Date': columns['Date'],
+      'Category': pd.Series(['category'] * 2, dtype='string'),
       'Sheet_ID': columns['Sheet_ID'],
       'Label': columns['Label'],
       'A': original['A'],
@@ -63,9 +65,9 @@ def test_fill_dataframe():
 
   result = main.fill_dataframe(
       pd.DataFrame.from_records(original),
-      label='label',
-      sheet_id='sheet_id',
-      date='2020-01-01T00:00:00.000Z',
+      main.ReportName.with_filename(
+          'category_label_rule_sheet_id_2020-01-01T00:00:00.000Z.csv'
+      ),
   )
 
   pd.testing.assert_frame_equal(expected_result, result)
@@ -90,6 +92,62 @@ def test_load_data_into_pandas():
   )
 
   pd.testing.assert_frame_equal(actual, expected)
+
+
+class TestReportName:
+
+  def test_happy_simple(self):
+    report_name = main.ReportName.with_filename(
+        'abc_def_ghi_jkl_2000-01-01T00:00:00.000Z.csv'
+    )
+    assert report_name == main.ReportName(
+        filename='abc_def_ghi_jkl_2000-01-01T00:00:00.000Z.csv',
+        category='abc',
+        label='def',
+        rule='ghi',
+        sheet_id='jkl',
+        date=datetime.datetime(
+            2000, 1, 1, 0, 0, 0, 0, tzinfo=datetime.timezone.utc
+        ),
+    )
+
+  def test_happy_complex(self):
+    report_name = main.ReportName.with_filename(
+        '1abc_2def_3ghi_4jkl_underscored_id5_2000-01-01T00:00:00.000Z.csv'
+    )
+    assert report_name == main.ReportName(
+        filename=(
+            '1abc_2def_3ghi_4jkl_underscored_id5_2000-01-01T00:00:00.000Z.csv'
+        ),
+        category='1abc',
+        label='2def',
+        rule='3ghi',
+        sheet_id='4jkl_underscored_id5',
+        date=datetime.datetime(
+            2000, 1, 1, 0, 0, 0, 0, tzinfo=datetime.timezone.utc
+        ),
+    )
+
+  def test_happy_no_label(self):
+    report_name = main.ReportName.with_filename(
+        'abc__ghi_jkl_2000-01-01T00:00:00.000Z.csv'
+    )
+    assert not report_name.label
+
+  @pytest.mark.parametrize(
+      'filename',
+      [
+          'abc.csv',
+          'abc_def_ghi_2000-01-01T00:00:00.000Z',
+          'abc_def_ghi_jkl_2000-01-01T00:00:00.000Z',
+          'abc_def_2000-01-01T00:00:00.000Z',
+      ],
+  )
+  def test_sad(self, filename):
+    with pytest.raises(ValueError) as exc:
+      main.ReportName.with_filename(filename)
+
+    assert str(exc.value).startswith('Invalid filename')
 
 
 class TestGetLaunchMonitorFiles:
@@ -136,6 +194,18 @@ class FakeRequest:
     return 200, True
 
 
+class FakeHttp:
+  """Stubs an HTTP request for testing."""
+
+  def __init__(self, csv: bytes):
+    self.csv = csv
+    self.response = FakeResponse()
+
+  def request(self, *unused_args, **unused_kwargs):
+    """Returns a `FakeResponse` and the CSV provided on class init."""
+    return self.response, self.csv
+
+
 class FakeResponse(dict):
 
   def __init__(self):
@@ -143,11 +213,8 @@ class FakeResponse(dict):
     super().__init__()
 
 
-class FakeHttp:
-
-  def __init__(self, csv: bytes):
-    self.csv = csv
-    self.response = FakeResponse()
+class Since(enum.Enum):
+  """Defines some dates to test `FakeDrive` list queries."""
 
   def request(self, *unused_args, **unused_kwargs):
     return self.response, self.csv
