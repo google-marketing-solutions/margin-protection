@@ -409,7 +409,8 @@ export abstract class AppsScriptFrontEnd<
   readonly client: C;
   readonly rules: ReadonlyArray<RuleExecutorClass<C, G, A>>;
 
-  constructor(
+  protected constructor(
+      private readonly category: string,
       private readonly injectedArgs: FrontEndArgs<C, G, A, F>,
   ) {
     const clientArgs = this.getIdentity();
@@ -663,8 +664,8 @@ export abstract class AppsScriptFrontEnd<
     const folder = this.getOrCreateFolder('reports');
     const sheetId = HELPERS.getSheetId();
     const label: string = this.getRangeByName('LABEL').getValue();
-    const filename = `${label ? label + '_' : 'report_'}${ruleName}_${sheetId}_${
-        new Date(Date.now()).toISOString()}`;
+    const filename = `${this.category}_${label ? label + '_' : 'report_'}${
+        ruleName}_${sheetId}_${new Date(Date.now()).toISOString()}`;
     Drive.Files!.insert(
         {
           parents: [{id: folder}],

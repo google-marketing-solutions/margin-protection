@@ -17,6 +17,7 @@
 
 import {AppsScriptPropertyStore, sendEmailAlert} from 'anomaly_library/main';
 import {addSettingWithDescription, AppsScriptFrontEnd, getOrCreateSheet, getTemplateSetting, HELPERS} from 'common/sheet_helpers';
+import {FrontEndArgs} from 'common/types';
 import {RuleRange} from 'dv360/src/client';
 import {ClientArgs, ClientInterface} from 'dv360/src/types';
 
@@ -101,10 +102,16 @@ export const migrations: Record<string, (frontend: DisplayVideoFrontEnd) => void
 };
 
 /**
- * Front-end configuration for SA360 Apps Script.
+ * Front-end configuration for DV360 Apps Script.
  */
 export class DisplayVideoFrontEnd extends AppsScriptFrontEnd<
     ClientInterface, RuleGranularity, ClientArgs, DisplayVideoFrontEnd> {
+  constructor(
+      args: FrontEndArgs<
+          ClientInterface, RuleGranularity, ClientArgs, DisplayVideoFrontEnd>) {
+    super('DV360', args);
+  }
+
   override getIdentity() {
     const sheet = SpreadsheetApp.getActive();
     if (!sheet) {

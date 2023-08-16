@@ -18,20 +18,10 @@
 import {setUpAppsScriptSimulator} from 'google3/javascript/apps/maestro/simulator/closure_apps_script_simulator-closurized';
 import {AppsScriptPropertyStore} from 'anomaly_library/main';
 
-import {
-  AppsScriptFrontEnd,
-  HELPERS,
-  lazyLoadApp,
-  toExport,
-} from '../sheet_helpers';
-import {AppsScriptFunctions} from '../types';
-import {
-  Client,
-  Granularity,
-  RuleRange,
-  TestClientArgs,
-  TestClientInterface,
-} from './helpers';
+import {AppsScriptFrontEnd, HELPERS, lazyLoadApp, toExport,} from '../sheet_helpers';
+import {AppsScriptFunctions, FrontEndArgs} from '../types';
+
+import {Client, Granularity, RuleRange, TestClientArgs, TestClientInterface,} from './helpers';
 
 describe('Check globals', async () => {
   let frontend: FakeFrontEnd;
@@ -95,6 +85,11 @@ class FakeFrontEnd extends AppsScriptFrontEnd<
     displaySetupGuide: 0,
     displayGlossary: 0,
   };
+
+  constructor(args: FrontEndArgs<
+              TestClientInterface, Granularity, TestClientArgs, FakeFrontEnd>) {
+    super('Fake', args);
+  }
 
   getIdentity(): TestClientArgs {
     return {};

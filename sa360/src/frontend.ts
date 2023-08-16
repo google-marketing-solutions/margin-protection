@@ -17,9 +17,9 @@
 
 import {AppsScriptPropertyStore, sendEmailAlert} from 'anomaly_library/main';
 import {addSettingWithDescription, AppsScriptFrontEnd, getOrCreateSheet, getTemplateSetting, HELPERS, RULE_SETTINGS_SHEET} from 'common/sheet_helpers';
+import {FrontEndArgs, ParamDefinition, RuleExecutor} from 'common/types';
 import {RuleRange} from 'sa360/src/client';
 import {ClientArgs, ClientInterface} from 'sa360/src/types';
-import {RuleExecutor, ParamDefinition} from 'common/types';
 
 import {RuleGranularity} from './types';
 
@@ -174,6 +174,12 @@ export const migrations: Record<
  */
 export class SearchAdsFrontEnd extends
     AppsScriptFrontEnd<ClientInterface, RuleGranularity, ClientArgs, SearchAdsFrontEnd> {
+  constructor(
+      args: FrontEndArgs<
+          ClientInterface, RuleGranularity, ClientArgs, SearchAdsFrontEnd>) {
+    super('SA360', args);
+  }
+
   override getIdentity() {
     const sheet = SpreadsheetApp.getActive();
     if (!sheet) {
