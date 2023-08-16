@@ -13,12 +13,14 @@
 # limitations under the License.
 
 """Tests for main.py."""
-
+import io
+import textwrap
 import types
 import uuid
 
 from googleapiclient import discovery
 import pandas as pd
+import pandas.testing
 import pytest
 
 from launch_monitor.dashboard import main
@@ -64,3 +66,56 @@ def test_fill_dataframe():
   )
 
   pd.testing.assert_frame_equal(expected_result, result)
+
+
+def test_load_data_into_pandas():
+  fd = io.BytesIO()
+  fd.seek(0)
+  expected = pd.DataFrame(
+      {'colA': ['A1', 'A2'], 'colB': ['B1', 'B2'], 'colC': ['C1', 'C2']},
+      dtype='string',
+  )
+
+  actual = main.load_data_into_pandas(
+      FakeRequest(
+          fd,
+          textwrap.dedent("""\
+  colA,colB,colC
+  A1,B1,C1
+  A2,B2,C2""").encode('utf-8'),
+      )
+  )
+
+  pandas.testing.assert_frame_equal(actual, expected)
+
+
+class FakeRequest:
+  """Wraps a CSV file handler to simulate an `http.HttpRequest` for testing."""
+
+  def __init__(self, fd, csv: bytes):
+    self._fd = fd
+    self.csv = csv.strip()
+    self.uri = 'localhost'
+    self.headers = {}
+    self.http = FakeHttp(self.csv)
+
+  def next_chunk(self):
+    self._fd.write(self.csv)
+    return 200, True
+
+
+class FakeResponse(dict):
+
+  def __init__(self):
+    self.status = 200
+    super().__init__()
+
+
+class FakeHttp:
+
+  def __init__(self, csv: bytes):
+    self.csv = csv
+    self.response = FakeResponse()
+
+  def request(self, *unused_args, **unused_kwargs):
+    return self.response, self.csv

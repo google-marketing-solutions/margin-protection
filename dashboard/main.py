@@ -13,7 +13,9 @@
 # limitations under the License.
 
 """A Cloud Function for ingesting data from Google Drive into BigQuery."""
+import io
 
+from googleapiclient import http
 import pandas as pd
 
 
@@ -46,3 +48,27 @@ def fill_dataframe(
 
 def _normalize(string):
   return string.replace(' ', '_').replace('.', '')
+
+
+def load_data_into_pandas(request: http.HttpRequest) -> pd.DataFrame:
+  """Use an API request to load the response into pandas for a BQ upload.
+
+  This function expects the response data from the request to be a CSV.
+
+  Args:
+    request: An HTTP request, i.e. the one used to download files from drive
+      (drive.files().get_media())
+
+  Returns:
+    A pandas DataFrame with the data from the request file in it.
+  """
+  file = io.BytesIO()
+  downloader = http.MediaIoBaseDownload(file, request)
+  done = False
+  while not done:
+    _, done = downloader.next_chunk()
+  file.seek(0)
+  df = pd.read_csv(file, dtype='string')
+  if df.get('anomalous'):
+    df['anomalous'] = pd.Series(df['anomalous'], dtype='bool')
+  return df
