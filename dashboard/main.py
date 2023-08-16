@@ -19,12 +19,27 @@ import datetime
 import io
 import re
 import sys
-from typing import Dict, List, Tuple
+import types
 
+from google import auth
+from google.cloud import bigquery
+from google.cloud import exceptions
+from google.cloud.bigquery import dataset
+from google.cloud.bigquery import table
+from googleapiclient import discovery
 from googleapiclient import http
 import pandas as pd
+import functions_framework
 
+
+
+SCOPES = [
+    'https://www.googleapis.com/auth/drive',
+]
 _DATE_FORMAT = '%Y-%m-%dT%H:%M:%S.%f%z'
+_LAST_REPORT_ID = 'last_report'
+
+__all__ = ['import_dashboard']
 
 
 @dataclasses.dataclass(frozen=True, eq=True)
@@ -35,6 +50,14 @@ class ReportName:
   is used to store information in BigQuery and as a key in dicts. Passing
   this object allows the regex matching to be done one time and leveraged
   multiple times.
+
+  Attributes:
+    category: The type of data getting exported (SA360, DV360, etc.)
+    filename: The full name of the file
+    label: The identifying label of a specific sheet (possibly a customer name).
+    rule: The rule being executed
+    sheet_id: The ID source signifying the copy of the tool.
+    date: The datetime of the report to the millisecond.
   """
 
   filename: str
@@ -135,7 +158,7 @@ def load_data_into_pandas(request: http.HttpRequest) -> pd.DataFrame:
 
 def get_latest_launch_monitor_files(
     drive_api, drive_id, since: datetime.datetime
-) -> str:
+) -> list[dict[str, str]]:
   """Returns the drive ID of the launch monitor folder given a parent folder.
 
   Raises:
@@ -182,8 +205,8 @@ def get_latest_launch_monitor_files(
 def load_files_into_dataframes(
     last_report_table: pd.DataFrame,
     drive_api,
-    drive_files: List[Dict[str, str]],
-) -> Tuple[pd.DataFrame, Dict[str, pd.DataFrame]]:
+    drive_files: list[dict[str, str]],
+) -> tuple[pd.DataFrame, dict[str, pd.DataFrame]]:
   """Loads data into a pandas dataframe from the given list of drive files.
 
   Downloads the files and loads them into pandas.
@@ -199,7 +222,7 @@ def load_files_into_dataframes(
     rule results to upload to BigQuery.
   """
   new_report_table = last_report_table.set_index('Sheet_ID')
-  dataframes: Dict[str, List[pd.DataFrame]] = collections.defaultdict(list)
+  dataframes: dict[str, list[pd.DataFrame]] = collections.defaultdict(list)
   for file_obj in drive_files:
     try:
       report_name = ReportName.with_filename(file_obj['name'])
@@ -221,3 +244,110 @@ def load_files_into_dataframes(
     )
 
   return new_report_table, {k: pd.concat(v) for k, v in dataframes.items()}
+
+
+def _get_or_create_last_report_table(
+    bigquery_client: bigquery.Client, gcp_project: str, gcp_dataset: str
+) -> pd.DataFrame:
+  """Retrieves a DataFrame with last updated dates per sheet ID.
+
+  If a report table `last_report` exists in BigQuery, creates it.
+
+  Args:
+    bigquery_client: The client for BigQuery calls
+
+  Returns:
+  """
+  try:
+    select_tables = bigquery_client.query(
+        'SELECT Sheet_ID, Label, Date from'
+        f' `{gcp_project}.{gcp_dataset}.{_LAST_REPORT_ID}`'
+    ).to_dataframe()
+  except exceptions.NotFound:
+    select_tables = pd.DataFrame({'Sheet_ID': [], 'Label': [], 'Date': []})
+    select_tables['Date'] = pd.to_datetime(select_tables['Date'])
+  return select_tables.set_index('Sheet_ID')
+
+
+def load_data_into_bigquery(
+    gcp_project: str,
+    gcp_dataset: str,
+    bigquery_client: bigquery.Client,
+    last_report_table: pd.DataFrame,
+    dataframes: dict[str, pd.DataFrame],
+) -> None:
+  """Loads pandas DataTables into BigQuery.
+
+  Loads `last_report_table` and all `dataframes` where each table is named
+  by the dict key.
+
+  Args:
+    gcp_project: The name of the GCP project.
+    gcp_dataset: The name of the dataset for BigQuery.
+    bigquery_client: A BigQuery python client.
+    last_report_table: The DataFrame for the `last_report` table.
+    dataframes: A dict of DataFrames to load, where the key is the table name.
+  """
+  for rule, df in dataframes.items():
+    bigquery_client.load_table_from_dataframe(
+        df,
+        table.TableReference(
+            dataset_ref=dataset.DatasetReference(
+                dataset_id=gcp_dataset,
+                project=gcp_project,
+            ),
+            table_id=_normalize(rule),
+        ),
+    ).result()
+    print(f'Completed {rule} ingestion')
+  job_config = bigquery.LoadJobConfig(
+      write_disposition='WRITE_TRUNCATE',
+  )
+  bigquery_client.load_table_from_dataframe(
+      last_report_table,
+      f'{gcp_project}.{gcp_dataset}.last_report',
+      job_config=job_config,
+  ).result()
+  print('Saved updated dates to `last_report`')
+
+
+@functions_framework.http
+def import_dashboard(request) -> str:
+  """Cloud function entrypoint.
+
+  Args:
+    request: A Cloud Function HTTP request method
+      <https://flask.palletsprojects.com/en/1.1.x/api/#incoming-request-data>
+
+  Returns:
+    A simple return message, 'Done'
+  """
+  request_json = request.get_json(silent=True)
+  gcp_project = request_json['gcp_project']
+  gcp_dataset = request_json['gcp_dataset']
+  credentials, _ = auth.default(scopes=SCOPES, quota_project_id=gcp_project)
+  drive_api = discovery.build('drive', 'v3', credentials=credentials)
+  drive_id = request_json['parent_drive_id']
+  client = bigquery.Client()
+
+  last_report_table = _get_or_create_last_report_table(
+      client, gcp_project=gcp_project, gcp_dataset=gcp_dataset
+  )
+  drive_files = get_latest_launch_monitor_files(
+      drive_id=drive_id,
+      drive_api=drive_api,
+      since=last_report_table['Date'].max(),
+  )
+  last_report_table, dataframes = load_files_into_dataframes(
+      last_report_table=last_report_table,
+      drive_api=drive_api,
+      drive_files=drive_files,
+  )
+  load_data_into_bigquery(
+      gcp_project=gcp_project,
+      gcp_dataset=gcp_dataset,
+      bigquery_client=client,
+      dataframes=dataframes,
+      last_report_table=last_report_table,
+  )
+  return 'Done'

@@ -12,3 +12,12 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+functions-framework==3.4.*
+Flask==2.3.*
+google-api-python-client==2.89.*
+google-auth==2.20.*
+google-auth-httplib2==0.1.*
+google-auth-oauthlib==1.0.*
+google-cloud-bigquery==3.11.*
+pandas==2.0.3
+
