@@ -13,10 +13,13 @@
 # limitations under the License.
 
 """A Cloud Function for ingesting data from Google Drive into BigQuery."""
+import collections
 import dataclasses
 import datetime
 import io
 import re
+import sys
+from typing import Dict, List, Tuple
 
 from googleapiclient import http
 import pandas as pd
@@ -174,3 +177,47 @@ def get_latest_launch_monitor_files(
       .get('files', [])
   )
   return files
+
+
+def load_files_into_dataframes(
+    last_report_table: pd.DataFrame,
+    drive_api,
+    drive_files: List[Dict[str, str]],
+) -> Tuple[pd.DataFrame, Dict[str, pd.DataFrame]]:
+  """Loads data into a pandas dataframe from the given list of drive files.
+
+  Downloads the files and loads them into pandas.
+
+  Args:
+    last_report_table: The dataframe that has a list of last updated reports
+    drive_api: The API for drive calls
+    drive_files: A list of drive files from drive.files().list()
+
+  Returns:
+    A tuple, the first one being the last_report_table, and the second being
+    a dict with the key the name of the rule and the value a DataFrame with
+    rule results to upload to BigQuery.
+  """
+  new_report_table = last_report_table.set_index('Sheet_ID')
+  dataframes: Dict[str, List[pd.DataFrame]] = collections.defaultdict(list)
+  for file_obj in drive_files:
+    try:
+      report_name = ReportName.with_filename(file_obj['name'])
+    except ValueError as e:
+      print(
+          f"File '{file_obj['name']}' name is invalid. Skipping.",
+          file=sys.stderr,
+      )
+      continue
+    new_report_table.loc[report_name.sheet_id] = [
+        report_name.label,
+        report_name.date,
+    ]
+
+    request = drive_api.files().get_media(fileId=file_obj['id'])
+    df = load_data_into_pandas(request)
+    dataframes[report_name.rule].append(
+        fill_dataframe(df, report_name=report_name)
+    )
+
+  return new_report_table, {k: pd.concat(v) for k, v in dataframes.items()}
