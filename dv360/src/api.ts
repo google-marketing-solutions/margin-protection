@@ -293,7 +293,10 @@ export class BudgetReport extends Report implements BudgetReportInterface {
  * Returns the first query that matches `REPORT_NAME`, if any.
  */
 function getExistingQueryByName(insertionOrderQueryTitle: string): Query | null {
-  const queryResponse = JSON.parse(UrlFetchApp.fetch(getQueryUrl('queries'), apiParams()).getContentText()) as {queries: Query[]};
+  const queryResponse = JSON.parse(UrlFetchApp.fetch(getQueryUrl('queries'), apiParams()).getContentText()) as {queries?: Query[]};
+  if(!queryResponse.queries){
+    return null;
+  }
   const queryMatchingName: Query[] = queryResponse.queries
       .filter((query: Query) => query.metadata.title === insertionOrderQueryTitle);
   if (queryMatchingName.length) {
