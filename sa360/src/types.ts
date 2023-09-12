@@ -15,13 +15,24 @@
  * limitations under the License.
  */
 
-import {BaseClientArgs, BaseClientInterface, RecordInfo} from 'common/types';
-import {AdGroupReport, AdGroupTargetReport, CampaignReport, CampaignTargetReport} from 'sa360/src/api';
+// g3-format-prettier
+import {
+  BaseClientArgs,
+  BaseClientInterface,
+  RecordInfo,
+} from 'common/types';
+import {
+  AdGroupReport,
+  AdGroupTargetReport,
+  CampaignReport,
+  CampaignTargetReport,
+} from 'sa360/src/api';
 
 /**
  * Extends the base client interface with SA360-specific features.
  */
-export interface ClientInterface extends BaseClientInterface<ClientInterface, RuleGranularity, ClientArgs> {
+export interface ClientInterface
+  extends BaseClientInterface<ClientInterface, RuleGranularity, ClientArgs> {
   getCampaignReport(): Promise<CampaignReport>;
   getCampaignTargetReport(): Promise<CampaignTargetReport>;
   getAdGroupReport(): Promise<AdGroupReport>;
@@ -33,7 +44,8 @@ export interface ClientInterface extends BaseClientInterface<ClientInterface, Ru
 /**
  * An agency ID and, optionally, an advertiser ID to narrow down.
  */
-export interface ClientArgs extends BaseClientArgs<ClientInterface, RuleGranularity, ClientArgs> {
+export interface ClientArgs
+  extends BaseClientArgs<ClientInterface, RuleGranularity, ClientArgs> {
   agencyId: string;
   advertiserId?: string;
 
@@ -67,4 +79,7 @@ interface StartAndEndDate {
  *
  * https://developers.google.com/search-ads/v2/reference/reports#request.timeRange
  */
-export type SearchAdsTimeRange = StartAndEndDate | ChangedMetricsSinceTimestamp | ChangedAttributesSinceTimestamp;
+export type SearchAdsTimeRange =
+  | StartAndEndDate
+  | ChangedMetricsSinceTimestamp
+  | ChangedAttributesSinceTimestamp;

@@ -15,13 +15,25 @@
  * limitations under the License.
  */
 
+// g3-format-prettier
 import {setUpAppsScriptSimulator} from 'google3/javascript/apps/maestro/simulator/closure_apps_script_simulator-closurized';
 import {AppsScriptPropertyStore} from 'anomaly_library/main';
 
-import {AppsScriptFrontEnd, HELPERS, lazyLoadApp, toExport,} from '../sheet_helpers';
+import {
+  AppsScriptFrontEnd,
+  HELPERS,
+  lazyLoadApp,
+  toExport,
+} from '../sheet_helpers';
 import {AppsScriptFunctions, FrontEndArgs} from '../types';
 
-import {Client, Granularity, RuleRange, TestClientArgs, TestClientInterface,} from './helpers';
+import {
+  Client,
+  Granularity,
+  RuleRange,
+  TestClientArgs,
+  TestClientInterface,
+} from './helpers';
 
 describe('Check globals', async () => {
   let frontend: FakeFrontEnd;
@@ -86,8 +98,14 @@ class FakeFrontEnd extends AppsScriptFrontEnd<
     displayGlossary: 0,
   };
 
-  constructor(args: FrontEndArgs<
-              TestClientInterface, Granularity, TestClientArgs, FakeFrontEnd>) {
+  constructor(
+    args: FrontEndArgs<
+      TestClientInterface,
+      Granularity,
+      TestClientArgs,
+      FakeFrontEnd
+    >,
+  ) {
     super('Fake', args);
   }
 
@@ -202,21 +220,29 @@ describe('Test migration order', () => {
   });
 
   it('runs when initializeSheets runs', async () => {
-    const frontend = setFrontEnd({expectedVersion: CURRENT_SHEET_VERSION, currentVersion: '1.0'});
+    const frontend = setFrontEnd({
+      expectedVersion: CURRENT_SHEET_VERSION,
+      currentVersion: '1.0',
+    });
     scaffoldSheetWithNamedRanges();
     spyOn(HtmlService, 'createTemplateFromFile').and.stub();
-    PropertiesService.getScriptProperties().setProperty(
-        'sheet_version', '0.1');
+    PropertiesService.getScriptProperties().setProperty('sheet_version', '0.1');
     await frontend.initializeSheets();
-    expect(PropertiesService.getScriptProperties().getProperty('sheet_version'))
-        .toEqual(String(CURRENT_SHEET_VERSION));
+    expect(
+      PropertiesService.getScriptProperties().getProperty('sheet_version'),
+    ).toEqual(String(CURRENT_SHEET_VERSION));
   });
 
   it('does not run migrations if version is up-to-date', () => {
-    const frontend = setFrontEnd({expectedVersion: CURRENT_SHEET_VERSION, currentVersion: '1.0'});
+    const frontend = setFrontEnd({
+      expectedVersion: CURRENT_SHEET_VERSION,
+      currentVersion: '1.0',
+    });
     // NOTE - do not change this test. Change `CURRENT_SHEET_VERSION` instead.
     PropertiesService.getScriptProperties().setProperty(
-        'sheet_version', String(CURRENT_SHEET_VERSION));
+      'sheet_version',
+      String(CURRENT_SHEET_VERSION),
+    );
     const numberRun = frontend.migrate();
     expect(numberRun).toEqual(0);
   });

@@ -15,12 +15,14 @@
  * limitations under the License.
  */
 
-/** @fileoverview DAO for the Google Ads API */
+/**
+ * g3-format-prettier
+ * @fileoverview DAO for the Google Ads API 
+ */
 
 import {AccountMap, CampaignReport} from './types';
 
 import URLFetchRequestOptions = GoogleAppsScript.URL_Fetch.URLFetchRequestOptions;
-
 
 /**
  * The API version, exposed for testing.
@@ -58,13 +60,13 @@ FROM campaign`;
  * Represents a GoogleAdsRow result.
  */
 export declare interface GoogleAdsRow {
-  campaign?: {id?: number, descriptiveName?: string, status?: string};
-  customer?: {id?: number, descriptiveName?: string};
+  campaign?: {id?: number; descriptiveName?: string; status?: string};
+  customer?: {id?: number; descriptiveName?: string};
   customerClient?: {
-    id?: number,
-    descriptiveName?: string,
-    manager?: boolean,
-    status?: string
+    id?: number;
+    descriptiveName?: string;
+    manager?: boolean;
+    status?: string;
   };
 }
 
@@ -93,14 +95,18 @@ export class GoogleAdsApiFactory {
   private readonly cache = new Map<string, GoogleAdsApi>();
 
   constructor(
-      private readonly developerToken: string,
-      private readonly credentialManager: CredentialManager) {}
+    private readonly developerToken: string,
+    private readonly credentialManager: CredentialManager,
+  ) {}
 
   create(loginCustomerId: string) {
     let api = this.cache.get(loginCustomerId);
     if (!api) {
       api = new GoogleAdsApi(
-          this.developerToken, loginCustomerId, this.credentialManager);
+        this.developerToken,
+        loginCustomerId,
+        this.credentialManager,
+      );
       this.cache.set(loginCustomerId, api);
     }
     return api;
@@ -127,9 +133,10 @@ export class CredentialManager {
  */
 export class GoogleAdsApi {
   constructor(
-      private readonly developerToken: string,
-      private readonly loginCustomerId: string,
-      private readonly credentialManager: CredentialManager) {}
+    private readonly developerToken: string,
+    private readonly loginCustomerId: string,
+    private readonly credentialManager: CredentialManager,
+  ) {}
 
   private requestHeaders() {
     const token = this.credentialManager.getToken();
@@ -140,11 +147,13 @@ export class GoogleAdsApi {
     };
   }
 
-  * query(customerId: string, query: string): IterableIterator<GoogleAdsRow> {
-    const url = `https://${GOOGLEADS_URL}/${GOOGLEADS_API_VERSION}/customers/${
-        customerId}/googleAds:search`;
-    const params:
-        GoogleAdsSearchRequest = {pageSize: MAX_PAGE_SIZE, query, customerId};
+  *query(customerId: string, query: string): IterableIterator<GoogleAdsRow> {
+    const url = `https://${GOOGLEADS_URL}/${GOOGLEADS_API_VERSION}/customers/${customerId}/googleAds:search`;
+    const params: GoogleAdsSearchRequest = {
+      pageSize: MAX_PAGE_SIZE,
+      query,
+      customerId,
+    };
     let pageToken;
     do {
       const req: URLFetchRequestOptions = {
@@ -153,8 +162,9 @@ export class GoogleAdsApi {
         contentType: 'application/json',
         payload: JSON.stringify({...params, pageToken}),
       };
-      const res = JSON.parse(UrlFetchApp.fetch(url, req).getContentText()) as
-          GoogleAdsSearchResponse;
+      const res = JSON.parse(
+        UrlFetchApp.fetch(url, req).getContentText(),
+      ) as GoogleAdsSearchResponse;
       pageToken = res.nextPageToken;
       for (const row of res.results || []) {
         yield row;
@@ -175,8 +185,9 @@ export class ReportGenerator {
    * @param apiFactory An injectable api client factory.
    */
   constructor(
-      private readonly loginAccounts: AccountMap[],
-      private readonly apiFactory: GoogleAdsApiFactory) {}
+    private readonly loginAccounts: AccountMap[],
+    private readonly apiFactory: GoogleAdsApiFactory,
+  ) {}
 
   campaignReports(): CampaignReport[] {
     const report: CampaignReport[] = [];
@@ -191,7 +202,7 @@ export class ReportGenerator {
           customerName: row.customer?.descriptiveName ?? '',
           id: String(row.campaign?.id ?? ''),
           name: row.campaign?.descriptiveName ?? '',
-          status: row.campaign?.status ?? 'UNKNOWN'
+          status: row.campaign?.status ?? 'UNKNOWN',
         });
       }
     }

@@ -15,37 +15,75 @@
  * limitations under the License.
  */
 
-import {Advertisers, AssignedTargetingOptions, Campaigns, InsertionOrders} from 'dv360_api/dv360';
-import {Advertiser, Campaign, InsertionOrder} from 'dv360_api/dv360_resources';
+// g3-format-prettier
+import {
+  Advertisers,
+  AssignedTargetingOptions,
+  Campaigns,
+  InsertionOrders,
+} from 'dv360_api/dv360';
+import {
+  Advertiser,
+  Campaign,
+  InsertionOrder,
+} from 'dv360_api/dv360_resources';
 import {RawApiDate} from 'dv360_api/dv360_types';
-import {PropertyStore, Rule, RuleInstructions} from 'anomaly_library/main';
-import {AbstractRuleRange, newRuleBuilder} from 'common/sheet_helpers';
-import {Callback, ExecutorResult, ParamDefinition, RecordInfo, RuleDefinition, RuleExecutor, RuleExecutorClass, RuleUtilities, Settings} from 'common/types';
+import {
+  PropertyStore,
+  Rule,
+  RuleInstructions,
+} from 'anomaly_library/main';
+import {
+  AbstractRuleRange,
+  newRuleBuilder,
+} from 'common/sheet_helpers';
+import {
+  Callback,
+  ExecutorResult,
+  ParamDefinition,
+  RecordInfo,
+  RuleDefinition,
+  RuleExecutor,
+  RuleExecutorClass,
+  RuleUtilities,
+  Settings,
+} from 'common/types';
 
 import {BudgetReport, BudgetReportInterface, ImpressionReport} from './api';
-import {ClientArgs, ClientInterface, IDType, QueryReportParams, RuleGranularity} from './types';
+import {
+  ClientArgs,
+  ClientInterface,
+  IDType,
+  QueryReportParams,
+  RuleGranularity,
+} from './types';
 
 /**
  * A new rule in SA360.
  */
-export const newRule =
-    newRuleBuilder<ClientInterface, RuleGranularity, ClientArgs>() as
-    <P extends Record<keyof P, ParamDefinition>>(p: RuleParams<P>) =>
-        RuleExecutorClass<ClientInterface, RuleGranularity, ClientArgs, P>;
+export const newRule = newRuleBuilder<
+  ClientInterface,
+  RuleGranularity,
+  ClientArgs
+>() as <P extends Record<keyof P, ParamDefinition>>(
+  p: RuleParams<P>,
+) => RuleExecutorClass<ClientInterface, RuleGranularity, ClientArgs, P>;
 
 /**
  * Parameters for a rule, with `this` methods from {@link RuleUtilities}.
  */
 type RuleParams<Params extends Record<keyof Params, ParamDefinition>> =
-    RuleDefinition<Params, RuleGranularity>&
-    ThisType<RuleExecutor<ClientInterface, RuleGranularity, ClientArgs, Params>&
-             RuleUtilities>;
+  RuleDefinition<Params, RuleGranularity> &
+    ThisType<
+      RuleExecutor<ClientInterface, RuleGranularity, ClientArgs, Params> &
+        RuleUtilities
+    >;
 
 /**
  * A report class that can return a Report object.
  */
 export interface ReportConstructor<T> {
-  new(params: QueryReportParams): T;
+  new (params: QueryReportParams): T;
 }
 
 /**
@@ -61,8 +99,11 @@ export interface ReportConstructor<T> {
  *   special characters.
  */
 export interface RuleStoreEntry<
-    Params extends
-        Record<keyof ParamDefinition, ParamDefinition[keyof ParamDefinition]>> {
+  Params extends Record<
+    keyof ParamDefinition,
+    ParamDefinition[keyof ParamDefinition]
+  >,
+> {
   /**
    * Contains a rule's metadata.
    */
@@ -90,39 +131,55 @@ export class Client implements ClientInterface {
   readonly settings: Required<ClientArgs>;
   readonly ruleStore: {
     [ruleName: string]: RuleExecutor<
-        ClientInterface, RuleGranularity, ClientArgs,
-        Record<string, ParamDefinition>>;
+      ClientInterface,
+      RuleGranularity,
+      ClientArgs,
+      Record<string, ParamDefinition>
+    >;
   };
 
   addRule<Params extends Record<keyof Params, ParamDefinition>>(
-      rule: RuleExecutorClass<
-          ClientInterface, RuleGranularity, ClientArgs, Params>,
-      settingsArray: readonly string[][]): ClientInterface {
+    rule: RuleExecutorClass<
+      ClientInterface,
+      RuleGranularity,
+      ClientArgs,
+      Params
+    >,
+    settingsArray: readonly string[][],
+  ): ClientInterface {
     this.ruleStore[rule.definition.name] = new rule(this, settingsArray);
     return this;
   }
 
   constructor(
-      settings: Omit<ClientArgs, 'idType'|'id'>&{advertiserId: string},
-      properties: PropertyStore);
+    settings: Omit<ClientArgs, 'idType' | 'id'> & {advertiserId: string},
+    properties: PropertyStore,
+  );
   constructor(
-      settings: Omit<ClientArgs, 'idType'|'id'>&{partnerId: string},
-      properties: PropertyStore);
+    settings: Omit<ClientArgs, 'idType' | 'id'> & {partnerId: string},
+    properties: PropertyStore,
+  );
   constructor(settings: ClientArgs, properties: PropertyStore);
   constructor(
-      settings: Omit<ClientArgs, 'idType'|'id'>&
-      Partial<Pick<ClientArgs, 'idType'|'id'>>&
-      {advertiserId?: string, partnerId?: string},
-      readonly properties: PropertyStore) {
+    settings: Omit<ClientArgs, 'idType' | 'id'> &
+      Partial<Pick<ClientArgs, 'idType' | 'id'>> & {
+        advertiserId?: string;
+        partnerId?: string;
+      },
+    readonly properties: PropertyStore,
+  ) {
     this.settings = {
       advertisers: settings.advertisers || Advertisers,
       assignedTargetingOptions:
-          settings.assignedTargetingOptions || AssignedTargetingOptions,
-      idType: settings.idType ??
-          (settings.advertiserId ? IDType.ADVERTISER : IDType.PARTNER),
-      id: settings.id ??
-          (settings.advertiserId ? settings.advertiserId :
-                                   settings.partnerId ?? ''),
+        settings.assignedTargetingOptions || AssignedTargetingOptions,
+      idType:
+        settings.idType ??
+        (settings.advertiserId ? IDType.ADVERTISER : IDType.PARTNER),
+      id:
+        settings.id ??
+        (settings.advertiserId
+          ? settings.advertiserId
+          : settings.partnerId ?? ''),
       campaigns: settings.campaigns || Campaigns,
       insertionOrders: settings.insertionOrders || InsertionOrders,
       budgetReport: settings.budgetReport || BudgetReport,
@@ -145,12 +202,16 @@ export class Client implements ClientInterface {
    */
   async validate() {
     type Executor = RuleExecutor<
-        ClientInterface, RuleGranularity, ClientArgs,
-        Record<string, ParamDefinition>>;
-    const thresholds: Array<[Executor, Function]> =
-        Object.values(this.ruleStore).reduce((prev, rule) => {
-          return [...prev, [rule, rule.run.bind(rule)]];
-        }, [] as Array<[Executor, Function]>);
+      ClientInterface,
+      RuleGranularity,
+      ClientArgs,
+      Record<string, ParamDefinition>
+    >;
+    const thresholds: Array<[Executor, Function]> = Object.values(
+      this.ruleStore,
+    ).reduce((prev, rule) => {
+      return [...prev, [rule, rule.run.bind(rule)]];
+    }, [] as Array<[Executor, Function]>);
     const rules: Record<string, Executor> = {};
     const results: Record<string, ExecutorResult> = {};
     for (const [rule, thresholdCallable] of thresholds) {
@@ -163,33 +224,44 @@ export class Client implements ClientInterface {
 
   getAllInsertionOrders(): InsertionOrder[] {
     if (!this.storedInsertionOrders.length) {
-      this.storedInsertionOrders = this.settings.idType === IDType.ADVERTISER ?
-          this.getAllInsertionOrdersForAdvertiser(this.settings.id) :
-          this.getAllAdvertisersForPartner().reduce(
-              (arr, advertiserId) => arr.concat(
-                  this.getAllInsertionOrdersForAdvertiser(advertiserId)),
-              [] as InsertionOrder[]);
+      this.storedInsertionOrders =
+        this.settings.idType === IDType.ADVERTISER
+          ? this.getAllInsertionOrdersForAdvertiser(this.settings.id)
+          : this.getAllAdvertisersForPartner().reduce(
+              (arr, advertiserId) =>
+                arr.concat(
+                  this.getAllInsertionOrdersForAdvertiser(advertiserId),
+                ),
+              [] as InsertionOrder[],
+            );
     }
     return this.storedInsertionOrders;
   }
 
   async getAllCampaigns() {
     if (!this.storedCampaigns.length) {
-      const campaignsWithSegments =
-          this.getAllInsertionOrders().reduce((prev, io) => {
-            prev.add(io.getCampaignId());
-            return prev;
-          }, new Set<string>());
+      const campaignsWithSegments = this.getAllInsertionOrders().reduce(
+        (prev, io) => {
+          prev.add(io.getCampaignId());
+          return prev;
+        },
+        new Set<string>(),
+      );
 
-      const result = this.settings.idType === IDType.ADVERTISER ?
-          this.getAllCampaignsForAdvertiser(this.settings.id)
-              .filter(campaign => campaignsWithSegments.has(campaign.id)) :
-          this.getAllAdvertisersForPartner().reduce(
-              (arr, advertiserId) => arr.concat(
-                  this.getAllCampaignsForAdvertiser(advertiserId)
-                      .filter(
-                          campaign => campaignsWithSegments.has(campaign.id))),
-              [] as RecordInfo[]);
+      const result =
+        this.settings.idType === IDType.ADVERTISER
+          ? this.getAllCampaignsForAdvertiser(this.settings.id).filter(
+              (campaign) => campaignsWithSegments.has(campaign.id),
+            )
+          : this.getAllAdvertisersForPartner().reduce(
+              (arr, advertiserId) =>
+                arr.concat(
+                  this.getAllCampaignsForAdvertiser(advertiserId).filter(
+                    (campaign) => campaignsWithSegments.has(campaign.id),
+                  ),
+                ),
+              [] as RecordInfo[],
+            );
       this.storedCampaigns = result;
     }
 
@@ -223,14 +295,16 @@ export class Client implements ClientInterface {
     const todayDate = new Date();
     const insertionOrderApi = new this.settings.insertionOrders(advertiserId);
     insertionOrderApi.list((ios: InsertionOrder[]) => {
-      result = result.concat(ios.filter(io => {
-        for (const budgetSegment of io.getInsertionOrderBudgetSegments()) {
-          if (getDate(budgetSegment.dateRange.endDate) > todayDate) {
-            return true;
+      result = result.concat(
+        ios.filter((io) => {
+          for (const budgetSegment of io.getInsertionOrderBudgetSegments()) {
+            if (getDate(budgetSegment.dateRange.endDate) > todayDate) {
+              return true;
+            }
           }
-        }
-        return false;
-      }));
+          return false;
+        }),
+      );
     });
 
     return result;
@@ -245,16 +319,24 @@ export class Client implements ClientInterface {
         if (!id) {
           throw new Error('Campaign ID is missing.');
         }
-        result.push(
-            {advertiserId, id, displayName: campaign.getDisplayName()!});
+        result.push({
+          advertiserId,
+          id,
+          displayName: campaign.getDisplayName()!,
+        });
       }
     });
 
     return result;
   }
 
-  getBudgetReport({startDate, endDate}: {startDate: Date; endDate: Date;}):
-      BudgetReportInterface {
+  getBudgetReport({
+    startDate,
+    endDate,
+  }: {
+    startDate: Date;
+    endDate: Date;
+  }): BudgetReportInterface {
     if (!this.savedBudgetReport) {
       this.savedBudgetReport = new this.settings.budgetReport({
         idType: this.settings.idType,
@@ -268,16 +350,17 @@ export class Client implements ClientInterface {
 
   getUniqueKey(prefix: string) {
     return `${prefix}-${this.settings.idType === IDType.PARTNER ? 'P' : 'A'}${
-        this.settings.id}`;
+      this.settings.id
+    }`;
   }
 
   newRule(
-      rule: (rule: RuleInstructions) => Rule,
-      instructions: Omit<RuleInstructions, 'propertyStore'>) {
+    rule: (rule: RuleInstructions) => Rule,
+    instructions: Omit<RuleInstructions, 'propertyStore'>,
+  ) {
     return rule({...instructions, propertyStore: this.properties});
   }
 }
-
 
 /**
  * Converts a {@link RawApiDate} to a {@link Date}.
@@ -289,18 +372,20 @@ export function getDate(rawApiDate: RawApiDate): Date {
 /**
  * DV360 rule settings splits.
  */
-export class RuleRange extends
-    AbstractRuleRange<ClientInterface, RuleGranularity, ClientArgs> {
+export class RuleRange extends AbstractRuleRange<
+  ClientInterface,
+  RuleGranularity,
+  ClientArgs
+> {
   async getRows(ruleGranularity: RuleGranularity) {
     if (ruleGranularity === RuleGranularity.CAMPAIGN) {
       return this.client.getAllCampaigns();
     } else {
-      return this.client.getAllInsertionOrders().map(
-          io => ({
-            advertiserId: io.getAdvertiserId(),
-            id: io.getId()!,
-            displayName: io.getDisplayName()!,
-          }));
+      return this.client.getAllInsertionOrders().map((io) => ({
+        advertiserId: io.getAdvertiserId(),
+        id: io.getId()!,
+        displayName: io.getDisplayName()!,
+      }));
     }
   }
 }

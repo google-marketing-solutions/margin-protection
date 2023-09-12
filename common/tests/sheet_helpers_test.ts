@@ -15,6 +15,7 @@
  * limitations under the License.
  */
 
+// g3-format-prettier
 import {
   FakePropertyStore,
   mockAppsScript,
@@ -102,18 +103,11 @@ describe('Rule Settings helper functions', () => {
 
   it('break down a settings sheet into the correct categories', () => {
     expect(
-      (rules as unknown as {rules: Record<string, Array<string[]|undefined>>}).rules,
+      (rules as unknown as {rules: Record<string, Array<string[] | undefined>>})
+        .rules,
     ).toEqual({
-      'none': [
-        ['id', 'name'],
-        undefined,
-        ['1', 'one'],
-      ],
-      'Category A': [
-        ['Header 1', 'Header 2'],
-        undefined,
-        ['Col 1', 'Col 2'],
-      ],
+      'none': [['id', 'name'], undefined, ['1', 'one']],
+      'Category A': [['Header 1', 'Header 2'], undefined, ['Col 1', 'Col 2']],
       'Category B': [
         ['Header 3', 'Header 4', 'Header 5'],
         undefined,

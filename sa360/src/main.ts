@@ -16,6 +16,7 @@
  */
 
 /**
+ * g3-format-prettier
  * @fileoverview Implement and bootstrap Apps Script.
  *
  * BEGIN-INTERNAL
@@ -24,10 +25,20 @@
  * END-INTERNAL
  */
 
-import {lazyLoadApp, toExport} from 'common/sheet_helpers';
-import {ClientArgs, ClientInterface, RuleGranularity} from 'sa360/src/types';
-import {Client, RuleRange} from 'sa360/src/client';
 import {PropertyStore} from 'anomaly_library/main';
+import {
+  lazyLoadApp,
+  toExport,
+} from 'common/sheet_helpers';
+import {
+  Client,
+  RuleRange,
+} from 'sa360/src/client';
+import {
+  ClientArgs,
+  ClientInterface,
+  RuleGranularity,
+} from 'sa360/src/types';
 
 import {migrations, SearchAdsFrontEnd} from './frontend';
 
@@ -45,8 +56,7 @@ export const CURRENT_SHEET_VERSION = '2.0';
 export function getFrontEnd(properties: PropertyStore) {
   return new SearchAdsFrontEnd({
     ruleRangeClass: RuleRange,
-    rules: [
-    ],
+    rules: [],
     version: CURRENT_SHEET_VERSION,
     clientClass: Client,
     migrations,
@@ -54,7 +64,9 @@ export function getFrontEnd(properties: PropertyStore) {
   });
 }
 
-lazyLoadApp<ClientInterface, RuleGranularity, ClientArgs, SearchAdsFrontEnd>(getFrontEnd);
+lazyLoadApp<ClientInterface, RuleGranularity, ClientArgs, SearchAdsFrontEnd>(
+  getFrontEnd,
+);
 
 global.onOpen = toExport.onOpen;
 global.initializeSheets = toExport.initializeSheets;

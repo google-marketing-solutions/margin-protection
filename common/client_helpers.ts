@@ -15,15 +15,26 @@
  * limitations under the License.
  */
 
+// g3-format-prettier
 import {getRule} from 'anomaly_library/main';
-import {BaseClientArgs, BaseClientInterface, ParamDefinition, RuleExecutor, RuleExecutorClass, RuleGranularity, RuleParams, RuleUtilities, Settings} from './types';
 import {transformToParamValues} from './sheet_helpers';
+import {
+  BaseClientArgs,
+  BaseClientInterface,
+  ParamDefinition,
+  RuleExecutor,
+  RuleExecutorClass,
+  RuleGranularity,
+  RuleParams,
+  RuleUtilities,
+  Settings,
+} from './types';
 
 /**
  * Creates new rule with the metadata needed to generate settings.
  *
  * Wrapping in this function gives us access to all methods in {@link
-    * RuleUtilities} as part of `this` in our `callback`.
+ * RuleUtilities} as part of `this` in our `callback`.
  *
  * Example:
  *
@@ -38,15 +49,16 @@ import {transformToParamValues} from './sheet_helpers';
  * });
  * ```
  */
-export function
-newRuleBuilder<
-    C extends BaseClientInterface<C, G, A>,
-    G extends RuleGranularity<G>,
-    A extends BaseClientArgs<C, G, A>>(): <P extends Record<keyof P, ParamDefinition>>(p: RuleParams<C, G, A, P>) => RuleExecutorClass<C, G, A, P> {
-  return function
-      newRule<P extends Record<keyof P, ParamDefinition>>(
-      ruleDefinition: RuleParams<C, G, A, P>):
-      RuleExecutorClass<C, G, A, P> {
+export function newRuleBuilder<
+  C extends BaseClientInterface<C, G, A>,
+  G extends RuleGranularity<G>,
+  A extends BaseClientArgs<C, G, A>,
+>(): <P extends Record<keyof P, ParamDefinition>>(
+  p: RuleParams<C, G, A, P>,
+) => RuleExecutorClass<C, G, A, P> {
+  return function newRule<P extends Record<keyof P, ParamDefinition>>(
+    ruleDefinition: RuleParams<C, G, A, P>,
+  ): RuleExecutorClass<C, G, A, P> {
     const ruleClass = class implements RuleExecutor<C, G, A, P> {
       readonly uniqueKeyPrefix: string = '';
       readonly settings: Settings<Record<keyof P, string>>;

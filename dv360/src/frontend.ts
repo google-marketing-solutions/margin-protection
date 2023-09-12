@@ -15,11 +15,24 @@
  * limitations under the License.
  */
 
-import {AppsScriptPropertyStore, sendEmailAlert} from 'anomaly_library/main';
-import {addSettingWithDescription, AppsScriptFrontEnd, getOrCreateSheet, getTemplateSetting, HELPERS} from 'common/sheet_helpers';
+// g3-format-prettier
+import {
+  AppsScriptPropertyStore,
+  sendEmailAlert,
+} from 'anomaly_library/main';
+import {
+  AppsScriptFrontEnd,
+  HELPERS,
+  addSettingWithDescription,
+  getOrCreateSheet,
+  getTemplateSetting,
+} from 'common/sheet_helpers';
 import {FrontEndArgs} from 'common/types';
 import {RuleRange} from 'dv360/src/client';
-import {ClientArgs, ClientInterface} from 'dv360/src/types';
+import {
+  ClientArgs,
+  ClientInterface,
+} from 'dv360/src/types';
 
 import {IDType, RuleGranularity} from './types';
 
@@ -37,7 +50,10 @@ export const GENERAL_SETTINGS_SHEET = 'General/Settings';
  * A list of migrations with version as key and a migration script as the
  * value.
  */
-export const migrations: Record<string, (frontend: DisplayVideoFrontEnd) => void> = {
+export const migrations: Record<
+  string,
+  (frontend: DisplayVideoFrontEnd) => void
+> = {
   '1.1': (frontend) => {
     const active = SpreadsheetApp.getActive();
     const ruleSettingsSheet = active.getSheetByName('Rule Settings');
@@ -47,30 +63,42 @@ export const migrations: Record<string, (frontend: DisplayVideoFrontEnd) => void
     let campaignValues: string[][] = [[]];
     let ioValues: string[][] = [[]];
 
-    const ruleRange =
-        new RuleRange(ruleSettingsSheet.getDataRange().getValues(), frontend.client);
+    const ruleRange = new RuleRange(
+      ruleSettingsSheet.getDataRange().getValues(),
+      frontend.client,
+    );
     campaignValues = ruleRange.getValues(RuleGranularity.CAMPAIGN);
     ioValues = ruleRange.getValues(RuleGranularity.INSERTION_ORDER);
     active.deleteSheet(ruleSettingsSheet);
     getOrCreateSheet('Rule Settings - Campaign')
-        .getRange(1, 1, campaignValues.length, campaignValues[0].length)
-        .setValues(campaignValues);
+      .getRange(1, 1, campaignValues.length, campaignValues[0].length)
+      .setValues(campaignValues);
     getOrCreateSheet('Rule Settings - Insertion Order')
-        .getRange(1, 1, ioValues.length, ioValues[0].length)
-        .setValues(ioValues);
+      .getRange(1, 1, ioValues.length, ioValues[0].length)
+      .setValues(ioValues);
   },
   '1.2': (frontend) => {
     // encrypt rules
     const properties = PropertiesService.getScriptProperties().getProperties();
     const newProperties = {...properties};
     for (const [key, property] of Object.entries(properties)) {
-      if (['pacingDays', 'impressionsByGeo', 'pacingPercent', 'dailyBudget', 'geo'].indexOf(key.split('-')[0]) < 0) {
+      if (
+        [
+          'pacingDays',
+          'impressionsByGeo',
+          'pacingPercent',
+          'dailyBudget',
+          'geo',
+        ].indexOf(key.split('-')[0]) < 0
+      ) {
         continue;
       }
       if (!property.startsWith('{')) {
         continue;
       }
-      newProperties[key] = Utilities.gzip(Utilities.newBlob(property)).getDataAsString();
+      newProperties[key] = Utilities.gzip(
+        Utilities.newBlob(property),
+      ).getDataAsString();
     }
     PropertiesService.getScriptProperties().setProperties(newProperties);
   },
@@ -90,13 +118,16 @@ export const migrations: Record<string, (frontend: DisplayVideoFrontEnd) => void
     ]);
     addSettingWithDescription(sheet, 'A7', [
       'Drive ID',
-      'The ID of the Drive folder destination\n(copy in folder URL after \'/folders/\' and before the \'?\')',
+      "The ID of the Drive folder destination\n(copy in folder URL after '/folders/' and before the '?')",
     ]);
   },
   '2.0': () => {
     const properties = new AppsScriptPropertyStore();
     Object.entries(properties.getProperties()).forEach(([k, v]) => {
-      properties.setProperty(k, JSON.stringify({values: JSON.parse(v), updated: new Date(), }));
+      properties.setProperty(
+        k,
+        JSON.stringify({values: JSON.parse(v), updated: new Date()}),
+      );
     });
   },
 };
@@ -105,10 +136,19 @@ export const migrations: Record<string, (frontend: DisplayVideoFrontEnd) => void
  * Front-end configuration for DV360 Apps Script.
  */
 export class DisplayVideoFrontEnd extends AppsScriptFrontEnd<
-    ClientInterface, RuleGranularity, ClientArgs, DisplayVideoFrontEnd> {
+  ClientInterface,
+  RuleGranularity,
+  ClientArgs,
+  DisplayVideoFrontEnd
+> {
   constructor(
-      args: FrontEndArgs<
-          ClientInterface, RuleGranularity, ClientArgs, DisplayVideoFrontEnd>) {
+    args: FrontEndArgs<
+      ClientInterface,
+      RuleGranularity,
+      ClientArgs,
+      DisplayVideoFrontEnd
+    >,
+  ) {
     super('DV360', args);
   }
 
@@ -123,30 +163,32 @@ export class DisplayVideoFrontEnd extends AppsScriptFrontEnd<
       return null;
     }
     const idType = idTypeRange.getValue();
-    return { id: idRange.getValue(), idType: idType === "Advertiser" ? IDType.ADVERTISER : IDType.PARTNER };
+    return {
+      id: idRange.getValue(),
+      idType: idType === 'Advertiser' ? IDType.ADVERTISER : IDType.PARTNER,
+    };
   }
 
   override displaySetupModal() {
     const template = HtmlService.createTemplateFromFile('html/setup');
     template['id'] = this.getRangeByName(ENTITY_ID).getValue() || '';
     template['idType'] = this.getRangeByName(ID_TYPE).getValue() || '';
-    const htmlOutput = template.evaluate()
-        .setWidth(350)
-        .setHeight(400);
+    const htmlOutput = template.evaluate().setWidth(350).setHeight(400);
     SpreadsheetApp.getUi().showModalDialog(htmlOutput, 'Set up');
   }
 
   maybeSendEmailAlert() {
-    const to =
-        getTemplateSetting(EMAIL_LIST_RANGE).getValue();
+    const to = getTemplateSetting(EMAIL_LIST_RANGE).getValue();
     const label = getTemplateSetting(LABEL_RANGE).getValue();
     if (!to) {
       return;
     }
     sendEmailAlert(
-        Object.values(this.client.ruleStore).map(rule => rule.getRule()), {
-          to,
-          subject: `Anomalies found for ${label}`,
-        });
+      Object.values(this.client.ruleStore).map((rule) => rule.getRule()),
+      {
+        to,
+        subject: `Anomalies found for ${label}`,
+      },
+    );
   }
 }

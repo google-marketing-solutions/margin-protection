@@ -16,12 +16,16 @@
  */
 
 /***
+ * g3-format-prettier
  * @fileoverview The client implementation. Connects to a library for
  *   centrally managed distributions. This usage is optional, but allows for
  *   ops teams to update code in a central location.
  */
 
-import {AppsScriptPropertyStore, PropertyStore} from 'anomaly_library/main';
+import {
+  AppsScriptPropertyStore,
+  PropertyStore,
+} from 'anomaly_library/main';
 
 interface Exported {
   onOpen(properties: PropertyStore): void;

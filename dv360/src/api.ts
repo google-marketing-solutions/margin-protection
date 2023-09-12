@@ -16,9 +16,9 @@
  */
 
 /**
+ * g3-format-prettier
  * @fileoverview Contains a DAO for DBM access.
  */
-
 
 import {IDType, QueryReportParams} from './types';
 
@@ -50,11 +50,13 @@ interface Report {
 interface QueryBody {
   metadata: {
     title: string;
-    dataRange: {
-      range: 'CUSTOM_DATES';
-      customEndDate: {month: number; year: number; day: number};
-      customStartDate: {month: number; year: number; day: number}
-    } | {range: string};
+    dataRange:
+      | {
+          range: 'CUSTOM_DATES';
+          customEndDate: {month: number; year: number; day: number};
+          customStartDate: {month: number; year: number; day: number};
+        }
+      | {range: string};
     format: string;
     sendNotification: boolean;
   };
@@ -62,7 +64,7 @@ interface QueryBody {
     type: string;
     groupBys: readonly string[];
     metrics: readonly string[];
-    filters: Array<{ type: string; value: string }>;
+    filters: Array<{type: string; value: string}>;
   };
 }
 
@@ -96,18 +98,22 @@ abstract class Report {
     if (existingQueryId) {
       return existingQueryId;
     }
-    const query: Query = getExistingQueryByName(queryTitle) || JSON.parse(
+    const query: Query =
+      getExistingQueryByName(queryTitle) ||
+      (JSON.parse(
         UrlFetchApp.fetch(
-            getQueryUrl('queries'),
-            apiParams({'payload': JSON.stringify(this.queryBody())}),
-        ).getContentText()
-    ) as Query;
+          getQueryUrl('queries'),
+          apiParams({'payload': JSON.stringify(this.queryBody())}),
+        ).getContentText(),
+      ) as Query);
     this.properties.setProperty(queryTitle, query.queryId);
     return query.queryId;
   }
 
   protected getQueryTitle() {
-    return `${REPORT_HEADER} (${this.getReportName()}) ${this.params.idType === IDType.PARTNER ? 'P' : 'A'}${this.params.id}`;
+    return `${REPORT_HEADER} (${this.getReportName()}) ${
+      this.params.idType === IDType.PARTNER ? 'P' : 'A'
+    }${this.params.id}`;
   }
 
   /**
@@ -121,14 +127,14 @@ abstract class Report {
       return reportUrl;
     }
     const query: Report = JSON.parse(
-        UrlFetchApp.fetch(
-            getQueryUrl(`queries/${queryId}:run?synchronous=true`),
-            apiParams({
-              'payload': JSON.stringify({
-                dataRange: getDataRange(this.params.startDate, this.params.endDate),
-              }),
-            }),
-        ).getContentText()
+      UrlFetchApp.fetch(
+        getQueryUrl(`queries/${queryId}:run?synchronous=true`),
+        apiParams({
+          'payload': JSON.stringify({
+            dataRange: getDataRange(this.params.startDate, this.params.endDate),
+          }),
+        }),
+      ).getContentText(),
     ) as Report;
     const result = query.metadata.googleCloudStoragePath;
     CacheService.getScriptCache().put(`dbm-${queryId}`, result, 60);
@@ -137,8 +143,8 @@ abstract class Report {
 
   protected fetchReport(reportUrl: string): string[][] {
     const query: string = UrlFetchApp.fetch(
-        reportUrl,
-        apiParams({ 'contentType': undefined }),
+      reportUrl,
+      apiParams({'contentType': undefined}),
     ).getContentText();
 
     return Utilities.parseCsv(query.split('\n\n')[0]);
@@ -147,12 +153,18 @@ abstract class Report {
   protected abstract queryBody(): QueryBody;
 }
 
-export class ImpressionReport extends Report implements ImpressionReportInterface {
+export class ImpressionReport
+  extends Report
+  implements ImpressionReportInterface
+{
   override getReportName() {
     return 'Impressions';
   }
 
-  getImpressionPercentOutsideOfGeos(insertionOrderId: string, countries: string[]) {
+  getImpressionPercentOutsideOfGeos(
+    insertionOrderId: string,
+    countries: string[],
+  ) {
     const report = {...this.report};
     let validImpressions = 0;
     for (const country of countries) {
@@ -160,12 +172,15 @@ export class ImpressionReport extends Report implements ImpressionReportInterfac
       validImpressions += report[key] ?? 0;
       delete report[key];
     }
-    const invalidImpressions = Object.entries(report).reduce((prev, [key, val]) => {
-      if (key.startsWith(insertionOrderId)) {
-        prev += val;
-      }
-      return prev;
-    }, 0);
+    const invalidImpressions = Object.entries(report).reduce(
+      (prev, [key, val]) => {
+        if (key.startsWith(insertionOrderId)) {
+          prev += val;
+        }
+        return prev;
+      },
+      0,
+    );
     return invalidImpressions / (invalidImpressions + validImpressions) || 0;
   }
 
@@ -193,7 +208,7 @@ export class ImpressionReport extends Report implements ImpressionReportInterfac
     return {
       metadata: {
         title: this.getQueryTitle(),
-        dataRange:  {
+        dataRange: {
           // note - this is a placeholder. date range will always be overridden.
           'range': 'LAST_7_DAYS',
         },
@@ -202,11 +217,14 @@ export class ImpressionReport extends Report implements ImpressionReportInterfac
       },
       params: {
         type: 'STANDARD',
-        groupBys: [ 'FILTER_COUNTRY', 'FILTER_INSERTION_ORDER' ],
-        metrics: [ 'METRIC_BILLABLE_IMPRESSIONS' ],
+        groupBys: ['FILTER_COUNTRY', 'FILTER_INSERTION_ORDER'],
+        metrics: ['METRIC_BILLABLE_IMPRESSIONS'],
         filters: [
           {
-            type: this.params.idType === IDType.PARTNER ? 'FILTER_PARTNER' : 'FILTER_ADVERTISER',
+            type:
+              this.params.idType === IDType.PARTNER
+                ? 'FILTER_PARTNER'
+                : 'FILTER_ADVERTISER',
             value: String(this.params.id),
           },
         ],
@@ -219,7 +237,6 @@ export class ImpressionReport extends Report implements ImpressionReportInterfac
  * Contains calls associated with getting a budget report.
  */
 export class BudgetReport extends Report implements BudgetReportInterface {
-
   override getReportName() {
     return 'Spend';
   }
@@ -229,7 +246,11 @@ export class BudgetReport extends Report implements BudgetReportInterface {
    *
    * The budget segment starts on `startDate` and ends on `endDate`.
    */
-  getSpendForInsertionOrder(insertionOrderId: string, startDate: number, endDate: number): number {
+  getSpendForInsertionOrder(
+    insertionOrderId: string,
+    startDate: number,
+    endDate: number,
+  ): number {
     return this.report[`${insertionOrderId},${startDate},${endDate}`];
   }
 
@@ -242,7 +263,9 @@ export class BudgetReport extends Report implements BudgetReportInterface {
   protected queryBody() {
     return {
       metadata: {
-        title: `${this.getQueryTitle()} ${this.params.idType === IDType.PARTNER ? 'P' : 'A'}${this.params.id}`,
+        title: `${this.getQueryTitle()} ${
+          this.params.idType === IDType.PARTNER ? 'P' : 'A'
+        }${this.params.id}`,
         dataRange: getDataRange(this.params.startDate, this.params.endDate),
         format: 'CSV',
         sendNotification: false,
@@ -252,14 +275,17 @@ export class BudgetReport extends Report implements BudgetReportInterface {
         groupBys: [
           'FILTER_ADVERTISER',
           'FILTER_INSERTION_ORDER',
-          "FILTER_BUDGET_SEGMENT_START_DATE",
-          "FILTER_BUDGET_SEGMENT_END_DATE",
-          "FILTER_BUDGET_SEGMENT_DESCRIPTION",
+          'FILTER_BUDGET_SEGMENT_START_DATE',
+          'FILTER_BUDGET_SEGMENT_END_DATE',
+          'FILTER_BUDGET_SEGMENT_DESCRIPTION',
         ],
         metrics: ['METRIC_BILLABLE_COST_USD'],
         filters: [
           {
-            type: this.params.idType === IDType.PARTNER ? 'FILTER_PARTNER' : 'FILTER_ADVERTISER',
+            type:
+              this.params.idType === IDType.PARTNER
+                ? 'FILTER_PARTNER'
+                : 'FILTER_ADVERTISER',
             value: String(this.params.id),
           },
         ],
@@ -271,8 +297,9 @@ export class BudgetReport extends Report implements BudgetReportInterface {
     const queryId = this.fetchQueryId();
     const reportUrl = this.fetchReportUrl(queryId);
     const report = this.fetchReport(reportUrl);
-    const headers = Object.fromEntries(report[0].map((header, idx) =>
-        [header, idx]));
+    const headers = Object.fromEntries(
+      report[0].map((header, idx) => [header, idx]),
+    );
 
     const insertionOrderId = headers['Insertion Order ID'];
     const mediaCost = headers['Billable Cost (USD)'];
@@ -292,13 +319,18 @@ export class BudgetReport extends Report implements BudgetReportInterface {
 /**
  * Returns the first query that matches `REPORT_NAME`, if any.
  */
-function getExistingQueryByName(insertionOrderQueryTitle: string): Query | null {
-  const queryResponse = JSON.parse(UrlFetchApp.fetch(getQueryUrl('queries'), apiParams()).getContentText()) as {queries?: Query[]};
-  if(!queryResponse.queries){
+function getExistingQueryByName(
+  insertionOrderQueryTitle: string,
+): Query | null {
+  const queryResponse = JSON.parse(
+    UrlFetchApp.fetch(getQueryUrl('queries'), apiParams()).getContentText(),
+  ) as {queries: Query[]};
+  if (!queryResponse.queries) {
     return null;
   }
-  const queryMatchingName: Query[] = queryResponse.queries
-      .filter((query: Query) => query.metadata.title === insertionOrderQueryTitle);
+  const queryMatchingName: Query[] = queryResponse.queries.filter(
+    (query: Query) => query.metadata.title === insertionOrderQueryTitle,
+  );
   if (queryMatchingName.length) {
     return queryMatchingName[0];
   }
@@ -312,8 +344,10 @@ function apiParams(requestParams?: {[key: string]: unknown}) {
   const token = ScriptApp.getOAuthToken();
   const baseParams = {
     'contentType': 'application/json',
-    'headers':
-        {'Authorization': `Bearer ${token}`, 'Accept': 'application/json'},
+    'headers': {
+      'Authorization': `Bearer ${token}`,
+      'Accept': 'application/json',
+    },
   };
   return Object.assign({}, baseParams, requestParams || {});
 }
@@ -350,7 +384,10 @@ export interface BudgetReportInterface {
    * @param endTime The time in seconds since epoch
    */
   getSpendForInsertionOrder(
-      insertionOrderId: string, startTime: number, endTime: number): number;
+    insertionOrderId: string,
+    startTime: number,
+    endTime: number,
+  ): number;
 }
 
 /**

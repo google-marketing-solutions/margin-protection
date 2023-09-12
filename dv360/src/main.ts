@@ -16,16 +16,26 @@
  */
 
 /**
+ * g3-format-prettier
  * @fileoverview Apps Script handlers.
  */
 
-import {lazyLoadApp, toExport} from 'common/sheet_helpers';
+import {
+  lazyLoadApp,
+  toExport,
+} from 'common/sheet_helpers';
 
+import {PropertyStore} from 'anomaly_library/main';
 import {Client, RuleRange} from './client';
 import {DisplayVideoFrontEnd, migrations} from './frontend';
-import {budgetPacingDaysAheadRule, budgetPacingPercentageRule, dailyBudgetRule, geoTargetRule, impressionsByGeoTarget} from './rules';
+import {
+  budgetPacingDaysAheadRule,
+  budgetPacingPercentageRule,
+  dailyBudgetRule,
+  geoTargetRule,
+  impressionsByGeoTarget,
+} from './rules';
 import {ClientArgs, ClientInterface, RuleGranularity} from './types';
-import {PropertyStore} from 'anomaly_library/main';
 
 /**
  * The sheet version the app currently has.
@@ -34,7 +44,6 @@ import {PropertyStore} from 'anomaly_library/main';
  * another.
  */
 export const CURRENT_SHEET_VERSION = '1.5';
-
 
 /**
  * Retrieves the front-end as a function.
@@ -64,7 +73,8 @@ export function getFrontEnd(properties: PropertyStore) {
  * Exported for testing.
  */
 lazyLoadApp<ClientInterface, RuleGranularity, ClientArgs, DisplayVideoFrontEnd>(
-    getFrontEnd);
+  getFrontEnd,
+);
 
 global.onOpen = toExport.onOpen;
 global.initializeSheets = toExport.initializeSheets;

@@ -15,7 +15,10 @@
  * limitations under the License.
  */
 
-/** @fileoverview DAO for the SA360 Reporting API */
+/**
+ * g3-format-prettier
+ * @fileoverview DAO for the SA360 Reporting API
+ */
 
 import {HELPERS} from 'common/sheet_helpers';
 import {RecordInfo} from 'common/types';

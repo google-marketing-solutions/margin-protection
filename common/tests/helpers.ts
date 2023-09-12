@@ -15,6 +15,7 @@
  * limitations under the License.
  */
 
+// g3-format-prettier
 import {
   Rule,
   RuleInstructions,
@@ -24,7 +25,9 @@ import {FakePropertyStore} from 'anomaly_library/testing/mock_apps_script';
 import {AbstractRuleRange} from '../sheet_helpers';
 import {
   BaseClientArgs,
-  BaseClientInterface, Callback, ExecutorResult,
+  BaseClientInterface,
+  Callback,
+  ExecutorResult,
   ParamDefinition,
   RecordInfo,
   RuleExecutor,
@@ -83,10 +86,16 @@ export class Client implements TestClientInterface {
     throw new Error('Method not implemented.');
   }
   validate(): Promise<{
-    rules: Record<string, RuleExecutor<
-        TestClientInterface, Granularity, TestClientArgs,
-        Record<string, ParamDefinition>>>,
-    results: Record<string, ExecutorResult>
+    rules: Record<
+      string,
+      RuleExecutor<
+        TestClientInterface,
+        Granularity,
+        TestClientArgs,
+        Record<string, ParamDefinition>
+      >
+    >;
+    results: Record<string, ExecutorResult>;
   }> {
     throw new Error('Method not implemented.');
   }

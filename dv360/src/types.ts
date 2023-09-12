@@ -15,9 +15,18 @@
  * limitations under the License.
  */
 
-import {Advertisers, AssignedTargetingOptions, Campaigns, InsertionOrders} from 'dv360_api/dv360';
+// g3-format-prettier
+import {
+  Advertisers,
+  AssignedTargetingOptions,
+  Campaigns,
+  InsertionOrders,
+} from 'dv360_api/dv360';
 import {InsertionOrder} from 'dv360_api/dv360_resources';
-import {BaseClientArgs, BaseClientInterface} from 'common/types';
+import {
+  BaseClientArgs,
+  BaseClientInterface,
+} from 'common/types';
 
 import {ReportConstructor} from './client';
 
@@ -43,7 +52,10 @@ export interface BudgetReportInterface {
    * @param endTime The time in seconds since epoch
    */
   getSpendForInsertionOrder(
-      insertionOrderId: string, startTime: number, endTime: number): number;
+    insertionOrderId: string,
+    startTime: number,
+    endTime: number,
+  ): number;
 }
 
 /**
@@ -66,17 +78,20 @@ export interface QueryReportParams {
 /**
  * Defines a client object, which is responsible for wrapping.
  */
-export interface ClientInterface extends
-    BaseClientInterface<ClientInterface, RuleGranularity, ClientArgs> {
+export interface ClientInterface
+  extends BaseClientInterface<ClientInterface, RuleGranularity, ClientArgs> {
   getAllInsertionOrders(): InsertionOrder[];
-  getBudgetReport(args: {startDate: Date; endDate: Date;}): BudgetReportInterface;
+  getBudgetReport(args: {
+    startDate: Date;
+    endDate: Date;
+  }): BudgetReportInterface;
 }
 
 /**
  * An agency ID and, optionally, an advertiser ID to narrow down.
  */
-export interface ClientArgs extends
-    BaseClientArgs<ClientInterface, RuleGranularity, ClientArgs> {
+export interface ClientArgs
+  extends BaseClientArgs<ClientInterface, RuleGranularity, ClientArgs> {
   idType: IDType;
   id: Readonly<string>;
   advertisers?: typeof Advertisers;
