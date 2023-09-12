@@ -151,6 +151,17 @@ function makeCampaignIndexedSettings(
 }
 
 /**
+ * Metadata that gets prepended to CSV exports.
+ */
+interface MetadataForCsv {
+  category: string;
+  sheetId: string;
+  label: string;
+  ruleName: string;
+  currentTime: string;
+}
+
+/**
  * Rule split according to the name of the rule in a dictionary.
  *
  * The range has two headers: Header 1 is category/rule names, and
@@ -181,7 +192,7 @@ export abstract class AbstractRuleRange<
       return;
     }
     if (this.rowIndex[id] === undefined) {
-      this.rowIndex[id] = ++this.length
+      this.rowIndex[id] = ++this.length;
     }
     (this.rules[category] = this.rules[category] || [])[this.rowIndex[id]] =
         column;
@@ -644,28 +655,39 @@ export abstract class AppsScriptFrontEnd<
   /**
    * Converts a 2-d array to a CSV.
    *
-   * Exported for testing.
+   * Prepends metadata from {@link MetadataForCsv}.
    */
-  matrixToCsv(matrix: string[][]): string {
+  matrixToCsv(
+      matrix: string[][],
+      {category, sheetId, label, ruleName, currentTime}: MetadataForCsv):
+      string {
     // note - the arrays we're using get API data, not user input. Not
     // anticipating anything that complicated, but we're adding tests to be
     // sure.
-    return matrix
-        .map(row => row.map(col => `"${col.replaceAll('"', '"""')}"`).join(','))
-        .join('\n');
+    const headers = (['Category', 'Sheet ID', 'Label', 'Rule Name', 'Current Time', ...matrix[0]]).map(col => `"${col.replaceAll('"', '"""')}"`).join(',');
+    return headers + '\n' +
+        matrix.slice(1)
+            .map(
+                row => [category, sheetId, label, ruleName, currentTime, ...row]
+                           .map(col => `"${col.replaceAll('"', '"""')}"`)
+                           .join(','))
+            .join('\n');
   }
 
   /**
    * Exports rules as a CSV.
-   *
    */
   exportAsCsv(ruleName: string, matrix: string[][]) {
-    const file = Utilities.newBlob(this.matrixToCsv(matrix));
     const folder = this.getOrCreateFolder('reports');
     const sheetId = HELPERS.getSheetId();
     const label: string = this.getRangeByName('LABEL').getValue();
+    const currentTime = new Date(Date.now()).toISOString();
+    const category = this.category;
+    const file = Utilities.newBlob(this.matrixToCsv(matrix, {
+      category, sheetId, label, ruleName, currentTime
+    }));
     const filename = `${this.category}_${label ? label + '_' : 'report_'}${
-        ruleName}_${sheetId}_${new Date(Date.now()).toISOString()}`;
+        ruleName}_${sheetId}_${currentTime}`;
     Drive.Files!.insert(
         {
           parents: [{id: folder}],
