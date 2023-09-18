@@ -20,4 +20,5 @@ google-auth-httplib2==0.1.*
 google-auth-oauthlib==1.0.*
 google-cloud-bigquery==3.11.*
 pandas==2.0.3
-
+pyarrow
+db-dtypes

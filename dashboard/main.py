@@ -13,13 +13,13 @@
 # limitations under the License.
 
 """A Cloud Function for ingesting data from Google Drive into BigQuery."""
+
 import collections
 import dataclasses
 import datetime
 import io
 import re
 import sys
-import types
 
 from google import auth
 from google.cloud import bigquery
@@ -29,6 +29,8 @@ from google.cloud.bigquery import table
 from googleapiclient import discovery
 from googleapiclient import http
 import pandas as pd
+
+
 import functions_framework
 
 
@@ -151,55 +153,9 @@ def load_data_into_pandas(request: http.HttpRequest) -> pd.DataFrame:
     _, done = downloader.next_chunk()
   file.seek(0)
   df = pd.read_csv(file, dtype='string')
-  if df.get('anomalous'):
+  if 'anomalous' in df:
     df['anomalous'] = pd.Series(df['anomalous'], dtype='bool')
   return df
-
-
-def get_latest_launch_monitor_files(
-    drive_api, drive_id, since: datetime.datetime
-) -> list[dict[str, str]]:
-  """Returns the drive ID of the launch monitor folder given a parent folder.
-
-  Raises:
-    ValueError: If the "reports" folder or its parent can't be found.
-
-  Args:
-    drive_api: The drive service.
-    drive_id: The ID the drive folder where the 'reports' folder lives.
-    since: The datetime to start searching from (the last time the report was
-      run). If the report hasn't been run yet, this will be a pd.NaT and start
-      from scratch.
-
-  Returns:
-    A list of files to be downloaded.
-  """
-  result = (
-      drive_api.files()
-      .list(q=f"'{drive_id}' in parents and name='reports'")
-      .execute()
-  )
-  try:
-    file_id = result['files'][0]['id']
-  except IndexError as e:
-    raise ValueError(
-        f'No folder in drive with ID {drive_id} named "reports". '
-        'Either the parent ID is invalid or the "reports" '
-        'folder is missing.'
-    ) from e
-
-  if not pd.isnull(since):
-    since_string = datetime.datetime.strftime(since, _DATE_FORMAT)
-    and_time = f' and createdTime>="{since_string}"'
-  else:
-    and_time = ''
-  files = (
-      drive_api.files()
-      .list(q=f"'{file_id}' in parents{and_time}")
-      .execute()
-      .get('files', [])
-  )
-  return files
 
 
 def load_files_into_dataframes(
@@ -214,36 +170,35 @@ def load_files_into_dataframes(
   Args:
     last_report_table: The dataframe that has a list of last updated reports
     drive_api: The API for drive calls
-    drive_files: A list of drive files from drive.files().list()
+    drive_files: A list of drive files with 'name' and 'id' keys,
+      typically from drive.files().list()
 
   Returns:
     A tuple, the first one being the last_report_table, and the second being
     a dict with the key the name of the rule and the value a DataFrame with
     rule results to upload to BigQuery.
   """
-  new_report_table = last_report_table.set_index('Sheet_ID')
   dataframes: dict[str, list[pd.DataFrame]] = collections.defaultdict(list)
   for file_obj in drive_files:
     try:
       report_name = ReportName.with_filename(file_obj['name'])
-    except ValueError as e:
+    except ValueError:
       print(
           f"File '{file_obj['name']}' name is invalid. Skipping.",
           file=sys.stderr,
       )
       continue
-    new_report_table.loc[report_name.sheet_id] = [
+    last_report_table.loc[report_name.sheet_id] = [
         report_name.label,
         report_name.date,
     ]
-
     request = drive_api.files().get_media(fileId=file_obj['id'])
     df = load_data_into_pandas(request)
     dataframes[report_name.rule].append(
         fill_dataframe(df, report_name=report_name)
     )
 
-  return new_report_table, {k: pd.concat(v) for k, v in dataframes.items()}
+  return last_report_table, {k: pd.concat(v) for k, v in dataframes.items()}
 
 
 def _get_or_create_last_report_table(
@@ -255,6 +210,8 @@ def _get_or_create_last_report_table(
 
   Args:
     bigquery_client: The client for BigQuery calls
+    gcp_project: The GCP Project
+    gcp_dataset: The dataset in which to store the report
 
   Returns:
   """
@@ -266,6 +223,9 @@ def _get_or_create_last_report_table(
   except exceptions.NotFound:
     select_tables = pd.DataFrame({'Sheet_ID': [], 'Label': [], 'Date': []})
     select_tables['Date'] = pd.to_datetime(select_tables['Date'])
+  except KeyError as e:
+    raise RuntimeError from e
+
   return select_tables.set_index('Sheet_ID')
 
 
@@ -288,14 +248,15 @@ def load_data_into_bigquery(
     last_report_table: The DataFrame for the `last_report` table.
     dataframes: A dict of DataFrames to load, where the key is the table name.
   """
+  dataset_ref = dataset.DatasetReference(
+      dataset_id=gcp_dataset,
+      project=gcp_project,
+  )
   for rule, df in dataframes.items():
     bigquery_client.load_table_from_dataframe(
         df,
         table.TableReference(
-            dataset_ref=dataset.DatasetReference(
-                dataset_id=gcp_dataset,
-                project=gcp_project,
-            ),
+            dataset_ref=dataset_ref,
             table_id=_normalize(rule),
         ),
     ).result()
@@ -305,14 +266,17 @@ def load_data_into_bigquery(
   )
   bigquery_client.load_table_from_dataframe(
       last_report_table,
-      f'{gcp_project}.{gcp_dataset}.last_report',
+      table.TableReference(
+          dataset_ref=dataset_ref,
+          table_id='last_report',
+      ),
       job_config=job_config,
   ).result()
   print('Saved updated dates to `last_report`')
 
 
 @functions_framework.http
-def import_dashboard(request) -> str:
+def import_dashboard(request):
   """Cloud function entrypoint.
 
   Args:
@@ -320,23 +284,19 @@ def import_dashboard(request) -> str:
       <https://flask.palletsprojects.com/en/1.1.x/api/#incoming-request-data>
 
   Returns:
-    A simple return message, 'Done'
+    A list of tables names/rule names for further evaluation/view creation.
   """
   request_json = request.get_json(silent=True)
   gcp_project = request_json['gcp_project']
   gcp_dataset = request_json['gcp_dataset']
+  drive_files = [{'id': file['id'], 'name': file['name']} for file in request_json['file_list']]
+
   credentials, _ = auth.default(scopes=SCOPES, quota_project_id=gcp_project)
   drive_api = discovery.build('drive', 'v3', credentials=credentials)
-  drive_id = request_json['parent_drive_id']
   client = bigquery.Client()
 
   last_report_table = _get_or_create_last_report_table(
       client, gcp_project=gcp_project, gcp_dataset=gcp_dataset
-  )
-  drive_files = get_latest_launch_monitor_files(
-      drive_id=drive_id,
-      drive_api=drive_api,
-      since=last_report_table['Date'].max(),
   )
   last_report_table, dataframes = load_files_into_dataframes(
       last_report_table=last_report_table,
@@ -350,4 +310,6 @@ def import_dashboard(request) -> str:
       dataframes=dataframes,
       last_report_table=last_report_table,
   )
-  return 'Done'
+  return {
+      'tables': list(dataframes.keys())
+  }

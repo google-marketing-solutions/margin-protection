@@ -141,33 +141,43 @@ class TestLoadFilesIntoDataFrames:
 
   @pytest.fixture
   def last_report_table(self):
-    last_report_table = pd.DataFrame({'Sheet_ID': [], 'Label': [], 'Date': []})
+    last_report_table = pd.DataFrame(
+        {'Sheet_ID': [], 'Label': [], 'Date': []}
+    ).set_index('Sheet_ID')
     last_report_table['Date'] = pd.to_datetime(last_report_table['Date'])
     return last_report_table
 
   @pytest.fixture
   def drive_files(self):
     """For when a rule is run for multiple sheet IDs at the same time."""
+
+    def make_file(i):
+      return {
+          'id': f'file{i}',
+          'name': (
+              f'category_label_rule_sheet_id_{i}_2020-01-01T00:00:00.000Z.csv'
+          ),
+      }
+
     return [
-        {
-            'id': f'file{i}',
-            'name': (
-                f'category_label_rule_sheet_id_{i}_2020-01-01T00:00:00.000Z.csv'
-            ),
-        }
+        make_file(i)
         for i in range(0, _NUMBER_OF_TEST_ROWS)
     ]
 
   @pytest.fixture
   def drive_files_same_id(self):
     """For when a rule for a single sheet ID is run multiple times."""
+
+    def make_file(i):
+      return {
+          'id': 'file0',
+          'name': (
+              f'category_label_rule_sheet_id_0_2020-01-01T0{i}:00:00.000Z.csv'
+          ),
+      }
+
     return [
-        {
-            'id': 'file0',
-            'name': (
-                f'category_label_rule_sheet_id_0_2020-01-01T0{i}:00:00.000Z.csv'
-            ),
-        }
+        make_file(i)
         for i in range(0, _NUMBER_OF_TEST_ROWS)
     ]
 
@@ -181,24 +191,22 @@ class TestLoadFilesIntoDataFrames:
 
   @pytest.fixture
   def expected_last_report_table_same_id(self, last_report_table):
-    expected = last_report_table.set_index('Sheet_ID')
-    expected.loc['sheet_id_0'] = [
+    last_report_table.loc['sheet_id_0'] = [
         'label',
         datetime.datetime(2020, 1, 1, 3, tzinfo=datetime.timezone.utc),
     ]
 
-    return expected
+    return last_report_table
 
   @pytest.fixture
   def expected_last_report_table(self, last_report_table):
-    expected = last_report_table.set_index('Sheet_ID')
     for i in range(0, _NUMBER_OF_TEST_ROWS):
-      expected.loc[f'sheet_id_{i}'] = [
+      last_report_table.loc[f'sheet_id_{i}'] = [
           'label',
           datetime.datetime(2020, 1, 1, tzinfo=datetime.timezone.utc),
       ]
 
-    return expected
+    return last_report_table
 
   @pytest.mark.parametrize(
       'file_list,expected',
@@ -314,35 +322,6 @@ class TestReportName:
     assert str(exc.value).startswith('Invalid filename')
 
 
-class TestGetLaunchMonitorFiles:
-
-  def test_happy_no_time(self):
-    drive = FakeDrive(error=False)
-    files = main.get_latest_launch_monitor_files(
-        drive, drive_id='parent_id', since=pd.NaT
-    )
-    assert len(files) == 4
-
-  def test_happy_since_time2(self):
-    drive = FakeDrive(error=False, since=Since.SECOND)
-    files = main.get_latest_launch_monitor_files(
-        drive, drive_id='parent_id', since=Since.SECOND.value
-    )
-    assert len(files) == 2
-
-  def test_sad(self):
-    drive = FakeDrive(error=True)
-
-    with pytest.raises(ValueError) as exc:
-      main.get_latest_launch_monitor_files(
-          drive, drive_id='parent_id', since=Since.SECOND.value
-      )
-
-    assert str(exc.value).startswith(
-        'No folder in drive with ID parent_id named "reports".'
-    )
-
-
 class FakeRequest:
   """Wraps a CSV file handler to simulate an `http.HttpRequest` for testing."""
 
@@ -379,13 +358,6 @@ class FakeResponse(dict):
 
 class Status(dict):
   status = 200
-
-
-class Since(enum.Enum):
-  """Defines some dates to test `FakeDrive` list queries."""
-
-  def request(self, *unused_args, **unused_kwargs):
-    return self.response, self.csv
 
 
 class Since(enum.Enum):

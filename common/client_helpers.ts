@@ -26,7 +26,6 @@ import {
   RuleExecutorClass,
   RuleGranularity,
   RuleParams,
-  RuleUtilities,
   Settings,
 } from './types';
 

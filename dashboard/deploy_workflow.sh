@@ -1,0 +1,179 @@
+#!/bin/bash
+
+#################################################
+# Copyright 2023 Google.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#################################################
+
+###
+# Enable strict mode. Fail if anything fails.
+###
+set -euo pipefail
+
+
+###
+# Set the name of the service account to create
+###
+SERVICE_ACCOUNT=performance-monitor-manager
+
+###
+# Set the name of the project to use (blank by default).
+###
+PROJECT_ID=
+
+###
+# Set the name of the dataset. Changing this may break Looker Studio reports.
+###
+DATASET_ID=performance_monitor
+
+###
+# Set the shared Drive ID for launch_monitor where reports live.
+###
+DRIVE_ID=
+
+###
+# Set the region in which to deploy your services
+###
+REGION=us-east1
+
+###
+# Set the name of the cloud function
+###
+PERFORMANCE_MONITOR_FN_NAME=performance_monitor_ingest
+
+###
+# Set the name of the cloud workflow
+###
+WORKFLOW_NAME=performance-monitor-workflow
+
+###
+# Set the timezone for scheduling workflows
+###
+TIME_ZONE='America/New_York'
+
+while test $# -gt 0; do
+  case "$1" in
+    -h|--help)
+      shift
+      echo <<EOF
+      ./deploy_workflow.sh - Create a workflow and cloud function for performance monitor."
+      
+      ./deploy_workflow.sh [options]"
+
+      -h, --help                show this message
+      -p, --project_id          the project ID to deploy to
+      -i, --dataset_id          the dataset ID to deploy reports to.
+      -r, --region              the region to set up services. Default is 'us-east1'
+      -s, --service_account     the service account to create/use. Default is 'performance-monitor-manager'
+      -d, --drive_id            the drive ID to pull reports from. Should be the "reports" folder.
+      -t, --time_zone           the timezone (default is 'America/New_York')
+      -w, --workflow_name       the name of the workflow to be deployed. Default is 'performance-monitor-workflow'
+      -f, --function_name       the name of the cloud function. Default is 'performance-monitor-ingest'
+EOF
+      exit 1
+    -p|--project_id)
+      shift
+      PROJECT_ID=$1
+      shift
+      ;;
+    -s|--service_account)
+      shift
+      SERVICE_ACCOUNT=$1
+      shift
+      ;;
+    -i|--dataset_id)
+      shift
+      DATASET_ID=$1
+      shift
+      ;;
+    -d|--drive_id)
+      shift
+      DRIVE_ID=$1
+      shift
+      ;;
+    -t|--time_zone)
+      shift
+      TIME_ZONE=$1
+      shift
+      ;;
+    -w|--workflow_name)
+      shift
+      WORKFLOW_NAME=$1
+      shift
+      ;;
+    -f|--function_name)
+      shift
+      PERFORMANCE_MONIOR_FN_NAME=$1
+      shift
+      ;;
+    -r|--region)
+      shift
+      REGION=$1
+      shift
+      ;;
+  esac
+done
+
+[[ -n "$PROJECT_ID" ]] && echo "Please set --project_id" && exit 1
+[[ -n "$DRIVE_ID" ]] && echo "Please set --drive_id" && exit 1
+
+###
+# Set the schedule for the workflow (unix-cron format). For example, to
+# schedule your workflow to execute every 5 minutes, type `*/5 * * * *`.
+# To run at midnight, use `0 0 * * *`.
+# See: grontab.guru
+###
+SCHEDULE='0 0 * * *'  # run at midnight
+
+###
+# The arguments to pass into cloud workflow. You probably won't need to edit
+# this directly, but if you do, make sure you pass in JSON.
+###
+ARGS = '{"cloud_function_url": "${CLOUD_FUNCTION_URL}", "dataset_id": "${DATASET_ID}", "drive_id": "${DRIVE_ID}"}'
+
+cd dashboard
+
+# create the service account
+gcloud iam service-accounts create ${SERVICE_ACCOUNT}
+
+# assign roles for Cloud Run invoker and viewer
+MEMBER="serviceAccount:${SERVICE_ACCOUNT}@${PROJECT_ID}.iam.gserviceaccount.com"
+gcloud projects add-iam-policy-binding $PROJECT_ID \
+  --member $MEMBER \
+  --role "roles/run.invoker"
+gcloud projects add-iam-policy-binding $PROJECT_ID \
+  --member $MEMBER \
+  --role "roles/run.viewer"
+gcloud projects add-iam-policy-binding $PROJECT_ID \
+  --member $MEMBER \
+  --role "roles/serviceusage.serviceUsageConsumer"
+
+# deploy the function
+gcloud functions deploy $PERFORMANCE_MONIOR_FN_NAME --gen2 \
+  --runtime=python11 --region=${REGION} \
+  --region=${REGION} --entry-point=import_dashboard \
+  --trigger-http
+
+# deploy the workflow
+gcloud workflows deploy $WORKFLOW_NAME \
+  --source=cloud_workflow.yaml \
+  --service-account=${SERVICE_ACCOUNT}
+
+# add a schedule (https://cloud.google.com/workflows/docs/schedule-workflow#schedule_a_workflow)
+gcloud scheduler jobs create http "${WORKFLOW_NAME}-job" \
+  --schedule="FREQUENCY" \
+  --uri="https://workflowexecutions.googleapis.com/v1/projects/${PROJECT_ID}/locations/${REGION}/workflows/${WORKFLOW_NAME}/executions" \
+  --message-body="{\"argument\": \"${ARGS | json -R | json -R}\"}" \
+  --time-zone="${TIME_ZONE}" \
+  --oauth-service-account-email="${SERVICE_ACCOUNT}"

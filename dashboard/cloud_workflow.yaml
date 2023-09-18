@@ -1,0 +1,230 @@
+# Copyright 2023 Google LLC.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+# Loads data from a Drive ID into BigQuery for Performance Monitor.
+#
+# Provided with a dataset ID, a drive ID and a cloud function URL for BigQuery loading, this
+# workflow will:
+#
+# 1. Get a list of files from Google Drive incrementally from after the last data load.
+# 2. Pass those files into the Cloud Function responsible for loading data into Cloud Function.
+#
+# This workflow can be built on: Add new views, delete old data, or whatever you like! This is a
+# base that makes logic simple to add without code.
+main:
+    params: [args]
+    steps:
+    - init:
+        assign:
+            - project_id: ${sys.get_env("GOOGLE_CLOUD_PROJECT_ID")}
+            - dataset_id: 'performance_monitor'
+            - drive_id: ${args.drive_id}
+            - cloud_function_url: ${args.cloud_function_url}
+    - create_dataset:
+        call: create_dataset
+        args:
+          dataset_id: ${dataset_id}
+          project_id: ${project_id}
+    - get_last_report_date:
+        call: get_last_report_date
+        args:
+          - ${project_id}
+          - ${dataset_id}
+        result: date
+    - define_after_var:
+        switch:
+          - condition: ${date == ""}
+            assign:
+              - after: ''
+          - condition: ${date != ""}
+            assign:
+              - after: ${" and createdTime >= \"" + date + "\""}
+    - get_drive_files:
+        call: get_files_from_drive_id
+        args:
+          - ${drive_id}
+        result: drive_files
+
+    - done:
+        return: ${tables}
+
+
+# Returns the last report date from the table.
+# If there is no table then it returns a blank.
+get_last_report_date:
+    params: [project_id, dataset_id]
+    steps:
+    - init:
+        assign:
+            - project_id: ${project_id}
+            - dataset_id: ${dataset_id}
+            - last_report_exists: false
+            - items: {rows: ['']}
+    - get_last_report_date:
+          try:
+            call: googleapis.bigquery.v2.jobs.query
+            args:
+              projectId: ${project_id}
+              body:
+                kind: 'query'
+                defaultDataset:
+                  datasetId: ${dataset_id}
+                  projectId: ${project_id}
+                query: 'SELECT MAX(Date) FROM last_report'
+                result: items
+          except:
+            as: e
+            assign:
+              - last_report_exists: false
+    - done:
+          return: ${items.rows[0]}
+
+
+
+retry_logic:
+  params: [e]
+  steps:
+    - should_repeat:
+        switch:
+          - condition: ${"LookupError" in e.tags}
+            return: true
+    - fail:
+        return: false
+
+
+
+get_files_from_drive_id:
+  params: [drive_id, page_token]
+  steps:
+    - init:
+        assign:
+          q: ${"'" + drive_id + "' in parents and trashed=false"}
+          table_map: {}
+    - get_next:
+        switch:
+          - condition: ${page_token}
+            call: drive_query
+            args:
+              orderBy: createdTime
+              pageSize: 200
+              pageToken: ${page_token}
+              q: ${q}
+            result: drive_files
+            next: next_page
+    - get_first:
+        call: drive_query
+        args:
+          orderBy: createdTime
+          pageSize: 200
+          q: ${q}
+        result: drive_files
+        next: next_page
+    - next_page:
+        switch:
+          - condition: ${files.body.nextPageToken}
+            call: get_files_from_id
+            args:
+              drive_id: ${drive_id}
+              page_token: ${files.body.nextPageToken}
+            result: new_table_map
+          - condition: ${not(files.body.nextPageToken)}
+            next: add_to_bigquery
+    - merge_table_map:
+        for:
+          value: table_key
+          index: i
+          in: new_table_map
+          steps:
+            - add_to_map:
+                assign:
+                  table_map[table_key]: ''
+    - add_to_bigquery:
+        call: add_files_to_bigquery
+        args:
+          files: ${drive_files}
+          project_id: ${project_id}
+          dataset_id: ${dataset_id}
+          cloud_function_url: ${cloud_function_url}
+        result: tables
+    - assign_tables_to_map:
+        for:
+          value: table 
+          index: i
+          in: tables
+          steps:
+            - add_to_map:
+                assign:
+                  table_map[table]: ''
+    - done:
+        return: ${table_map}
+
+
+drive_query:
+  params: [q]
+  steps:
+    - make_request:
+        call: http.get
+        args:
+          url: https://www.googleapis.com/drive/v3/files
+          query:
+            q: ${q}
+          auth:
+            type: OAuth2
+            scopes:
+            - https://www.googleapis.com/auth/drive
+        result: files
+    - done:
+        return: ${files}
+
+
+add_files_to_bigquery:
+  params: [files, project_id, dataset_id, cloud_function_url]
+  steps:
+    - create_insert_job:
+        call: http.post
+        args:
+          url: ${cloud_function_url}
+          body:
+            gcp_project: ${project_id}
+            gcp_dataset: ${dataset_id}
+            file_list: [${file}]
+          auth:
+            type: OIDC
+        result: tables
+    - done:
+        return: ${tables}
+
+
+create_dataset:
+  params: [project_id, dataset_id]
+  steps:
+    - create:
+        try:
+          call: googleapis.bigquery.v2.datasets.insert
+          args:
+            projectId: ${project_id}
+            body:
+              datasetReference:
+                projectId: ${project_id}
+                datasetId: ${dataset_id}
+              access[].role: "roles/bigquery.dataViewer"
+        except:
+          as: e
+          steps:
+            - known_errors:
+                switch:
+                  - condition: '${"HttpError" in e.tags}'
+                    return: "Already created"
+            - fail:
+                raise: ${e}
