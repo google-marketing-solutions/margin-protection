@@ -582,7 +582,7 @@ export abstract class AppsScriptFrontEnd<
           ruleSheet.getMaxRows() - (values.length + 1),
         );
       }
-      if (ruleSheet.getMaxColumns() > values.length + 1) {
+      if (ruleSheet.getMaxColumns() > values[0].length + 1) {
         ruleSheet.deleteColumns(
           values[0].length + 1,
           ruleSheet.getMaxColumns() - (values[0].length + 1),
