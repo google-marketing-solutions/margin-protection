@@ -412,7 +412,6 @@ export abstract class AbstractRuleRange<
           : rule.defaults[paramsByHeader[headersByIndex[index]]],
       ),
     );
-    const inSystem = new Set<string>(['ID', 'default']);
     for (const record of await this.getRows(rule.granularity)) {
       this.setRow(
         rule.name,
@@ -424,12 +423,6 @@ export abstract class AbstractRuleRange<
         ),
       );
       this.setRow('none', record.id, [record.id, record.displayName]);
-      inSystem.add(record.id);
-    }
-    for (const row of Object.keys(this.rowIndex)) {
-      if (!inSystem.has(row)) {
-        delete this.rowIndex[row];
-      }
     }
   }
 
