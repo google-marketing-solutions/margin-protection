@@ -19,7 +19,7 @@
 ###
 # Enable strict mode. Fail if anything fails.
 ###
-set -euo pipefail
+set -euxo pipefail
 
 
 ###
@@ -66,9 +66,9 @@ while test $# -gt 0; do
   case "$1" in
     -h|--help)
       shift
-      echo <<EOF
+      cat <<EOF
       ./deploy_workflow.sh - Create a workflow and cloud function for performance monitor."
-      
+
       ./deploy_workflow.sh [options]"
 
       -h, --help                show this message
@@ -82,6 +82,7 @@ while test $# -gt 0; do
       -f, --function_name       the name of the cloud function. Default is 'performance-monitor-ingest'
 EOF
       exit 1
+      ;;
     -p|--project_id)
       shift
       PROJECT_ID=$1
@@ -114,7 +115,7 @@ EOF
       ;;
     -f|--function_name)
       shift
-      PERFORMANCE_MONIOR_FN_NAME=$1
+      PERFORMANCE_MONITOR_FN_NAME=$1
       shift
       ;;
     -r|--region)
@@ -125,8 +126,8 @@ EOF
   esac
 done
 
-[[ -n "$PROJECT_ID" ]] && echo "Please set --project_id" && exit 1
-[[ -n "$DRIVE_ID" ]] && echo "Please set --drive_id" && exit 1
+[[ -z "$PROJECT_ID" ]] && echo "Please set --project_id" && exit 1
+[[ -z "$DRIVE_ID" ]] && echo "Please set --drive_id" && exit 1
 
 ###
 # Set the schedule for the workflow (unix-cron format). For example, to
@@ -140,15 +141,19 @@ SCHEDULE='0 0 * * *'  # run at midnight
 # The arguments to pass into cloud workflow. You probably won't need to edit
 # this directly, but if you do, make sure you pass in JSON.
 ###
-ARGS = '{"cloud_function_url": "${CLOUD_FUNCTION_URL}", "dataset_id": "${DATASET_ID}", "drive_id": "${DRIVE_ID}"}'
 
-cd dashboard
-
+gcloud config set project $PROJECT_ID
 # create the service account
 gcloud iam service-accounts create ${SERVICE_ACCOUNT}
 
+SERVICE_ACCOUNT_EMAIL=${SERVICE_ACCOUNT}@${PROJECT_ID}.iam.gserviceaccount.com
+
 # assign roles for Cloud Run invoker and viewer
-MEMBER="serviceAccount:${SERVICE_ACCOUNT}@${PROJECT_ID}.iam.gserviceaccount.com"
+MEMBER="serviceAccount:${SERVICE_ACCOUNT_EMAIL}"
+
+gcloud projects add-iam-policy-binding $PROJECT_ID \
+  --member $MEMBER \
+  --role "roles/bigquery.jobs.create"
 gcloud projects add-iam-policy-binding $PROJECT_ID \
   --member $MEMBER \
   --role "roles/run.invoker"
@@ -158,22 +163,45 @@ gcloud projects add-iam-policy-binding $PROJECT_ID \
 gcloud projects add-iam-policy-binding $PROJECT_ID \
   --member $MEMBER \
   --role "roles/serviceusage.serviceUsageConsumer"
+gcloud projects add-iam-policy-binding $PROJECT_ID \
+  --member $MEMBER \
+  --role "roles/workflows.invoker"
+gcloud projects add-iam-policy-binding $PROJECT_ID \
+  --member $MEMBER \
+  --role "roles/bigquery.user"
 
 # deploy the function
-gcloud functions deploy $PERFORMANCE_MONIOR_FN_NAME --gen2 \
-  --runtime=python11 --region=${REGION} \
-  --region=${REGION} --entry-point=import_dashboard \
+gcloud functions deploy $PERFORMANCE_MONITOR_FN_NAME --gen2 \
+  --runtime=python11 \
+  --region=${REGION} \
+  --service_account=${SERVICE_ACCOUNT_EMAIL}
+  --entry-point=import_dashboard \
   --trigger-http
+
+gcloud functions add-invoker-policy-binding $PERFORMANCE_MONITOR_FN_NAME \
+  --member=${MEMBER}
 
 # deploy the workflow
 gcloud workflows deploy $WORKFLOW_NAME \
   --source=cloud_workflow.yaml \
-  --service-account=${SERVICE_ACCOUNT}
+  --location=${REGION} \
+  --service-account=${SERVICE_ACCOUNT_EMAIL}
 
+CLOUD_FUNCTION_URL="https://${REGION}-${PROJECT_ID}.cloudfunctions.net/${PERFORMANCE_MONITOR_FN_NAME}"
+ARGS="{"'"'"cloud_function_url"'"'": "'"'"${CLOUD_FUNCTION_URL}"'"'", "'"'"dataset_id"'"'": "'"'"${DATASET_ID}"'"'", "'"'"drive_id"'"'": "'"'"${DRIVE_ID}"'"'"}"
+JSON_STR=$(echo $ARGS | jq -R)
+
+cd $(dirname $(realpath "$0"))
 # add a schedule (https://cloud.google.com/workflows/docs/schedule-workflow#schedule_a_workflow)
 gcloud scheduler jobs create http "${WORKFLOW_NAME}-job" \
-  --schedule="FREQUENCY" \
+  --schedule="$SCHEDULE" \
   --uri="https://workflowexecutions.googleapis.com/v1/projects/${PROJECT_ID}/locations/${REGION}/workflows/${WORKFLOW_NAME}/executions" \
-  --message-body="{\"argument\": \"${ARGS | json -R | json -R}\"}" \
+  --message-body="{\"argument\": $JSON_STR}" \
   --time-zone="${TIME_ZONE}" \
-  --oauth-service-account-email="${SERVICE_ACCOUNT}"
+  --oauth-service-account-email="${SERVICE_ACCOUNT}@${PROJECT_ID}.iam.gserviceaccount.com" \
+  --location=${REGION}
+
+
+###
+# BQ permissions
+###

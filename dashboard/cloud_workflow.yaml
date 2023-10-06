@@ -50,12 +50,14 @@ main:
           - condition: ${date != ""}
             assign:
               - after: ${" and createdTime >= \"" + date + "\""}
-    - get_drive_files:
-        call: get_files_from_drive_id
+    - load_files_into_bigquery:
+        call: load_files_into_bigquery
         args:
-          - ${drive_id}
-        result: drive_files
-
+          drive_id: ${drive_id}
+          project_id: ${project_id}
+          dataset_id: ${dataset_id}
+          cloud_function_url: ${cloud_function_url}
+        result: tables
     - done:
         return: ${tables}
 
@@ -104,81 +106,95 @@ retry_logic:
 
 
 
-get_files_from_drive_id:
-  params: [drive_id, page_token]
+load_files_into_bigquery:
+  params: [drive_id, project_id, dataset_id, cloud_function_url, page_token: '']
   steps:
     - init:
         assign:
-          q: ${"'" + drive_id + "' in parents and trashed=false"}
-          table_map: {}
-    - get_next:
+          - q: ${"'" + drive_id + "' in parents and trashed=false"}
+          - table_map: {}
+    - get_files:
         switch:
-          - condition: ${page_token}
+          - condition: '${page_token != ""}'
+            call: drive_query
+            args:
+              orderBy: createdTime
+              pageSize: 500
+              q: '${q}'
+            result: files
+          - condition: '${page_token == ""}'
             call: drive_query
             args:
               orderBy: createdTime
               pageSize: 200
-              pageToken: ${page_token}
-              q: ${q}
-            result: drive_files
-            next: next_page
-    - get_first:
-        call: drive_query
-        args:
-          orderBy: createdTime
-          pageSize: 200
-          q: ${q}
-        result: drive_files
-        next: next_page
-    - next_page:
-        switch:
-          - condition: ${files.body.nextPageToken}
-            call: get_files_from_id
-            args:
-              drive_id: ${drive_id}
-              page_token: ${files.body.nextPageToken}
-            result: new_table_map
-          - condition: ${not(files.body.nextPageToken)}
-            next: add_to_bigquery
-    - merge_table_map:
-        for:
-          value: table_key
-          index: i
-          in: new_table_map
-          steps:
-            - add_to_map:
-                assign:
-                  table_map[table_key]: ''
+              q: '${q}'
+              pageToken: '${page_token}'
+            result: files
     - add_to_bigquery:
         call: add_files_to_bigquery
         args:
-          files: ${drive_files}
+          files: ${files.body.files}
           project_id: ${project_id}
           dataset_id: ${dataset_id}
           cloud_function_url: ${cloud_function_url}
         result: tables
     - assign_tables_to_map:
         for:
-          value: table 
-          index: i
-          in: tables
+          value: table
+          in: ${keys(tables)}
+          steps:
+            - add_to_map_2:
+                assign:
+                  - table_map[table]: ''
+    - clear_memory:
+        assign:
+          - files:
+    - next_page:
+        switch:
+          - condition: '${files == null}'
+            next: done
+          - condition: '${files.body.nextPageToken != ""}'
+            call: load_files_into_bigquery
+            args:
+              drive_id: ${drive_id}
+              page_token: ${files.body.nextPageToken}
+              project_id: ${project_id}
+              dataset_id: ${dataset_id}
+              cloud_function_url: ${cloud_function_url}
+            result: new_table_map
+          - condition: '${files.body.nextPageToken == ""}'
+            next: add_to_bigquery
+    - merge_table_map:
+        for:
+          value: table_key
+          in: ${keys(new_table_map)}
           steps:
             - add_to_map:
                 assign:
-                  table_map[table]: ''
+                  - table_map[table_key]: ''
     - done:
         return: ${table_map}
 
 
 drive_query:
-  params: [q]
+  params: [q, orderBy, pageSize, pageToken: null]
   steps:
+    - init:
+        assign:
+          - query:
+              q: ${q}
+              orderBy: ${orderBy}
+              pageSize: ${pageSize}
+    - add_page_token:
+        switch:
+          - condition: '${pageToken != null}'
+            assign:
+              - query.pageToken: ${pageToken}
     - make_request:
         call: http.get
         args:
           url: https://www.googleapis.com/drive/v3/files
-          query:
-            q: ${q}
+          query: ${query}
           auth:
             type: OAuth2
             scopes:
@@ -198,7 +214,7 @@ add_files_to_bigquery:
           body:
             gcp_project: ${project_id}
             gcp_dataset: ${dataset_id}
-            file_list: [${file}]
+            file_list: ${files}
           auth:
             type: OIDC
         result: tables
