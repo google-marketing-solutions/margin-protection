@@ -287,6 +287,12 @@ export class SearchAdsFrontEnd extends AppsScriptFrontEnd<
     this.client.settings.fullFetch = true;
     await super.preLaunchQa();
   }
+
+  override async initializeSheets() {
+    this.client.settings.fullFetch = true;
+    await super.initializeSheets();
+  }
+
   override saveSettingsBackToSheets(
     rules: Array<
       RuleExecutor<

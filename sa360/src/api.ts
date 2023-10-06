@@ -555,6 +555,18 @@ export class AdGroupTargetReportBuilder extends ReportBuilder<
         row[headers[i]] === undefined ? column : `${row[headers[i]]},${column}`;
     }
   }
+
+  // Incremental loads don't work for targets
+  protected override getTimeRange(): SearchAdsTimeRange {
+    const date = new Date();
+    const dateString = `${date.getFullYear()}-${
+      date.getUTCMonth() + 1
+    }-${date.getDate()}`;
+    return {
+      startDate: dateString,
+      endDate: dateString,
+    };
+  }
 }
 
 /**
@@ -607,6 +619,18 @@ export class CampaignTargetReportBuilder extends ReportBuilder<
       row[headers[i]] =
         row[headers[i]] === undefined ? column : `${row[headers[i]]},${column}`;
     }
+  }
+
+  // Incremental loads don't work for targets
+  protected override getTimeRange(): SearchAdsTimeRange {
+    const date = new Date();
+    const dateString = `${date.getFullYear()}-${
+      date.getUTCMonth() + 1
+    }-${date.getDate()}`;
+    return {
+      startDate: dateString,
+      endDate: dateString,
+    };
   }
 }
 
