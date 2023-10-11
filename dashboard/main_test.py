@@ -51,16 +51,10 @@ def test_fill_dataframe():
   )
   columns = {
       'Date': [date] * 2,
-      'Category': pd.Series(['category'] * 2, dtype='string'),
-      'Sheet_ID': pd.Series(['sheet_id'] * 2, dtype='string'),
-      'Label': pd.Series(['label'] * 2, dtype='string'),
   }
   original = {'A': ['A1', 'A2'], 'B': ['B1', 'B2']}
   expected_result = pd.DataFrame({
       'Date': columns['Date'],
-      'Category': pd.Series(['category'] * 2, dtype='string'),
-      'Sheet_ID': columns['Sheet_ID'],
-      'Label': columns['Label'],
       'A': original['A'],
       'B': original['B'],
   })
@@ -109,9 +103,6 @@ class TestLoadFilesIntoDataFrames:
                       2020, 1, 1, 0, 0, 0, tzinfo=datetime.timezone.utc
                   )
               ],
-              'Category': ['category'],
-              'Sheet_ID': [f'sheet_id_{i}'],
-              'Label': ['label'],
               'A': [f'a{i}'],
               'B': [f'b{i}'],
               'C': [f'c{i}'],
@@ -130,8 +121,6 @@ class TestLoadFilesIntoDataFrames:
         for i in range(0, _NUMBER_OF_TEST_ROWS)
     ]
     for col, val in (
-        ('Sheet_ID', 'sheet_id_0'),
-        ('Label', 'label'),
         ('A', 'a0'),
         ('B', 'b0'),
         ('C', 'c0'),

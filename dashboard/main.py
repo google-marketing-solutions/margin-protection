@@ -122,9 +122,6 @@ def fill_dataframe(df: pd.DataFrame, report_name: ReportName) -> pd.DataFrame:
   date = [pd.to_datetime(report_name.date, format=_DATE_FORMAT)]
   df = pd.DataFrame({
       'Date': pd.Series(date * dfl, dtype='datetime64[ns, UTC]'),
-      'Category': pd.Series([report_name.category] * dfl, dtype='string'),
-      'Sheet_ID': pd.Series([report_name.sheet_id] * dfl, dtype='string'),
-      'Label': pd.Series([report_name.label] * dfl, dtype='string'),
   }).join(df)
   df.columns = [_normalize(column) for column in df.columns]
   return df
