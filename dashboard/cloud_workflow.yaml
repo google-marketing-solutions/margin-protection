@@ -31,6 +31,7 @@ main:
             - dataset_id: 'performance_monitor'
             - drive_id: ${args.drive_id}
             - cloud_function_url: ${args.cloud_function_url}
+            - after: ''
     - create_dataset:
         call: create_dataset
         args:
@@ -57,6 +58,7 @@ main:
           project_id: ${project_id}
           dataset_id: ${dataset_id}
           cloud_function_url: ${cloud_function_url}
+          after: ${after}
         result: tables
     - done:
         return: ${tables}
@@ -71,8 +73,7 @@ get_last_report_date:
         assign:
             - project_id: ${project_id}
             - dataset_id: ${dataset_id}
-            - last_report_exists: false
-            - items: {rows: ['']}
+            - items: {rows: [f: [{v: ''}]]}
     - get_last_report_date:
           try:
             call: googleapis.bigquery.v2.jobs.query
@@ -83,15 +84,31 @@ get_last_report_date:
                 defaultDataset:
                   datasetId: ${dataset_id}
                   projectId: ${project_id}
-                query: 'SELECT MAX(Date) FROM last_report'
-                result: items
+                query: 'SELECT FORMAT_TIMESTAMP("%Y-%m-%dT%H:%M:%SZ", Date) AS date FROM last_report ORDER BY Date DESC LIMIT 1'
+                useLegacySql: false
+            result: items
           except:
             as: e
-            assign:
-              - last_report_exists: false
-    - done:
-          return: ${items.rows[0]}
-
+            steps:
+              - known_errors:
+                  switch:
+                    - condition: '${e.code == 404}'
+                      return: ''
+              - unhandled_exception:
+                  raise: ${e}
+    - output:
+        call: sys.log
+        args:
+          text: ${items}
+          severity: INFO
+    - route_done:
+          switch:
+            - condition: '${map.get(items, "rows") == null}'
+              next: done_sad
+    - done_happy:
+          return: ${items.rows[0].f[0].v}
+    - done_sad:
+          return: ''
 
 
 retry_logic:
@@ -107,7 +124,7 @@ retry_logic:
 
 
 load_files_into_bigquery:
-  params: [drive_id, project_id, dataset_id, cloud_function_url, page_token: '']
+  params: [drive_id, project_id, dataset_id, cloud_function_url, after, page_token: '']
   steps:
     - init:
         assign:
@@ -120,14 +137,14 @@ load_files_into_bigquery:
             args:
               orderBy: createdTime
               pageSize: 500
-              q: '${q}'
+              q: '${q + " " + after}'
             result: files
           - condition: '${page_token == ""}'
             call: drive_query
             args:
               orderBy: createdTime
               pageSize: 200
-              q: '${q}'
+              q: '${q + " " + after}'
               pageToken: '${page_token}'
             result: files
     - add_to_bigquery:
@@ -161,6 +178,7 @@ load_files_into_bigquery:
               project_id: ${project_id}
               dataset_id: ${dataset_id}
               cloud_function_url: ${cloud_function_url}
+              after: ${after}
             result: new_table_map
           - condition: '${files.body.nextPageToken == ""}'
             next: add_to_bigquery
@@ -244,3 +262,4 @@ create_dataset:
                     return: "Already created"
             - fail:
                 raise: ${e}
+
