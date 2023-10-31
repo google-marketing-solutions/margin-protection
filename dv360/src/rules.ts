@@ -105,9 +105,7 @@ export const geoTargetRule = newRule({
   async callback() {
     const uniqueKey = this.getUniqueKey();
     const rule = equalTo({
-      uniqueKey,
       thresholdValue: 1,
-      propertyStore: this.client.properties,
     });
     const values: Values = {};
 
@@ -322,12 +320,10 @@ function getPacingVariables<P extends Record<'min' | 'max', string>>(
   const campaignSettings = settings.getOrDefault(insertionOrderId);
   if (!rules[insertionOrderId]) {
     rules[insertionOrderId] = inRange({
-      uniqueKey,
       thresholdValue: {
         min: Number(campaignSettings.min),
         max: Number(campaignSettings.max),
       },
-      propertyStore: client.properties,
     });
   }
   const displayName = insertionOrder.getDisplayName();
@@ -514,12 +510,10 @@ export const dailyBudgetRule = newRule({
       const campaignSettings = this.settings.getOrDefault(insertionOrderId);
       if (!rules[insertionOrderId]) {
         rules[insertionOrderId] = inRange({
-          uniqueKey,
           thresholdValue: {
             min: Number(campaignSettings.min),
             max: Number(campaignSettings.max),
           },
-          propertyStore: this.client.properties,
         });
       }
       const displayName = insertionOrder.getDisplayName();
@@ -673,8 +667,6 @@ export const impressionsByGeoTarget = newRule({
       );
       const rule = lessThanOrEqualTo({
         thresholdValue: Number(campaignSettings.maxOutside),
-        uniqueKey: this.getUniqueKey(),
-        propertyStore: this.client.properties,
       });
       values[insertionOrderId] = rule.createValue(impressions.toString(), {
         'Insertion Order ID': insertionOrderId,

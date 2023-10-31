@@ -71,8 +71,8 @@ export interface Rule extends RuleGetter {
  * Rule parameters to pass to a `Rule` implementation.
  */
 export interface RuleInstructions {
-  uniqueKey: Readonly<string>;
-  propertyStore: PropertyStore;
+  uniqueKey?: Readonly<string>;
+  propertyStore?: PropertyStore;
 }
 
 /**

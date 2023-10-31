@@ -21,7 +21,7 @@
  */
 
 
-import {PropertyStore, Rule, Threshold, ThresholdRuleInstructions, unpack, Value, ValueObject, Values} from 'anomaly_library/main';
+import {PropertyStore, Rule, Threshold, ThresholdRuleInstructions, Value, ValueObject, Values} from 'anomaly_library/main';
 
 /**
  * Checks for any anomalies based on a fixed `Threshold`.
@@ -30,9 +30,9 @@ import {PropertyStore, Rule, Threshold, ThresholdRuleInstructions, unpack, Value
  * to implement. Examples are below (see `equalTo`, and `inRange`).
  */
 export class AbsoluteRule<ThresholdType> implements Rule {
-  private readonly uniqueKey: string;
+  private readonly uniqueKey?: string;
   readonly valueIsInBounds: (value: string) => boolean;
-  private readonly properties: PropertyStore;
+  private readonly properties?: PropertyStore;
 
   /**
    * Object constructor
@@ -60,6 +60,13 @@ export class AbsoluteRule<ThresholdType> implements Rule {
    * Saves values iff they are anomalous.
    */
   saveValues(values: Values) {
+    if (!this.uniqueKey) {
+      throw new Error('uniqueKey is required for saving');
+    }
+    if (!this.properties) {
+      throw new Error('properties is required for saving');
+    }
+
     const nonAnomalousValues = Object.entries(values).reduce((obj, [k, v]) => {
       if (v.anomalous) {
         obj[k] = v;
@@ -75,6 +82,14 @@ export class AbsoluteRule<ThresholdType> implements Rule {
   }
 
   getValueObject() {
+    if (!this.uniqueKey) {
+      throw new Error('uniqueKey is required for value retrieval');
+    }
+
+    if (!this.properties) {
+      throw new Error('properties is required for value retrieval');
+    }
+
     return (JSON.parse(this.properties.getProperty(this.uniqueKey) ?? '""') ||
         {values: {}}) as ValueObject;
   }
