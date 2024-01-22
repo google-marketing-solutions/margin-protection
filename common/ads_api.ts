@@ -16,22 +16,12 @@
  */
 
 /**
- * @fileoverview DAO for the Google Ads API
+ * @fileoverview DAO for the Google Ads API and SA360 API
  */
 
-import {AccountMap, CampaignReport} from './types';
+import {AccountMap, AdsRow, AdsSearchRequest, AdsSearchResponse, CampaignReport} from './ads_api_types';
 
 import URLFetchRequestOptions = GoogleAppsScript.URL_Fetch.URLFetchRequestOptions;
-
-/**
- * The API version, exposed for testing.
- */
-export const GOOGLEADS_API_VERSION = 'v14';
-
-/**
- * The API URL, exposed for testing.
- */
-export const GOOGLEADS_URL = 'googleads.googleapis.com';
 
 // Ads API has a limit of 10k rows.
 const MAX_PAGE_SIZE = 10_000;
@@ -55,37 +45,26 @@ const GAQL_GET_CAMPAIGN_REPORT = `SELECT
   campaign.status
 FROM campaign`;
 
-/**
- * Represents a GoogleAdsRow result.
- */
-export declare interface GoogleAdsRow {
-  campaign?: {id?: number; descriptiveName?: string; status?: string};
-  customer?: {id?: number; descriptiveName?: string};
-  customerClient?: {
-    id?: number;
-    descriptiveName?: string;
-    manager?: boolean;
-    status?: string;
-  };
+interface ApiEndpoint {
+  url: string;
+  version: string;
 }
 
 /**
- * A response row from the query API.
+ * The Google Ads API endpoint.
  */
-export declare interface GoogleAdsSearchResponse {
-  nextPageToken?: string;
-  results?: GoogleAdsRow[];
-}
+export const GOOGLEADS_API_ENDPOINT = {
+  url: 'googleads.googleapis.com',
+  version: 'v11',
+};
 
 /**
- * A request object for the query API.
+ * The SA360 API endpoint.
  */
-export declare interface GoogleAdsSearchRequest {
-  pageSize: number;
-  query: string;
-  customerId?: string;
-  pageToken?: string;
-}
+export const SA360_API_ENDPOINT = {
+  url: 'searchads360.googleapis.com',
+  version: 'v0',
+};
 
 /**
  * Caching factory for Ads API instantiation.
@@ -93,19 +72,21 @@ export declare interface GoogleAdsSearchRequest {
 export class GoogleAdsApiFactory {
   private readonly cache = new Map<string, GoogleAdsApi>();
 
-  constructor(
-    private readonly developerToken: string,
-    private readonly credentialManager: CredentialManager,
-  ) {}
+  constructor(private readonly factoryArgs: {
+      developerToken: string,
+      credentialManager: CredentialManager,
+      apiEndpoint: ApiEndpoint,
+  }) {}
 
   create(loginCustomerId: string) {
     let api = this.cache.get(loginCustomerId);
     if (!api) {
-      api = new GoogleAdsApi(
-        this.developerToken,
+      api = new GoogleAdsApi({
+        developerToken: this.factoryArgs.developerToken,
         loginCustomerId,
-        this.credentialManager,
-      );
+        credentialManager: this.factoryArgs.credentialManager,
+        apiEndpoint: this.factoryArgs.apiEndpoint,
+      });
       this.cache.set(loginCustomerId, api);
     }
     return api;
@@ -131,24 +112,26 @@ export class CredentialManager {
  * Ads API client
  */
 export class GoogleAdsApi {
-  constructor(
-    private readonly developerToken: string,
-    private readonly loginCustomerId: string,
-    private readonly credentialManager: CredentialManager,
-  ) {}
+  
+  constructor(private readonly apiInstructions: {
+    developerToken: string,
+    loginCustomerId: string,
+    credentialManager: CredentialManager,
+    apiEndpoint: ApiEndpoint,
+  }) {}
 
   private requestHeaders() {
-    const token = this.credentialManager.getToken();
+    const token = this.apiInstructions.credentialManager.getToken();
     return {
-      'developer-token': this.developerToken,
+      'developer-token': this.apiInstructions.developerToken,
       'Authorization': `Bearer ${token}`,
-      'login-customer-id': this.loginCustomerId,
+      'login-customer-id': this.apiInstructions.loginCustomerId,
     };
   }
 
-  *query(customerId: string, query: string): IterableIterator<GoogleAdsRow> {
-    const url = `https://${GOOGLEADS_URL}/${GOOGLEADS_API_VERSION}/customers/${customerId}/googleAds:search`;
-    const params: GoogleAdsSearchRequest = {
+  * query(customerId: string, query: string): IterableIterator<AdsRow> {
+    const url = `https://${this.apiInstructions.apiEndpoint.url}/${this.apiInstructions.apiEndpoint.version}/customers/${customerId}/googleAds:search`;
+    const params: AdsSearchRequest = {
       pageSize: MAX_PAGE_SIZE,
       query,
       customerId,
@@ -162,8 +145,8 @@ export class GoogleAdsApi {
         payload: JSON.stringify({...params, pageToken}),
       };
       const res = JSON.parse(
-        UrlFetchApp.fetch(url, req).getContentText(),
-      ) as GoogleAdsSearchResponse;
+                      UrlFetchApp.fetch(url, req).getContentText(),
+                      ) as AdsSearchResponse;
       pageToken = res.nextPageToken;
       for (const row of res.results || []) {
         yield row;
@@ -253,4 +236,3 @@ export class ReportGenerator {
   }
 }
 
-global.GoogleAdsApi = GoogleAdsApi;

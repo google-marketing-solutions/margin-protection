@@ -15,23 +15,38 @@
  * limitations under the License.
  */
 
-import {
-  BaseClientArgs,
-  BaseClientInterface,
-} from 'common/types';
+/**
+ * Represents a AdsRow result.
+ */
+export declare interface AdsRow {
+  campaign?: {id?: number; descriptiveName?: string; status?: string};
+  customer?: {id?: number; descriptiveName?: string};
+  // https://developers.google.com/google-ads/api/fields/v13/customer_client -
+  // Google Ads-specific
+  customerClient?: {
+    id?: number;
+    descriptiveName?: string;
+    manager?: boolean;
+    status?: string;
+  };
+}
 
 /**
- * Extends the base client interface with Google Ads-specific features.
+ * A response row from the query API.
  */
-export interface ClientInterface
-  extends BaseClientInterface<ClientInterface, RuleGranularity, ClientArgs> {}
+export declare interface AdsSearchResponse {
+  nextPageToken?: string;
+  results?: AdsRow[];
+}
 
 /**
- * Necessary Ads API request metadata
+ * A request object for the query API.
  */
-export interface ClientArgs
-  extends BaseClientArgs<ClientInterface, RuleGranularity, ClientArgs> {
-  developerToken: string;
+export declare interface AdsSearchRequest {
+  pageSize: number;
+  query: string;
+  customerId?: string;
+  pageToken?: string;
 }
 
 /**
@@ -61,12 +76,4 @@ export interface CampaignReport {
   id: string;
   name: string;
   status: string;
-}
-
-/**
- * The level at which to apply this rule.
- */
-export enum RuleGranularity {
-  CAMPAIGN = 'Campaign',
-  AD_GROUP = 'Ad Group',
 }
