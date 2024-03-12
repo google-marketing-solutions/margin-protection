@@ -19,9 +19,24 @@
  * @fileoverview Tests for the common API library suites.
  */
 
-import {CredentialManager, GET_LEAF_ACCOUNTS_REPORT, GOOGLEADS_API_ENDPOINT, GoogleAdsApi, GoogleAdsApiFactory, makeReport, qlifyQuery, ReportFactory, SA360_API_ENDPOINT,} from '../ads_api';
+// g3-format-prettier
+
+import {
+  CredentialManager,
+  GET_LEAF_ACCOUNTS_REPORT,
+  GOOGLEADS_API_ENDPOINT,
+  GoogleAdsApi,
+  GoogleAdsApiFactory,
+  makeReport,
+  qlifyQuery,
+  ReportFactory,
+  SA360_API_ENDPOINT,
+} from '../ads_api';
 import {AdsSearchRequest, buildQuery} from '../ads_api_types';
-import {generateFakeHttpResponse, mockAppsScript,} from '../test_helpers/mock_apps_script';
+import {
+  generateFakeHttpResponse,
+  mockAppsScript,
+} from '../test_helpers/mock_apps_script';
 
 import {bootstrapGoogleAdsApi} from './helpers';
 
@@ -282,12 +297,13 @@ describe('Report Factory', () => {
           });
         } else {
           return iterator(
-              {
-                customerClient: {id: '2'},
-              },
-              {
-                customerClient: {id: '3'},
-              });
+            {
+              customerClient: {id: '2'},
+            },
+            {
+              customerClient: {id: '3'},
+            },
+          );
         }
       });
       return api;
@@ -371,17 +387,20 @@ describe('Leaf expansion', () => {
   const mockLeafAccounts: Record<string, string[]> = {'123': ['1', '2', '3']};
 
   beforeEach(() => {
-    ({reportFactory, api, mockQuery} =
-         bootstrapGoogleAdsApi({mockLeafAccounts, spyOnLeaf: false}));
+    ({reportFactory, api, mockQuery} = bootstrapGoogleAdsApi({
+      mockLeafAccounts,
+      spyOnLeaf: false,
+    }));
   });
 
   it('checks all expanded accounts are added to the report', () => {
     mockQuery.and.callFake(({customerId, query}) => {
       if (query === GET_LEAF_ACCOUNTS_REPORT.query) {
-        return iterator(...mockLeafAccounts[customerId].map(
-            (id) => ({
-              customerClient: {id, name: `customer ${id}`, status: 'ENABLED'},
-            })));
+        return iterator(
+          ...mockLeafAccounts[customerId].map((id) => ({
+            customerClient: {id, name: `customer ${id}`, status: 'ENABLED'},
+          })),
+        );
       } else {
         return iterator({
           customerId,
