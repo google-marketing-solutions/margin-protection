@@ -41,6 +41,7 @@ import {
   AGE_TARGET_REPORT,
   CAMPAIGN_REPORT,
   CAMPAIGN_TARGET_REPORT,
+  GENDER_TARGET_REPORT,
 } from 'sa360/src/api_v2';
 
 describe('ApiV2', () => {
@@ -359,6 +360,74 @@ describe('ApiV2', () => {
           campaignId: 'c1',
           adGroupId: 'ag1',
           ageRange: 'AGE_RANGE_4',
+        },
+      });
+    });
+  });
+
+  describe('Gender type target report', () => {
+    it('returns expected results', () => {
+      const mockQuery: jasmine.Spy = spyOn(api, 'query');
+      mockQuery.and.returnValue(
+        iterator(
+          ...[...Array.from({length: 5}).keys()].map((x) => ({
+            customer: {
+              resourceName: 'customers/1',
+              id: '1',
+              name: 'Customer 1',
+            },
+            campaign: {resourceName: 'customers/1/campaigns/c1', id: 'c1'},
+            adGroup: {resourceName: 'customers/c1/adGroups/ag1', id: 'ag1'},
+            adGroupCriterion: {
+              resourceName: `customers/1/adGroupCriteria/agc${x}`,
+              criterionId: `agc${x}`,
+              gender: {type: `Gender Type ${x}`},
+            },
+            genderView: {resourceName: 'customers/1/genderViews/1~${x}'},
+          })),
+        ),
+      );
+      const report = reportFactory.create(GENDER_TARGET_REPORT);
+      expect(report.fetch()).toEqual({
+        'agc0': {
+          criterionId: 'agc0',
+          customerId: '1',
+          customerName: 'Customer 1',
+          campaignId: 'c1',
+          adGroupId: 'ag1',
+          gender: 'Gender Type 0',
+        },
+        'agc1': {
+          criterionId: 'agc1',
+          customerId: '1',
+          customerName: 'Customer 1',
+          campaignId: 'c1',
+          adGroupId: 'ag1',
+          gender: 'Gender Type 1',
+        },
+        'agc2': {
+          criterionId: 'agc2',
+          customerId: '1',
+          customerName: 'Customer 1',
+          campaignId: 'c1',
+          adGroupId: 'ag1',
+          gender: 'Gender Type 2',
+        },
+        'agc3': {
+          criterionId: 'agc3',
+          customerId: '1',
+          customerName: 'Customer 1',
+          campaignId: 'c1',
+          adGroupId: 'ag1',
+          gender: 'Gender Type 3',
+        },
+        'agc4': {
+          criterionId: 'agc4',
+          customerId: '1',
+          customerName: 'Customer 1',
+          campaignId: 'c1',
+          adGroupId: 'ag1',
+          gender: 'Gender Type 4',
         },
       });
     });
