@@ -268,16 +268,21 @@ export interface ReportInterface<
     result: ReportResponse<Q>,
     joins: Joins extends undefined
       ? never
-      : Record<
-          keyof Exclude<Joins, undefined>,
-          Record<
-            string,
+      : Joins[keyof Joins] extends UnknownReportClass
+        ? Record<
+            keyof Joins,
             Record<
-              Extract<Joins[keyof Joins], UnknownReportClass>['output'][number],
-              string
+              string,
+              Record<
+                Extract<
+                  Joins[keyof Joins],
+                  UnknownReportClass
+                >['output'][number],
+                string
+              >
             >
           >
-        >,
+        : undefined,
   ): readonly [key: string, record: Record<ArrayToUnion<Output[]>, string>];
 }
 
