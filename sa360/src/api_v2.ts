@@ -394,7 +394,7 @@ export const CAMPAIGN_PACING_REPORT = makeReport({
     queryFrom: 'campaign',
     queryWheres: ["campaign.status == 'ENABLED'"],
   }),
-  transform(result, joins) {
+  transform(result) {
     return [
       result.campaign.id as string,
       {

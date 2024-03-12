@@ -260,3 +260,10 @@ export function bootstrapGoogleAdsApi() {
  */
 export interface AdsClientInterface
   extends BaseClientInterface<AdsClientInterface, Granularity, AdsClientArgs> {}
+
+/**
+ * Create an iterator from a list of options.
+ */
+export function iterator<T>(...a: T[]): IterableIterator<T> {
+  return a[Symbol.iterator]();
+}

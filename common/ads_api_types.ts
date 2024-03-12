@@ -127,8 +127,11 @@ export type DotsToObject<S extends string> = S extends ''
 /**
  * Converts a report format to the expected response output.
  */
-export type ReportResponse<Q extends NonGenericQueryBuilder> =
-  UnionToIntersection<DotsToObject<Q['queryParams'][number]>> & {};
+export type ReportResponse<
+  Q extends QueryBuilder<P, J>,
+  P extends string = Q['queryParams'][number],
+  J extends JoinType<P> | undefined = Q['joins'],
+> = UnionToIntersection<DotsToObject<Q['queryParams'][number]>> & {};
 
 /**
  * Helper method to turn a union into an intersection.

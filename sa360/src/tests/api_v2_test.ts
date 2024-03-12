@@ -95,8 +95,8 @@ describe('ApiV2', () => {
           ...[...Array.from({length: 5}).keys()].map((x: number) => ({
             customer: {
               resourceName: 'customers/1',
-              name: 'Customer 1',
               id: '1',
+              name: 'Customer 1',
             },
             campaign: {
               resourceName: `customers/1/campaigns/c${x}`,
@@ -157,8 +157,8 @@ describe('ApiV2', () => {
           ...[...Array.from({length: 5}).keys()].map((x) => ({
             customer: {
               resourceName: 'customers/1',
-              name: 'Customer 1',
               id: '1',
+              name: 'Customer 1',
             },
             campaign: {
               resourceName: `customers/1/campaigns/c${Math.floor(x / 2)}`,
@@ -383,7 +383,9 @@ describe('ApiV2', () => {
             adGroupCriterion: {
               resourceName: `customers/1/adGroupCriteria/agc${x}`,
               criterionId: `agc${x}`,
-              gender: {type: `Gender Type ${x}`},
+              gender: {
+                type: `Gender Type ${x}`,
+              },
             },
             genderView: {resourceName: 'customers/1/genderViews/1~${x}'},
           })),
