@@ -203,7 +203,6 @@ drive_query:
               q: ${q}
               orderBy: ${orderBy}
               pageSize: ${pageSize}
-              fields: 'files(id,name,owners)'
     - add_page_token:
         switch:
           - condition: '${pageToken != null}'
