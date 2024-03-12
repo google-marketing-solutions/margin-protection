@@ -176,7 +176,6 @@ export interface RuleDefinition<
   callback: Callback<P>;
   granularity: G;
   params: {[Property in keyof P]: ParamDefinition};
-  uniqueKeyPrefix: string;
   defaults: {[Property in keyof P]: string};
   helper?: string;
   /** The name of the "value" column in the anomaly detector, for reporting. */

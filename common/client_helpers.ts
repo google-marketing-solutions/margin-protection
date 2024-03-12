@@ -66,7 +66,6 @@ export function newRuleBuilder<
     ruleDefinition: RuleParams<C, G, A, P>,
   ): RuleExecutorClass<C, G, A, P> {
     const ruleClass = class implements RuleExecutor<C, G, A, P> {
-      readonly uniqueKeyPrefix: string = '';
       readonly settings: Settings<Record<keyof P, string>>;
       readonly name: string = ruleDefinition.name;
       readonly description: string = ruleDefinition.description;
@@ -80,7 +79,6 @@ export function newRuleBuilder<
         readonly client: C,
         settingsArray: ReadonlyArray<string[]>,
       ) {
-        this.uniqueKeyPrefix = ruleDefinition.uniqueKeyPrefix;
         this.settings = transformToParamValues(settingsArray, this.params);
       }
 

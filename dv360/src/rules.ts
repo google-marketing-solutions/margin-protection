@@ -102,7 +102,6 @@ export const geoTargetRule = newRule({
     },
   },
   granularity: RuleGranularity.CAMPAIGN,
-  uniqueKeyPrefix: 'geo',
   defaults: {
     geotargeting: 'United States',
     excludes: '',
@@ -197,7 +196,6 @@ export const budgetPacingPercentageRule = newRule({
     },
   },
   defaults: {min: '0', max: '0.5'},
-  uniqueKeyPrefix: 'pacingPercent',
   async callback() {
     const rules: {[campaignId: string]: AbridgedCheck} = {};
     const values: Values = {};
@@ -361,7 +359,6 @@ export const budgetPacingDaysAheadRule = newRule({
     max: '1',
   },
   granularity: RuleGranularity.INSERTION_ORDER,
-  uniqueKeyPrefix: 'pacingDays',
   async callback() {
     const rules: {[campaignId: string]: AbridgedCheck} = {};
     const values: Values = {};
@@ -487,7 +484,6 @@ export const dailyBudgetRule = newRule({
     max: '1000000',
   },
   granularity: RuleGranularity.INSERTION_ORDER,
-  uniqueKeyPrefix: 'dailyBudget',
   async callback() {
     const values: Values = {};
 
@@ -602,7 +598,6 @@ export const impressionsByGeoTarget = newRule({
   helper: `=HYPERLINK(
     "https://developers.google.com/google-ads/api/reference/data/geotargets", "Use the 2-digit country codes found in this report.")`,
   defaults: {countries: 'US', maxOutside: '0.01'},
-  uniqueKeyPrefix: 'impressionsByGeo',
   async callback() {
     const values: Values = {};
 

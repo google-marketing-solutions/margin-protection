@@ -975,12 +975,7 @@ export abstract class AppsScriptFrontEnd<
    */
   async initializeSheets() {
     if (!this.getIdentity()) {
-      let advertiserId = '';
-
-      while (!advertiserId) {
-        this.displaySetupModal();
-      }
-      getTemplateSetting('ID').setValue(advertiserId);
+      this.displaySetupModal();
     }
 
     this.migrate();
@@ -1218,7 +1213,6 @@ export function newRuleBuilder<
     ruleDefinition: RuleParams<C, G, A, P>,
   ): RuleExecutorClass<C, G, A, P> {
     const ruleClass = class implements RuleExecutor<C, G, A, P> {
-      readonly uniqueKeyPrefix: string = '';
       readonly description = ruleDefinition.description;
       readonly settings: Settings<Record<keyof P, string>>;
       readonly name: string = ruleDefinition.name;
@@ -1232,7 +1226,6 @@ export function newRuleBuilder<
         readonly client: C,
         settingsArray: Readonly<string[][]>,
       ) {
-        this.uniqueKeyPrefix = ruleDefinition.uniqueKeyPrefix;
         this.settings = transformToParamValues(settingsArray, this.params);
       }
 

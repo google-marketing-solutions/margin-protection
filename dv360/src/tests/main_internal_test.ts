@@ -171,7 +171,6 @@ describe('Rule value filling', () => {
       callback: geoTargetRule.definition.callback as unknown as Callback<
         Record<'newrule', ParamDefinition>
       >,
-      uniqueKeyPrefix: geoTargetRule.definition.uniqueKeyPrefix,
       granularity: geoTargetRule.definition.granularity,
       valueFormat: geoTargetRule.definition.valueFormat,
       params: {

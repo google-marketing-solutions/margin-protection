@@ -49,7 +49,6 @@ describe('Client rules are validated', () => {
         valueFormat: {label: 'Some Value'},
         name: 'ruleA',
         description: ``,
-        uniqueKeyPrefix: 'ruleA',
         granularity: RuleGranularity.CAMPAIGN,
         async callback() {
           output.push('ruleA');
@@ -65,7 +64,6 @@ describe('Client rules are validated', () => {
         valueFormat: {label: 'Some Value'},
         name: 'ruleB',
         description: ``,
-        uniqueKeyPrefix: 'ruleB',
         granularity: RuleGranularity.CAMPAIGN,
         async callback() {
           output.push('ruleB');
