@@ -1,4 +1,6 @@
 # Launch Monitor
+NOTE: This is a work-in-progress. Contact your Google representative for support
+in getting this solution to work for you.
 
 ## Problem
 This solution helps to automate pre-launch and just-launched checklists for
