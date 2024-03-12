@@ -36,7 +36,10 @@ import {
   ReportResponse,
   buildQuery,
 } from 'common/ads_api_types';
-import {CAMPAIGN_REPORT} from 'sa360/src/api_v2';
+import {
+  AD_GROUP_REPORT,
+  CAMPAIGN_REPORT,
+} from 'sa360/src/api_v2';
 
 describe('ApiV2', () => {
   let mockQuery: jasmine.Spy;
@@ -136,6 +139,76 @@ describe('ApiV2', () => {
           campaignId: 'c4',
           campaignName: 'Campaign 4',
           campaignStatus: 'ENABLED',
+        },
+      });
+    });
+  });
+
+  describe('Ad Group report', () => {
+    it('returns expected results', () => {
+      const mockQuery: jasmine.Spy = spyOn(api, 'query');
+      mockQuery.and.returnValue(
+        iterator(
+          ...[...Array.from({length: 5}).keys()].map((x) => ({
+            customer: {
+              resourceName: 'customers/1',
+              name: 'Customer 1',
+              id: '1',
+            },
+            campaign: {
+              resourceName: `customers/1/campaigns/c${Math.floor(x / 2)}`,
+              id: `c${Math.floor(x / 2)}`,
+            },
+            adGroup: {
+              resourceName: `customers/1/adGroups/ag${x}`,
+              id: `ag${x}`,
+              status: x < 3 ? 'ACTIVE' : 'PAUSED',
+              name: `AdGroup ${x}`,
+            },
+          })),
+        ),
+      );
+      const report = reportFactory.create(AD_GROUP_REPORT);
+      expect(report.fetch()).toEqual({
+        'ag0': {
+          customerId: '1',
+          customerName: 'Customer 1',
+          campaignId: 'c0',
+          adGroupId: 'ag0',
+          adGroupName: 'AdGroup 0',
+          adGroupStatus: 'ACTIVE',
+        },
+        'ag1': {
+          customerId: '1',
+          customerName: 'Customer 1',
+          campaignId: 'c0',
+          adGroupId: 'ag1',
+          adGroupName: 'AdGroup 1',
+          adGroupStatus: 'ACTIVE',
+        },
+        'ag2': {
+          customerId: '1',
+          customerName: 'Customer 1',
+          campaignId: 'c1',
+          adGroupId: 'ag2',
+          adGroupName: 'AdGroup 2',
+          adGroupStatus: 'ACTIVE',
+        },
+        'ag3': {
+          customerId: '1',
+          customerName: 'Customer 1',
+          campaignId: 'c1',
+          adGroupId: 'ag3',
+          adGroupName: 'AdGroup 3',
+          adGroupStatus: 'PAUSED',
+        },
+        'ag4': {
+          customerId: '1',
+          customerName: 'Customer 1',
+          campaignId: 'c2',
+          adGroupId: 'ag4',
+          adGroupName: 'AdGroup 4',
+          adGroupStatus: 'PAUSED',
         },
       });
     });

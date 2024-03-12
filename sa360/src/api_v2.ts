@@ -61,3 +61,43 @@ export const CAMPAIGN_REPORT = makeReport({
     ] as const;
   },
 });
+
+/**
+ * SA360 Ad group-based report.
+ *
+ * Exposed for testing.
+ */
+export const AD_GROUP_REPORT = makeReport({
+  output: [
+    'customerId',
+    'customerName',
+    'campaignId',
+    'adGroupId',
+    'adGroupName',
+    'adGroupStatus',
+  ] as const,
+  query: buildQuery({
+    queryParams: [
+      'customer.id',
+      'customer.name',
+      'campaign.id',
+      'ad_group.id',
+      'ad_group.name',
+      'ad_group.status',
+    ],
+    queryFrom: 'ad_group',
+  }),
+  transform(result) {
+    return [
+      result.adGroup.id as string,
+      {
+        customerId: result.customer.id as string,
+        customerName: result.customer.name as string,
+        campaignId: result.campaign.id as string,
+        adGroupId: result.adGroup.id as string,
+        adGroupName: result.adGroup.name as string,
+        adGroupStatus: result.adGroup.status as string,
+      },
+    ] as const;
+  },
+});
