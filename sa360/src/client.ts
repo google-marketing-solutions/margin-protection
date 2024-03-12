@@ -21,13 +21,12 @@
 
 // g3-format-prettier
 
-import {PropertyStore} from 'google3/third_party/professional_services/solutions/appsscript_anomaly_library/lib/main';
 import {newRuleBuilder} from 'common/client_helpers';
-
 import {AbstractRuleRange} from 'common/sheet_helpers';
 import {
   ExecutorResult,
   ParamDefinition,
+  PropertyStore,
   RecordInfo,
   RuleExecutor,
   RuleExecutorClass,
@@ -45,6 +44,9 @@ import {
   RuleGranularity,
 } from 'sa360/src/types';
 
+/**
+ * Creates a new rule for SA360.
+ */
 export const newRule = newRuleBuilder<
   ClientInterface,
   RuleGranularity,

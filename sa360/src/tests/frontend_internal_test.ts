@@ -17,27 +17,26 @@
 
 // g3-format-prettier
 
+import {Values} from 'google3/third_party/professional_services/solutions/appsscript_anomaly_library/lib/main';
 import {
   AppsScriptPropertyStore,
-  PropertyStore,
-  Values,
-} from 'google3/third_party/professional_services/solutions/appsscript_anomaly_library/lib/main';
-import {GENERAL_SETTINGS_SHEET} from 'common/sheet_helpers';
+  GENERAL_SETTINGS_SHEET,
+  lazyLoadApp,
+} from 'common/sheet_helpers';
 import {
   FakePropertyStore,
   FakeUtilitiesService,
   mockAppsScript,
 } from 'common/test_helpers/mock_apps_script';
-
-import {lazyLoadApp} from '../../../common/sheet_helpers';
+import {PropertyStore} from 'common/types';
 import {Client} from '../client';
-import {migrations, SearchAdsFrontEnd} from '../frontend';
+import {SearchAdsFrontEnd, migrations} from '../frontend';
 import {getFrontEnd} from '../main';
 import {ClientArgs, ClientInterface, RuleGranularity} from '../types';
 
 import {FakeClient} from './client_helpers';
 
-describe('Migrations', async () => {
+describe('Migrations', () => {
   let frontend: SearchAdsFrontEnd;
   let properties: PropertyStore;
 

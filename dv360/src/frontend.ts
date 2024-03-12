@@ -17,16 +17,14 @@
 
 // g3-format-prettier
 
+import {sendEmailAlert} from 'google3/third_party/professional_services/solutions/appsscript_anomaly_library/lib/main';
 import {
-  AppsScriptPropertyStore,
-  sendEmailAlert,
-} from 'google3/third_party/professional_services/solutions/appsscript_anomaly_library/lib/main';
-import {
-  AppsScriptFrontEnd,
-  HELPERS,
   addSettingWithDescription,
+  AppsScriptFrontEnd,
+  AppsScriptPropertyStore,
   getOrCreateSheet,
   getTemplateSetting,
+  HELPERS,
 } from 'common/sheet_helpers';
 import {FrontEndArgs} from 'common/types';
 import {RuleRange} from 'dv360/src/client';

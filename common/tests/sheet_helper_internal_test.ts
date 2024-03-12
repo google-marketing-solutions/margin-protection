@@ -18,10 +18,10 @@
 // g3-format-prettier
 
 import {setUpAppsScriptSimulator} from 'google3/javascript/apps/maestro/simulator/closure_apps_script_simulator-closurized';
-import {AppsScriptPropertyStore} from 'google3/third_party/professional_services/solutions/appsscript_anomaly_library/lib/main';
 
 import {
   AppsScriptFrontEnd,
+  AppsScriptPropertyStore,
   HELPERS,
   lazyLoadApp,
   toExport,

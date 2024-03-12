@@ -22,11 +22,10 @@
 // g3-format-prettier
 
 import {
-  AppsScriptPropertyStore,
   PropertyStore,
   Value,
   Values,
-} from 'google3/third_party/professional_services/solutions/appsscript_anomaly_library/lib/main';
+} from 'common/types';
 
 import {
   AppsScriptFunctions,
@@ -215,7 +214,7 @@ export abstract class AbstractRuleRange<
   private readonly columnOrders: Record<string, Record<string, number>> = {};
   private readonly rules: Record<string, string[][]> &
     Record<'none', string[][]> = {'none': [[]]};
-  private length: number = 0;
+  private length = 0;
 
   constructor(
     range: string[][],
@@ -1012,6 +1011,7 @@ export abstract class AppsScriptFrontEnd<
   }
 
   abstract maybeSendEmailAlert(): void;
+
   protected saveSettingsBackToSheets(
     rules: Array<RuleExecutor<C, G, A, Record<string, ParamDefinition>>>,
   ) {
@@ -1072,6 +1072,8 @@ function load<
       case 'displayGlossary':
         frontend.displayGlossary();
         return;
+      default:
+        throw new Error('Unsupported function: ${fnName}');
     }
   };
 }
@@ -1174,4 +1176,61 @@ export function sortMigrations(ver1: string, ver2: string) {
     difference += ((keys1[i] ?? 0) - (keys2[i] ?? 0)) / 10 ** i;
   }
   return difference;
+}
+
+/**
+ * Provides convenience methods to manage property getters and setters.
+ *
+ * This class uses `gzip` to stay within storage quotas for PropertiesService.
+ */
+export class AppsScriptPropertyStore implements PropertyStore {
+  private static readonly cache: {[key: string]: string} = {};
+
+  constructor(
+    private readonly properties = PropertiesService.getScriptProperties(),
+  ) {}
+
+  setProperty(key: string, value: string) {
+    this.properties.setProperty(key, compress(value));
+    AppsScriptPropertyStore.cache[key] = value;
+  }
+
+  getProperty(key: string) {
+    if (AppsScriptPropertyStore.cache[key]) {
+      return AppsScriptPropertyStore.cache[key];
+    }
+    const property = this.properties.getProperty(key);
+    return property ? extract(property) : null;
+  }
+
+  getProperties() {
+    return Object.fromEntries(
+      Object.entries(this.properties.getProperties()).map(([k, v]) => [
+        k,
+        extract(v),
+      ]),
+    );
+  }
+}
+
+/**
+ * Compresses a blob and condenses it to a base64 string.
+ */
+function compress(content: string): string {
+  const blob = Utilities.newBlob(content);
+  const zip = Utilities.gzip(blob);
+  return Utilities.base64Encode(zip.getBytes());
+}
+
+/**
+ * The opposite of {@link compress}.
+ */
+function extract(content: string): string {
+  try {
+    const decode = Utilities.base64Decode(content);
+    const blob = Utilities.newBlob(decode, 'application/x-gzip');
+    return Utilities.ungzip(blob).getDataAsString();
+  } catch (e) {
+    return content; // already extracted
+  }
 }

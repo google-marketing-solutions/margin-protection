@@ -34,7 +34,6 @@ import {
 } from 'dv360_api/dv360_resources';
 import {RawApiDate} from 'dv360_api/dv360_types';
 import {
-  PropertyStore,
   Rule,
   RuleInstructions,
 } from 'google3/third_party/professional_services/solutions/appsscript_anomaly_library/lib/main';
@@ -44,6 +43,7 @@ import {AbstractRuleRange} from 'common/sheet_helpers';
 import {
   ExecutorResult,
   ParamDefinition,
+  PropertyStore,
   RecordInfo,
   RuleDefinition,
   RuleExecutor,

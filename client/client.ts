@@ -27,10 +27,9 @@ declare global {
   const LaunchMonitor: Exported;
 }
 
-import {
-  AppsScriptPropertyStore,
-  PropertyStore,
-} from 'google3/third_party/professional_services/solutions/appsscript_anomaly_library/lib/main';
+import {PropertyStore} from 'common/types';
+
+import {AppsScriptPropertyStore} from 'common/sheet_helpers';
 
 interface Exported {
   onOpen(properties: PropertyStore): void;
