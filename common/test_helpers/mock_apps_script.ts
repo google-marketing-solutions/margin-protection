@@ -238,6 +238,25 @@ export function mockAppsScript() {
   (globalThis.Utilities as unknown as FakeUtilities) = new FakeUtilities();
   (globalThis.HtmlService as unknown as FakeHtmlService) =
     new FakeHtmlService();
+  (globalThis.UrlFetchApp as unknown as FakeUrlFetchApp) =
+    new FakeUrlFetchApp();
+}
+
+class FakeUrlFetchApp {
+  fetch(url: string) {
+    throw new Error('Not implemented. Mock me.');
+  }
+}
+
+/**
+ * A return value for a FakeUrlFetchApp
+ */
+export function generateFakeHttpResponse(args: {contentText: string}) {
+  return {
+    getContentText() {
+      return args.contentText;
+    },
+  } as unknown as GoogleAppsScript.URL_Fetch.HTTPResponse;
 }
 
 class FakeScriptApp {

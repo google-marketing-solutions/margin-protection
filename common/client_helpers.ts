@@ -60,7 +60,7 @@ export function newRuleBuilder<
   G extends RuleGranularity<G>,
   A extends BaseClientArgs,
 >(): <P extends Record<keyof P, ParamDefinition>>(
-  p: RuleParams<C, G, A, P>,
+  p: RuleParams<C, G, A, P> & ThisType<RuleExecutor<C, G, A, P>>,
 ) => RuleExecutorClass<C, G, A, P> {
   return function newRule<P extends Record<keyof P, ParamDefinition>>(
     ruleDefinition: RuleParams<C, G, A, P>,

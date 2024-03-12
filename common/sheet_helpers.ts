@@ -957,6 +957,22 @@ export abstract class AppsScriptFrontEnd<
       );
   }
 
+  /**
+   * Realistically-typed value getter from a named range.
+   */
+  getValueFromRangeByName<AllowEmpty extends boolean>(args: {
+    name: string;
+    allowEmpty: AllowEmpty;
+  }): AllowEmpty extends true ? string | number | undefined : string | number {
+    const range = this.getRangeByName(args.name);
+    const value = range.getValue();
+    if (!value && !args.allowEmpty) {
+      throw new Error(`Require a value in named range '${args.name}'.`);
+    }
+
+    return value || undefined;
+  }
+
   getRangeByName(name: string) {
     const range = SpreadsheetApp.getActive().getRangeByName(name);
     if (!range) {

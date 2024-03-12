@@ -29,8 +29,15 @@ import {
   makeReport,
   qlifyQuery,
   ReportFactory,
+  SA360_API_ENDPOINT,
 } from '../ads_api';
 import {AdsSearchRequest, buildQuery} from '../ads_api_types';
+import {
+  generateFakeHttpResponse,
+  mockAppsScript,
+} from '../test_helpers/mock_apps_script';
+
+import {bootstrapGoogleAdsApi} from './helpers';
 
 import HTTPResponse = GoogleAppsScript.URL_Fetch.HTTPResponse;
 
@@ -75,6 +82,47 @@ describe('qlifyQuery', () => {
     );
     expect(query).toEqual(
       'SELECT a.one FROM table WHERE foo = "1" AND bar = "2"',
+    );
+  });
+});
+
+describe('Google Ads API', () => {
+  let url = '';
+
+  beforeEach(() => {
+    mockAppsScript();
+    spyOn(UrlFetchApp, 'fetch').and.callFake((requestUrl) => {
+      url = requestUrl;
+
+      return generateFakeHttpResponse({contentText: '{}'});
+    });
+  });
+
+  it('has a well-formed URL for GOOGLEADS_API_ENDPOINT', () => {
+    const factory = new GoogleAdsApiFactory({
+      developerToken: '',
+      credentialManager: new CredentialManager(),
+      apiEndpoint: GOOGLEADS_API_ENDPOINT,
+    });
+    const api = factory.create('123');
+    api.query('1', FAKE_REPORT.query).next();
+
+    expect(url).toEqual(
+      'https://googleads.googleapis.com/v11/customers/1/googleAds:search',
+    );
+  });
+
+  it('has a well-formed URL for SA360_API_ENDPOINT', () => {
+    const factory = new GoogleAdsApiFactory({
+      developerToken: '',
+      credentialManager: new CredentialManager(),
+      apiEndpoint: SA360_API_ENDPOINT,
+    });
+    const api = factory.create('123');
+    api.query('1', FAKE_REPORT.query).next();
+
+    expect(url).toEqual(
+      'https://searchads360.googleapis.com/v0/customers/1/searchAds360:search',
     );
   });
 });
@@ -288,28 +336,11 @@ describe('Report Factory', () => {
 });
 
 describe('Join Report', () => {
-  let apiFactory: GoogleAdsApiFactory;
   let reportFactory: ReportFactory;
   let api: GoogleAdsApi;
 
   beforeEach(() => {
-    apiFactory = new GoogleAdsApiFactory({
-      developerToken: '',
-      credentialManager: new CredentialManager(),
-      apiEndpoint: FAKE_API_ENDPOINT,
-    });
-    reportFactory = new ReportFactory(apiFactory, {
-      customerIds: '',
-      label: 'test',
-    });
-    spyOn(reportFactory, 'create').and.callFake((report) =>
-      new ReportFactory(apiFactory, {
-        customerIds: '1',
-        label: 'test',
-      }).create(report),
-    );
-    api = apiFactory.create('');
-    spyOn(apiFactory, 'create').and.returnValue(api);
+    ({reportFactory, api} = bootstrapGoogleAdsApi());
   });
 
   it('returns expected results from query', () => {
@@ -352,6 +383,7 @@ function iterator<T>(...a: T[]): IterableIterator<T> {
 const FAKE_API_ENDPOINT = {
   url: 'my://url',
   version: 'v0',
+  call: 'fake:endpoint',
 };
 
 const CUSTOMER_QUERY = buildQuery({

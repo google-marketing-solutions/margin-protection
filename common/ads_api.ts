@@ -31,6 +31,7 @@ const MAX_PAGE_SIZE = 10_000;
 interface ApiEndpoint {
   url: string;
   version: string;
+  call: string;
 }
 
 /**
@@ -39,6 +40,7 @@ interface ApiEndpoint {
 export const GOOGLEADS_API_ENDPOINT = {
   url: 'googleads.googleapis.com',
   version: 'v11',
+  call: 'googleAds:search',
 };
 
 /**
@@ -47,6 +49,7 @@ export const GOOGLEADS_API_ENDPOINT = {
 export const SA360_API_ENDPOINT = {
   url: 'searchads360.googleapis.com',
   version: 'v0',
+  call: 'searchAds360:search',
 };
 
 /**
@@ -109,9 +112,13 @@ export class GoogleAdsApi implements AdTypes.GoogleAdsApiInterface {
   private requestHeaders() {
     const token = this.apiInstructions.credentialManager.getToken();
     return {
-      'developer-token': this.apiInstructions.developerToken,
+      ...(this.apiInstructions.developerToken
+        ? {
+            'developer-token': this.apiInstructions.developerToken,
+          }
+        : {}),
       'Authorization': `Bearer ${token}`,
-      'login-customer-id': this.apiInstructions.loginCustomerId,
+      'login-customer-id': String(this.apiInstructions.loginCustomerId),
     };
   }
 
@@ -142,7 +149,7 @@ export class GoogleAdsApi implements AdTypes.GoogleAdsApiInterface {
     customerId: string;
     queryWheres: string[];
   }): IterableIterator<AdTypes.ReportResponse<Q>> {
-    const url = `https://${this.apiInstructions.apiEndpoint.url}/${this.apiInstructions.apiEndpoint.version}/customers/${customerId}/googleAds:search`;
+    const url = `https://${this.apiInstructions.apiEndpoint.url}/${this.apiInstructions.apiEndpoint.version}/customers/${customerId}/${this.apiInstructions.apiEndpoint.call}`;
     const params: AdTypes.AdsSearchRequest = {
       pageSize: MAX_PAGE_SIZE,
       query: qlifyQuery(query, queryWheres),

@@ -23,6 +23,11 @@
 
 import {AdsClientArgs} from 'common/ads_api_types';
 import {FakePropertyStore} from 'common/test_helpers/mock_apps_script';
+import {
+  CredentialManager,
+  GoogleAdsApiFactory,
+  ReportFactory,
+} from '../ads_api';
 import {AbstractRuleRange, AppsScriptFrontEnd} from '../sheet_helpers';
 import {
   AppsScriptFunctions,
@@ -227,6 +232,29 @@ export function scaffoldSheetWithNamedRanges() {
   }
 }
 
+const FAKE_API_ENDPOINT = {
+  url: 'my://url',
+  version: 'v0',
+  call: 'fake:call',
+};
+
+/**
+ * Set up a Google Ads API for testing.
+ */
+export function bootstrapGoogleAdsApi() {
+  const apiFactory = new GoogleAdsApiFactory({
+    developerToken: '',
+    credentialManager: new CredentialManager(),
+    apiEndpoint: FAKE_API_ENDPOINT,
+  });
+  const reportFactory = new ReportFactory(apiFactory, {
+    customerIds: '1',
+    label: 'test',
+  });
+  const api = apiFactory.create('');
+  spyOn(apiFactory, 'create').and.returnValue(api);
+  return {api, reportFactory};
+}
 /**
  * Like TestClientInterface only for Ads.
  */

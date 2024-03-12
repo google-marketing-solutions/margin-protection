@@ -289,7 +289,7 @@ export interface ReportFactoryInterface {
     Q extends QueryBuilder<Params, Joins>,
     Output extends string,
     Params extends string,
-    Joins extends JoinType<Params>,
+    Joins extends JoinType<Params> | undefined,
     ChildReport extends ReportInterface<
       Q,
       Output,

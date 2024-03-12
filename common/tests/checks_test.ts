@@ -26,7 +26,7 @@ describe('checks test', () => {
       );
     });
 
-    it('erorrs on handles out of range', () => {
+    it('errors on handles out of range', () => {
       [0, 6].forEach((i) => expect(inRange(test, i, {}).anomalous).toBeTrue());
     });
   });
