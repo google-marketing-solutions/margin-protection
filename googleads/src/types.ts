@@ -15,12 +15,14 @@
  * limitations under the License.
  */
 
+/**
+ * @fileoverview Google Ads-specific interfaces.
+ */
+
 // g3-format-prettier
 
-import {
-  BaseClientArgs,
-  BaseClientInterface,
-} from 'common/types';
+import {AdsClientArgs} from 'common/ads_api_types';
+import {BaseClientInterface} from 'common/types';
 
 /**
  * Extends the base client interface with Google Ads-specific features.
@@ -31,7 +33,7 @@ export interface ClientInterface
 /**
  * Necessary Ads API request metadata
  */
-export interface ClientArgs extends BaseClientArgs {
+export interface ClientArgs extends AdsClientArgs {
   developerToken: string;
 }
 

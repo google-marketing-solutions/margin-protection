@@ -80,7 +80,7 @@ export interface AccountMap {
  */
 export interface AdsClientArgs extends BaseClientArgs {
   loginCustomerId?: string;
-  customerId: string;
+  customerIds: string;
 }
 
 /**
@@ -145,12 +145,19 @@ export type UnionToIntersection<U> = (
  * Google Ads API interface
  */
 export declare interface GoogleAdsApiInterface {
+  /**
+   * Runs a query agains the Google Ads API.
+   *
+   * @param customerIds A comma separated list of customer IDs to query.
+   * @param query The query to run (a {@link QueryBuilder} type).
+   * @param queryWheres Optional list of WHERE clauses to filter the results.
+   */
   query<
     Q extends QueryBuilder<Params, Joins>,
     Params extends string = Q['queryParams'][number],
     Joins extends JoinType<Params> | undefined = Q['joins'],
   >(
-    customerId: string,
+    customerIds: string,
     query: Q,
     queryWheres?: string[],
   ): IterableIterator<ReportResponse<Q>>;
@@ -243,27 +250,9 @@ export interface ReportInterface<
    *
    * Optional filter is used for smart joins and for user input.
    */
-  getReport(
+  fetch(
     queryWheres?: Array<string | number>,
   ): Record<string, Record<Output, string>>;
-
-  transform(
-    result: ReportResponse<Q>,
-  ): readonly [key: string, record: Record<ArrayToUnion<Output[]>, string>];
-
-  transform(
-    result: ReportResponse<Q>,
-    joins: Record<
-      keyof Exclude<Joins, undefined>,
-      Record<
-        string,
-        Record<
-          Extract<Joins[keyof Joins], UnknownReportClass>['output'][number],
-          string
-        >
-      >
-    >,
-  ): readonly [key: string, record: Record<ArrayToUnion<Output[]>, string>];
 
   /**
    * Does a row-by-row transformation and returns a tuple of key to record.
@@ -284,10 +273,7 @@ export interface ReportInterface<
           Record<
             string,
             Record<
-              Extract<
-                Joins[keyof Joins],
-                UnknownReportClass
-              >['query']['output'][number],
+              Extract<Joins[keyof Joins], UnknownReportClass>['output'][number],
               string
             >
           >
@@ -333,8 +319,7 @@ export interface ReportClass<
   new (
     api: GoogleAdsApiInterface,
     clientArgs: AdsClientArgs,
-    reportArgs: Q,
-    result: IterableIterator<ReportResponse<Q>>,
+    query: Q,
     factory: ReportFactoryInterface,
   ): ChildReport;
   query: Q;

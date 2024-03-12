@@ -226,3 +226,9 @@ export function scaffoldSheetWithNamedRanges() {
     SpreadsheetApp.getActive().getRangeByName(constName)!.setValue(value);
   }
 }
+
+/**
+ * Like TestClientInterface only for Ads.
+ */
+export interface AdsClientInterface
+  extends BaseClientInterface<AdsClientInterface, Granularity, AdsClientArgs> {}

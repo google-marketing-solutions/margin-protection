@@ -21,6 +21,7 @@
 
 // g3-format-prettier
 
+import {AdsClientArgs} from 'common/ads_api_types';
 import {
   BaseClientArgs,
   BaseClientInterface,
@@ -92,11 +93,10 @@ export interface ClientInterfaceV2
 /**
  * Client args for SA360's new API
  */
-export interface ClientArgsV2 extends BaseClientArgs {
+export interface ClientArgsV2 extends AdsClientArgs {
   customerId: string;
   loginCustomerId?: string;
   fullFetch?: boolean;
-  granularity: RuleGranularity;
 }
 
 /**

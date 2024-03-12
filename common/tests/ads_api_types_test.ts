@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-// g3-prettier-format
+// g3-format-prettier
 
 import 'jasmine';
 
@@ -42,7 +42,7 @@ describe('Ads API Types', () => {
     static output = ['a'];
     static query = CHILD_QUERY1;
     static key = 'Child1';
-    getReport() {
+    fetch() {
       return {};
     }
 
@@ -54,7 +54,7 @@ describe('Ads API Types', () => {
     static output = ['b'];
     static query = CHILD_QUERY2;
     static key = 'Child2';
-    getReport() {
+    fetch() {
       return {};
     }
 
