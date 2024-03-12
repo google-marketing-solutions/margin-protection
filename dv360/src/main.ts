@@ -62,7 +62,9 @@ export function getFrontEnd(properties: PropertyStore) {
       impressionsByGeoTarget,
     ],
     version: CURRENT_SHEET_VERSION,
-    clientClass: Client,
+    clientInitializer(clientArgs, properties) {
+      return new Client(clientArgs, properties);
+    },
     migrations,
     properties,
   });

@@ -522,7 +522,7 @@ export abstract class AppsScriptFrontEnd<
     if (!clientArgs) {
       throw new Error('Cannot initialize front-end without client ID(s)');
     }
-    this.client = new injectedArgs.clientClass(
+    this.client = injectedArgs.clientInitializer(
       clientArgs,
       injectedArgs.properties,
     );

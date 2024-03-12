@@ -236,6 +236,14 @@ export const migrations: Record<string, (frontend: SearchAdsFrontEnd) => void> =
   };
 
 /**
+ * Migrations for the new SA360 V2 Launch Monitor
+ */
+export const migrationsV2: Record<
+  string,
+  (frontend: NewSearchAdsFrontEnd) => void
+> = {};
+
+/**
  * Front-end configuration for SA360 Apps Script.
  */
 export class SearchAdsFrontEnd extends AppsScriptFrontEnd<

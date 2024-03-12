@@ -66,7 +66,7 @@ describe('Check globals', () => {
         ruleRangeClass: RuleRange,
         rules: [],
         version: '1.0',
-        clientClass: FakeClient,
+        clientInitializer: () => new FakeClient(),
         migrations: {},
         properties,
       });
@@ -136,7 +136,7 @@ describe('Test migration order', () => {
         ruleRangeClass: RuleRange,
         rules: [],
         version: expectedVersion,
-        clientClass: FakeClient,
+        clientInitializer: () => new FakeClient(),
         migrations,
         properties,
       });
@@ -483,7 +483,7 @@ describe('Test emails', () => {
         ruleRangeClass: RuleRange,
         rules: [],
         version: '1.0',
-        clientClass: FakeClient,
+        clientInitializer: (args, properties) => new FakeClient(),
         migrations: {},
         properties,
       });

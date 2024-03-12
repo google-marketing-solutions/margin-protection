@@ -314,7 +314,7 @@ export interface FrontEndArgs<
   readonly rules: ReadonlyArray<
     RuleExecutorClass<C, G, A, Record<string, ParamDefinition>>
   >;
-  readonly clientClass: {new (clientArgs: A, properties: PropertyStore): C};
+  readonly clientInitializer: (clientArgs: A, properties: PropertyStore) => C;
   readonly version: string;
   readonly migrations: Record<string, (frontend: F) => void>;
   readonly properties: PropertyStore;

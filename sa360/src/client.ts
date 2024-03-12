@@ -19,9 +19,7 @@
  * @fileoverview Client for SA360.
  */
 
-// g3-format-prettier
-
-import {ReportFactory} from 'common/ads_api';
+import {ReportFactory,} from 'common/ads_api';
 import {
   JoinType,
   QueryBuilder,
