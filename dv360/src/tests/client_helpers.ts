@@ -175,7 +175,11 @@ export function generateTestClient(param: TestClientParams) {
     },
   };
 
-  const clientArgs: ClientArgs = {id: param.id, idType: IDType.ADVERTISER};
+  const clientArgs: ClientArgs = {
+    id: param.id,
+    idType: IDType.ADVERTISER,
+    label: 'test',
+  };
   if (param.allCampaigns) {
     class FakeCampaigns extends Campaigns {
       readonly id: string = 'c1';

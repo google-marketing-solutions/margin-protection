@@ -15,26 +15,10 @@
  * limitations under the License.
  */
 
-// g3-format-prettier
-
-import {
-  addSettingWithDescription,
-  AppsScriptFrontEnd,
-  AppsScriptPropertyStore,
-  getOrCreateSheet,
-  getTemplateSetting,
-  RULE_SETTINGS_SHEET,
-} from 'common/sheet_helpers';
-import {
-  FrontEndArgs,
-  ParamDefinition,
-  RuleExecutor,
-} from 'common/types';
+import {addSettingWithDescription, AppsScriptFrontEnd, AppsScriptPropertyStore, getOrCreateSheet, getTemplateSetting, LABEL_RANGE, RULE_SETTINGS_SHEET} from 'common/sheet_helpers';
+import {FrontEndArgs, ParamDefinition, RuleExecutor,} from 'common/types';
 import {RuleRange} from 'sa360/src/client';
-import {
-  ClientArgs,
-  ClientInterface,
-} from 'sa360/src/types';
+import {ClientArgs, ClientInterface,} from 'sa360/src/types';
 
 import {RuleGranularity} from './types';
 
@@ -49,10 +33,6 @@ const ADVERTISER_ID = 'ADVERTISER_ID';
  * Used to figure out the list of email addresses to send emails to.
  */
 export const EMAIL_LIST_RANGE = 'EMAIL_LIST';
-/**
- * Used to distinguish between different reports (e.g. advertiser name)
- */
-export const LABEL_RANGE = 'LABEL';
 const DRIVE_ID_RANGE = 'DRIVE_ID';
 const FULL_FETCH_RANGE = 'FULL_FETCH';
 
@@ -252,10 +232,12 @@ export class SearchAdsFrontEnd extends AppsScriptFrontEnd<
     if (!agencyId) {
       return null;
     }
+    const label = sheet.getRangeByName(LABEL_RANGE);
     return {
       agencyId: agencyId.getValue(),
       advertiserId: advertiserId?.getValue(),
       fullFetch: fullFetch?.getValue(),
+      label: label?.getValue() || `${advertiserId!.getValue()}`,
     };
   }
 

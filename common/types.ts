@@ -201,7 +201,12 @@ export interface BaseClientArgs<
   C extends BaseClientInterface<C, G, A>,
   G extends RuleGranularity<G>,
   A extends BaseClientArgs<C, G, A>,
-> {}
+> {
+  /**
+   * The name of the client. Distinguishable for emails.
+   */
+  label: string;
+}
 
 /**
  * A rule class that can instantiate a {@link RuleExecutor} object.

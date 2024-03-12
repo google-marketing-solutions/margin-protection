@@ -415,7 +415,7 @@ function generateTestClient(params: {id?: string}): TestClientInterface {
     ): TestClientInterface => {
       throw new Error('Not implemented.');
     },
-    settings: {label: 'Test'},
+    settings: {label: 'test'},
     properties: new FakePropertyStore(),
   };
 }

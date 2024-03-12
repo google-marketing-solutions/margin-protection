@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-import {addSettingWithDescription, AppsScriptFrontEnd, AppsScriptPropertyStore, getOrCreateSheet, HELPERS,} from 'common/sheet_helpers';
+import {addSettingWithDescription, AppsScriptFrontEnd, AppsScriptPropertyStore, getOrCreateSheet, HELPERS, LABEL_RANGE} from 'common/sheet_helpers';
 import {FrontEndArgs} from 'common/types';
 import {RuleRange} from 'dv360/src/client';
 import {
@@ -144,6 +144,7 @@ export class DisplayVideoFrontEnd extends AppsScriptFrontEnd<
     if (!sheet) {
       throw new Error('There is no active spreadsheet.');
     }
+    const label = sheet.getRangeByName(LABEL_RANGE);
     const idRange = sheet.getRangeByName(ENTITY_ID);
     const idTypeRange = sheet.getRangeByName(ID_TYPE);
     if (!idRange || !idTypeRange) {
@@ -153,6 +154,7 @@ export class DisplayVideoFrontEnd extends AppsScriptFrontEnd<
     return {
       id: idRange.getValue(),
       idType: idType === 'Advertiser' ? IDType.ADVERTISER : IDType.PARTNER,
+      label: label?.getValue() || `${idType} ${idRange.getValue()}`,
     };
   }
 

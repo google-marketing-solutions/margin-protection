@@ -68,7 +68,10 @@ export interface TestClientInterface
  * Test client args for use in tests.
  */
 export class TestClientArgs
-  implements BaseClientArgs<TestClientInterface, Granularity, TestClientArgs> {}
+  implements BaseClientArgs<TestClientInterface, Granularity, TestClientArgs>
+{
+  readonly label = 'test';
+}
 
 /**
  * Test rule range for use in tests.
@@ -87,7 +90,9 @@ export class RuleRange extends AbstractRuleRange<
  * Test client for use in tests.
  */
 export class FakeClient implements TestClientInterface {
-  readonly settings: TestClientArgs = {};
+  readonly settings: TestClientArgs = {
+    label: 'test',
+  };
   readonly ruleStore: {
     [ruleName: string]: RuleExecutor<
       TestClientInterface,
@@ -173,7 +178,7 @@ export class FakeFrontEnd extends AppsScriptFrontEnd<
   }
 
   getIdentity(): TestClientArgs {
-    return {label: 'Test'};
+    return {label: 'test'};
   }
 
   override async onOpen() {

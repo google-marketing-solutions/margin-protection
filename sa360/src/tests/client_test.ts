@@ -103,5 +103,8 @@ function generateTestClient({
   agencyId?: string;
   advertiserId?: string;
 }): Client {
-  return new Client({agencyId, advertiserId}, new AppsScriptPropertyStore());
+  return new Client(
+    {agencyId, advertiserId, label: 'Fake'},
+    new AppsScriptPropertyStore(),
+  );
 }

@@ -178,6 +178,7 @@ export class Client implements ClientInterface {
         (settings.advertiserId
           ? settings.advertiserId
           : settings.partnerId ?? ''),
+      label: settings.label ?? `${settings.idType} ${settings.id}`,
       campaigns: settings.campaigns || Campaigns,
       insertionOrders: settings.insertionOrders || InsertionOrders,
       budgetReport: settings.budgetReport || BudgetReport,

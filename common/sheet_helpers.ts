@@ -47,10 +47,16 @@ import {
 
 const FOLDER = 'application/vnd.google-apps.folder';
 const HEADER_RULE_NAME_INDEX = 0;
+
 /**
  * The number of headers at the top of a rule sheet.
  */
 const SHEET_TOP_PADDING = 2;
+
+/**
+ * Used to distinguish between different reports (e.g. advertiser name)
+ */
+export const LABEL_RANGE = 'LABEL';
 
 type ScriptFunction<F> = (properties: PropertyStore) => F;
 type ScriptEntryPoints =

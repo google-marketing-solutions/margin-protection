@@ -114,12 +114,13 @@ export class FakeCampaignTargetReport extends CampaignTargetReport {
 export class FakeClient extends Client {
   constructor(
     properties: PropertyStore,
-    args: ClientArgs = {advertiserId: 'AV1', agencyId: 'AY1'},
+    args: ClientArgs = {advertiserId: 'AV1', agencyId: 'AY1', label: 'Fake'},
   ) {
     super(
       {
         advertiserId: args.advertiserId || 'AV1',
         agencyId: args.agencyId || 'AY1',
+        label: args.label || 'Fake',
       },
       properties,
     );

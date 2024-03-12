@@ -46,7 +46,10 @@ describe('SA360 report aggregation', () => {
   });
 
   it('correctly maps values from a campaign report', async () => {
-    const report = await api.CampaignReport.buildReport({agencyId: '1'});
+    const report = await api.CampaignReport.buildReport({
+      agencyId: '1',
+      label: 'Test',
+    });
 
     expect(report.report['campaignId1']).toEqual(
       jasmine.objectContaining({
@@ -63,7 +66,10 @@ describe('SA360 report aggregation', () => {
   });
 
   it('correctly maps values from an ad group report', async () => {
-    const report = await api.AdGroupReport.buildReport({agencyId: '1'});
+    const report = await api.AdGroupReport.buildReport({
+      agencyId: '1',
+      label: 'Test',
+    });
 
     expect(report.report['adGroupId1']).toEqual(
       jasmine.objectContaining({
@@ -80,7 +86,10 @@ describe('SA360 report aggregation', () => {
   });
 
   it('correctly maps values from an ad group target report', async () => {
-    const report = await api.AdGroupTargetReport.buildReport({agencyId: '1'});
+    const report = await api.AdGroupTargetReport.buildReport({
+      agencyId: '1',
+      label: 'Test',
+    });
 
     expect(report.report['adGroupId1']).toEqual(
       jasmine.objectContaining({
@@ -92,7 +101,10 @@ describe('SA360 report aggregation', () => {
   });
 
   it('correctly appends values from an ad group target report with multiple targets', async () => {
-    const report = await api.AdGroupTargetReport.buildReport({agencyId: '2'});
+    const report = await api.AdGroupTargetReport.buildReport({
+      agencyId: '2',
+      label: 'Test',
+    });
 
     expect(report.report['adGroupId1']).toEqual(
       jasmine.objectContaining({
@@ -106,7 +118,10 @@ describe('SA360 report aggregation', () => {
   });
 
   it('correctly maps values from a campaign target report', async () => {
-    const report = await api.CampaignTargetReport.buildReport({agencyId: '1'});
+    const report = await api.CampaignTargetReport.buildReport({
+      agencyId: '1',
+      label: 'Test',
+    });
     expect(report.report['campaignId1']).toEqual({
       agency: 'agency1',
       agencyId: 'agencyId1',
@@ -120,7 +135,10 @@ describe('SA360 report aggregation', () => {
   it('concatenates range-bound calls correctly', async () => {
     const oldStep = api.ReportBuilder.step;
     api.ReportBuilder.step = 100;
-    const report = await api.AdGroupTargetReport.buildReport({agencyId: '2'});
+    const report = await api.AdGroupTargetReport.buildReport({
+      agencyId: '2',
+      label: 'Test',
+    });
     expect(report.report['adGroupId1']).toEqual(
       jasmine.objectContaining({
         'ageTargetAgeRange': 'ageTargetAgeRange1,ageTargetAgeRange2',
@@ -174,7 +192,7 @@ describe('SA360 report aggregation', () => {
 
   it('saves the last report pull in cache', async () => {
     const originalPull = CacheService.getScriptCache().get('scriptPull');
-    await api.AdGroupTargetReport.buildReport({agencyId: '2'});
+    await api.AdGroupTargetReport.buildReport({agencyId: '2', label: 'Test'});
     const newPull = CacheService.getScriptCache().get('scriptPull');
     expect(originalPull).not.toEqual(newPull);
     expect(newPull).toEqual(String(new Date('2020-01-01').getTime()));
