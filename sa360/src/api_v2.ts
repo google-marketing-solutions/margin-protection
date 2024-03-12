@@ -326,3 +326,53 @@ export const CAMPAIGN_USER_LIST_REPORT = makeReport({
     ] as const;
   },
 });
+
+/**
+ * Ad group audience user list report columns.
+ *
+ * Exposed for testing.
+ */
+export const AD_GROUP_USER_LIST_REPORT = makeReport({
+  output: [
+    'criterionId',
+    'customerId',
+    'customerName',
+    'campaignId',
+    'adGroupId',
+    'userListName',
+  ],
+  query: buildQuery({
+    queryParams: [
+      'customer.id',
+      'customer.name',
+      'campaign.id',
+      'ad_group.id',
+      'ad_group_criterion.resource_name',
+      'ad_group_criterion.user_list.user_list',
+      'ad_group_criterion.type',
+      'ad_group_criterion.criterion_id',
+    ],
+    queryFrom: 'ad_group_audience_view',
+    joins: {
+      'adGroupCriterion.criterionId': USER_LIST_REPORT,
+    },
+    queryWheres: ['ad_group_criterion.type = "USER_LIST"'],
+  }),
+  transform(result, joins) {
+    const userList =
+      joins['adGroupCriterion.criterionId'][
+        result.adGroupCriterion.criterionId as string
+      ];
+    return [
+      result.adGroupCriterion.criterionId as string,
+      {
+        criterionId: result.adGroupCriterion.criterionId as string,
+        customerId: result.customer.id as string,
+        customerName: result.customer.name as string,
+        campaignId: result.campaign.id as string,
+        adGroupId: result.adGroup.id as string,
+        userListName: userList.userListName,
+      },
+    ] as const;
+  },
+});
