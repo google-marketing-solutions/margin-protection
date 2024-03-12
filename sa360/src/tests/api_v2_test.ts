@@ -39,6 +39,7 @@ import {
 import {
   AD_GROUP_REPORT,
   CAMPAIGN_REPORT,
+  CAMPAIGN_TARGET_REPORT,
 } from 'sa360/src/api_v2';
 
 describe('ApiV2', () => {
@@ -209,6 +210,87 @@ describe('ApiV2', () => {
           adGroupId: 'ag4',
           adGroupName: 'AdGroup 4',
           adGroupStatus: 'PAUSED',
+        },
+      });
+    });
+  });
+
+  describe('Geo target report', () => {
+    it('returns expected results', () => {
+      const mockQuery: jasmine.Spy = spyOn(api, 'query');
+      mockQuery.and.callFake((customerId, query) => {
+        if (query === CAMPAIGN_TARGET_REPORT.query) {
+          return iterator(
+            ...[...Array.from({length: 5}).keys()].map((x) => ({
+              campaignCriterion: {
+                resourceName: `customers/1/campaignCriteria/c1~gtc${x}`,
+                type: 'LOCATION',
+                location: {
+                  geoTargetConstant: `geoTargetConstants/gtc${x}`,
+                },
+                criterionId: `gtc${x}`,
+              },
+              campaign: {
+                resourceName: `customers/1/campaigns/c1`,
+                id: `c1`,
+              },
+              customer: {
+                resourceName: 'customers/1',
+                name: 'Customer 1',
+                id: '1',
+              },
+            })),
+          );
+        } else {
+          return iterator(
+            ...[...Array.from({length: 5}).fill('').keys()].map((x) => ({
+              geoTargetConstant: {
+                resourceName: `geoTargetConstants/gtc${x}`,
+                id: `gtc${x}`,
+                name: `Location ${x}`,
+                countryCode: `Country ${x}`,
+                canonicalName: `Canonical Name ${x}`,
+              },
+            })),
+          );
+        }
+      });
+      const report = reportFactory.create(CAMPAIGN_TARGET_REPORT);
+      expect(report.fetch()).toEqual({
+        'gtc0': {
+          criterionId: 'gtc0',
+          customerId: '1',
+          customerName: 'Customer 1',
+          campaignId: 'c1',
+          location: 'Canonical Name 0',
+        },
+        'gtc1': {
+          criterionId: 'gtc1',
+          customerId: '1',
+          customerName: 'Customer 1',
+          campaignId: 'c1',
+          location: 'Canonical Name 1',
+        },
+        'gtc2': {
+          criterionId: 'gtc2',
+          customerId: '1',
+          customerName: 'Customer 1',
+          campaignId: 'c1',
+          location: 'Canonical Name 2',
+        },
+        'gtc3': {
+          criterionId: 'gtc3',
+          customerId: '1',
+          customerName: 'Customer 1',
+          campaignId: 'c1',
+          location: 'Canonical Name 3',
+        },
+        'gtc4': {
+          criterionId: 'gtc4',
+          customerId: '1',
+          customerName: 'Customer 1',
+          campaignId: 'c1',
+          location: 'Canonical Name 4',
         },
       });
     });

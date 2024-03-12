@@ -75,7 +75,7 @@ export const AD_GROUP_REPORT = makeReport({
     'adGroupId',
     'adGroupName',
     'adGroupStatus',
-  ] as const,
+  ],
   query: buildQuery({
     queryParams: [
       'customer.id',
@@ -97,6 +97,74 @@ export const AD_GROUP_REPORT = makeReport({
         adGroupId: result.adGroup.id as string,
         adGroupName: result.adGroup.name as string,
         adGroupStatus: result.adGroup.status as string,
+      },
+    ] as const;
+  },
+});
+
+/**
+ * Geo target report.
+ *
+ * Exposed for testing.
+ */
+export const GEO_TARGET_REPORT = makeReport({
+  output: ['location'],
+  query: buildQuery({
+    queryParams: [
+      'geo_target_constant.resource_name',
+      'geo_target_constant.country_code',
+      'geo_target_constant.id',
+      'geo_target_constant.canonical_name',
+    ],
+    queryFrom: 'geo_target_constant',
+  }),
+
+  transform(result) {
+    return [
+      result.geoTargetConstant.id as string,
+      {
+        location: result.geoTargetConstant.canonicalName as string,
+      },
+    ] as const;
+  },
+});
+
+/**
+ * Campaign target report columns.
+ *
+ * Exposed for testing.
+ */
+export const CAMPAIGN_TARGET_REPORT = makeReport({
+  output: [
+    'criterionId',
+    'customerId',
+    'customerName',
+    'campaignId',
+    'location',
+  ],
+  query: buildQuery({
+    queryParams: [
+      'customer.id',
+      'customer.name',
+      'campaign.id',
+      'campaign_criterion.criterion_id',
+    ],
+    queryFrom: 'campaign_criterion',
+    joins: {
+      'campaignCriterion.criterionId': GEO_TARGET_REPORT,
+    },
+  }),
+  transform(result, joins) {
+    return [
+      result.campaignCriterion.criterionId as string,
+      {
+        criterionId: result.campaignCriterion.criterionId as string,
+        customerId: result.customer.id as string,
+        customerName: result.customer.name as string,
+        campaignId: result.campaign.id as string,
+        location: joins['campaignCriterion.criterionId'][
+          result.campaignCriterion.criterionId as string
+        ].location as string,
       },
     ] as const;
   },
