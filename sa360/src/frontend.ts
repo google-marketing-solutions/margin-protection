@@ -15,10 +15,28 @@
  * limitations under the License.
  */
 
-import {addSettingWithDescription, AppsScriptFrontEnd, AppsScriptPropertyStore, getOrCreateSheet, getTemplateSetting, LABEL_RANGE, RULE_SETTINGS_SHEET} from 'common/sheet_helpers';
-import {FrontEndArgs, ParamDefinition, RuleExecutor,} from 'common/types';
+// g3-format-prettier
+
+import {
+  addSettingWithDescription,
+  AppsScriptFrontEnd,
+  AppsScriptPropertyStore,
+  EMAIL_LIST_RANGE,
+  getOrCreateSheet,
+  getTemplateSetting,
+  LABEL_RANGE,
+  RULE_SETTINGS_SHEET,
+} from 'common/sheet_helpers';
+import {
+  FrontEndArgs,
+  ParamDefinition,
+  RuleExecutor,
+} from 'common/types';
 import {RuleRange} from 'sa360/src/client';
-import {ClientArgs, ClientInterface,} from 'sa360/src/types';
+import {
+  ClientArgs,
+  ClientInterface,
+} from 'sa360/src/types';
 
 import {RuleGranularity} from './types';
 
@@ -29,10 +47,6 @@ export const GENERAL_SETTINGS_SHEET = 'General/Settings';
 
 const AGENCY_ID = 'AGENCY_ID';
 const ADVERTISER_ID = 'ADVERTISER_ID';
-/**
- * Used to figure out the list of email addresses to send emails to.
- */
-export const EMAIL_LIST_RANGE = 'EMAIL_LIST';
 const DRIVE_ID_RANGE = 'DRIVE_ID';
 const FULL_FETCH_RANGE = 'FULL_FETCH';
 
@@ -248,21 +262,6 @@ export class SearchAdsFrontEnd extends AppsScriptFrontEnd<
       this.getRangeByName(ADVERTISER_ID).getValue() || '';
     const htmlOutput = template.evaluate().setWidth(350).setHeight(400);
     SpreadsheetApp.getUi().showModalDialog(htmlOutput, 'Set up');
-  }
-
-  maybeSendEmailAlert() {
-    // TODO(): Fix me
-    /*
-    const to = getTemplateSetting(EMAIL_LIST_RANGE).getValue();
-    const label = getTemplateSetting(LABEL_RANGE).getValue();
-    sendEmailAlert(
-        Object.values(this.client.ruleStore).map((rule) => rule.getRule()),
-        {
-          to,
-          subject: `Anomalies found for ${label}`,
-        },
-    );
-    */
   }
 
   override async preLaunchQa() {

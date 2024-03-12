@@ -22,7 +22,6 @@
 // g3-format-prettier
 
 import {FakePropertyStore} from 'common/test_helpers/mock_apps_script';
-
 import {AbstractRuleRange, AppsScriptFrontEnd} from '../sheet_helpers';
 import {
   AppsScriptFunctions,
@@ -34,6 +33,7 @@ import {
   RecordInfo,
   RuleExecutor,
   RuleExecutorClass,
+  RuleGetter,
 } from '../types';
 
 /**
@@ -198,8 +198,16 @@ export class FakeFrontEnd extends AppsScriptFrontEnd<
     this.calls.launchMonitor++;
   }
 
-  override maybeSendEmailAlert() {
-    throw new Error('Method not implemented.');
+  override async sendEmailAlert(
+    rules: RuleGetter[],
+    message: GoogleAppsScript.Mail.MailAdvancedParameters,
+  ) {
+    const noop: GoogleAppsScript.Mail.MailApp['sendEmail'] = ((
+      message: GoogleAppsScript.Mail.MailAdvancedParameters,
+    ) => {}) as GoogleAppsScript.Mail.MailApp['sendEmail'];
+    super.sendEmailAlert(rules, message, noop);
+
+    this.messages.push(message);
   }
 
   getMessages() {

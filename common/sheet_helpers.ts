@@ -40,6 +40,7 @@ import {
   RuleDefinition,
   RuleExecutor,
   RuleExecutorClass,
+  RuleGetter,
   RuleGranularity,
   RuleRangeInterface,
   SettingMapInterface,
@@ -53,6 +54,10 @@ const HEADER_RULE_NAME_INDEX = 0;
  */
 const SHEET_TOP_PADDING = 2;
 
+/**
+ * Used to figure out the list of email addresses to send emails to.
+ */
+export const EMAIL_LIST_RANGE = 'EMAIL_LIST';
 /**
  * Used to distinguish between different reports (e.g. advertiser name)
  */
@@ -719,7 +724,14 @@ export abstract class AppsScriptFrontEnd<
     const {rules, results} = await this.client.validate();
     this.saveSettingsBackToSheets(Object.values(rules));
     this.populateRuleResultsInSheets(rules, results);
-    this.maybeSendEmailAlert();
+    this.maybeSendEmailAlert(
+      Object.fromEntries(
+        Object.entries(rules).map(([key, ruleInfo]) => [
+          key,
+          {name: ruleInfo.name, values: results[key].values},
+        ]),
+      ),
+    );
   }
 
   displayGlossary() {
@@ -809,7 +821,7 @@ export abstract class AppsScriptFrontEnd<
   exportAsCsv(ruleName: string, matrix: string[][]) {
     const folder = this.getOrCreateFolder('reports');
     const sheetId = HELPERS.getSheetId();
-    const label: string = this.getRangeByName('LABEL').getValue();
+    const label: string = this.getRangeByName(LABEL_RANGE).getValue();
     const currentTime = new Date(Date.now()).toISOString();
     const category = this.category;
     const file = Utilities.newBlob(
@@ -1018,7 +1030,129 @@ export abstract class AppsScriptFrontEnd<
     return numberOfMigrations;
   }
 
-  abstract maybeSendEmailAlert(): void;
+  maybeSendEmailAlert(rules: Record<string, RuleGetter>): void {
+    const peopleToSend = getTemplateSetting(EMAIL_LIST_RANGE).getValue();
+    const label = this.getIdentity()?.label;
+    if (!label) {
+      throw new Error('Set up sheet before running.');
+    }
+    const SEND_DATE_KEY = 'email_send_dates';
+    const ANOMALY_SEND_DATE_KEY = 'anomaly_send_dates';
+
+    const updateTime = Date.now();
+    const emailSendDates = JSON.parse(
+      this.client.properties.getProperty(SEND_DATE_KEY) || '{}',
+    ) as {[author: string]: number};
+    // never reuse anomaly dates. We should use newAnomalySendDates so we
+    // get rid of no-longer-anomalous values.
+    const anomalySendDates: {readonly [id: string]: number} = JSON.parse(
+      this.client.properties.getProperty(ANOMALY_SEND_DATE_KEY) || '{}',
+    ) as {[id: string]: number};
+    const newAnomalySendDates: {[id: string]: number} = {};
+    let emailSent = false;
+
+    const rulesWithAnomalies: readonly RuleGetter[] = Object.values(rules)
+      .map(
+        (rule) =>
+          ({
+            name: rule.name,
+            values: Object.fromEntries(
+              Object.entries(rule.values).filter(
+                ([key, value]) => value.anomalous,
+              ),
+            ),
+          }) as const,
+      )
+      .filter((anomalies) => Object.keys(anomalies.values).length);
+
+    for (const to of Object.values<string>(
+      peopleToSend.replace(';', ',').replace(' ', ',').split(','),
+    ).filter((s) => s)) {
+      /**
+       * When a recipient has not received the latest anomaly report, flag it.
+       */
+      const recipientAlerted = ([key, value]: [key: string, value: Value]) => {
+        const alertedAt: number | undefined = anomalySendDates[key];
+        return (
+          value.anomalous &&
+          (!alertedAt || alertedAt > (emailSendDates[to] || 0))
+        );
+      };
+
+      const unsentAnomalies = rulesWithAnomalies
+        .map((rule) => ({
+          name: rule.name,
+          values: Object.fromEntries(
+            Object.entries(rule.values).filter(recipientAlerted),
+          ),
+        }))
+        .filter((rule) => Object.keys(rule.values).length);
+      if (unsentAnomalies.length === 0) {
+        continue;
+      }
+      this.sendEmailAlert(unsentAnomalies, {
+        to,
+        subject: `Anomalies found for ${label}`,
+      });
+      emailSendDates[to] = updateTime;
+      emailSent = true;
+    }
+
+    // update all anomalous values to the latest send date
+    for (const rule of rulesWithAnomalies) {
+      for (const key of Object.keys(rule.values)) {
+        newAnomalySendDates[key] = emailSent
+          ? updateTime
+          : anomalySendDates[key];
+      }
+    }
+    this.client.properties.setProperty(
+      ANOMALY_SEND_DATE_KEY,
+      JSON.stringify(newAnomalySendDates),
+    );
+
+    this.client.properties.setProperty(
+      SEND_DATE_KEY,
+      JSON.stringify(emailSendDates),
+    );
+  }
+
+  /**
+   * Generates an e-mail alert, then updates the alertedAt timestamp.
+   *
+   * Note: This comes with a default message body. If you add your own, then
+   * you're responsible for including the anomaly list and avoiding duplication.
+   * Because this is user-facing, tests are strongly encouraged.
+   */
+  sendEmailAlert(
+    rules: RuleGetter[],
+    message: GoogleAppsScript.Mail.MailAdvancedParameters,
+    sendEmail = MailApp.sendEmail,
+  ): void {
+    if (rules.length === 0) {
+      return;
+    }
+    const alertTime = Date.now();
+    let anomalies: Value[] = [];
+    const messages: string[] = [];
+    for (const rule of rules) {
+      const values = rule.values;
+      anomalies = Object.values(values);
+
+      if (anomalies.length === 0) {
+        continue;
+      }
+      messages.push(emailAlertBody(rule.name, anomalies));
+    }
+
+    message.body =
+      'The following errors were found:\n\n' + messages.join('\n\n');
+    sendEmail(message);
+
+    for (const anomaly of anomalies) {
+      anomaly.alertedAt = alertTime;
+    }
+  }
 
   protected saveSettingsBackToSheets(
     rules: Array<RuleExecutor<C, G, A, Record<string, ParamDefinition>>>,
@@ -1064,7 +1198,6 @@ export abstract class AppsScriptFrontEnd<
  *   callback(client, settings) {
  *     // insert rule logic here
  *     return {values};
- *     //...
  *   }
  * });
  * ```
@@ -1303,4 +1436,15 @@ function extract(content: string): string {
   } catch (e) {
     return content; // already extracted
   }
+}
+
+/**
+ * Generates an email body given a list of possibly anomalous values.
+ */
+function emailAlertBody(name: string, values: Value[]) {
+  const header = `----------\n${name}:\n----------\n`;
+  const anomalyList =
+    header + values.map((value) => `- ${value.value}`).join('\n');
+
+  return anomalyList;
 }

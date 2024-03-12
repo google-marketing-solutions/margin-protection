@@ -155,6 +155,7 @@ export class DisplayVideoFrontEnd extends AppsScriptFrontEnd<
       id: idRange.getValue(),
       idType: idType === 'Advertiser' ? IDType.ADVERTISER : IDType.PARTNER,
       label: label?.getValue() || `${idType} ${idRange.getValue()}`,
+      name: label?.getValue(),
     };
   }
 
@@ -164,21 +165,5 @@ export class DisplayVideoFrontEnd extends AppsScriptFrontEnd<
     template['idType'] = this.getRangeByName(ID_TYPE).getValue() || '';
     const htmlOutput = template.evaluate().setWidth(350).setHeight(400);
     SpreadsheetApp.getUi().showModalDialog(htmlOutput, 'Set up');
-  }
-
-  maybeSendEmailAlert() {
-    // TODO(): fixme
-    // const to = getTemplateSetting(EMAIL_LIST_RANGE).getValue();
-    // const label = getTemplateSetting(LABEL_RANGE).getValue();
-    // if (!to) {
-    //   return;
-    // }
-    // sendEmailAlert(
-    //   Object.values(this.client.ruleStore).map((rule) => rule.getRule()),
-    //   {
-    //     to,
-    //     subject: `Anomalies found for ${label}`,
-    //   },
-    // );
   }
 }

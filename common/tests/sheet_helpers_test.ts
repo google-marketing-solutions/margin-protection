@@ -34,6 +34,7 @@ import {
 import {
   ParamDefinition,
   RuleExecutorClass,
+  RuleGetter,
 } from 'common/types';
 
 import {
@@ -391,6 +392,174 @@ describe('test HELPERS', () => {
     expect(HELPERS.getLastReportPull()).toEqual(10);
   });
 });
+
+describe('Test emails', () => {
+  let frontend: FakeFrontEnd;
+  let rules: Record<string, RuleGetter>;
+
+  const email = (to: string) => ({
+    to,
+    subject: 'Anomalies found for test',
+    body: `The following errors were found:
+
+          ----------
+          Rule A:
+          ----------
+          - v1
+          - v3
+
+          ----------
+          Rule B:
+          ----------
+          - v5`.replace(/  +/g, ''),
+  });
+
+  beforeEach(() => {
+    rules = {
+      keyA: {
+        name: 'Rule A',
+        values: {
+          '1': {
+            value: 'v1',
+            anomalous: true,
+            fields: {},
+          },
+          '2': {
+            value: 'v2',
+            anomalous: false,
+            fields: {},
+          },
+          '3': {
+            value: 'v3',
+            anomalous: true,
+            fields: {},
+          },
+        },
+      },
+      keyB: {
+        name: 'Rule B',
+        values: {
+          '1': {
+            value: 'v4',
+            anomalous: false,
+            fields: {},
+          },
+          '2': {
+            value: 'v5',
+            anomalous: true,
+            fields: {},
+          },
+        },
+      },
+      keyC: {
+        name: 'Rule C',
+        values: {
+          '1': {
+            value: 'v6',
+            anomalous: false,
+            fields: {},
+          },
+          '2': {
+            value: 'v7',
+            anomalous: false,
+            fields: {},
+          },
+        },
+      },
+    };
+    mockAppsScript();
+    frontend = lazyLoadApp<
+      TestClientInterface,
+      Granularity,
+      TestClientArgs,
+      FakeFrontEnd
+    >((properties) => {
+      return new FakeFrontEnd({
+        ruleRangeClass: RuleRange,
+        rules: [],
+        version: '1.0',
+        clientClass: FakeClient,
+        migrations: {},
+        properties,
+      });
+    })(new AppsScriptPropertyStore());
+  });
+
+  it('sends an email with only anomalies', () => {
+    SpreadsheetApp.getActive()
+      .getRangeByName('EMAIL_LIST')!
+      .setValue('user@example.com');
+    frontend.maybeSendEmailAlert(rules);
+
+    expect(frontend.getMessages()).toEqual([email('user@example.com')]);
+  });
+
+  it('only sends emails once to a user for each anomaly', () => {
+    SpreadsheetApp.getActive()
+      .getRangeByName('EMAIL_LIST')!
+      .setValue('user@example.com');
+    frontend.maybeSendEmailAlert(rules);
+    frontend.getMessages();
+    frontend.maybeSendEmailAlert(rules);
+
+    expect(frontend.getMessages()).toEqual([]);
+  });
+
+  it('sends emails for old anomalies to a new user', () => {
+    SpreadsheetApp.getActive()
+      .getRangeByName('EMAIL_LIST')!
+      .setValue('user@example.com');
+    frontend.maybeSendEmailAlert(rules);
+    frontend.getMessages();
+    SpreadsheetApp.getActive()
+      .getRangeByName('EMAIL_LIST')!
+      .setValue('user@example.com,user2@example.com');
+    frontend.maybeSendEmailAlert(rules);
+
+    expect(frontend.getMessages()).toEqual([email('user2@example.com')]);
+  });
+
+  it('sends anomalies to a user whenever they are new', () => {
+    SpreadsheetApp.getActive()
+      .getRangeByName('EMAIL_LIST')!
+      .setValue('user@example.com');
+    const messageExists: boolean[] = [];
+
+    // Act
+    frontend.maybeSendEmailAlert(rules);
+    // Add messages
+    messageExists.push(frontend.getMessages().length === 1);
+    // One anomaly is resolved.
+    const newRules = getNewRules(rules, 'keyB');
+    frontend.maybeSendEmailAlert(newRules);
+    messageExists.push(frontend.getMessages().length === 1);
+    // The anomaly is back.
+    frontend.maybeSendEmailAlert(rules);
+    const messages = frontend.getMessages();
+    messageExists.push(messages.length === 1);
+    // Expected output shows the old anomaly is freshly alerted.
+    const newEmail = email('user@example.com');
+    newEmail.body = `The following errors were found:
+
+      ----------
+      Rule B:
+      ----------
+      - v5`.replace(/  +/g, '');
+
+    // Assert
+    expect(messageExists).toEqual([true, false, true]);
+    expect(messages).toEqual([newEmail]);
+  });
+});
+
+/**
+ * Replaces a current ruleset with a copy that lacks a given key.
+ */
+function getNewRules(rules: Record<string, RuleGetter>, keyToRemove: string) {
+  const newRules = Object.assign({}, rules);
+  delete newRules[keyToRemove];
+  return newRules;
+}
 
 function generateTestClient(params: {id?: string}): TestClientInterface {
   return {
