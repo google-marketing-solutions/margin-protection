@@ -90,9 +90,9 @@ export interface ClientInterfaceV2
     Q extends AdTypes.QueryBuilder<Params, Joins>,
     Output extends string,
     Params extends string,
-    Joins extends AdTypes.JoinType<Params>,
+    Joins extends AdTypes.JoinType<Params> | undefined,
   >(
-    Report: ReportClass<Q, Output, Params>,
+    Report: ReportClass<Q, Output, Params, Joins>,
   ): ReportInterface<Q, Output, Params, Joins>;
 }
 

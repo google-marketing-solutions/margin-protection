@@ -376,3 +376,33 @@ export const AD_GROUP_USER_LIST_REPORT = makeReport({
     ] as const;
   },
 });
+
+/**
+ * A pacing report to check spend vs budgeting.
+ */
+export const CAMPAIGN_PACING_REPORT = makeReport({
+  output: ['campaignId', 'campaignName', 'budget', 'spend'],
+  query: buildQuery({
+    queryParams: [
+      'campaign.id',
+      'campaign.name',
+      'campaign_budget.amount_micros',
+      'campaign.status',
+      'campaign.advertising_channel_type',
+      'metrics.cost_micros',
+    ],
+    queryFrom: 'campaign',
+    queryWheres: ["campaign.status == 'ENABLED'"],
+  }),
+  transform(result, joins) {
+    return [
+      result.campaign.id as string,
+      {
+        campaignId: result.campaign.id as string,
+        campaignName: result.campaign.name as string,
+        budget: result.campaignBudget.amountMicros as string,
+        spend: (result.metrics?.costMicros ?? '') as string,
+      },
+    ];
+  },
+});
