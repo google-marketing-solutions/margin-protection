@@ -73,6 +73,33 @@ export interface ClientArgsV2 extends BaseClientArgs {
 }
 
 /**
+ * Extends the base client interface with SA360-specific features.
+ */
+export interface ClientInterfaceV2
+  extends BaseClientInterface<
+    ClientInterfaceV2,
+    RuleGranularity,
+    ClientArgsV2
+  > {
+  getCampaignReport(): Promise<CampaignReport>;
+  getCampaignTargetReport(): Promise<CampaignTargetReport>;
+  getAdGroupReport(): Promise<AdGroupReport>;
+  getAdGroupTargetReport(): Promise<AdGroupTargetReport>;
+  getAllAdGroups(): Promise<RecordInfo[]>;
+  settings: ClientArgsV2;
+}
+
+/**
+ * Client args for SA360's new API
+ */
+export interface ClientArgsV2 extends BaseClientArgs {
+  customerId: string;
+  loginCustomerId?: string;
+  fullFetch?: boolean;
+  granularity: RuleGranularity;
+}
+
+/**
  * An agency ID and, optionally, an advertiser ID to narrow down.
  */
 export interface ClientArgs extends BaseClientArgs {

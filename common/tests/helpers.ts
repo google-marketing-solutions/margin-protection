@@ -21,6 +21,7 @@
 
 // g3-format-prettier
 
+import {AdsClientArgs} from 'common/ads_api_types';
 import {FakePropertyStore} from 'common/test_helpers/mock_apps_script';
 import {AbstractRuleRange, AppsScriptFrontEnd} from '../sheet_helpers';
 import {
@@ -52,6 +53,15 @@ export interface TestClientInterface
     Granularity,
     BaseClientArgs
   > {
+  id: string;
+  getAllCampaigns(): Promise<RecordInfo[]>;
+}
+
+/**
+ * Test ad client interface for use in tests.
+ */
+export interface AdsClientInterface
+  extends BaseClientInterface<AdsClientInterface, Granularity, AdsClientArgs> {
   id: string;
   getAllCampaigns(): Promise<RecordInfo[]>;
 }

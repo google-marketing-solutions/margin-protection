@@ -16,30 +16,30 @@
  */
 
 /**
- * Represents a AdsRow result.
+ * @fileoverview Ads API-specific types for SA360 and Google Ads
  */
 
 // g3-format-prettier
 
-export declare interface AdsRow {
-  campaign?: {id?: number; descriptiveName?: string; status?: string};
-  customer?: {id?: number; descriptiveName?: string};
-  // https://developers.google.com/google-ads/api/fields/v13/customer_client -
-  // Google Ads-specific
-  customerClient?: {
-    id?: number;
-    descriptiveName?: string;
-    manager?: boolean;
-    status?: string;
-  };
+import {BaseClientArgs} from './types';
+
+/**
+ * Manages query (input) and expected output pairs for each report type.
+ *
+ * This is a non-generic version of QueryBuilder
+ */
+export interface NonGenericQueryBuilder {
+  queryParams: readonly string[];
+  queryFrom: string;
+  joins?: Record<string, unknown>;
 }
 
 /**
  * A response row from the query API.
  */
-export declare interface AdsSearchResponse {
+export declare interface AdsSearchResponse<T> {
   nextPageToken?: string;
-  results?: AdsRow[];
+  results?: T[];
 }
 
 /**
@@ -51,6 +51,11 @@ export declare interface AdsSearchRequest {
   customerId?: string;
   pageToken?: string;
 }
+
+/**
+ * A report output.
+ */
+export type ArrayToUnion<S extends string[]> = S[number];
 
 /**
  * The user-provided tree of known Ads accounts to run a report against.
@@ -71,12 +76,267 @@ export interface AccountMap {
 }
 
 /**
- * A report for a single campaign.
+ * Ads-specific minimum requirements for client arguments.
  */
-export interface CampaignReport {
+export interface AdsClientArgs extends BaseClientArgs {
+  loginCustomerId?: string;
   customerId: string;
-  customerName: string;
-  id: string;
-  name: string;
-  status: string;
+}
+
+/**
+ * Converts underscores to camel case.
+ *
+ * Example:
+ *   const transformed: CamelCase<'my_id'> = 'myId';
+ */
+export type CamelCase<S extends string> =
+  S extends `_${infer NextLetter}${infer Rest}`
+    ? `${Uppercase<NextLetter>}${CamelCase<Rest>}`
+    : S extends ''
+      ? ''
+      : S extends `${infer NextLetter extends string}${infer Rest}`
+        ? `${NextLetter}${CamelCase<Rest>}`
+        : '';
+
+/**
+ * A raw type literal that effectively forces objects to be const.
+ */
+export type TypeLiteral<S, T> = S extends T ? (T extends S ? never : S) : never;
+
+/**
+ * A string literal is a string constant. Avoids requiring `const`.
+ */
+export type StringLiteral<S extends string> = TypeLiteral<S, string>;
+
+/**
+ * Converts dots to an object.
+ *
+ * Example:
+ *   const transformed: DotsToObject<'a.b.c'> = {'a': {'b': {'c': string } } };
+ */
+export type DotsToObject<S extends string> = S extends ''
+  ? never
+  : S extends `${infer First}.${infer Rest}`
+    ? '' extends First
+      ? {}
+      : {[key in CamelCase<First>]: DotsToObject<Rest>}
+    : '' extends S
+      ? {}
+      : {[key in CamelCase<S>]: unknown};
+
+/**
+ * Converts a report format to the expected response output.
+ */
+export type ReportResponse<Q extends NonGenericQueryBuilder> =
+  UnionToIntersection<DotsToObject<Q['queryParams'][number]>> & {};
+
+/**
+ * Helper method to turn a union into an intersection.
+ *
+ * Turns a|b|c into a & b & c.
+ */
+export type UnionToIntersection<U> = (
+  U extends {} ? (k: U) => void : never
+) extends (k: infer I) => void
+  ? I
+  : {};
+
+/**
+ * Google Ads API interface
+ */
+export declare interface GoogleAdsApiInterface {
+  query<
+    Q extends QueryBuilder<Params, Joins>,
+    Params extends string = Q['queryParams'][number],
+    Joins extends JoinType<Params> | undefined = Q['joins'],
+  >(
+    customerId: string,
+    query: Q,
+    queryWheres?: string[],
+  ): IterableIterator<ReportResponse<Q>>;
+}
+
+/**
+ * Ad report format
+ *
+ * Allows generic handling of reports.
+ */
+export declare interface AdsReportType<
+  Output extends string[],
+  RecordFormat extends Record<
+    keyof RecordFormat,
+    RecordFormat[keyof RecordFormat]
+  >,
+> {
+  output: Output;
+  format: RecordFormat;
+}
+
+/**
+ * Helper function to create a report type with less verbosity.
+ */
+export function buildQuery<
+  Params extends string,
+  Joins extends JoinType<Params> | undefined = undefined,
+>(args: {
+  queryParams: ReadonlyArray<StringLiteral<Params>>;
+  queryFrom: string;
+  queryWheres?: string[];
+  joins?: Joins;
+}): QueryBuilder<StringLiteral<Params>, Joins> {
+  return args;
+}
+
+/**
+ * Represents an Ads API response type.
+ */
+export interface RecursiveRecord<K, V> {
+  [key: string]: RecursiveRecord<K, V> | V;
+}
+
+/**
+ * Represents an "any-" type {@link ReportClass} for containers.
+ */
+// We don't know what will be in a report class.
+// tslint:disable-next-line:no-any
+export type UnknownReportClass = ReportClass<any, any, any>;
+
+/**
+ * Mappings from parameters to a report class.
+ *
+ * This is a subset of parameters in a report, and could be empty.
+ * Implementations of this should allow undefined values to simplify
+ * user definitions of queries that don't require any joins (most of them).
+ */
+export type JoinType<Params extends string> = Partial<{
+  [key in Exclude<CamelCase<Params>, ''>]: UnknownReportClass;
+}>;
+
+/**
+ * Represents the parts of an ad report query.
+ *
+ * The query is broken out into parts, with optional filters (WHERE).
+ * Also includes a "JOINS" concept for use by the Report classes in order to
+ * simplify business logic.
+ */
+export interface QueryBuilder<
+  Params extends string,
+  Joins extends JoinType<Params> | undefined = undefined,
+> {
+  queryParams: readonly Params[];
+  queryFrom: string;
+  queryWheres?: string[];
+  joins?: Joins;
+}
+
+/**
+ * A report used to retrieve data from the API.
+ */
+export interface ReportInterface<
+  Q extends QueryBuilder<Params, Joins>,
+  Output extends string,
+  Params extends string = Q['queryParams'][number],
+  Joins extends JoinType<Params> | undefined = Q['joins'],
+> {
+  /**
+   * Returns the full report based on the results of the object.
+   *
+   * Optional filter is used for smart joins and for user input.
+   */
+  getReport(
+    queryWheres?: Array<string | number>,
+  ): Record<string, Record<Output, string>>;
+
+  transform(
+    result: ReportResponse<Q>,
+  ): readonly [key: string, record: Record<ArrayToUnion<Output[]>, string>];
+
+  transform(
+    result: ReportResponse<Q>,
+    joins: Record<
+      keyof Exclude<Joins, undefined>,
+      Record<
+        string,
+        Record<
+          Extract<Joins[keyof Joins], UnknownReportClass>['output'][number],
+          string
+        >
+      >
+    >,
+  ): readonly [key: string, record: Record<ArrayToUnion<Output[]>, string>];
+
+  /**
+   * Does a row-by-row transformation and returns a tuple of key to record.
+   *
+   * This should be transformed into a string to be maximally compatible with
+   * web output (e.g. Google Sheets).
+   *
+   * @param result A row of the report being pulled.
+   * @param joins A key/value pair of any joins. These are all pre-fetched.
+   *   They can be accessed by using the report class's "name" parameter.
+   */
+  transform(
+    result: ReportResponse<Q>,
+    joins: Joins extends undefined
+      ? never
+      : Record<
+          keyof Exclude<Joins, undefined>,
+          Record<
+            string,
+            Record<
+              Extract<
+                Joins[keyof Joins],
+                UnknownReportClass
+              >['query']['output'][number],
+              string
+            >
+          >
+        >,
+  ): readonly [key: string, record: Record<ArrayToUnion<Output[]>, string>];
+}
+
+/**
+ * A factory for creating {@link Report}s.
+ */
+export interface ReportFactoryInterface {
+  create<
+    Q extends QueryBuilder<Params, Joins>,
+    Output extends string,
+    Params extends string,
+    Joins extends JoinType<Params>,
+    ChildReport extends ReportInterface<
+      Q,
+      Output,
+      Params,
+      Joins
+    > = ReportInterface<Q, Output, Params, Joins>,
+  >(
+    reportClass: ReportClass<Q, Output, Params, Joins, ChildReport>,
+  ): ReportInterface<Q, Output, Params, Joins>;
+}
+
+/**
+ * Report class - represents the class that gets the {@link Report} object.
+ */
+export interface ReportClass<
+  Q extends QueryBuilder<Params, Joins>,
+  Output extends string,
+  Params extends string = Q['queryParams'][number],
+  Joins extends JoinType<Params> | undefined = Q['joins'],
+  ChildReport extends ReportInterface<
+    Q,
+    Output,
+    Params,
+    Joins
+  > = ReportInterface<Q, Output, Params, Joins>,
+> {
+  new (
+    api: GoogleAdsApiInterface,
+    clientArgs: AdsClientArgs,
+    reportArgs: Q,
+    result: IterableIterator<ReportResponse<Q>>,
+    factory: ReportFactoryInterface,
+  ): ChildReport;
+  query: Q;
+  output: Output[];
 }
