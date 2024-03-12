@@ -23,6 +23,8 @@
 
 import {
   PropertyStore,
+  RuleParams,
+  Settings,
   Value,
   Values,
 } from 'common/types';
@@ -1040,6 +1042,68 @@ export abstract class AppsScriptFrontEnd<
       range.writeBack(granularity);
     }
   }
+}
+
+/**
+ * Creates new rule with the metadata needed to generate settings.
+ *
+ * Wrapping in this function gives us access to all methods in {@link
+ * RuleUtilities} as part of `this` in our `callback`.
+ *
+ * Example:
+ *
+ * ```
+ * newRule({
+ *   //...
+ *   callback(client, settings) {
+ *     // insert rule logic here
+ *     return {values};
+ *     //...
+ *   }
+ * });
+ * ```
+ */
+
+// This returns a function, a use case that this lint rule doesn't
+// apply to.
+// tslint:disable-next-line:no-return-only-generics
+export function newRuleBuilder<
+  C extends BaseClientInterface<C, G, A>,
+  G extends RuleGranularity<G>,
+  A extends BaseClientArgs<C, G, A>,
+>(): <P extends Record<keyof P, ParamDefinition>>(
+  p: RuleParams<C, G, A, P>,
+) => RuleExecutorClass<C, G, A, P> {
+  return function newRule<P extends Record<keyof P, ParamDefinition>>(
+    ruleDefinition: RuleParams<C, G, A, P>,
+  ): RuleExecutorClass<C, G, A, P> {
+    const ruleClass = class implements RuleExecutor<C, G, A, P> {
+      readonly uniqueKeyPrefix: string = '';
+      readonly description = ruleDefinition.description;
+      readonly settings: Settings<Record<keyof P, string>>;
+      readonly name: string = ruleDefinition.name;
+      readonly params = ruleDefinition.params;
+      readonly helper = ruleDefinition.helper ?? '';
+      readonly granularity: G = ruleDefinition.granularity;
+      readonly valueFormat = ruleDefinition.valueFormat;
+      static definition = ruleDefinition;
+
+      constructor(
+        readonly client: C,
+        settingsArray: Readonly<string[][]>,
+      ) {
+        this.uniqueKeyPrefix = ruleDefinition.uniqueKeyPrefix;
+        this.settings = transformToParamValues(settingsArray, this.params);
+      }
+
+      async run() {
+        return await ruleDefinition.callback.bind(this)();
+      }
+    };
+
+    Object.defineProperty(ruleClass, 'name', {value: ruleDefinition.name});
+    return ruleClass;
+  };
 }
 
 // Lazy load frontend.

@@ -26,11 +26,11 @@
 
 // g3-format-prettier
 
-import {PropertyStore} from 'google3/third_party/professional_services/solutions/appsscript_anomaly_library/lib/main';
 import {
   lazyLoadApp,
   toExport,
 } from 'common/sheet_helpers';
+import {PropertyStore} from 'common/types';
 import {
   Client,
   RuleRange,

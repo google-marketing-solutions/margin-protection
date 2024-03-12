@@ -253,9 +253,6 @@ function generateTestClient(params: {id?: string}): TestClientInterface {
       throw new Error('Not implemented.');
     },
     settings: {},
-    getUniqueKey(prefix: string) {
-      throw new Error('Not implemented.');
-    },
     properties: new FakePropertyStore(),
   };
 }

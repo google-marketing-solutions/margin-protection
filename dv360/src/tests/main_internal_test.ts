@@ -34,7 +34,7 @@ import {
 } from 'google3/javascript/apps/maestro/simulator/closure_apps_script_simulator-closurized';
 import {AssignedTargetingOption} from 'dv360_api/dv360_resources';
 import {TARGETING_TYPE} from 'dv360_api/dv360_types';
-import {equalTo} from 'google3/third_party/professional_services/solutions/appsscript_anomaly_library/lib/absoluteRule';
+import {equalTo} from 'common/checks';
 import {
   HELPERS,
   lazyLoadApp,
@@ -217,7 +217,7 @@ describe('Pre-Launch QA menu option', () => {
     jasmine.clock().uninstall();
   });
 
-  it('populates rule results', async () => {
+  it('populates check results', async () => {
     await frontend.preLaunchQa();
     const sheet = SpreadsheetApp.getActive().getSheetByName(
       'Pre-Launch QA Results',
@@ -230,7 +230,7 @@ describe('Pre-Launch QA menu option', () => {
     ]);
   });
 
-  it('clears rule results that were previously set', async () => {
+  it('clears check results that were previously set', async () => {
     const noise = Array.from<string>({length: 10})
       .fill('')
       .map(() => Array.from<string>({length: 10}).fill('lorem ipsum'));
@@ -421,7 +421,7 @@ describe('Export as CSV', () => {
       mimeType: FOLDER,
       title: 'launch_monitor',
     };
-    frontend.exportAsCsv('my rule', [['it works!']]);
+    frontend.exportAsCsv('my check', [['it works!']]);
     const folderId = fakeFiles.files['reports'];
     expect(fakeFiles.folders[folderId.id!]).toEqual([
       jasmine.objectContaining({
@@ -431,17 +431,17 @@ describe('Export as CSV', () => {
       }),
     ]);
 
-    for (const value of [
-      'Acme Inc.',
-      'my rule',
-      '1970-01-01T00:00:00.000Z.csv',
+    for (const value
+             of ['Acme Inc.',
+                 'my check',
+                 '1970-01-01T00:00:00.000Z.csv',
     ]) {
       expect(Object.keys(fakeFiles.files)[1].split('_')).toContain(value);
     }
   });
 });
 
-describe('Fill rule values', () => {
+describe('Fill check values', () => {
   let rules: RuleRange;
   let frontend: DisplayVideoFrontEnd;
 
@@ -475,25 +475,15 @@ describe('getMatrixOfResults', () => {
   });
 
   it('Provides 2-d array from a set of values with no fields.', async () => {
-    const rule = equalTo({
-      uniqueKey: 'rule',
-      thresholdValue: 1,
-      propertyStore: frontend.client.properties,
-    });
-    const result = frontend.getMatrixOfResults('value1', [rule.createValue(1)]);
+    const result = frontend.getMatrixOfResults('value1', [equalTo(1, 1, {})]);
     expect(result).toEqual([
       ['value1', 'anomalous'],
       ['1', 'false'],
     ]);
   });
   it('Provides 2-d array from a set of values with fields.', async () => {
-    const rule = equalTo({
-      uniqueKey: 'rule',
-      thresholdValue: 1,
-      propertyStore: frontend.client.properties,
-    });
     const result = frontend.getMatrixOfResults('value2', [
-      rule.createValue(1, {'test1': 'a', 'test2': 'b'}),
+      equalTo(1, 1, {'test1': 'a', 'test2': 'b'}),
     ]);
     expect(result).toEqual([
       ['value2', 'anomalous', 'test1', 'test2'],
@@ -593,8 +583,8 @@ describe('Migrations', () => {
     fillInSheetStubs();
     await frontend.initializeRules();
 
-    for (const rule of Object.values(frontend.rules)) {
-      await ruleRange.fillRuleValues(rule.definition);
+    for (const check of Object.values(frontend.rules)) {
+      await ruleRange.fillRuleValues(check.definition);
     }
     const values = ruleRange.getValues();
     const active = SpreadsheetApp.getActive();

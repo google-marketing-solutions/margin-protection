@@ -17,7 +17,7 @@
 
 // g3-format-prettier
 
-import {AbsoluteRule} from 'google3/third_party/professional_services/solutions/appsscript_anomaly_library/lib/absoluteRule';
+import {equalTo} from 'common/checks';
 import {AppsScriptPropertyStore} from 'common/sheet_helpers';
 import {mockAppsScript} from 'common/test_helpers/mock_apps_script';
 import {
@@ -28,8 +28,8 @@ import {RuleGranularity} from 'sa360/src/types';
 
 describe('Client rules are validated', () => {
   let output: string[] = [];
-  let rule: AbsoluteRule<string>;
   let client: Client;
+  const test = 42;
   const defaultGrid = [
     ['', 'param1', 'param2'],
     ['default', '1', '2'],
@@ -38,15 +38,9 @@ describe('Client rules are validated', () => {
   beforeEach(() => {
     mockAppsScript();
     client = generateTestClient({agencyId: '123'});
-    rule = new AbsoluteRule(
-      {thresholdValue: 42, uniqueKey: 'uniq', propertyStore: client.properties},
-      (thresholdValue) => (value) => Number(value) === thresholdValue,
-    );
 
-    const returnValue = {
-      rule,
-      values: {'1': rule.createValue(1), '42': rule.createValue(42)},
-    };
+    const values = {'1': equalTo(test, 1, {}), '42': equalTo(test, 42, {})};
+
     client.addRule(
       newRule({
         params: {},
@@ -57,7 +51,7 @@ describe('Client rules are validated', () => {
         valueFormat: {label: 'ruleA'},
         async callback() {
           output.push('ruleA');
-          return returnValue;
+          return {values};
         },
         defaults: {},
       }),
@@ -73,7 +67,7 @@ describe('Client rules are validated', () => {
         valueFormat: {label: 'ruleB'},
         async callback() {
           output.push('ruleB');
-          return returnValue;
+          return {values};
         },
         defaults: {},
       }),
@@ -94,7 +88,7 @@ describe('Client rules are validated', () => {
     expect(output).toEqual(['ruleA', 'ruleB']);
   });
 
-  it('should have rule results after validate() is run', async () => {
+  it('should have check results after validate() is run', async () => {
     const {results} = await client.validate();
     expect(
       Object.values(results['ruleA'].values).map((value) => value.anomalous),
@@ -109,10 +103,5 @@ function generateTestClient({
   agencyId?: string;
   advertiserId?: string;
 }): Client {
-  const client = new Client(
-    {agencyId, advertiserId},
-    new AppsScriptPropertyStore(),
-  );
-
-  return client;
+  return new Client({agencyId, advertiserId}, new AppsScriptPropertyStore());
 }

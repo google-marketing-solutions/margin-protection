@@ -17,7 +17,6 @@
 
 // g3-format-prettier
 
-import {sendEmailAlert} from 'google3/third_party/professional_services/solutions/appsscript_anomaly_library/lib/main';
 import {
   addSettingWithDescription,
   AppsScriptFrontEnd,
@@ -270,15 +269,18 @@ export class SearchAdsFrontEnd extends AppsScriptFrontEnd<
   }
 
   maybeSendEmailAlert() {
+    // TODO(): Fix me
+    /*
     const to = getTemplateSetting(EMAIL_LIST_RANGE).getValue();
     const label = getTemplateSetting(LABEL_RANGE).getValue();
     sendEmailAlert(
-      Object.values(this.client.ruleStore).map((rule) => rule.getRule()),
-      {
-        to,
-        subject: `Anomalies found for ${label}`,
-      },
+        Object.values(this.client.ruleStore).map((rule) => rule.getRule()),
+        {
+          to,
+          subject: `Anomalies found for ${label}`,
+        },
     );
+    */
   }
 
   override async preLaunchQa() {

@@ -15,12 +15,12 @@
  * limitations under the License.
  */
 
+/**
+ * @fileoverview Test helpers for the common library.
+ */
+
 // g3-format-prettier
 
-import {
-  Rule,
-  RuleInstructions,
-} from 'google3/third_party/professional_services/solutions/appsscript_anomaly_library/lib/main';
 import {FakePropertyStore} from 'common/test_helpers/mock_apps_script';
 
 import {AbstractRuleRange} from '../sheet_helpers';
@@ -52,6 +52,14 @@ export interface TestClientInterface
   > {
   id: string;
   getAllCampaigns(): Promise<RecordInfo[]>;
+  getRule(
+    ruleName: string,
+  ): RuleExecutor<
+    TestClientInterface,
+    Granularity,
+    TestClientArgs,
+    Record<string, ParamDefinition>
+  >;
 }
 
 /**
@@ -98,9 +106,6 @@ export class Client implements TestClientInterface {
   > {
     throw new Error('Method not implemented.');
   }
-  getUniqueKey(prefix: string): string {
-    throw new Error('Method not implemented.');
-  }
   validate(): Promise<{
     rules: Record<
       string,
@@ -130,12 +135,5 @@ export class Client implements TestClientInterface {
 
   getAllCampaigns(): Promise<[]> {
     return Promise.resolve([]);
-  }
-
-  newRule(
-    rule: (instructions: RuleInstructions) => Rule,
-    instructions: Omit<RuleInstructions, 'propertyStore'>,
-  ) {
-    return rule({...instructions, propertyStore: this.properties});
   }
 }

@@ -22,7 +22,7 @@ import {
   ApiDate,
   TARGETING_TYPE,
 } from 'dv360_api/dv360_types';
-import {AppsScriptPropertyStore} from 'google3/third_party/professional_services/solutions/appsscript_anomaly_library/lib/main';
+import {AppsScriptPropertyStore} from 'common/sheet_helpers';
 import {mockAppsScript} from 'common/test_helpers/mock_apps_script';
 import {RuleExecutorClass} from 'common/types';
 import {Client} from '../client';

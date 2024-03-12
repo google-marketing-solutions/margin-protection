@@ -17,7 +17,6 @@
 
 // g3-format-prettier
 
-import {Values} from 'google3/third_party/professional_services/solutions/appsscript_anomaly_library/lib/main';
 import {
   AppsScriptPropertyStore,
   GENERAL_SETTINGS_SHEET,
@@ -28,9 +27,13 @@ import {
   FakeUtilitiesService,
   mockAppsScript,
 } from 'common/test_helpers/mock_apps_script';
-import {PropertyStore} from 'common/types';
+import {
+  PropertyStore,
+  Values,
+} from 'common/types';
+
 import {Client} from '../client';
-import {SearchAdsFrontEnd, migrations} from '../frontend';
+import {migrations, SearchAdsFrontEnd} from '../frontend';
 import {getFrontEnd} from '../main';
 import {ClientArgs, ClientInterface, RuleGranularity} from '../types';
 

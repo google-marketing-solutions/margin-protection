@@ -17,9 +17,9 @@
 
 // g3-format-prettier
 
-import {AbsoluteRule} from 'google3/third_party/professional_services/solutions/appsscript_anomaly_library/lib/absoluteRule';
-import {Value} from 'google3/third_party/professional_services/solutions/appsscript_anomaly_library/lib/main';
+import {equalTo} from 'common/checks';
 import {mockAppsScript} from 'common/test_helpers/mock_apps_script';
+import {Value} from 'common/types';
 
 import {Client, newRule} from '../client';
 import {RuleGranularity} from '../types';
@@ -28,7 +28,7 @@ import {generateTestClient} from './client_helpers';
 
 describe('Client rules are validated', () => {
   let output: string[] = [];
-  let rule: AbsoluteRule<string>;
+  const test = 42;
   let client: Client;
   const defaultGrid = [
     ['', 'param1', 'param2'],
@@ -38,18 +38,10 @@ describe('Client rules are validated', () => {
   beforeEach(() => {
     mockAppsScript();
     client = generateTestClient({id: '123'});
-    rule = new AbsoluteRule(
-      {
-        thresholdValue: 42,
-        uniqueKey: 'uniq',
-        propertyStore: client.properties,
-      },
-      (thresholdValue) => (value) => Number(value) === thresholdValue,
-    );
 
-    const returnValue = {
-      rule,
-      values: {'1': rule.createValue(1), '42': rule.createValue(42)},
+    const values = {
+      '1': equalTo(test, 1, {}),
+      '42': equalTo(test, 42, {}),
     };
     client.addRule(
       newRule({
@@ -61,7 +53,7 @@ describe('Client rules are validated', () => {
         granularity: RuleGranularity.CAMPAIGN,
         async callback() {
           output.push('ruleA');
-          return returnValue;
+          return {values};
         },
         defaults: {},
       }),
@@ -77,7 +69,7 @@ describe('Client rules are validated', () => {
         granularity: RuleGranularity.CAMPAIGN,
         async callback() {
           output.push('ruleB');
-          return returnValue;
+          return {values};
         },
         defaults: {},
       }),
@@ -98,7 +90,7 @@ describe('Client rules are validated', () => {
     expect(output).toEqual(['ruleA', 'ruleB']);
   });
 
-  it('should have rule results after validate() is run', async () => {
+  it('should have check results after validate() is run', async () => {
     const {results} = await client.validate();
     const ruleValues: Value[] = Object.values(results['ruleA'].values);
     expect(ruleValues.map((value) => value.anomalous)).toEqual([true, false]);

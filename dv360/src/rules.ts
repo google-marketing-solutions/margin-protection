@@ -33,13 +33,12 @@ import {
   equalTo,
   inRange,
   lessThanOrEqualTo,
-} from 'google3/third_party/professional_services/solutions/appsscript_anomaly_library/lib/absoluteRule';
+} from 'common/checks';
 import {
-  Rule,
+  Settings,
+  Value,
   Values,
-} from 'google3/third_party/professional_services/solutions/appsscript_anomaly_library/lib/main';
-
-import {Settings} from 'common/types';
+} from 'common/types';
 
 import {getDate, newRule} from './client';
 import {DailyBudget} from './rule_types';
@@ -63,6 +62,11 @@ const RULES = {
     IS_NUMBER,
   ],
 };
+
+/**
+ * Provides a mechanism to preload checks with tests.
+ */
+type AbridgedCheck = (value: number, fields: {[key: string]: string}) => Value;
 
 /**
  * Adds a geotarget rule.
@@ -104,10 +108,6 @@ export const geoTargetRule = newRule({
     excludes: '',
   },
   async callback() {
-    const uniqueKey = this.getUniqueKey();
-    const rule = equalTo({
-      thresholdValue: 1,
-    });
     const values: Values = {};
 
     for (const {
@@ -158,7 +158,7 @@ export const geoTargetRule = newRule({
         }
         targetingOptionsLength += targetingOptions.length;
       });
-      values[id] = rule.createValue(hasOnlyValidGeo ? '1' : '0', {
+      values[id] = equalTo(1, hasOnlyValidGeo ? 1 : 0, {
         'Advertiser ID': advertiserId,
         'Campaign Name': displayName,
         'Campaign ID': id,
@@ -166,7 +166,7 @@ export const geoTargetRule = newRule({
       });
     }
 
-    return {rule, values};
+    return {values};
   },
 });
 
@@ -200,9 +200,7 @@ export const budgetPacingPercentageRule = newRule({
   defaults: {min: '0', max: '0.5'},
   uniqueKeyPrefix: 'pacingPercent',
   async callback() {
-    const uniqueKey: string = this.getUniqueKey();
-    const rules: {[campaignId: string]: Rule} = {};
-    const rule = this.getRule();
+    const rules: {[campaignId: string]: AbridgedCheck} = {};
     const values: Values = {};
 
     let earliestStartDate: Date | undefined = undefined;
@@ -224,7 +222,6 @@ export const budgetPacingPercentageRule = newRule({
         insertionOrder,
         this.settings,
         rules,
-        uniqueKey,
       );
       for (const budgetSegment of insertionOrder.getInsertionOrderBudgetSegments()) {
         const startDate = getDate(budgetSegment.dateRange.startDate);
@@ -260,7 +257,7 @@ export const budgetPacingPercentageRule = newRule({
       }
     }
     if (!earliestStartDate || !latestEndDate) {
-      return {rule, values};
+      return {values};
     }
     const budgetReport = this.client.getBudgetReport({
       startDate: earliestStartDate,
@@ -290,23 +287,20 @@ export const budgetPacingPercentageRule = newRule({
         budget / (flightDuration / DAY_DENOMINATOR);
       const spendToTimeElapsed = spend / (timeElapsed / DAY_DENOMINATOR);
       const percent = spendToTimeElapsed / budgetToFlightDuration - 1;
-      values[insertionOrderId] = rules[insertionOrderId].createValue(
-        percent.toString(),
-        {
-          'Insertion Order ID': insertionOrderId,
-          'Display Name': displayName,
-          'Campaign ID': campaignId,
-          'Flight Start': startDate.toDateString(),
-          'Flight End': endDate.toDateString(),
-          'Spend': `$${spend.toString()}`,
-          'Budget': `$${budget.toString()}`,
-          'Pacing': `${(spendToTimeElapsed / budgetToFlightDuration) * 100}%`,
-          'Days Elapsed': (timeElapsed / DAY_DENOMINATOR).toString(),
-          'Flight Duration': (flightDuration / DAY_DENOMINATOR).toString(),
-        },
-      );
+      values[insertionOrderId] = rules[insertionOrderId](percent, {
+        'Insertion Order ID': insertionOrderId,
+        'Display Name': displayName,
+        'Campaign ID': campaignId,
+        'Flight Start': startDate.toDateString(),
+        'Flight End': endDate.toDateString(),
+        'Spend': `$${spend.toString()}`,
+        'Budget': `$${budget.toString()}`,
+        'Pacing': `${(spendToTimeElapsed / budgetToFlightDuration) * 100}%`,
+        'Days Elapsed': (timeElapsed / DAY_DENOMINATOR).toString(),
+        'Flight Duration': (flightDuration / DAY_DENOMINATOR).toString(),
+      });
     }
-    return {rule, values};
+    return {values};
   },
 });
 
@@ -314,18 +308,23 @@ function getPacingVariables<P extends Record<'min' | 'max', string>>(
   client: ClientInterface,
   insertionOrder: InsertionOrder,
   settings: Settings<P>,
-  rules: {[p: string]: Rule},
-  uniqueKey: string,
+  rules: {[p: string]: AbridgedCheck},
 ) {
   const insertionOrderId = insertionOrder.getId()!;
   const campaignSettings = settings.getOrDefault(insertionOrderId);
   if (!rules[insertionOrderId]) {
-    rules[insertionOrderId] = inRange({
-      thresholdValue: {
-        min: Number(campaignSettings.min),
-        max: Number(campaignSettings.max),
-      },
-    });
+    rules[insertionOrderId] = (
+      value: number,
+      fields: {[key: string]: string},
+    ) =>
+      inRange(
+        {
+          min: Number(campaignSettings.min),
+          max: Number(campaignSettings.max),
+        },
+        value,
+        fields,
+      );
   }
   const displayName = insertionOrder.getDisplayName();
   if (!displayName) {
@@ -369,9 +368,7 @@ export const budgetPacingDaysAheadRule = newRule({
   granularity: RuleGranularity.INSERTION_ORDER,
   uniqueKeyPrefix: 'pacingDays',
   async callback() {
-    const uniqueKey: string = this.getUniqueKey();
-    const rules: {[campaignId: string]: Rule} = {};
-    const rule = this.getRule();
+    const rules: {[campaignId: string]: AbridgedCheck} = {};
     const values: Values = {};
     const result: Array<{
       campaignId: string;
@@ -397,7 +394,6 @@ export const budgetPacingDaysAheadRule = newRule({
         insertionOrder,
         this.settings,
         rules,
-        uniqueKey,
       );
       for (const budgetSegment of insertionOrder.getInsertionOrderBudgetSegments()) {
         const startDate = getDate(budgetSegment.dateRange.startDate);
@@ -424,7 +420,7 @@ export const budgetPacingDaysAheadRule = newRule({
       }
     }
     if (!earliestStartDate || !latestEndDate) {
-      return {rule, values};
+      return {values};
     }
     const budgetReport = this.client.getBudgetReport({
       startDate: earliestStartDate,
@@ -455,20 +451,17 @@ export const budgetPacingDaysAheadRule = newRule({
       const actualSpendPerDay = spend / daysToToday;
       const days =
         (actualSpendPerDay / budgetPerDay) * daysToToday - daysToToday;
-      values[insertionOrderId] = rules[insertionOrderId].createValue(
-        days.toString(),
-        {
-          'Insertion Order ID': insertionOrderId,
-          'Display Name': displayName,
-          'Campaign ID': campaignId,
-          'Flight Start': startDate.toDateString(),
-          'Flight End': endDate.toDateString(),
-          'Spend': spend.toString(),
-          'Budget': budget.toString(),
-        },
-      );
+      values[insertionOrderId] = rules[insertionOrderId](days, {
+        'Insertion Order ID': insertionOrderId,
+        'Display Name': displayName,
+        'Campaign ID': campaignId,
+        'Flight Start': startDate.toDateString(),
+        'Flight End': endDate.toDateString(),
+        'Spend': spend.toString(),
+        'Budget': budget.toString(),
+      });
     }
-    return {rule, values};
+    return {values};
   },
 });
 
@@ -501,22 +494,11 @@ export const dailyBudgetRule = newRule({
   granularity: RuleGranularity.INSERTION_ORDER,
   uniqueKeyPrefix: 'dailyBudget',
   async callback() {
-    const uniqueKey = this.getUniqueKey();
-    const rule = this.getRule();
     const values: Values = {};
-    const rules: {[campaignId: string]: Rule} = {};
 
     for (const insertionOrder of this.client.getAllInsertionOrders()) {
       const insertionOrderId = insertionOrder.getId()!;
       const campaignSettings = this.settings.getOrDefault(insertionOrderId);
-      if (!rules[insertionOrderId]) {
-        rules[insertionOrderId] = inRange({
-          thresholdValue: {
-            min: Number(campaignSettings.min),
-            max: Number(campaignSettings.max),
-          },
-        });
-      }
       const displayName = insertionOrder.getDisplayName();
       if (!displayName) {
         throw new Error('Missing ID or Display Name for Insertion Order.');
@@ -525,8 +507,12 @@ export const dailyBudgetRule = newRule({
         this.client,
         insertionOrder,
       )) {
-        values[insertionOrderId] = rules[insertionOrderId].createValue(
-          dailyBudgets.dailyBudget.toString(),
+        values[insertionOrderId] = inRange(
+          {
+            min: Number(campaignSettings.min),
+            max: Number(campaignSettings.max),
+          },
+          dailyBudgets.dailyBudget,
           {
             'Insertion Order ID': insertionOrderId,
             'Display Name': displayName,
@@ -536,7 +522,7 @@ export const dailyBudgetRule = newRule({
         );
       }
     }
-    return {rule, values};
+    return {values};
   },
 });
 
@@ -623,13 +609,15 @@ export const impressionsByGeoTarget = newRule({
   defaults: {countries: 'US', maxOutside: '0.01'},
   uniqueKeyPrefix: 'impressionsByGeo',
   async callback() {
-    const rule = this.getRule();
     const values: Values = {};
 
     const range = {
       startDate: undefined,
       endDate: undefined,
-    } as {startDate: Date | undefined; endDate: Date | undefined};
+    } as {
+      startDate: Date | undefined;
+      endDate: Date | undefined;
+    };
 
     const today = Date.now();
     const todayDate = new Date(today);
@@ -648,7 +636,7 @@ export const impressionsByGeoTarget = newRule({
     }
 
     if (!range.startDate || !range.endDate) {
-      return {rule, values};
+      return {values};
     }
     const impressionReport = new this.client.settings.impressionReport!({
       idType: this.client.settings.idType,
@@ -666,15 +654,16 @@ export const impressionsByGeoTarget = newRule({
           .split(',')
           .map((country: string) => country.trim()),
       );
-      const rule = lessThanOrEqualTo({
-        thresholdValue: Number(campaignSettings.maxOutside),
-      });
-      values[insertionOrderId] = rule.createValue(impressions.toString(), {
-        'Insertion Order ID': insertionOrderId,
-        'Display Name': displayName,
-        'Campaign ID': campaignId,
-      });
+      values[insertionOrderId] = lessThanOrEqualTo(
+        Number(campaignSettings.maxOutside),
+        impressions,
+        {
+          'Insertion Order ID': insertionOrderId,
+          'Display Name': displayName,
+          'Campaign ID': campaignId,
+        },
+      );
     }
-    return {rule, values};
+    return {values};
   },
 });

@@ -8,6 +8,6 @@
     "target": "es2020",
     "lib": ["esnext", "dom"]
   },
-  "include": ["app/**/*", "anomaly_library/**/*", "dv360_api/*.ts", "outs.d.ts"],
+  "include": ["app/**/*", "dv360_api/*.ts", "outs.d.ts"],
   "exclude": ["node_modules/**/*", "dist/**/*", "**/*_test.ts"]
 }

@@ -9,7 +9,6 @@
     "lib": ["esnext", "dom"],
     "noImplicitThis": true,
     "paths": {
-      "anomaly_library": ["anomaly_library"],
       "common": ["common"]
     }
   },

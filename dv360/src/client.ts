@@ -32,11 +32,6 @@ import {
   Campaign,
   InsertionOrder,
 } from 'dv360_api/dv360_resources';
-import {RawApiDate} from 'dv360_api/dv360_types';
-import {
-  Rule,
-  RuleInstructions,
-} from 'google3/third_party/professional_services/solutions/appsscript_anomaly_library/lib/main';
 import {newRuleBuilder} from 'common/client_helpers';
 
 import {AbstractRuleRange} from 'common/sheet_helpers';
@@ -48,10 +43,10 @@ import {
   RuleDefinition,
   RuleExecutor,
   RuleExecutorClass,
-  RuleUtilities,
   Settings,
 } from 'common/types';
 
+import {RawApiDate} from 'dv360_api/dv360_types';
 import {BudgetReport, BudgetReportInterface, ImpressionReport} from './api';
 import {
   ClientArgs,
@@ -78,8 +73,7 @@ export const newRule = newRuleBuilder<
 type RuleParams<Params extends Record<keyof Params, ParamDefinition>> =
   RuleDefinition<Params, RuleGranularity> &
     ThisType<
-      RuleExecutor<ClientInterface, RuleGranularity, ClientArgs, Params> &
-        RuleUtilities
+      RuleExecutor<ClientInterface, RuleGranularity, ClientArgs, Params>
     >;
 
 /**
@@ -131,6 +125,7 @@ export class Client implements ClientInterface {
   private storedCampaigns: RecordInfo[] = [];
   private savedBudgetReport?: BudgetReportInterface;
 
+  readonly properties: PropertyStore;
   readonly settings: Required<ClientArgs>;
   readonly ruleStore: {
     [ruleName: string]: RuleExecutor<
@@ -169,7 +164,7 @@ export class Client implements ClientInterface {
         advertiserId?: string;
         partnerId?: string;
       },
-    readonly properties: PropertyStore,
+    properties: PropertyStore,
   ) {
     this.settings = {
       advertisers: settings.advertisers || Advertisers,
@@ -189,6 +184,7 @@ export class Client implements ClientInterface {
       impressionReport: settings.impressionReport || ImpressionReport,
     };
 
+    this.properties = properties;
     this.ruleStore = {};
   }
 
@@ -200,8 +196,7 @@ export class Client implements ClientInterface {
    * Executes each added callable rule once per call to this method.
    *
    * This function is meant to be scheduled or otherwise called
-   * by the client. It relies on a rule changing state using the anomaly
-   * library.
+   * by the client.
    */
   async validate() {
     type Executor = RuleExecutor<
@@ -358,13 +353,6 @@ export class Client implements ClientInterface {
     return `${prefix}-${this.settings.idType === IDType.PARTNER ? 'P' : 'A'}${
       this.settings.id
     }`;
-  }
-
-  newRule(
-    rule: (rule: RuleInstructions) => Rule,
-    instructions: Omit<RuleInstructions, 'propertyStore'>,
-  ) {
-    return rule({...instructions, propertyStore: this.properties});
   }
 }
 

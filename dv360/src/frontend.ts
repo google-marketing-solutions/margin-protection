@@ -15,17 +15,7 @@
  * limitations under the License.
  */
 
-// g3-format-prettier
-
-import {sendEmailAlert} from 'google3/third_party/professional_services/solutions/appsscript_anomaly_library/lib/main';
-import {
-  addSettingWithDescription,
-  AppsScriptFrontEnd,
-  AppsScriptPropertyStore,
-  getOrCreateSheet,
-  getTemplateSetting,
-  HELPERS,
-} from 'common/sheet_helpers';
+import {addSettingWithDescription, AppsScriptFrontEnd, AppsScriptPropertyStore, getOrCreateSheet, HELPERS,} from 'common/sheet_helpers';
 import {FrontEndArgs} from 'common/types';
 import {RuleRange} from 'dv360/src/client';
 import {
@@ -37,8 +27,6 @@ import {IDType, RuleGranularity} from './types';
 
 const ENTITY_ID = 'ENTITY_ID';
 const ID_TYPE = 'ID_TYPE';
-const EMAIL_LIST_RANGE = 'EMAIL_LIST';
-const LABEL_RANGE = 'LABEL';
 
 /**
  * The name of the general settings sheet.
@@ -177,17 +165,18 @@ export class DisplayVideoFrontEnd extends AppsScriptFrontEnd<
   }
 
   maybeSendEmailAlert() {
-    const to = getTemplateSetting(EMAIL_LIST_RANGE).getValue();
-    const label = getTemplateSetting(LABEL_RANGE).getValue();
-    if (!to) {
-      return;
-    }
-    sendEmailAlert(
-      Object.values(this.client.ruleStore).map((rule) => rule.getRule()),
-      {
-        to,
-        subject: `Anomalies found for ${label}`,
-      },
-    );
+    // TODO(): fixme
+    // const to = getTemplateSetting(EMAIL_LIST_RANGE).getValue();
+    // const label = getTemplateSetting(LABEL_RANGE).getValue();
+    // if (!to) {
+    //   return;
+    // }
+    // sendEmailAlert(
+    //   Object.values(this.client.ruleStore).map((rule) => rule.getRule()),
+    //   {
+    //     to,
+    //     subject: `Anomalies found for ${label}`,
+    //   },
+    // );
   }
 }

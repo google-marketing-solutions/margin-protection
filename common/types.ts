@@ -17,8 +17,6 @@
 
 // g3-format-prettier
 
-import {RuleGetter} from 'google3/third_party/professional_services/solutions/appsscript_anomaly_library/lib/main';
-
 import {AppsScriptFrontEnd} from './sheet_helpers';
 
 /**
@@ -33,10 +31,9 @@ export interface PropertyStore {
 /**
  * The result of a rule executor once the Promise has resolved.
  */
-export type ExecutorResult = {
-  rule: RuleGetter;
+export interface ExecutorResult {
   values: Values;
-};
+}
 
 /**
  * A rule callback is created to enable efficient API calls.
@@ -89,10 +86,6 @@ export interface BaseClientInterface<
   };
   readonly properties: PropertyStore;
   getAllCampaigns(): Promise<RecordInfo[]>;
-  getRule(
-    ruleName: string,
-  ): RuleExecutor<C, G, A, Record<string, ParamDefinition>>;
-  getUniqueKey(prefix: string): string;
   validate(): Promise<{
     rules: Record<
       string,
@@ -137,8 +130,7 @@ export interface RuleExecutor<
   G extends RuleGranularity<G>,
   A extends BaseClientArgs<C, G, A>,
   P extends Record<keyof P, ParamDefinition>,
-> extends RuleUtilities,
-    Omit<RuleDefinition<P, G>, 'callback' | 'defaults' | 'granularity'> {
+> extends Omit<RuleDefinition<P, G>, 'callback' | 'defaults' | 'granularity'> {
   client: C;
   settings: Settings<Record<keyof P, string>>;
   run: Function;
@@ -147,11 +139,20 @@ export interface RuleExecutor<
 }
 
 /**
- * Methods that are used on rule wrappers to get context.
+ * Simple information-level data holder for a rule.
+ *
+ * For more, use the generic {@link RuleDefinition}.
  */
-export interface RuleUtilities {
-  getRule(): RuleGetter;
-  getUniqueKey(): string;
+export interface RuleInfo {
+  name: string;
+  description: string;
+}
+/**
+ * Merger of {@link RuleInfo} and {@link ExecutorResult}.
+ */
+export interface RuleGetter {
+  name: string;
+  values: Values;
 }
 
 /**
@@ -173,16 +174,11 @@ export interface RuleExecutorClass<
 export interface RuleDefinition<
   P extends Record<keyof P, ParamDefinition>,
   G extends RuleGranularity<G>,
-> {
-  name: string;
+> extends RuleInfo {
   callback: Callback<P>;
   granularity: G;
   params: {[Property in keyof P]: ParamDefinition};
   uniqueKeyPrefix: string;
-  /**
-   * The description is exported to a
-   */
-  description: string;
   defaults: {[Property in keyof P]: string};
   helper?: string;
   /** The name of the "value" column in the anomaly detector, for reporting. */
@@ -313,14 +309,14 @@ export interface FrontEndArgs<
 }
 
 /**
- * Parameters for a rule, with `this` methods from {@link RuleUtilities}.
+ * Parameters for a rule.
  */
 export type RuleParams<
   C extends BaseClientInterface<C, G, A>,
   G extends RuleGranularity<G>,
   A extends BaseClientArgs<C, G, A>,
   P extends Record<keyof P, ParamDefinition>,
-> = RuleDefinition<P, G> & ThisType<RuleExecutor<C, G, A, P> & RuleUtilities>;
+> = RuleDefinition<P, G> & ThisType<RuleExecutor<C, G, A, P>>;
 
 /**
  * A list of available and required Apps Script functions for Launch Monitor.

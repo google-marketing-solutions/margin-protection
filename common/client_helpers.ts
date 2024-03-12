@@ -17,7 +17,6 @@
 
 // g3-format-prettier
 
-import {getRule} from 'google3/third_party/professional_services/solutions/appsscript_anomaly_library/lib/main';
 import {transformToParamValues} from './sheet_helpers';
 import {
   BaseClientArgs,
@@ -85,26 +84,6 @@ export function newRuleBuilder<
 
       async run() {
         return await ruleDefinition.callback.bind(this)();
-      }
-
-      getRule() {
-        return getRule(this.getUniqueKey());
-      }
-
-      getUniqueKey() {
-        return this.client.getUniqueKey(ruleDefinition.uniqueKeyPrefix);
-      }
-
-      /**
-       * Executes this rule once per call to this method.
-       *
-       * This should not be used when checking multiple rules. Instead, use
-       * {@link Client.validate} which serves the same purpose but is able to
-       * combine rules.
-       */
-      async validate() {
-        const threshold = await this.run();
-        threshold.rule.saveValues(threshold.values);
       }
     };
 
