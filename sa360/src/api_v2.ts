@@ -169,3 +169,45 @@ export const CAMPAIGN_TARGET_REPORT = makeReport({
     ] as const;
   },
 });
+
+/**
+ * Age target report.
+ *
+ * Exposed for testing.
+ */
+export const AGE_TARGET_REPORT = makeReport({
+  output: [
+    'criterionId',
+    'customerId',
+    'customerName',
+    'campaignId',
+    'adGroupId',
+    'ageRange',
+  ],
+  query: buildQuery({
+    queryParams: [
+      'criterion.id',
+      'customer.id',
+      'customer.name',
+      'campaign.id',
+      'ad_group.id',
+      'ad_group_criterion.age_range.type',
+      'ad_group_criterion.criterion_id',
+    ],
+    queryFrom: 'age_range_view',
+  }),
+
+  transform(result) {
+    return [
+      result.adGroupCriterion.criterionId as string,
+      {
+        criterionId: result.adGroupCriterion.criterionId as string,
+        customerId: result.customer.id as string,
+        customerName: result.customer.name as string,
+        campaignId: result.campaign.id as string,
+        adGroupId: result.adGroup.id as string,
+        ageRange: result.adGroupCriterion.ageRange.type as string,
+      },
+    ] as const;
+  },
+});
