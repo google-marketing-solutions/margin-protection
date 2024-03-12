@@ -109,6 +109,10 @@ export class GoogleAdsApi implements AdTypes.GoogleAdsApiInterface {
     },
   ) {}
 
+  getLoginCustomerId() {
+    return this.apiInstructions.loginCustomerId;
+  }
+
   private requestHeaders() {
     const token = this.apiInstructions.credentialManager.getToken();
     return {
@@ -186,10 +190,21 @@ export abstract class Report<
 {
   constructor(
     protected readonly api: AdTypes.GoogleAdsApiInterface,
+    protected readonly clientIds: string[],
     protected readonly clientArgs: AdTypes.AdsClientArgs,
     protected readonly query: Q,
     protected readonly factory: AdTypes.ReportFactoryInterface,
   ) {}
+
+  private *mapIterators(queryWheres: string[] = []) {
+    for (const customerId of this.clientIds) {
+      yield* this.api.query<Q, Params, Joins>(
+        customerId,
+        this.query,
+        queryWheres,
+      );
+    }
+  }
 
   /**
    * Converts a raw nested API response into its corresponding flat output.
@@ -201,18 +216,15 @@ export abstract class Report<
    * }
    */
   fetch(queryWheres: string[] = []): Record<string, Record<Output, string>> {
-    const results = this.api.query<Q, Params, Joins>(
-      this.clientArgs.customerIds,
-      this.query,
-      queryWheres,
-    );
+    const results = this.mapIterators(queryWheres);
+
     // type boilerplate - separated out for readability
     type DefinedJoin = Exclude<Joins, undefined>;
     type JoinKey = keyof DefinedJoin;
     type JoinOutputKey = Extract<
       DefinedJoin[JoinKey],
       AdTypes.UnknownReportClass
-    >['query']['output'][number];
+    >['output'][number];
     type JoinDict = Record<
       JoinKey,
       Record<
@@ -229,7 +241,7 @@ export abstract class Report<
 
     let resultsHolder:
       | IterableIterator<AdTypes.ReportResponse<Q>>
-      | ArrayLike<AdTypes.ReportResponse<Q>> = results;
+      | Array<AdTypes.ReportResponse<Q>> = results;
     // first - get all results and find joins
     // this is a full extra loop of data, but it should be much cheaper than
     // querying everything in AQL.
@@ -324,7 +336,7 @@ export abstract class Report<
                 Extract<
                   Joins[keyof Joins],
                   AdTypes.UnknownReportClass
-                >['query']['output'][number],
+                >['output'][number],
                 string
               >
             >
@@ -390,6 +402,11 @@ export abstract class Report<
  * Injects the API and other dependencies while calling the primary query.
  */
 export class ReportFactory implements AdTypes.ReportFactoryInterface {
+  /**
+   * A list of CID leafs mapped to their parents.
+   */
+  private readonly leafToRoot = new Map<string, string>();
+
   constructor(
     protected readonly apiFactory: GoogleAdsApiFactory,
     protected readonly clientArgs: AdTypes.AdsClientArgs,
@@ -421,10 +438,52 @@ export class ReportFactory implements AdTypes.ReportFactoryInterface {
         'Please provide a single login customer ID for multiple CIDs.',
       );
     }
+    const leafAccounts = this.leafAccounts();
     const api = this.apiFactory.create(
-      this.clientArgs.loginCustomerId || allClientIds[0],
+      this.clientArgs.loginCustomerId || this.clientArgs.customerIds,
     );
-    return new reportClass(api, this.clientArgs, reportClass.query, this);
+    return new reportClass(
+      api,
+      leafAccounts,
+      this.clientArgs,
+      reportClass.query,
+      this,
+    );
+  }
+
+  /**
+   * Returns all leaf account IDs for the initial login account map.
+   */
+  leafAccounts(): string[] {
+    if (!this.leafToRoot.size) {
+      for (const customerId of this.clientArgs.customerIds.split(',')) {
+        const api = this.apiFactory.create(
+          this.clientArgs.loginCustomerId || this.clientArgs.customerIds,
+        );
+        const expand = (account: string): string[] => {
+          const rows = api.query(customerId, GET_LEAF_ACCOUNTS_REPORT.query);
+          const customerIds: string[] = [];
+          for (const row of rows) {
+            customerIds.push(String(row.customerClient!.id!));
+          }
+          return customerIds;
+        };
+
+        const traverse = (account: string): string[] => {
+          // User preference for expansion takes priority.
+          // If the user forgot to set expand and there are no children, check
+          // anyway. If this account is supposed to be a leaf, the expand query
+          // will confirm it.
+          return expand(account);
+        };
+
+        for (const leaf of traverse(customerId)) {
+          // Clobbering is fine: we only need one way to access a given leaf.
+          this.leafToRoot.set(leaf, customerId);
+        }
+      }
+    }
+    return [...this.leafToRoot.keys()];
   }
 }
 

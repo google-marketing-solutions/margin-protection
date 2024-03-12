@@ -321,6 +321,7 @@ export interface ReportClass<
 > {
   new (
     api: GoogleAdsApiInterface,
+    customerIds: string[],
     clientArgs: AdsClientArgs,
     query: Q,
     factory: ReportFactoryInterface,

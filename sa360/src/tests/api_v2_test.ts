@@ -64,12 +64,7 @@ describe('ApiV2', () => {
       customerIds: '1',
       label: 'test',
     });
-    spyOn(reportFactory, 'create').and.callFake((reportClass) =>
-      new ReportFactory(apiFactory, {
-        customerIds: '1',
-        label: 'test',
-      }).create(reportClass),
-    );
+    spyOn(reportFactory, 'leafAccounts').and.returnValue(['2']);
   });
 
   it('returns expected results from query', () => {
@@ -367,6 +362,73 @@ describe('ApiV2', () => {
     });
   });
 
+  describe('Age range target report', () => {
+    it('returns expected results', () => {
+      const mockQuery: jasmine.Spy = spyOn(api, 'query');
+      mockQuery.and.returnValue(
+        iterator(
+          ...[...Array.from({length: 5}).keys()].map((x) => ({
+            customer: {
+              resourceName: 'customers/1',
+              id: '1',
+              name: 'Customer 1',
+            },
+            campaign: {resourceName: 'customers/1/campaigns/c1', id: 'c1'},
+            adGroup: {resourceName: 'customers/c1/adGroups/ag1', id: 'ag1'},
+            adGroupCriterion: {
+              resourceName: `customers/1/adGroupCriteria/ag1~agc${x}`,
+              criterionId: `agc${x}`,
+              ageRange: {type: `AGE_RANGE_${x}`},
+            },
+          })),
+        ),
+      );
+      const report = reportFactory.create(AGE_TARGET_REPORT);
+      expect(report.fetch()).toEqual({
+        'agc0': {
+          criterionId: 'agc0',
+          customerId: '1',
+          customerName: 'Customer 1',
+          campaignId: 'c1',
+          adGroupId: 'ag1',
+          ageRange: 'AGE_RANGE_0',
+        },
+        'agc1': {
+          criterionId: 'agc1',
+          customerId: '1',
+          customerName: 'Customer 1',
+          campaignId: 'c1',
+          adGroupId: 'ag1',
+          ageRange: 'AGE_RANGE_1',
+        },
+        'agc2': {
+          criterionId: 'agc2',
+          customerId: '1',
+          customerName: 'Customer 1',
+          campaignId: 'c1',
+          adGroupId: 'ag1',
+          ageRange: 'AGE_RANGE_2',
+        },
+        'agc3': {
+          criterionId: 'agc3',
+          customerId: '1',
+          customerName: 'Customer 1',
+          campaignId: 'c1',
+          adGroupId: 'ag1',
+          ageRange: 'AGE_RANGE_3',
+        },
+        'agc4': {
+          criterionId: 'agc4',
+          customerId: '1',
+          customerName: 'Customer 1',
+          campaignId: 'c1',
+          adGroupId: 'ag1',
+          ageRange: 'AGE_RANGE_4',
+        },
+      });
+    });
+  });
+
   describe('Gender type target report', () => {
     it('returns expected results', () => {
       const mockQuery: jasmine.Spy = spyOn(api, 'query');
@@ -383,9 +445,7 @@ describe('ApiV2', () => {
             adGroupCriterion: {
               resourceName: `customers/1/adGroupCriteria/agc${x}`,
               criterionId: `agc${x}`,
-              gender: {
-                type: `Gender Type ${x}`,
-              },
+              gender: {type: `Gender Type ${x}`},
             },
             genderView: {resourceName: 'customers/1/genderViews/1~${x}'},
           })),
@@ -451,13 +511,13 @@ describe('ApiV2', () => {
               },
               campaign: {resourceName: 'customers/1/campaigns/c1', id: 'c1'},
               campaignCriterion: {
-                resourceName: 'customers/1/campaignCriteria/209618821~c1',
+                resourceName: `customers/1/campaignCriteria/209618821~c${x}`,
                 type: 'USER_LIST',
                 userList: {userList: `customers/1/userLists/ul${x}`},
                 criterionId: `ul${x}`,
               },
               campaignAudienceView: {
-                resourceName: 'customers/1/campaignAudienceViews/c1~ul1',
+                resourceName: `customers/1/campaignAudienceViews/c1~ul${x}`,
               },
             })),
           );

@@ -26,6 +26,8 @@ import {FakePropertyStore} from 'common/test_helpers/mock_apps_script';
 
 import {
   CredentialManager,
+  GET_LEAF_ACCOUNTS_REPORT,
+  GoogleAdsApi,
   GoogleAdsApiFactory,
   ReportFactory,
 } from '../ads_api';
@@ -242,20 +244,43 @@ const FAKE_API_ENDPOINT = {
 /**
  * Set up a Google Ads API for testing.
  */
-export function bootstrapGoogleAdsApi() {
+export function bootstrapGoogleAdsApi(
+  {
+    mockLeafAccounts = {'1': ['123']},
+    spyOnLeaf = true,
+  }: {mockLeafAccounts: Record<string, string[]>; spyOnLeaf: boolean} = {
+    mockLeafAccounts: {'1': ['123']},
+    spyOnLeaf: true,
+  },
+) {
   const apiFactory = new GoogleAdsApiFactory({
     developerToken: '',
     credentialManager: new CredentialManager(),
     apiEndpoint: FAKE_API_ENDPOINT,
   });
   const reportFactory = new ReportFactory(apiFactory, {
-    customerIds: '1',
+    loginCustomerId: 'la1',
+    customerIds: Object.keys(mockLeafAccounts).join(','),
     label: 'test',
   });
-  const api = apiFactory.create('');
-  spyOn(apiFactory, 'create').and.returnValue(api);
-  return {api, reportFactory};
+  if (spyOnLeaf) {
+    spyOn(reportFactory, 'leafAccounts').and.returnValue(['1']);
+  }
+  const api = new GoogleAdsApi({
+    developerToken: '',
+    loginCustomerId: 'la1',
+    credentialManager: {
+      getToken() {
+        return '';
+      },
+    },
+    apiEndpoint: FAKE_API_ENDPOINT,
+  });
+  const mockQuery: jasmine.Spy = spyOn(api, 'queryOne');
+  spyOn(apiFactory, 'create').and.callFake(() => api);
+  return {api, reportFactory, mockQuery};
 }
+
 /**
  * Like TestClientInterface only for Ads.
  */

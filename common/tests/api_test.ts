@@ -19,23 +19,9 @@
  * @fileoverview Tests for the common API library suites.
  */
 
-// g3-format-prettier
-
-import {
-  CredentialManager,
-  GOOGLEADS_API_ENDPOINT,
-  GoogleAdsApi,
-  GoogleAdsApiFactory,
-  makeReport,
-  qlifyQuery,
-  ReportFactory,
-  SA360_API_ENDPOINT,
-} from '../ads_api';
+import {CredentialManager, GET_LEAF_ACCOUNTS_REPORT, GOOGLEADS_API_ENDPOINT, GoogleAdsApi, GoogleAdsApiFactory, makeReport, qlifyQuery, ReportFactory, SA360_API_ENDPOINT,} from '../ads_api';
 import {AdsSearchRequest, buildQuery} from '../ads_api_types';
-import {
-  generateFakeHttpResponse,
-  mockAppsScript,
-} from '../test_helpers/mock_apps_script';
+import {generateFakeHttpResponse, mockAppsScript,} from '../test_helpers/mock_apps_script';
 
 import {bootstrapGoogleAdsApi} from './helpers';
 
@@ -287,12 +273,22 @@ describe('Report Factory', () => {
         apiEndpoint: FAKE_API_ENDPOINT,
       }).create(loginCustomerId);
       const mockQuery: jasmine.Spy = spyOn(api, 'queryOne');
-      mockQuery.and.callFake(({customerId}) => {
-        return iterator({
-          a: {one: `${customerId}/one`},
-          b: {two: `${customerId}/two`},
-          c: {three: `${customerId}/three`},
-        });
+      mockQuery.and.callFake(({query, customerId}) => {
+        if (query === FAKE_REPORT.query) {
+          return iterator({
+            a: {one: `${customerId}/one`},
+            b: {two: `${customerId}/two`},
+            c: {three: `${customerId}/three`},
+          });
+        } else {
+          return iterator(
+              {
+                customerClient: {id: '2'},
+              },
+              {
+                customerClient: {id: '3'},
+              });
+        }
       });
       return api;
     });
@@ -305,7 +301,8 @@ describe('Report Factory', () => {
   it('returns expected results from query', () => {
     const report = reportFactory.create(FAKE_REPORT);
     expect(report.fetch()).toEqual({
-      '1/one': {one: '1/one', two: '1/two', three: '1/three'},
+      '2/one': {one: '2/one', two: '2/two', three: '2/three'},
+      '3/one': {one: '3/one', two: '3/two', three: '3/three'},
     });
   });
 
@@ -338,16 +335,20 @@ describe('Report Factory', () => {
 describe('Join Report', () => {
   let reportFactory: ReportFactory;
   let api: GoogleAdsApi;
+  let mockQuery: jasmine.Spy;
 
   beforeEach(() => {
-    ({reportFactory, api} = bootstrapGoogleAdsApi());
+    ({reportFactory, api, mockQuery} = bootstrapGoogleAdsApi());
   });
 
   it('returns expected results from query', () => {
-    const mockQuery: jasmine.Spy = spyOn(api, 'queryOne');
     mockQuery.and.callFake(({query}) => {
       if (query === JOIN_REPORT.query) {
         return iterator({d: {one: 'one', nother: 'another'}});
+      } else if (query === GET_LEAF_ACCOUNTS_REPORT.query) {
+        return iterator({
+          customerClient: {id: '1'},
+        });
       } else {
         return iterator({
           a: {one: 'one'},
@@ -359,6 +360,40 @@ describe('Join Report', () => {
     const report = reportFactory.create(JOIN_REPORT);
     expect(report.fetch()).toEqual({
       one: {one: 'one', two: 'two', another: 'another'},
+    });
+  });
+});
+
+describe('Leaf expansion', () => {
+  let reportFactory: ReportFactory;
+  let api: GoogleAdsApi;
+  let mockQuery: jasmine.Spy;
+  const mockLeafAccounts: Record<string, string[]> = {'123': ['1', '2', '3']};
+
+  beforeEach(() => {
+    ({reportFactory, api, mockQuery} =
+         bootstrapGoogleAdsApi({mockLeafAccounts, spyOnLeaf: false}));
+  });
+
+  it('checks all expanded accounts are added to the report', () => {
+    mockQuery.and.callFake(({customerId, query}) => {
+      if (query === GET_LEAF_ACCOUNTS_REPORT.query) {
+        return iterator(...mockLeafAccounts[customerId].map(
+            (id) => ({
+              customerClient: {id, name: `customer ${id}`, status: 'ENABLED'},
+            })));
+      } else {
+        return iterator({
+          customerId,
+          a: {id: customerId},
+        });
+      }
+    });
+    const report = reportFactory.create(FAKE_REPORT_2);
+    expect(report.fetch()).toEqual({
+      'customers/1/id/a1': {customerId: '1', id: 'a1'},
+      'customers/2/id/a2': {customerId: '2', id: 'a2'},
+      'customers/3/id/a3': {customerId: '3', id: 'a3'},
     });
   });
 });
@@ -404,6 +439,23 @@ const FAKE_REPORT = makeReport({
         one: result.a.one as string,
         two: result.b.two as string,
         three: result.c.three as string,
+      },
+    ] as const;
+  },
+});
+
+const FAKE_REPORT_2 = makeReport({
+  output: ['customerId', 'id'],
+  query: buildQuery({
+    queryParams: ['a.id', 'customerId'],
+    queryFrom: 'something',
+  }),
+  transform(result) {
+    return [
+      `customers/${result.customerId}/id/a${result.a.id}` as string,
+      {
+        customerId: result.customerId as string,
+        id: `a${result.a.id}`,
       },
     ] as const;
   },
