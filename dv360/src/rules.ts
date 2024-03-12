@@ -19,6 +19,8 @@
  * @fileoverview Contains rules tailored for the current client.
  */
 
+// g3-format-prettier
+
 import {
   AssignedTargetingOption,
   InsertionOrder,
@@ -31,13 +33,12 @@ import {
   equalTo,
   inRange,
   lessThanOrEqualTo,
-} from 'anomaly_library/absoluteRule';
+} from 'common/checks';
 import {
-  Rule,
+  Settings,
+  Value,
   Values,
-} from 'anomaly_library/main';
-
-import {Settings} from 'common/types';
+} from 'common/types';
 
 import {getDate, newRule} from './client';
 import {DailyBudget} from './rule_types';
@@ -61,6 +62,11 @@ const RULES = {
     IS_NUMBER,
   ],
 };
+
+/**
+ * Provides a mechanism to preload checks with tests.
+ */
+type AbridgedCheck = (value: number, fields: {[key: string]: string}) => Value;
 
 /**
  * Adds a geotarget rule.
@@ -96,16 +102,11 @@ export const geoTargetRule = newRule({
     },
   },
   granularity: RuleGranularity.CAMPAIGN,
-  uniqueKeyPrefix: 'geo',
   defaults: {
     geotargeting: 'United States',
     excludes: '',
   },
   async callback() {
-    const uniqueKey = this.getUniqueKey();
-    const rule = equalTo({
-      thresholdValue: 1,
-    });
     const values: Values = {};
 
     for (const {
@@ -113,12 +114,11 @@ export const geoTargetRule = newRule({
       id,
       displayName,
     } of await this.client.getAllCampaigns()) {
-      const targetingOptionApi =
-        new this.client.settings.assignedTargetingOptions!(
-          TARGETING_TYPE.GEO_REGION,
-          advertiserId,
-          {campaignId: id},
-        );
+      const targetingOptionApi = new this.client.args.assignedTargetingOptions!(
+        TARGETING_TYPE.GEO_REGION,
+        advertiserId,
+        {campaignId: id},
+      );
       let hasOnlyValidGeo = true;
       const campaignSettings = this.settings.getOrDefault(id);
 
@@ -156,7 +156,7 @@ export const geoTargetRule = newRule({
         }
         targetingOptionsLength += targetingOptions.length;
       });
-      values[id] = rule.createValue(hasOnlyValidGeo ? '1' : '0', {
+      values[id] = equalTo(1, hasOnlyValidGeo ? 1 : 0, {
         'Advertiser ID': advertiserId,
         'Campaign Name': displayName,
         'Campaign ID': id,
@@ -164,7 +164,7 @@ export const geoTargetRule = newRule({
       });
     }
 
-    return {rule, values};
+    return {values};
   },
 });
 
@@ -196,15 +196,11 @@ export const budgetPacingPercentageRule = newRule({
     },
   },
   defaults: {min: '0', max: '0.5'},
-  uniqueKeyPrefix: 'pacingPercent',
   async callback() {
-    const uniqueKey: string = this.getUniqueKey();
-    const rules: {[campaignId: string]: Rule} = {};
-    const rule = this.getRule();
+    const rules: {[campaignId: string]: AbridgedCheck} = {};
     const values: Values = {};
 
-    let earliestStartDate: Date | undefined = undefined;
-    let latestEndDate: Date | undefined = undefined;
+    const dateRange: {earliestStartDate?: Date; latestEndDate?: Date} = {};
 
     const results: Array<{
       budget: number;
@@ -222,7 +218,6 @@ export const budgetPacingPercentageRule = newRule({
         insertionOrder,
         this.settings,
         rules,
-        uniqueKey,
       );
       for (const budgetSegment of insertionOrder.getInsertionOrderBudgetSegments()) {
         const startDate = getDate(budgetSegment.dateRange.startDate);
@@ -236,17 +231,14 @@ export const budgetPacingPercentageRule = newRule({
         ) {
           continue;
         }
-        // TODO: go/ts50upgrade - Auto-added to unblock TS5.0 migration
-        //   TS2365: Operator '<' cannot be applied to types 'never' and 'Date'.
-        // @ts-ignore
-        earliestStartDate = earliestStartDate && earliestStartDate < startDate ?
-            earliestStartDate :
-            startDate;
-        latestEndDate =
-          // TODO: go/ts50upgrade - Auto-added to unblock TS5.0 migration
-          //   TS2365: Operator '<' cannot be applied to types 'never' and 'Date'.
-          // @ts-ignore
-          latestEndDate && latestEndDate < endDate ? latestEndDate : endDate;
+        dateRange.earliestStartDate =
+          dateRange.earliestStartDate && dateRange.earliestStartDate < startDate
+            ? dateRange.earliestStartDate
+            : startDate;
+        dateRange.latestEndDate =
+          dateRange.latestEndDate && dateRange.latestEndDate < endDate
+            ? dateRange.latestEndDate
+            : endDate;
         results.push({
           campaignId: insertionOrder.getCampaignId(),
           displayName,
@@ -257,12 +249,12 @@ export const budgetPacingPercentageRule = newRule({
         });
       }
     }
-    if (!earliestStartDate || !latestEndDate) {
-      return {rule, values};
+    if (!dateRange.earliestStartDate || !dateRange.latestEndDate) {
+      return {values};
     }
     const budgetReport = this.client.getBudgetReport({
-      startDate: earliestStartDate,
-      endDate: latestEndDate,
+      startDate: dateRange.earliestStartDate,
+      endDate: dateRange.latestEndDate,
     });
     for (const {
       budget,
@@ -288,23 +280,20 @@ export const budgetPacingPercentageRule = newRule({
         budget / (flightDuration / DAY_DENOMINATOR);
       const spendToTimeElapsed = spend / (timeElapsed / DAY_DENOMINATOR);
       const percent = spendToTimeElapsed / budgetToFlightDuration - 1;
-      values[insertionOrderId] = rules[insertionOrderId].createValue(
-        percent.toString(),
-        {
-          'Insertion Order ID': insertionOrderId,
-          'Display Name': displayName,
-          'Campaign ID': campaignId,
-          'Flight Start': startDate.toDateString(),
-          'Flight End': endDate.toDateString(),
-          'Spend': `$${spend.toString()}`,
-          'Budget': `$${budget.toString()}`,
-          'Pacing': `${(spendToTimeElapsed / budgetToFlightDuration) * 100}%`,
-          'Days Elapsed': (timeElapsed / DAY_DENOMINATOR).toString(),
-          'Flight Duration': (flightDuration / DAY_DENOMINATOR).toString(),
-        },
-      );
+      values[insertionOrderId] = rules[insertionOrderId](percent, {
+        'Insertion Order ID': insertionOrderId,
+        'Display Name': displayName,
+        'Campaign ID': campaignId,
+        'Flight Start': startDate.toDateString(),
+        'Flight End': endDate.toDateString(),
+        'Spend': `$${spend.toString()}`,
+        'Budget': `$${budget.toString()}`,
+        'Pacing': `${(spendToTimeElapsed / budgetToFlightDuration) * 100}%`,
+        'Days Elapsed': (timeElapsed / DAY_DENOMINATOR).toString(),
+        'Flight Duration': (flightDuration / DAY_DENOMINATOR).toString(),
+      });
     }
-    return {rule, values};
+    return {values};
   },
 });
 
@@ -312,18 +301,23 @@ function getPacingVariables<P extends Record<'min' | 'max', string>>(
   client: ClientInterface,
   insertionOrder: InsertionOrder,
   settings: Settings<P>,
-  rules: {[p: string]: Rule},
-  uniqueKey: string,
+  rules: {[p: string]: AbridgedCheck},
 ) {
   const insertionOrderId = insertionOrder.getId()!;
   const campaignSettings = settings.getOrDefault(insertionOrderId);
   if (!rules[insertionOrderId]) {
-    rules[insertionOrderId] = inRange({
-      thresholdValue: {
-        min: Number(campaignSettings.min),
-        max: Number(campaignSettings.max),
-      },
-    });
+    rules[insertionOrderId] = (
+      value: number,
+      fields: {[key: string]: string},
+    ) =>
+      inRange(
+        {
+          min: Number(campaignSettings.min),
+          max: Number(campaignSettings.max),
+        },
+        value,
+        fields,
+      );
   }
   const displayName = insertionOrder.getDisplayName();
   if (!displayName) {
@@ -365,11 +359,8 @@ export const budgetPacingDaysAheadRule = newRule({
     max: '1',
   },
   granularity: RuleGranularity.INSERTION_ORDER,
-  uniqueKeyPrefix: 'pacingDays',
   async callback() {
-    const uniqueKey: string = this.getUniqueKey();
-    const rules: {[campaignId: string]: Rule} = {};
-    const rule = this.getRule();
+    const rules: {[campaignId: string]: AbridgedCheck} = {};
     const values: Values = {};
     const result: Array<{
       campaignId: string;
@@ -379,8 +370,7 @@ export const budgetPacingDaysAheadRule = newRule({
       startDate: Date;
       endDate: Date;
     }> = [];
-    let earliestStartDate: Date | undefined = undefined;
-    let latestEndDate: Date | undefined = undefined;
+    const dateRange: {earliestStartDate?: Date; latestEndDate?: Date} = {};
     const today = Date.now();
     const todayDate = new Date(today);
     for (const insertionOrder of this.client.getAllInsertionOrders()) {
@@ -395,7 +385,6 @@ export const budgetPacingDaysAheadRule = newRule({
         insertionOrder,
         this.settings,
         rules,
-        uniqueKey,
       );
       for (const budgetSegment of insertionOrder.getInsertionOrderBudgetSegments()) {
         const startDate = getDate(budgetSegment.dateRange.startDate);
@@ -404,13 +393,14 @@ export const budgetPacingDaysAheadRule = newRule({
           continue;
         }
 
-        // @ts-ignore(go/ts50upgrade): Operator '<' cannot be applied to types 'never' and 'Date'.
-        earliestStartDate = earliestStartDate && earliestStartDate < startDate ?
-            earliestStartDate :
-            startDate;
-        latestEndDate =
-          // @ts-ignore(go/ts50upgrade): Operator '>' cannot be applied to types 'never' and 'Date'.
-          latestEndDate && latestEndDate > endDate ? latestEndDate : endDate;
+        dateRange.earliestStartDate =
+          dateRange.earliestStartDate && dateRange.earliestStartDate < startDate
+            ? dateRange.earliestStartDate
+            : startDate;
+        dateRange.latestEndDate =
+          dateRange.latestEndDate && dateRange.latestEndDate > endDate
+            ? dateRange.latestEndDate
+            : endDate;
         result.push({
           campaignId: insertionOrder.getCampaignId(),
           displayName,
@@ -421,12 +411,12 @@ export const budgetPacingDaysAheadRule = newRule({
         });
       }
     }
-    if (!earliestStartDate || !latestEndDate) {
-      return {rule, values};
+    if (!dateRange.earliestStartDate || !dateRange.latestEndDate) {
+      return {values};
     }
     const budgetReport = this.client.getBudgetReport({
-      startDate: earliestStartDate,
-      endDate: latestEndDate,
+      startDate: dateRange.earliestStartDate,
+      endDate: dateRange.latestEndDate,
     });
     for (const {
       campaignId,
@@ -453,20 +443,17 @@ export const budgetPacingDaysAheadRule = newRule({
       const actualSpendPerDay = spend / daysToToday;
       const days =
         (actualSpendPerDay / budgetPerDay) * daysToToday - daysToToday;
-      values[insertionOrderId] = rules[insertionOrderId].createValue(
-        days.toString(),
-        {
-          'Insertion Order ID': insertionOrderId,
-          'Display Name': displayName,
-          'Campaign ID': campaignId,
-          'Flight Start': startDate.toDateString(),
-          'Flight End': endDate.toDateString(),
-          'Spend': spend.toString(),
-          'Budget': budget.toString(),
-        },
-      );
+      values[insertionOrderId] = rules[insertionOrderId](days, {
+        'Insertion Order ID': insertionOrderId,
+        'Display Name': displayName,
+        'Campaign ID': campaignId,
+        'Flight Start': startDate.toDateString(),
+        'Flight End': endDate.toDateString(),
+        'Spend': spend.toString(),
+        'Budget': budget.toString(),
+      });
     }
-    return {rule, values};
+    return {values};
   },
 });
 
@@ -497,24 +484,12 @@ export const dailyBudgetRule = newRule({
     max: '1000000',
   },
   granularity: RuleGranularity.INSERTION_ORDER,
-  uniqueKeyPrefix: 'dailyBudget',
   async callback() {
-    const uniqueKey = this.getUniqueKey();
-    const rule = this.getRule();
     const values: Values = {};
-    const rules: {[campaignId: string]: Rule} = {};
 
     for (const insertionOrder of this.client.getAllInsertionOrders()) {
       const insertionOrderId = insertionOrder.getId()!;
       const campaignSettings = this.settings.getOrDefault(insertionOrderId);
-      if (!rules[insertionOrderId]) {
-        rules[insertionOrderId] = inRange({
-          thresholdValue: {
-            min: Number(campaignSettings.min),
-            max: Number(campaignSettings.max),
-          },
-        });
-      }
       const displayName = insertionOrder.getDisplayName();
       if (!displayName) {
         throw new Error('Missing ID or Display Name for Insertion Order.');
@@ -523,8 +498,12 @@ export const dailyBudgetRule = newRule({
         this.client,
         insertionOrder,
       )) {
-        values[insertionOrderId] = rules[insertionOrderId].createValue(
-          dailyBudgets.dailyBudget.toString(),
+        values[insertionOrderId] = inRange(
+          {
+            min: Number(campaignSettings.min),
+            max: Number(campaignSettings.max),
+          },
+          dailyBudgets.dailyBudget,
           {
             'Insertion Order ID': insertionOrderId,
             'Display Name': displayName,
@@ -534,7 +513,7 @@ export const dailyBudgetRule = newRule({
         );
       }
     }
-    return {rule, values};
+    return {values};
   },
 });
 
@@ -619,15 +598,13 @@ export const impressionsByGeoTarget = newRule({
   helper: `=HYPERLINK(
     "https://developers.google.com/google-ads/api/reference/data/geotargets", "Use the 2-digit country codes found in this report.")`,
   defaults: {countries: 'US', maxOutside: '0.01'},
-  uniqueKeyPrefix: 'impressionsByGeo',
   async callback() {
-    const rule = this.getRule();
     const values: Values = {};
 
-    const range = {
+    const range: {startDate: Date | undefined; endDate: Date | undefined} = {
       startDate: undefined,
       endDate: undefined,
-    } as {startDate: Date | undefined; endDate: Date | undefined};
+    };
 
     const today = Date.now();
     const todayDate = new Date(today);
@@ -646,12 +623,15 @@ export const impressionsByGeoTarget = newRule({
     }
 
     if (!range.startDate || !range.endDate) {
-      return {rule, values};
+      return {values};
     }
-    const impressionReport = new this.client.settings.impressionReport!({
-      idType: this.client.settings.idType,
-      id: this.client.settings.id,
-      ...(range as {startDate: Date; endDate: Date}),
+    const impressionReport = new this.client.args.impressionReport!({
+      idType: this.client.args.idType,
+      id: this.client.args.id,
+      ...(range as {
+        startDate: Date;
+        endDate: Date;
+      }),
     });
 
     for (const [insertionOrderId, {campaignId, displayName}] of Object.entries(
@@ -664,15 +644,16 @@ export const impressionsByGeoTarget = newRule({
           .split(',')
           .map((country: string) => country.trim()),
       );
-      const rule = lessThanOrEqualTo({
-        thresholdValue: Number(campaignSettings.maxOutside),
-      });
-      values[insertionOrderId] = rule.createValue(impressions.toString(), {
-        'Insertion Order ID': insertionOrderId,
-        'Display Name': displayName,
-        'Campaign ID': campaignId,
-      });
+      values[insertionOrderId] = lessThanOrEqualTo(
+        Number(campaignSettings.maxOutside),
+        impressions,
+        {
+          'Insertion Order ID': insertionOrderId,
+          'Display Name': displayName,
+          'Campaign ID': campaignId,
+        },
+      );
     }
-    return {rule, values};
+    return {values};
   },
 });

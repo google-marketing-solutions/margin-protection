@@ -19,6 +19,8 @@
  * @fileoverview DAO for the SA360 Reporting API
  */
 
+// g3-format-prettier
+
 import {HELPERS} from 'common/sheet_helpers';
 import {RecordInfo} from 'common/types';
 import {SearchAdsTimeRange} from 'sa360/src/types';
@@ -66,6 +68,9 @@ export const adGroupColumns = [
   'adGroupStatus',
 ] as const;
 
+/**
+ * Ad Group Target report columns.
+ */
 export const adGroupTargetColumns = [
   'agency',
   'agencyId',
@@ -343,50 +348,53 @@ export abstract class ReportBuilder<Columns extends AllowedColumns> {
    * concatenated together to make things easier.
    */
   aggregateReports(urls: Array<{url: string; byteCount: string}>) {
-    const reports = urls.reduce((prev, {url, byteCount}) => {
-      const byteCountInt = Number(byteCount);
-      let partialRow: string = '';
-      let headers: Array<ColumnType<Columns>> | undefined;
-      const batches = Math.ceil(Number(byteCountInt) / ReportBuilder.step);
-      for (let i = 0; i < batches; i++) {
-        console.log(`getting data from URL: ${i + 1}/${batches}`);
-        const report = fetch(
-          url,
-          this.apiParams({
-            contentType: 'text/plain',
-            headers: {
-              'Range': `bytes=${ReportBuilder.step * i}-${
-                Math.min(byteCountInt, ReportBuilder.step * (i + 1)) - 1
-              }`,
-            },
-          }),
-        )
-          .getContentText()
-          .split('\n');
-        // get the last row which will be blank at the end of the file.
+    const reports = urls.reduce(
+      (prev, {url, byteCount}) => {
+        const byteCountInt = Number(byteCount);
+        let partialRow = '';
+        let headers: Array<ColumnType<Columns>> | undefined;
+        const batches = Math.ceil(Number(byteCountInt) / ReportBuilder.step);
+        for (let i = 0; i < batches; i++) {
+          console.log(`getting data from URL: ${i + 1}/${batches}`);
+          const report = fetch(
+            url,
+            this.apiParams({
+              contentType: 'text/plain',
+              headers: {
+                'Range': `bytes=${ReportBuilder.step * i}-${
+                  Math.min(byteCountInt, ReportBuilder.step * (i + 1)) - 1
+                }`,
+              },
+            }),
+          )
+            .getContentText()
+            .split('\n');
+          // get the last row which will be blank at the end of the file.
 
-        report[0] = partialRow + (report[0] ?? '');
-        partialRow = report.pop() as string;
-        if (!report.length) {
-          report[0] = partialRow;
-          continue;
-        }
-        if (!headers) {
-          headers = report.shift()!.split(',') as Array<ColumnType<Columns>>;
+          report[0] = partialRow + (report[0] ?? '');
+          partialRow = report.pop() as string;
+          if (!report.length) {
+            report[0] = partialRow;
+            continue;
+          }
+          if (!headers) {
+            headers = report.shift()!.split(',') as Array<ColumnType<Columns>>;
+          }
+
+          const indexMap = Object.fromEntries(
+            headers.map((columnName, idx) => [columnName, idx]),
+          ) as {[Property in ColumnType<Columns>]: number};
+          for (const row of report) {
+            const columns: string[] = row.split(',');
+            const id = columns[this.getKey(indexMap)];
+            this.mutateRow(prev, id, headers, columns);
+          }
         }
 
-        const indexMap = Object.fromEntries(
-          headers.map((columnName, idx) => [columnName, idx]),
-        ) as {[Property in ColumnType<Columns>]: number};
-        for (const row of report) {
-          const columns: string[] = row.split(',');
-          const id = columns[this.getKey(indexMap)];
-          this.mutateRow(prev, id, headers, columns);
-        }
-      }
-
-      return prev;
-    }, {} as {[campaignId: string]: ReportRecord<Columns>});
+        return prev;
+      },
+      {} as {[campaignId: string]: ReportRecord<Columns>},
+    );
 
     return reports;
   }

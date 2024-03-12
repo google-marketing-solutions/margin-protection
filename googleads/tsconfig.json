@@ -9,10 +9,9 @@
     "lib": ["esnext", "dom"],
     "noImplicitThis": true,
     "paths": {
-      "anomaly_library": ["anomaly_library"],
       "common": ["common"]
     }
   },
   "include": ["src/**/*", "../googelads_api/*.ts", "outs.d.ts"],
-  "exclude": ["node_modules/**/*", "dist/**/*", "src/tests/**/*"]
+  "exclude": ["node_modules/**/*", "dist/**/*", "**/*_test.ts"]
 }

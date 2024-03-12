@@ -15,13 +15,19 @@
  * limitations under the License.
  */
 
+/**
+ * @fileoverview Helpers for Apps Script based front-ends.
+ */
+
+// g3-format-prettier
+
 import {
-  AppsScriptPropertyStore,
-  getRule,
   PropertyStore,
+  RuleParams,
+  Settings,
   Value,
   Values,
-} from 'anomaly_library/main';
+} from 'common/types';
 
 import {
   AppsScriptFunctions,
@@ -34,20 +40,28 @@ import {
   RuleDefinition,
   RuleExecutor,
   RuleExecutorClass,
+  RuleGetter,
   RuleGranularity,
-  RuleParams,
   RuleRangeInterface,
-  RuleUtilities,
   SettingMapInterface,
-  Settings,
 } from './types';
 
 const FOLDER = 'application/vnd.google-apps.folder';
 const HEADER_RULE_NAME_INDEX = 0;
+
 /**
  * The number of headers at the top of a rule sheet.
  */
 const SHEET_TOP_PADDING = 2;
+
+/**
+ * Used to figure out the list of email addresses to send emails to.
+ */
+export const EMAIL_LIST_RANGE = 'EMAIL_LIST';
+/**
+ * Used to distinguish between different reports (e.g. advertiser name)
+ */
+export const LABEL_RANGE = 'LABEL';
 
 type ScriptFunction<F> = (properties: PropertyStore) => F;
 type ScriptEntryPoints =
@@ -99,13 +113,17 @@ export class SettingMap<P extends {[Property in keyof P]: P[keyof P]}>
     const defaultValue =
       this.map.get('default') || ({} as Record<keyof P, string>);
     const campaignValue = this.map.get(id) || ({} as Record<keyof P, string>);
-    return this.keys.reduce((prev, key) => {
-      prev[key] =
-        (!(key in campaignValue) || campaignValue[key] === ''
-          ? defaultValue[key]
-          : campaignValue[key]) ?? '';
-      return prev;
-    }, {} as Record<keyof P, string>) as P;
+    return this.keys.reduce(
+      (prev, key) => {
+        prev[key] =
+          (!(key in campaignValue) || campaignValue[key] === ''
+            ? defaultValue[key]
+            : campaignValue[key]) ?? '';
+        return prev;
+      },
+
+      {} as Record<keyof P, string>,
+    ) as P;
   }
 
   entries(): ReadonlyArray<[string, string[]]> {
@@ -143,7 +161,7 @@ export class SettingMap<P extends {[Property in keyof P]: P[keyof P]}>
  */
 export function transformToParamValues<
   MapType extends Record<keyof MapType, ParamDefinition>,
->(rawSettings: readonly string[][], mapper: MapType) {
+>(rawSettings: ReadonlyArray<string[]>, mapper: MapType) {
   if (rawSettings.length < 2) {
     throw new Error(
       'Expected a grid with row and column headers of at least size 2',
@@ -203,14 +221,14 @@ interface MetadataForCsv {
 export abstract class AbstractRuleRange<
   C extends BaseClientInterface<C, G, A>,
   G extends RuleGranularity<G>,
-  A extends BaseClientArgs<C, G, A>,
+  A extends BaseClientArgs,
 > implements RuleRangeInterface<C, G, A>
 {
   private rowIndex: Record<string, number> = {};
   private readonly columnOrders: Record<string, Record<string, number>> = {};
   private readonly rules: Record<string, string[][]> &
     Record<'none', string[][]> = {'none': [[]]};
-  private length: number = 0;
+  private length = 0;
 
   constructor(
     range: string[][],
@@ -490,7 +508,7 @@ export function getTemplateSetting(
 export abstract class AppsScriptFrontEnd<
   C extends BaseClientInterface<C, G, A>,
   G extends RuleGranularity<G>,
-  A extends BaseClientArgs<C, G, A>,
+  A extends BaseClientArgs,
   F extends AppsScriptFrontEnd<C, G, A, F>,
 > {
   readonly client: C;
@@ -504,7 +522,7 @@ export abstract class AppsScriptFrontEnd<
     if (!clientArgs) {
       throw new Error('Cannot initialize front-end without client ID(s)');
     }
-    this.client = new injectedArgs.clientClass(
+    this.client = injectedArgs.clientInitializer(
       clientArgs,
       injectedArgs.properties,
     );
@@ -540,12 +558,15 @@ export abstract class AppsScriptFrontEnd<
    */
   async initializeRules() {
     const numberOfHeaders = 3;
-    const sheets = this.injectedArgs.rules.reduce((prev, rule) => {
-      (prev[rule.definition.granularity.toString()] ??= [] as Array<
-        RuleExecutorClass<C, G, A>
-      >).push(rule);
-      return prev;
-    }, {} as Record<string, Array<RuleExecutorClass<C, G, A>>>);
+    const sheets = this.injectedArgs.rules.reduce(
+      (prev, rule) => {
+        (prev[rule.definition.granularity.toString()] ??= [] as Array<
+          RuleExecutorClass<C, G, A>
+        >).push(rule);
+        return prev;
+      },
+      {} as Record<string, Array<RuleExecutorClass<C, G, A>>>,
+    );
 
     for (const [sheetName, ruleClasses] of Object.entries(sheets)) {
       const ruleSheet = getOrCreateSheet(
@@ -704,7 +725,14 @@ export abstract class AppsScriptFrontEnd<
     const {rules, results} = await this.client.validate();
     this.saveSettingsBackToSheets(Object.values(rules));
     this.populateRuleResultsInSheets(rules, results);
-    this.maybeSendEmailAlert();
+    this.maybeSendEmailAlert(
+      Object.fromEntries(
+        Object.entries(rules).map(([key, ruleInfo]) => [
+          key,
+          {name: ruleInfo.name, values: results[key].values},
+        ]),
+      ),
+    );
   }
 
   displayGlossary() {
@@ -794,7 +822,7 @@ export abstract class AppsScriptFrontEnd<
   exportAsCsv(ruleName: string, matrix: string[][]) {
     const folder = this.getOrCreateFolder('reports');
     const sheetId = HELPERS.getSheetId();
-    const label: string = this.getRangeByName('LABEL').getValue();
+    const label: string = this.getRangeByName(LABEL_RANGE).getValue();
     const currentTime = new Date(Date.now()).toISOString();
     const category = this.category;
     const file = Utilities.newBlob(
@@ -929,6 +957,22 @@ export abstract class AppsScriptFrontEnd<
       );
   }
 
+  /**
+   * Realistically-typed value getter from a named range.
+   */
+  getValueFromRangeByName<AllowEmpty extends boolean>(args: {
+    name: string;
+    allowEmpty: AllowEmpty;
+  }): AllowEmpty extends true ? string | number | undefined : string | number {
+    const range = this.getRangeByName(args.name);
+    const value = range.getValue();
+    if (!value && !args.allowEmpty) {
+      throw new Error(`Require a value in named range '${args.name}'.`);
+    }
+
+    return value || undefined;
+  }
+
   getRangeByName(name: string) {
     const range = SpreadsheetApp.getActive().getRangeByName(name);
     if (!range) {
@@ -947,12 +991,7 @@ export abstract class AppsScriptFrontEnd<
    */
   async initializeSheets() {
     if (!this.getIdentity()) {
-      let advertiserId = '';
-
-      while (!advertiserId) {
-        this.displaySetupModal();
-      }
-      getTemplateSetting('ID').setValue(advertiserId);
+      this.displaySetupModal();
     }
 
     this.migrate();
@@ -1003,7 +1042,130 @@ export abstract class AppsScriptFrontEnd<
     return numberOfMigrations;
   }
 
-  abstract maybeSendEmailAlert(): void;
+  maybeSendEmailAlert(rules: Record<string, RuleGetter>): void {
+    const peopleToSend = getTemplateSetting(EMAIL_LIST_RANGE).getValue();
+    const label = this.getIdentity()?.label;
+    if (!label) {
+      throw new Error('Set up sheet before running.');
+    }
+    const SEND_DATE_KEY = 'email_send_dates';
+    const ANOMALY_SEND_DATE_KEY = 'anomaly_send_dates';
+
+    const updateTime = Date.now();
+    const emailSendDates = JSON.parse(
+      this.client.properties.getProperty(SEND_DATE_KEY) || '{}',
+    ) as {[author: string]: number};
+    // never reuse anomaly dates. We should use newAnomalySendDates so we
+    // get rid of no-longer-anomalous values.
+    const anomalySendDates: {readonly [id: string]: number} = JSON.parse(
+      this.client.properties.getProperty(ANOMALY_SEND_DATE_KEY) || '{}',
+    ) as {[id: string]: number};
+    const newAnomalySendDates: {[id: string]: number} = {};
+    let emailSent = false;
+
+    const rulesWithAnomalies: readonly RuleGetter[] = Object.values(rules)
+      .map(
+        (rule) =>
+          ({
+            name: rule.name,
+            values: Object.fromEntries(
+              Object.entries(rule.values).filter(
+                ([key, value]) => value.anomalous,
+              ),
+            ),
+          }) as const,
+      )
+      .filter((anomalies) => Object.keys(anomalies.values).length);
+
+    for (const to of Object.values<string>(
+      peopleToSend.replace(';', ',').replace(' ', ',').split(','),
+    ).filter((s) => s)) {
+      /**
+       * When a recipient has not received the latest anomaly report, flag it.
+       */
+      const recipientAlerted = ([key, value]: [key: string, value: Value]) => {
+        const alertedAt: number | undefined = anomalySendDates[key];
+        return (
+          value.anomalous &&
+          (!alertedAt || alertedAt > (emailSendDates[to] || 0))
+        );
+      };
+
+      const unsentAnomalies = rulesWithAnomalies
+        .map((rule) => ({
+          name: rule.name,
+          values: Object.fromEntries(
+            Object.entries(rule.values).filter(recipientAlerted),
+          ),
+        }))
+        .filter((rule) => Object.keys(rule.values).length);
+      if (unsentAnomalies.length === 0) {
+        continue;
+      }
+      this.sendEmailAlert(unsentAnomalies, {
+        to,
+        subject: `Anomalies found for ${label}`,
+      });
+      emailSendDates[to] = updateTime;
+      emailSent = true;
+    }
+
+    // update all anomalous values to the latest send date
+    for (const rule of rulesWithAnomalies) {
+      for (const key of Object.keys(rule.values)) {
+        newAnomalySendDates[key] = emailSent
+          ? updateTime
+          : anomalySendDates[key];
+      }
+    }
+    this.client.properties.setProperty(
+      ANOMALY_SEND_DATE_KEY,
+      JSON.stringify(newAnomalySendDates),
+    );
+
+    this.client.properties.setProperty(
+      SEND_DATE_KEY,
+      JSON.stringify(emailSendDates),
+    );
+  }
+
+  /**
+   * Generates an e-mail alert, then updates the alertedAt timestamp.
+   *
+   * Note: This comes with a default message body. If you add your own, then
+   * you're responsible for including the anomaly list and avoiding duplication.
+   * Because this is user-facing, tests are strongly encouraged.
+   */
+  sendEmailAlert(
+    rules: RuleGetter[],
+    message: GoogleAppsScript.Mail.MailAdvancedParameters,
+    sendEmail = MailApp.sendEmail,
+  ): void {
+    if (rules.length === 0) {
+      return;
+    }
+    const alertTime = Date.now();
+    let anomalies: Value[] = [];
+    const messages: string[] = [];
+    for (const rule of rules) {
+      const values = rule.values;
+      anomalies = Object.values(values);
+
+      if (anomalies.length === 0) {
+        continue;
+      }
+      messages.push(emailAlertBody(rule.name, anomalies));
+    }
+
+    message.body =
+      'The following errors were found:\n\n' + messages.join('\n\n');
+    sendEmail(message);
+
+    for (const anomaly of anomalies) {
+      anomaly.alertedAt = alertTime;
+    }
+  }
+
   protected saveSettingsBackToSheets(
     rules: Array<RuleExecutor<C, G, A, Record<string, ParamDefinition>>>,
   ) {
@@ -1046,17 +1208,20 @@ export abstract class AppsScriptFrontEnd<
  * newRule({
  *   //...
  *   callback(client, settings) {
- *     const rule = this.getRule(); // the `RuleGetter`
- *     const rule = rule.getValues();
- *     //...
+ *     // insert rule logic here
+ *     return {values};
  *   }
  * });
  * ```
  */
+
+// This returns a function, a use case that this lint rule doesn't
+// apply to.
+// tslint:disable-next-line:no-return-only-generics
 export function newRuleBuilder<
   C extends BaseClientInterface<C, G, A>,
   G extends RuleGranularity<G>,
-  A extends BaseClientArgs<C, G, A>,
+  A extends BaseClientArgs,
 >(): <P extends Record<keyof P, ParamDefinition>>(
   p: RuleParams<C, G, A, P>,
 ) => RuleExecutorClass<C, G, A, P> {
@@ -1064,39 +1229,24 @@ export function newRuleBuilder<
     ruleDefinition: RuleParams<C, G, A, P>,
   ): RuleExecutorClass<C, G, A, P> {
     const ruleClass = class implements RuleExecutor<C, G, A, P> {
-      readonly uniqueKeyPrefix: string = '';
       readonly description = ruleDefinition.description;
       readonly settings: Settings<Record<keyof P, string>>;
       readonly name: string = ruleDefinition.name;
       readonly params = ruleDefinition.params;
       readonly helper = ruleDefinition.helper ?? '';
-      // Auto-added to unblock TS5.0 migration
-      // @ts-ignore(go/ts50upgrade): This syntax requires an imported helper
-      // named
-      // '__setFunctionName' which does not exist in 'tslib'. Consider upgrading
-      // your version of 'tslib'.
       readonly granularity: G = ruleDefinition.granularity;
       readonly valueFormat = ruleDefinition.valueFormat;
-      // TODO: go/ts50upgrade - Auto-added to unblock TS5.0 migration
-      //   TS2343: This syntax requires an imported helper named '__setFunctionName' which does not exist in 'tslib'. Consider upgrading your version of 'tslib'.
-      // @ts-ignore
       static definition = ruleDefinition;
 
-      constructor(readonly client: C, settingsArray: readonly string[][]) {
-        this.uniqueKeyPrefix = ruleDefinition.uniqueKeyPrefix;
+      constructor(
+        readonly client: C,
+        settingsArray: Readonly<string[][]>,
+      ) {
         this.settings = transformToParamValues(settingsArray, this.params);
       }
 
       async run() {
         return await ruleDefinition.callback.bind(this)();
-      }
-
-      getRule() {
-        return getRule(this.getUniqueKey(), this.client.properties);
-      }
-
-      getUniqueKey() {
-        return this.client.getUniqueKey(ruleDefinition.uniqueKeyPrefix);
       }
     };
 
@@ -1109,7 +1259,7 @@ export function newRuleBuilder<
 function load<
   C extends BaseClientInterface<C, G, A>,
   G extends RuleGranularity<G>,
-  A extends BaseClientArgs<C, G, A>,
+  A extends BaseClientArgs,
   F extends AppsScriptFrontEnd<C, G, A, F>,
 >(frontEndCaller: ScriptFunction<F>, fnName: ScriptEntryPoints) {
   return (
@@ -1135,6 +1285,8 @@ function load<
       case 'displayGlossary':
         frontend.displayGlossary();
         return;
+      default:
+        throw new Error('Unsupported function: ${fnName}');
     }
   };
 }
@@ -1142,7 +1294,7 @@ function load<
 function applyBinding<
   C extends BaseClientInterface<C, G, A>,
   G extends RuleGranularity<G>,
-  A extends BaseClientArgs<C, G, A>,
+  A extends BaseClientArgs,
   F extends AppsScriptFrontEnd<C, G, A, F>,
 >(frontEndCaller: ScriptFunction<F>): ScriptFunction<F> {
   return (scriptProperties: PropertyStore) => {
@@ -1166,7 +1318,7 @@ function applyBinding<
 export function lazyLoadApp<
   C extends BaseClientInterface<C, G, A>,
   G extends RuleGranularity<G>,
-  A extends BaseClientArgs<C, G, A>,
+  A extends BaseClientArgs,
   F extends AppsScriptFrontEnd<C, G, A, F>,
 >(frontEndCaller: ScriptFunction<F>): ScriptFunction<F> {
   const binders = applyBinding<C, G, A, F>(frontEndCaller);
@@ -1237,4 +1389,72 @@ export function sortMigrations(ver1: string, ver2: string) {
     difference += ((keys1[i] ?? 0) - (keys2[i] ?? 0)) / 10 ** i;
   }
   return difference;
+}
+
+/**
+ * Provides convenience methods to manage property getters and setters.
+ *
+ * This class uses `gzip` to stay within storage quotas for PropertiesService.
+ */
+export class AppsScriptPropertyStore implements PropertyStore {
+  private static readonly cache: {[key: string]: string} = {};
+
+  constructor(
+    private readonly properties = PropertiesService.getScriptProperties(),
+  ) {}
+
+  setProperty(key: string, value: string) {
+    this.properties.setProperty(key, compress(value));
+    AppsScriptPropertyStore.cache[key] = value;
+  }
+
+  getProperty(key: string) {
+    if (AppsScriptPropertyStore.cache[key]) {
+      return AppsScriptPropertyStore.cache[key];
+    }
+    const property = this.properties.getProperty(key);
+    return property ? extract(property) : null;
+  }
+
+  getProperties() {
+    return Object.fromEntries(
+      Object.entries(this.properties.getProperties()).map(([k, v]) => [
+        k,
+        extract(v),
+      ]),
+    );
+  }
+}
+
+/**
+ * Compresses a blob and condenses it to a base64 string.
+ */
+function compress(content: string): string {
+  const blob = Utilities.newBlob(content);
+  const zip = Utilities.gzip(blob);
+  return Utilities.base64Encode(zip.getBytes());
+}
+
+/**
+ * The opposite of {@link compress}.
+ */
+function extract(content: string): string {
+  try {
+    const decode = Utilities.base64Decode(content);
+    const blob = Utilities.newBlob(decode, 'application/x-gzip');
+    return Utilities.ungzip(blob).getDataAsString();
+  } catch (e) {
+    return content; // already extracted
+  }
+}
+
+/**
+ * Generates an email body given a list of possibly anomalous values.
+ */
+function emailAlertBody(name: string, values: Value[]) {
+  const header = `----------\n${name}:\n----------\n`;
+  const anomalyList =
+    header + values.map((value) => `- ${value.value}`).join('\n');
+
+  return anomalyList;
 }

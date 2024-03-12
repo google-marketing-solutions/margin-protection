@@ -15,6 +15,12 @@
  * limitations under the License.
  */
 
+/**
+ * @fileoverview Client class for DV360.
+ */
+
+// g3-format-prettier
+
 import {
   Advertisers,
   AssignedTargetingOptions,
@@ -26,28 +32,21 @@ import {
   Campaign,
   InsertionOrder,
 } from 'dv360_api/dv360_resources';
-import {RawApiDate} from 'dv360_api/dv360_types';
+import {newRuleBuilder} from 'common/client_helpers';
+
+import {AbstractRuleRange} from 'common/sheet_helpers';
 import {
-  PropertyStore,
-  Rule,
-  RuleInstructions,
-} from 'anomaly_library/main';
-import {
-  AbstractRuleRange,
-  newRuleBuilder,
-} from 'common/sheet_helpers';
-import {
-  Callback,
   ExecutorResult,
   ParamDefinition,
+  PropertyStore,
   RecordInfo,
   RuleDefinition,
   RuleExecutor,
   RuleExecutorClass,
-  RuleUtilities,
   Settings,
 } from 'common/types';
 
+import {RawApiDate} from 'dv360_api/dv360_types';
 import {BudgetReport, BudgetReportInterface, ImpressionReport} from './api';
 import {
   ClientArgs,
@@ -74,8 +73,7 @@ export const newRule = newRuleBuilder<
 type RuleParams<Params extends Record<keyof Params, ParamDefinition>> =
   RuleDefinition<Params, RuleGranularity> &
     ThisType<
-      RuleExecutor<ClientInterface, RuleGranularity, ClientArgs, Params> &
-        RuleUtilities
+      RuleExecutor<ClientInterface, RuleGranularity, ClientArgs, Params>
     >;
 
 /**
@@ -88,7 +86,7 @@ export interface ReportConstructor<T> {
 /**
  * Contains a `RuleContainer` along with information to instantiate it.
  *
- * This interface enables type integrity between a rule and its settings.
+ * This interface enables type integrity between a rule and its args.
  *
  * This is not directly callable. Use {@link newRule} to generate a
  * {@link RuleExecutorClass}.
@@ -113,7 +111,7 @@ export interface RuleStoreEntry<
    *
    * This is the information that is passed into a `Rule` on instantiation.
    */
-  settings: Settings<Params>;
+  args: Settings<Params>;
 }
 
 /**
@@ -127,7 +125,7 @@ export class Client implements ClientInterface {
   private storedCampaigns: RecordInfo[] = [];
   private savedBudgetReport?: BudgetReportInterface;
 
-  readonly settings: Required<ClientArgs>;
+  readonly args: Required<ClientArgs>;
   readonly ruleStore: {
     [ruleName: string]: RuleExecutor<
       ClientInterface,
@@ -144,45 +142,43 @@ export class Client implements ClientInterface {
       ClientArgs,
       Params
     >,
-    settingsArray: readonly string[][],
+    settingsArray: ReadonlyArray<string[]>,
   ): ClientInterface {
     this.ruleStore[rule.definition.name] = new rule(this, settingsArray);
     return this;
   }
 
   constructor(
-    settings: Omit<ClientArgs, 'idType' | 'id'> & {advertiserId: string},
+    args: Omit<ClientArgs, 'idType' | 'id'> & {advertiserId: string},
     properties: PropertyStore,
   );
   constructor(
-    settings: Omit<ClientArgs, 'idType' | 'id'> & {partnerId: string},
+    args: Omit<ClientArgs, 'idType' | 'id'> & {partnerId: string},
     properties: PropertyStore,
   );
-  constructor(settings: ClientArgs, properties: PropertyStore);
+  constructor(args: ClientArgs, properties: PropertyStore);
   constructor(
-    settings: Omit<ClientArgs, 'idType' | 'id'> &
+    args: Omit<ClientArgs, 'idType' | 'id'> &
       Partial<Pick<ClientArgs, 'idType' | 'id'>> & {
         advertiserId?: string;
         partnerId?: string;
       },
     readonly properties: PropertyStore,
   ) {
-    this.settings = {
-      advertisers: settings.advertisers || Advertisers,
+    this.args = {
+      advertisers: args.advertisers || Advertisers,
       assignedTargetingOptions:
-        settings.assignedTargetingOptions || AssignedTargetingOptions,
+        args.assignedTargetingOptions || AssignedTargetingOptions,
       idType:
-        settings.idType ??
-        (settings.advertiserId ? IDType.ADVERTISER : IDType.PARTNER),
+        args.idType ?? (args.advertiserId ? IDType.ADVERTISER : IDType.PARTNER),
       id:
-        settings.id ??
-        (settings.advertiserId
-          ? settings.advertiserId
-          : settings.partnerId ?? ''),
-      campaigns: settings.campaigns || Campaigns,
-      insertionOrders: settings.insertionOrders || InsertionOrders,
-      budgetReport: settings.budgetReport || BudgetReport,
-      impressionReport: settings.impressionReport || ImpressionReport,
+        args.id ??
+        (args.advertiserId ? args.advertiserId : args.partnerId ?? ''),
+      label: args.label ?? `${args.idType} ${args.id}`,
+      campaigns: args.campaigns || Campaigns,
+      insertionOrders: args.insertionOrders || InsertionOrders,
+      budgetReport: args.budgetReport || BudgetReport,
+      impressionReport: args.impressionReport || ImpressionReport,
     };
 
     this.ruleStore = {};
@@ -196,8 +192,7 @@ export class Client implements ClientInterface {
    * Executes each added callable rule once per call to this method.
    *
    * This function is meant to be scheduled or otherwise called
-   * by the client. It relies on a rule changing state using the anomaly
-   * library.
+   * by the client.
    */
   async validate() {
     type Executor = RuleExecutor<
@@ -208,9 +203,12 @@ export class Client implements ClientInterface {
     >;
     const thresholds: Array<[Executor, Function]> = Object.values(
       this.ruleStore,
-    ).reduce((prev, rule) => {
-      return [...prev, [rule, rule.run.bind(rule)]];
-    }, [] as Array<[Executor, Function]>);
+    ).reduce(
+      (prev, rule) => {
+        return [...prev, [rule, rule.run.bind(rule)]];
+      },
+      [] as Array<[Executor, Function]>,
+    );
     const rules: Record<string, Executor> = {};
     const results: Record<string, ExecutorResult> = {};
     for (const [rule, thresholdCallable] of thresholds) {
@@ -224,8 +222,8 @@ export class Client implements ClientInterface {
   getAllInsertionOrders(): InsertionOrder[] {
     if (!this.storedInsertionOrders.length) {
       this.storedInsertionOrders =
-        this.settings.idType === IDType.ADVERTISER
-          ? this.getAllInsertionOrdersForAdvertiser(this.settings.id)
+        this.args.idType === IDType.ADVERTISER
+          ? this.getAllInsertionOrdersForAdvertiser(this.args.id)
           : this.getAllAdvertisersForPartner().reduce(
               (arr, advertiserId) =>
                 arr.concat(
@@ -248,9 +246,9 @@ export class Client implements ClientInterface {
       );
 
       const result =
-        this.settings.idType === IDType.ADVERTISER
-          ? this.getAllCampaignsForAdvertiser(this.settings.id).filter(
-              (campaign) => campaignsWithSegments.has(campaign.id),
+        this.args.idType === IDType.ADVERTISER
+          ? this.getAllCampaignsForAdvertiser(this.args.id).filter((campaign) =>
+              campaignsWithSegments.has(campaign.id),
             )
           : this.getAllAdvertisersForPartner().reduce(
               (arr, advertiserId) =>
@@ -274,7 +272,7 @@ export class Client implements ClientInterface {
     if (advertisers) {
       return JSON.parse(advertisers) as string[];
     }
-    const advertiserApi = new this.settings.advertisers(this.settings.id);
+    const advertiserApi = new this.args.advertisers(this.args.id);
     advertiserApi.list((advertisers: Advertiser[]) => {
       for (const advertiser of advertisers) {
         const id = advertiser.getId();
@@ -292,7 +290,7 @@ export class Client implements ClientInterface {
   getAllInsertionOrdersForAdvertiser(advertiserId: string): InsertionOrder[] {
     let result: InsertionOrder[] = [];
     const todayDate = new Date();
-    const insertionOrderApi = new this.settings.insertionOrders(advertiserId);
+    const insertionOrderApi = new this.args.insertionOrders(advertiserId);
     insertionOrderApi.list((ios: InsertionOrder[]) => {
       result = result.concat(
         ios.filter((io) => {
@@ -311,7 +309,7 @@ export class Client implements ClientInterface {
 
   getAllCampaignsForAdvertiser(advertiserId: string): RecordInfo[] {
     const result: RecordInfo[] = [];
-    const campaignApi = new this.settings.campaigns(advertiserId);
+    const campaignApi = new this.args.campaigns(advertiserId);
     campaignApi.list((campaigns: Campaign[]) => {
       for (const campaign of campaigns) {
         const id = campaign.getId();
@@ -337,9 +335,9 @@ export class Client implements ClientInterface {
     endDate: Date;
   }): BudgetReportInterface {
     if (!this.savedBudgetReport) {
-      this.savedBudgetReport = new this.settings.budgetReport({
-        idType: this.settings.idType,
-        id: this.settings.id,
+      this.savedBudgetReport = new this.args.budgetReport({
+        idType: this.args.idType,
+        id: this.args.id,
         startDate,
         endDate,
       });
@@ -348,16 +346,9 @@ export class Client implements ClientInterface {
   }
 
   getUniqueKey(prefix: string) {
-    return `${prefix}-${this.settings.idType === IDType.PARTNER ? 'P' : 'A'}${
-      this.settings.id
+    return `${prefix}-${this.args.idType === IDType.PARTNER ? 'P' : 'A'}${
+      this.args.id
     }`;
-  }
-
-  newRule(
-    rule: (rule: RuleInstructions) => Rule,
-    instructions: Omit<RuleInstructions, 'propertyStore'>,
-  ) {
-    return rule({...instructions, propertyStore: this.properties});
   }
 }
 
@@ -369,7 +360,7 @@ export function getDate(rawApiDate: RawApiDate): Date {
 }
 
 /**
- * DV360 rule settings splits.
+ * DV360 rule args splits.
  */
 export class RuleRange extends AbstractRuleRange<
   ClientInterface,

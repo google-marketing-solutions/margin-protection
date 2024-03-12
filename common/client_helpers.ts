@@ -15,7 +15,12 @@
  * limitations under the License.
  */
 
-import {getRule} from 'anomaly_library/main';
+/**
+ * @fileoverview Client helpers - frontend agnostic.
+ */
+
+// g3-format-prettier
+
 import {transformToParamValues} from './sheet_helpers';
 import {
   BaseClientArgs,
@@ -47,59 +52,38 @@ import {
  * });
  * ```
  */
+
+// This returns a function that is self-typed.
+// tslint:disable-next-line:no-return-only-generics
 export function newRuleBuilder<
   C extends BaseClientInterface<C, G, A>,
   G extends RuleGranularity<G>,
-  A extends BaseClientArgs<C, G, A>,
+  A extends BaseClientArgs,
 >(): <P extends Record<keyof P, ParamDefinition>>(
-  p: RuleParams<C, G, A, P>,
+  p: RuleParams<C, G, A, P> & ThisType<RuleExecutor<C, G, A, P>>,
 ) => RuleExecutorClass<C, G, A, P> {
   return function newRule<P extends Record<keyof P, ParamDefinition>>(
     ruleDefinition: RuleParams<C, G, A, P>,
   ): RuleExecutorClass<C, G, A, P> {
     const ruleClass = class implements RuleExecutor<C, G, A, P> {
-      readonly uniqueKeyPrefix: string = '';
       readonly settings: Settings<Record<keyof P, string>>;
       readonly name: string = ruleDefinition.name;
       readonly description: string = ruleDefinition.description;
       readonly params = ruleDefinition.params;
       readonly helper = ruleDefinition.helper ?? '';
-      // Auto-added to unblock TS5.0 migration
-      // @ts-ignore(go/ts50upgrade): This syntax requires an imported helper
-      // named
-      // '__setFunctionName' which does not exist in 'tslib'. Consider upgrading
-      // your version of 'tslib'.
-      readonly granularity: RuleGranularity = ruleDefinition.granularity;
+      readonly granularity: G = ruleDefinition.granularity;
       readonly valueFormat = ruleDefinition.valueFormat;
       static definition = ruleDefinition;
 
-      constructor(readonly client: C, settingsArray: readonly string[][]) {
-        this.uniqueKeyPrefix = ruleDefinition.uniqueKeyPrefix;
+      constructor(
+        readonly client: C,
+        settingsArray: ReadonlyArray<string[]>,
+      ) {
         this.settings = transformToParamValues(settingsArray, this.params);
       }
 
       async run() {
         return await ruleDefinition.callback.bind(this)();
-      }
-
-      getRule() {
-        return getRule(this.getUniqueKey());
-      }
-
-      getUniqueKey() {
-        return this.client.getUniqueKey(ruleDefinition.uniqueKeyPrefix);
-      }
-
-      /**
-       * Executes this rule once per call to this method.
-       *
-       * This should not be used when checking multiple rules. Instead, use
-       * {@link Client.validate} which serves the same purpose but is able to
-       * combine rules.
-       */
-      async validate() {
-        const threshold = await this.run();
-        threshold.rule.saveValues(threshold.values);
       }
     };
 

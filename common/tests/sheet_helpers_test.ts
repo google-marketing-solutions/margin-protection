@@ -15,27 +15,198 @@
  * limitations under the License.
  */
 
+/**
+ * @fileoverview Tests for sheet helpers.
+ */
+
+// g3-format-prettier
+
 import {
   FakePropertyStore,
   mockAppsScript,
-} from 'anomaly_library/testing/mock_apps_script';
-import {ParamDefinition} from 'common/types';
+} from 'common/test_helpers/mock_apps_script';
+import {
+  BaseClientArgs,
+  ParamDefinition,
+  RuleExecutorClass,
+  RuleGetter,
+} from 'common/types';
 
 import {
-  getOrCreateSheet,
+  AppsScriptPropertyStore,
   HELPERS,
   SettingMap,
+  getOrCreateSheet,
+  lazyLoadApp,
   sortMigrations,
+  toExport,
   transformToParamValues,
 } from '../sheet_helpers';
-import {RuleExecutorClass} from '../types';
 
 import {
+  FakeClient,
+  FakeFrontEnd,
   Granularity,
   RuleRange,
-  TestClientArgs,
   TestClientInterface,
 } from './helpers';
+
+describe('Check globals', () => {
+  let frontend: FakeFrontEnd;
+
+  beforeEach(() => {
+    setUp();
+    frontend = lazyLoadApp<
+      TestClientInterface,
+      Granularity,
+      BaseClientArgs,
+      FakeFrontEnd
+    >((properties) => {
+      return new FakeFrontEnd({
+        ruleRangeClass: RuleRange,
+        rules: [],
+        version: '1.0',
+        clientInitializer: () => new FakeClient(),
+        migrations: {},
+        properties,
+      });
+    })(new AppsScriptPropertyStore());
+  });
+
+  it('exists in `toExport`', () => {
+    expect(toExport.onOpen).toBeDefined();
+    expect(toExport.initializeSheets).toBeDefined();
+    expect(toExport.launchMonitor).toBeDefined();
+    expect(toExport.preLaunchQa).toBeDefined();
+  });
+
+  it('calls frontend version', () => {
+    const calls = {...frontend.calls};
+
+    toExport.onOpen();
+    toExport.initializeSheets();
+    toExport.launchMonitor();
+    toExport.preLaunchQa();
+
+    expect(calls.onOpen).toEqual(0);
+    expect(calls.initializeSheets).toEqual(0);
+    expect(calls.launchMonitor).toEqual(0);
+    expect(calls.preLaunchQa).toEqual(0);
+    expect(frontend.calls.onOpen).toEqual(1);
+    expect(frontend.calls.initializeSheets).toEqual(1);
+    expect(frontend.calls.launchMonitor).toEqual(1);
+    expect(frontend.calls.preLaunchQa).toEqual(1);
+  });
+});
+
+function setUp() {
+  mockAppsScript();
+  spyOn(HELPERS, 'insertRows').and.callFake((range) => range);
+}
+
+describe('Test migration order', () => {
+  const list: string[] = [];
+  const CURRENT_SHEET_VERSION = '2.2.0';
+  const migrations = {
+    '3.0': () => list.push('3.0'),
+    '2.1.4': () => list.push('2.1.4'),
+    '2.0': () => list.push('2.0'),
+    '2.1.0': () => list.push('2.1.0'),
+    '2.2.0': () => list.push('2.2.0'),
+  };
+
+  function setFrontEnd({
+    expectedVersion,
+    currentVersion,
+  }: {
+    expectedVersion: string;
+    currentVersion: string;
+  }) {
+    PropertiesService.getScriptProperties().setProperty(
+      'sheet_version',
+      currentVersion,
+    );
+    return lazyLoadApp<
+      TestClientInterface,
+      Granularity,
+      BaseClientArgs,
+      FakeFrontEnd
+    >((properties) => {
+      return new FakeFrontEnd({
+        ruleRangeClass: RuleRange,
+        rules: [],
+        version: expectedVersion,
+        clientInitializer: () => new FakeClient(),
+        migrations,
+        properties,
+      });
+    })(new AppsScriptPropertyStore());
+  }
+
+  beforeEach(() => {
+    mockAppsScript();
+  });
+
+  afterEach(() => {
+    list.splice(0, list.length);
+  });
+
+  it('migrates all', () => {
+    const frontend = setFrontEnd({
+      expectedVersion: '5.0',
+      currentVersion: '1.0',
+    });
+    frontend.migrate();
+    expect(list).toEqual(['2.0', '2.1.0', '2.1.4', '2.2.0', '3.0']);
+  });
+
+  it('partially migrates', () => {
+    const frontend = setFrontEnd({
+      expectedVersion: '5.0',
+      currentVersion: '2.1.0',
+    });
+    frontend.migrate();
+    expect(list).toEqual(['2.1.4', '2.2.0', '3.0']);
+  });
+
+  it('runs when initializeSheets runs', async () => {
+    const frontend = setFrontEnd({
+      expectedVersion: CURRENT_SHEET_VERSION,
+      currentVersion: '1.0',
+    });
+    mockAppsScript();
+    spyOn(HtmlService, 'createTemplateFromFile').and.stub();
+    PropertiesService.getScriptProperties().setProperty('sheet_version', '0.1');
+    await frontend.initializeSheets();
+    expect(
+      PropertiesService.getScriptProperties().getProperty('sheet_version'),
+    ).toEqual(String(CURRENT_SHEET_VERSION));
+  });
+
+  it('does not run migrations if version is up-to-date', () => {
+    const frontend = setFrontEnd({
+      expectedVersion: CURRENT_SHEET_VERSION,
+      currentVersion: '1.0',
+    });
+    // NOTE - do not change this test. Change `CURRENT_SHEET_VERSION` instead.
+    PropertiesService.getScriptProperties().setProperty(
+      'sheet_version',
+      String(CURRENT_SHEET_VERSION),
+    );
+    const numberRun = frontend.migrate();
+    expect(numberRun).toEqual(0);
+  });
+
+  it('migrates only to specified version cap', () => {
+    const frontend = setFrontEnd({
+      expectedVersion: '2.1.0',
+      currentVersion: '2.1.0',
+    });
+    const numberOfMigrations = frontend.migrate();
+    expect(list).toEqual([]);
+    expect(numberOfMigrations).toEqual(0);
+  });
+});
 
 describe('2-D array', () => {
   let array2d: string[][];
@@ -227,15 +398,180 @@ describe('test HELPERS', () => {
   });
 });
 
+describe('Test emails', () => {
+  let frontend: FakeFrontEnd;
+  let rules: Record<string, RuleGetter>;
+
+  const email = (to: string) => ({
+    to,
+    subject: 'Anomalies found for test',
+    body: `The following errors were found:
+
+          ----------
+          Rule A:
+          ----------
+          - v1
+          - v3
+
+          ----------
+          Rule B:
+          ----------
+          - v5`.replace(/  +/g, ''),
+  });
+
+  beforeEach(() => {
+    rules = {
+      keyA: {
+        name: 'Rule A',
+        values: {
+          '1': {
+            value: 'v1',
+            anomalous: true,
+            fields: {},
+          },
+          '2': {
+            value: 'v2',
+            anomalous: false,
+            fields: {},
+          },
+          '3': {
+            value: 'v3',
+            anomalous: true,
+            fields: {},
+          },
+        },
+      },
+      keyB: {
+        name: 'Rule B',
+        values: {
+          '1': {
+            value: 'v4',
+            anomalous: false,
+            fields: {},
+          },
+          '2': {
+            value: 'v5',
+            anomalous: true,
+            fields: {},
+          },
+        },
+      },
+      keyC: {
+        name: 'Rule C',
+        values: {
+          '1': {
+            value: 'v6',
+            anomalous: false,
+            fields: {},
+          },
+          '2': {
+            value: 'v7',
+            anomalous: false,
+            fields: {},
+          },
+        },
+      },
+    };
+    mockAppsScript();
+    frontend = lazyLoadApp<
+      TestClientInterface,
+      Granularity,
+      BaseClientArgs,
+      FakeFrontEnd
+    >((properties) => {
+      return new FakeFrontEnd({
+        ruleRangeClass: RuleRange,
+        rules: [],
+        version: '1.0',
+        clientInitializer: (args, properties) => new FakeClient(),
+        migrations: {},
+        properties,
+      });
+    })(new AppsScriptPropertyStore());
+  });
+
+  it('sends an email with only anomalies', () => {
+    SpreadsheetApp.getActive()
+      .getRangeByName('EMAIL_LIST')!
+      .setValue('user@example.com');
+    frontend.maybeSendEmailAlert(rules);
+
+    expect(frontend.getMessages()).toEqual([email('user@example.com')]);
+  });
+
+  it('only sends emails once to a user for each anomaly', () => {
+    SpreadsheetApp.getActive()
+      .getRangeByName('EMAIL_LIST')!
+      .setValue('user@example.com');
+    frontend.maybeSendEmailAlert(rules);
+    frontend.getMessages();
+    frontend.maybeSendEmailAlert(rules);
+
+    expect(frontend.getMessages()).toEqual([]);
+  });
+
+  it('sends emails for old anomalies to a new user', () => {
+    SpreadsheetApp.getActive()
+      .getRangeByName('EMAIL_LIST')!
+      .setValue('user@example.com');
+    frontend.maybeSendEmailAlert(rules);
+    frontend.getMessages();
+    SpreadsheetApp.getActive()
+      .getRangeByName('EMAIL_LIST')!
+      .setValue('user@example.com,user2@example.com');
+    frontend.maybeSendEmailAlert(rules);
+
+    expect(frontend.getMessages()).toEqual([email('user2@example.com')]);
+  });
+
+  it('sends anomalies to a user whenever they are new', () => {
+    SpreadsheetApp.getActive()
+      .getRangeByName('EMAIL_LIST')!
+      .setValue('user@example.com');
+    const messageExists: boolean[] = [];
+
+    // Act
+    frontend.maybeSendEmailAlert(rules);
+    // Add messages
+    messageExists.push(frontend.getMessages().length === 1);
+    // One anomaly is resolved.
+    const newRules = getNewRules(rules, 'keyB');
+    frontend.maybeSendEmailAlert(newRules);
+    messageExists.push(frontend.getMessages().length === 1);
+    // The anomaly is back.
+    frontend.maybeSendEmailAlert(rules);
+    const messages = frontend.getMessages();
+    messageExists.push(messages.length === 1);
+    // Expected output shows the old anomaly is freshly alerted.
+    const newEmail = email('user@example.com');
+    newEmail.body = `The following errors were found:
+
+      ----------
+      Rule B:
+      ----------
+      - v5`.replace(/  +/g, '');
+
+    // Assert
+    expect(messageExists).toEqual([true, false, true]);
+    expect(messages).toEqual([newEmail]);
+  });
+});
+
+/**
+ * Replaces a current ruleset with a copy that lacks a given key.
+ */
+function getNewRules(rules: Record<string, RuleGetter>, keyToRemove: string) {
+  const newRules = Object.assign({}, rules);
+  delete newRules[keyToRemove];
+  return newRules;
+}
+
 function generateTestClient(params: {id?: string}): TestClientInterface {
   return {
     id: params.id ?? '1',
     ruleStore: {},
     async getAllCampaigns() {
       return [];
-    },
-    getRule(ruleName: string) {
-      throw new Error('Not implemented.');
     },
     validate() {
       throw new Error('Not implemented.');
@@ -244,16 +580,13 @@ function generateTestClient(params: {id?: string}): TestClientInterface {
       rule: RuleExecutorClass<
         TestClientInterface,
         Granularity,
-        TestClientArgs,
+        BaseClientArgs,
         {}
       >,
     ): TestClientInterface => {
       throw new Error('Not implemented.');
     },
-    settings: {},
-    getUniqueKey(prefix: string) {
-      throw new Error('Not implemented.');
-    },
+    args: {label: 'test'},
     properties: new FakePropertyStore(),
   };
 }

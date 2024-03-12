@@ -15,13 +15,15 @@
  * limitations under the License.
  */
 
-import {
-  AppsScriptPropertyStore,
-  sendEmailAlert,
-} from 'anomaly_library/main';
+/**
+ * @fileoverview frontend/apps script hooks for SA360 launch monitor
+ */
+
+// g3-format-prettier
+
 import {
   AppsScriptFrontEnd,
-  HELPERS,
+  AppsScriptPropertyStore,
   RULE_SETTINGS_SHEET,
   addSettingWithDescription,
   getOrCreateSheet,
@@ -35,26 +37,36 @@ import {
 import {RuleRange} from 'sa360/src/client';
 import {
   ClientArgs,
+  ClientArgsV2,
   ClientInterface,
+  ClientInterfaceV2,
+  RuleGranularity,
 } from 'sa360/src/types';
-
-import {RuleGranularity} from './types';
 
 /**
  * The name of the general settings sheet.
  */
 export const GENERAL_SETTINGS_SHEET = 'General/Settings';
 
-const AGENCY_ID = 'AGENCY_ID';
-const ADVERTISER_ID = 'ADVERTISER_ID';
 /**
- * Used to figure out the list of email addresses to send emails to.
- */
-export const EMAIL_LIST_RANGE = 'EMAIL_LIST';
-/**
- * Used to distinguish between different reports (e.g. advertiser name)
+ * The name of the label range in Apps Script.
  */
 export const LABEL_RANGE = 'LABEL';
+
+/**
+ * The name of the email list range in Apps Script.
+ */
+export const EMAIL_LIST_RANGE = 'EMAIL_LIST';
+
+// NEW SA360 API variables
+const LOGIN_CUSTOMER_ID = 'LOGIN_CUSTOMER_ID';
+const CUSTOMER_IDS = 'CUSTOMER_IDS';
+
+// OLD SA360 API variables
+const AGENCY_ID = 'AGENCY_ID';
+const ADVERTISER_ID = 'ADVERTISER_ID';
+
+// Common variables
 const DRIVE_ID_RANGE = 'DRIVE_ID';
 const FULL_FETCH_RANGE = 'FULL_FETCH';
 
@@ -224,6 +236,14 @@ export const migrations: Record<string, (frontend: SearchAdsFrontEnd) => void> =
   };
 
 /**
+ * Migrations for the new SA360 V2 Launch Monitor
+ */
+export const migrationsV2: Record<
+  string,
+  (frontend: NewSearchAdsFrontEnd) => void
+> = {};
+
+/**
  * Front-end configuration for SA360 Apps Script.
  */
 export class SearchAdsFrontEnd extends AppsScriptFrontEnd<
@@ -254,10 +274,12 @@ export class SearchAdsFrontEnd extends AppsScriptFrontEnd<
     if (!agencyId) {
       return null;
     }
+    const label = sheet.getRangeByName(LABEL_RANGE);
     return {
       agencyId: agencyId.getValue(),
       advertiserId: advertiserId?.getValue(),
       fullFetch: fullFetch?.getValue(),
+      label: label?.getValue() || `${advertiserId!.getValue()}`,
     };
   }
 
@@ -268,27 +290,17 @@ export class SearchAdsFrontEnd extends AppsScriptFrontEnd<
       this.getRangeByName(ADVERTISER_ID).getValue() || '';
     const htmlOutput = template.evaluate().setWidth(350).setHeight(400);
     SpreadsheetApp.getUi().showModalDialog(htmlOutput, 'Set up');
-  }
 
-  maybeSendEmailAlert() {
-    const to = getTemplateSetting(EMAIL_LIST_RANGE).getValue();
-    const label = getTemplateSetting(LABEL_RANGE).getValue();
-    sendEmailAlert(
-      Object.values(this.client.ruleStore).map((rule) => rule.getRule()),
-      {
-        to,
-        subject: `Anomalies found for ${label}`,
-      },
-    );
+    return template['advertiserID'];
   }
 
   override async preLaunchQa() {
-    this.client.settings.fullFetch = true;
+    this.client.args.fullFetch = true;
     await super.preLaunchQa();
   }
 
   override async initializeSheets() {
-    this.client.settings.fullFetch = true;
+    this.client.args.fullFetch = true;
     await super.initializeSheets();
   }
 
@@ -304,6 +316,89 @@ export class SearchAdsFrontEnd extends AppsScriptFrontEnd<
   ) {
     super.saveSettingsBackToSheets(rules);
     getTemplateSetting(FULL_FETCH_RANGE).setValue('FALSE');
-    this.client.settings.fullFetch = false;
+    this.client.args.fullFetch = false;
+  }
+}
+
+/**
+ * Front-end configuration for the new SA360 (our V2) Apps Script.
+ */
+export class NewSearchAdsFrontEnd extends AppsScriptFrontEnd<
+  ClientInterfaceV2,
+  RuleGranularity,
+  ClientArgsV2,
+  NewSearchAdsFrontEnd
+> {
+  constructor(
+    args: FrontEndArgs<
+      ClientInterfaceV2,
+      RuleGranularity,
+      ClientArgsV2,
+      NewSearchAdsFrontEnd
+    >,
+  ) {
+    super('SA360', args);
+  }
+
+  private cleanCid(cid: string | number) {
+    return String(cid).replace(/[- ]/, '');
+  }
+
+  override getIdentity() {
+    const loginCustomerId = this.getValueFromRangeByName({
+      name: LOGIN_CUSTOMER_ID,
+      allowEmpty: true,
+    });
+    const customerIdsDirty = this.getValueFromRangeByName({
+      name: CUSTOMER_IDS,
+      allowEmpty: false,
+    });
+    const label = this.getValueFromRangeByName({
+      name: LABEL_RANGE,
+      allowEmpty: true,
+    });
+    const customerIds = this.cleanCid(customerIdsDirty);
+
+    return {
+      loginCustomerId: loginCustomerId
+        ? this.cleanCid(loginCustomerId)
+        : customerIds,
+      customerIds,
+      label: String(label || customerIds),
+    };
+  }
+
+  override displaySetupModal() {
+    const template = HtmlService.createTemplateFromFile('html/setup');
+    template['agencyId'] = this.getRangeByName(AGENCY_ID).getValue() || '';
+    template['advertiserId'] =
+      this.getRangeByName(ADVERTISER_ID).getValue() || '';
+    const htmlOutput = template.evaluate().setWidth(350).setHeight(400);
+    SpreadsheetApp.getUi().showModalDialog(htmlOutput, 'Set up');
+
+    return template['advertiserID'];
+  }
+
+  override async preLaunchQa() {
+    await super.preLaunchQa();
+  }
+
+  override async initializeSheets() {
+    await super.initializeSheets();
+  }
+
+  override saveSettingsBackToSheets(
+    rules: Array<
+      RuleExecutor<
+        ClientInterfaceV2,
+        RuleGranularity,
+        ClientArgsV2,
+        Record<string, ParamDefinition>
+      >
+    >,
+  ) {
+    super.saveSettingsBackToSheets(rules);
+    getTemplateSetting(FULL_FETCH_RANGE).setValue('FALSE');
+    this.client.args.fullFetch = false;
   }
 }

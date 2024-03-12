@@ -45,7 +45,7 @@ DRIVE_ID=
 ###
 # Set the region in which to deploy your services
 ###
-REGION=us-central1
+REGION=us-east1
 
 ###
 # Set the name of the cloud function
@@ -62,72 +62,69 @@ WORKFLOW_NAME=performance-monitor-workflow
 ###
 TIME_ZONE='America/New_York'
 
-#while test $# -gt 0; do
-#  case "$1" in
-#    -h|--help)
-#      shift
-#      cat <<EOF
-#      ./deploy_workflow.sh - Create a workflow and cloud function for performance monitor."
-#
-#      ./deploy_workflow.sh [options]"
-#
-#      -h, --help                show this message
-#      -p, --project_id          the project ID to deploy to
-#      -i, --dataset_id          the dataset ID to deploy reports to.
-#      -r, --region              the region to set up services. Default is 'us-east1'
-#      -s, --service_account     the service account to create/use. Default is 'performance-monitor-manager'
-#      -d, --drive_id            the drive ID to pull reports from. Should be the "reports" folder.
-#      -t, --time_zone           the timezone (default is 'America/New_York')
-#      -w, --workflow_name       the name of the workflow to be deployed. Default is 'performance-monitor-workflow'
-#      -f, --function_name       the name of the cloud function. Default is 'performance-monitor-ingest'
-#EOF
-#      exit 1
-#      ;;
-#    -p|--project_id)
-#      shift
-#      PROJECT_ID=$1
-#      shift
-#      ;;
-#    -s|--service_account)
-#      shift
-#      SERVICE_ACCOUNT=$1
-#      shift
-#      ;;
-#    -i|--dataset_id)
-#      shift
-#      DATASET_ID=$1
-#      shift
-#      ;;
-#    -d|--drive_id)
-#      shift
-#      DRIVE_ID=$1
-#      shift
-#      ;;
-#    -t|--time_zone)
-#      shift
-#      TIME_ZONE=$1
-#      shift
-#      ;;
-#    -w|--workflow_name)
-#      shift
-#      WORKFLOW_NAME=$1
-#      shift
-#      ;;
-#    -f|--function_name)
-#      shift
-#      PERFORMANCE_MONITOR_FN_NAME=$1
-#      shift
-#      ;;
-#    -r|--region)
-#      shift
-#      REGION=$1
-#      shift
-#      ;;
-#  esac
-#done
+while test $# -gt 0; do
+  case "$1" in
+    -h|--help)
+      shift
+      cat <<EOF
+      ./deploy_workflow.sh - Create a workflow and cloud function for performance monitor."
 
-PROJECT_ID=$1
-DRIVE_ID=$2
+      ./deploy_workflow.sh [options]"
+
+      -h, --help                show this message
+      -p, --project_id          the project ID to deploy to
+      -i, --dataset_id          the dataset ID to deploy reports to.
+      -r, --region              the region to set up services. Default is 'us-east1'
+      -s, --service_account     the service account to create/use. Default is 'performance-monitor-manager'
+      -d, --drive_id            the drive ID to pull reports from. Should be the "reports" folder.
+      -t, --time_zone           the timezone (default is 'America/New_York')
+      -w, --workflow_name       the name of the workflow to be deployed. Default is 'performance-monitor-workflow'
+      -f, --function_name       the name of the cloud function. Default is 'performance-monitor-ingest'
+EOF
+      exit 1
+      ;;
+    -p|--project_id)
+      shift
+      PROJECT_ID=$1
+      shift
+      ;;
+    -s|--service_account)
+      shift
+      SERVICE_ACCOUNT=$1
+      shift
+      ;;
+    -i|--dataset_id)
+      shift
+      DATASET_ID=$1
+      shift
+      ;;
+    -d|--drive_id)
+      shift
+      DRIVE_ID=$1
+      shift
+      ;;
+    -t|--time_zone)
+      shift
+      TIME_ZONE=$1
+      shift
+      ;;
+    -w|--workflow_name)
+      shift
+      WORKFLOW_NAME=$1
+      shift
+      ;;
+    -f|--function_name)
+      shift
+      PERFORMANCE_MONITOR_FN_NAME=$1
+      shift
+      ;;
+    -r|--region)
+      shift
+      REGION=$1
+      shift
+      ;;
+  esac
+done
 
 [[ -z "$PROJECT_ID" ]] && echo "Please set --project_id" && exit 1
 [[ -z "$DRIVE_ID" ]] && echo "Please set --drive_id" && exit 1
@@ -172,18 +169,14 @@ gcloud projects add-iam-policy-binding $PROJECT_ID \
 gcloud projects add-iam-policy-binding $PROJECT_ID \
   --member $MEMBER \
   --role "roles/bigquery.user"
-gcloud projects add-iam-policy-binding $PROJECT_ID \
-  --member $MEMBER \
-  --role "roles/logging.logWriter"
 
 # deploy the function
 gcloud functions deploy $PERFORMANCE_MONITOR_FN_NAME --gen2 \
-  --runtime=python311 \
+  --runtime=python11 \
   --region=${REGION} \
-  --service-account=${SERVICE_ACCOUNT_EMAIL} \
+  --service_account=${SERVICE_ACCOUNT_EMAIL}
   --entry-point=import_dashboard \
-  --trigger-http \
-  --memory=512MB
+  --trigger-http
 
 gcloud functions add-invoker-policy-binding $PERFORMANCE_MONITOR_FN_NAME \
   --member=${MEMBER}

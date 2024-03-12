@@ -20,7 +20,6 @@ import datetime
 import io
 import re
 import sys
-import uuid
 
 from google import auth
 from google.cloud import bigquery
@@ -41,84 +40,9 @@ SCOPES = [
 ]
 _DATE_FORMAT = '%Y-%m-%dT%H:%M:%S.%f%z'
 _LAST_REPORT_ID = 'last_report'
-USE_OLD_FILENAME = True
 
 __all__ = ['import_dashboard']
-VIEW = '''
-SELECT
-  uuid,
-  date,
-  'Budget Pacing by Days Ahead/Behind' as error_type,
-  anomalous,
-  (
-    EXISTS(SELECT * FROM (
-      SELECT e.*, ROW_NUMBER() OVER (PARTITION BY Insertion_Order_ID ORDER BY date DESC) AS rn
-      FROM `{gcp_project}.{gcp_dataset}.Budget_Pacing_by_Days_Ahead_Behind` AS e) r
-    WHERE rn = 1 and t.Insertion_Order_ID = r.Insertion_Order_ID
-      and anomalous and t.date = r.date)
-  ) as active,
-  owner
-FROM `{gcp_project}.{gcp_dataset}.Budget_Pacing_by_Days_Ahead_Behind` t
-union all
-SELECT
-  uuid,
-  date,
-  'Budget Pacing by Percent Ahead/Behind' as error_type,
-  anomalous,
-  (
-    EXISTS(SELECT * FROM (
-      SELECT e.*, ROW_NUMBER() OVER (PARTITION BY Insertion_Order_ID ORDER BY date DESC) AS rn
-      FROM `{gcp_project}.{gcp_dataset}.Budget_Pacing_by_Percent_Ahead` AS e) r
-    WHERE rn = 1 and t.Insertion_Order_ID = r.Insertion_Order_ID
-      and anomalous and t.date = r.date)
-  ) as active,
-  owner
-FROM `{gcp_project}.{gcp_dataset}.Budget_Pacing_by_Percent_Ahead` t
-union all
-SELECT
-  uuid,
-  date,
-  'Budget Per Day' as error_type,
-  anomalous,
-  (
-    EXISTS(SELECT * FROM (
-      SELECT e.*, ROW_NUMBER() OVER (PARTITION BY Insertion_Order_ID ORDER BY date DESC) AS rn
-      FROM `{gcp_project}.{gcp_dataset}.Budget_Per_Day` AS e) r
-    WHERE rn = 1 and t.Insertion_Order_ID = r.Insertion_Order_ID
-      and anomalous and t.date = r.date)
-  ) as active,
-  owner
-FROM `{gcp_project}.{gcp_dataset}.Budget_Per_Day` t
-union all
-SELECT
-  uuid,
-  date,
-  'Geo Targeting' as error_type,
-  anomalous,
-  (
-    EXISTS(SELECT * FROM (
-      SELECT e.*, ROW_NUMBER() OVER (PARTITION BY Campaign_ID ORDER BY date DESC) AS rn
-      FROM `{gcp_project}.{gcp_dataset}.Geo_Targeting` AS e) r
-    WHERE rn = 1 and t.Campaign_ID = r.Campaign_ID and anomalous and t.date = r.date)
-  ) as active,
-  owner
-FROM `{gcp_project}.{gcp_dataset}.Geo_Targeting` t
-union all
-SELECT
-  uuid,
-  date,
-  'Impressions by Geo Target' as error_type,
-  anomalous,
-  (
-    EXISTS(SELECT * FROM (
-      SELECT e.*, ROW_NUMBER() OVER (PARTITION BY Insertion_Order_ID ORDER BY date DESC) AS rn
-      FROM `{gcp_project}.{gcp_dataset}.Impressions_by_Geo_Target` AS e) r
-    WHERE rn = 1 and t.Insertion_Order_ID = r.Insertion_Order_ID
-      and anomalous and t.date = r.date)
-  ) as active,
-  owner
-FROM `{gcp_project}.{gcp_dataset}.Impressions_by_Geo_Target` t
-'''
+
 
 @dataclasses.dataclass(frozen=True, eq=True)
 class ReportName:
@@ -168,26 +92,12 @@ class ReportName:
         r'(?P<sheet_id>.+?)\_'  # sheet IDs sometimes have underscores
         r'(?P<date>\d{4}\-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}.\d{3}Z).csv'
     )
-    pattern_old = (
-        r'(?P<sheet_id>.+?)\_'  # sheet IDs sometimes have underscores
-        r'(?P<label>[^_]*)\_'  # can be blank
-        r'(?P<rule>[^_]+)\_'
-        r'(?P<date>\d{4}\-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}.\d{3}Z).csv'
-    )
     matched_filename = re.fullmatch(pattern, filename)
-    if matched_filename is None or USE_OLD_FILENAME:
-      matched_filename = re.fullmatch(pattern_old, filename)
-      if matched_filename is None:
-        raise ValueError('Invalid filename')
-      else:
-        category = ''
-        sheet_id, label, rule, date = matched_filename.group(
-           'sheet_id', 'label', 'rule', 'date',
-        )
-    else:
-      category, label, rule, sheet_id, date = matched_filename.group(
-          'category', 'label', 'rule', 'sheet_id', 'date',
-      )
+    if matched_filename is None:
+      raise ValueError('Invalid filename')
+    category, label, rule, sheet_id, date = matched_filename.group(
+        'category', 'label', 'rule', 'sheet_id', 'date'
+    )
     return cls(
         filename=filename,
         category=category,
@@ -218,14 +128,10 @@ def fill_dataframe(df: pd.DataFrame, report_name: ReportName) -> pd.DataFrame:
 
 
 def _normalize(string):
-  return string.replace(' ', '_')
-    .replace('.', '')
-    .replace('/','_')
-    .replace('?','')
-    .replace('%', 'percent')
+  return string.replace(' ', '_').replace('.', '')
 
 
-def load_data_into_pandas(request: http.HttpRequest, file_owner: str) -> pd.DataFrame:
+def load_data_into_pandas(request: http.HttpRequest) -> pd.DataFrame:
   """Use an API request to load the response into pandas for a BQ upload.
 
   This function expects the response data from the request to be a CSV.
@@ -244,9 +150,8 @@ def load_data_into_pandas(request: http.HttpRequest, file_owner: str) -> pd.Data
     _, done = downloader.next_chunk()
   file.seek(0)
   df = pd.read_csv(file, dtype='string')
-  df['owner'] = file_owner
   if 'anomalous' in df:
-    df['anomalous'] = pd.Series(df['anomalous'].map({'true': True, 'false':False}), dtype='bool')
+    df['anomalous'] = pd.Series(df['anomalous'], dtype='bool')
   return df
 
 
@@ -285,7 +190,7 @@ def load_files_into_dataframes(
         report_name.date,
     ]
     request = drive_api.files().get_media(fileId=file_obj['id'])
-    df = load_data_into_pandas(request, file_owner=file_obj['owner'])
+    df = load_data_into_pandas(request)
     dataframes[report_name.rule].append(
         fill_dataframe(df, report_name=report_name)
     )
@@ -345,10 +250,6 @@ def load_data_into_bigquery(
       project=gcp_project,
   )
   for rule, df in dataframes.items():
-    # Workaround for uuid.uuid4 returning the same value for every row in the dataframe
-    # Investigate alternative to avoid unused variable
-    # (df['uuid'] = [str(uuid.uuid4())] * len(df.index))
-    df['uuid'] = [str(uuid.uuid4()) for _ in range(len(df.index))]
     bigquery_client.load_table_from_dataframe(
         df,
         table.TableReference(
@@ -357,19 +258,8 @@ def load_data_into_bigquery(
         ),
     ).result()
     print(f'Completed {rule} ingestion')
-
-  view = bigquery.Table(f'{gcp_project}.{gcp_dataset}.errors_view')
-  view.view_query = VIEW.format(gcp_project = gcp_project, gcp_dataset = gcp_dataset)
-  view = bigquery_client.create_table(view, exists_ok=True)
-  print(f"Created {view.table_type}: {str(view.reference)}")
-
   job_config = bigquery.LoadJobConfig(
       write_disposition='WRITE_TRUNCATE',
-      schema=[
-        bigquery.SchemaField("Sheet_ID", "STRING"),
-        bigquery.SchemaField("Label", "STRING"),
-        bigquery.SchemaField("Date", "DATE")
-      ]
   )
   bigquery_client.load_table_from_dataframe(
       last_report_table,
@@ -396,8 +286,7 @@ def import_dashboard(request):
   request_json = request.get_json(silent=True)
   gcp_project = request_json['gcp_project']
   gcp_dataset = request_json['gcp_dataset']
-  drive_files = [{'id': file['id'], 'name': file['name'],
-    'owner': file['owners'][0]['emailAddress']} for file in request_json['file_list']]
+  drive_files = [{'id': file['id'], 'name': file['name']} for file in request_json['file_list']]
 
   credentials, _ = auth.default(scopes=SCOPES, quota_project_id=gcp_project)
   drive_api = discovery.build('drive', 'v3', credentials=credentials)

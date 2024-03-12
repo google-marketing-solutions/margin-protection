@@ -15,16 +15,19 @@
  * limitations under the License.
  */
 
-import {
-  AppsScriptPropertyStore,
-  sendEmailAlert,
-} from 'anomaly_library/main';
+/**
+ * @fileoverview frontend/apps script hooks for DV360 launch monitor
+ */
+
+// g3-format-prettier
+
 import {
   AppsScriptFrontEnd,
+  AppsScriptPropertyStore,
   HELPERS,
+  LABEL_RANGE,
   addSettingWithDescription,
   getOrCreateSheet,
-  getTemplateSetting,
 } from 'common/sheet_helpers';
 import {FrontEndArgs} from 'common/types';
 import {RuleRange} from 'dv360/src/client';
@@ -37,8 +40,6 @@ import {IDType, RuleGranularity} from './types';
 
 const ENTITY_ID = 'ENTITY_ID';
 const ID_TYPE = 'ID_TYPE';
-const EMAIL_LIST_RANGE = 'EMAIL_LIST';
-const LABEL_RANGE = 'LABEL';
 
 /**
  * The name of the general settings sheet.
@@ -156,6 +157,7 @@ export class DisplayVideoFrontEnd extends AppsScriptFrontEnd<
     if (!sheet) {
       throw new Error('There is no active spreadsheet.');
     }
+    const label = sheet.getRangeByName(LABEL_RANGE);
     const idRange = sheet.getRangeByName(ENTITY_ID);
     const idTypeRange = sheet.getRangeByName(ID_TYPE);
     if (!idRange || !idTypeRange) {
@@ -165,6 +167,8 @@ export class DisplayVideoFrontEnd extends AppsScriptFrontEnd<
     return {
       id: idRange.getValue(),
       idType: idType === 'Advertiser' ? IDType.ADVERTISER : IDType.PARTNER,
+      label: label?.getValue() || `${idType} ${idRange.getValue()}`,
+      name: label?.getValue(),
     };
   }
 
@@ -174,20 +178,6 @@ export class DisplayVideoFrontEnd extends AppsScriptFrontEnd<
     template['idType'] = this.getRangeByName(ID_TYPE).getValue() || '';
     const htmlOutput = template.evaluate().setWidth(350).setHeight(400);
     SpreadsheetApp.getUi().showModalDialog(htmlOutput, 'Set up');
-  }
-
-  maybeSendEmailAlert() {
-    const to = getTemplateSetting(EMAIL_LIST_RANGE).getValue();
-    const label = getTemplateSetting(LABEL_RANGE).getValue();
-    if (!to) {
-      return;
-    }
-    sendEmailAlert(
-      Object.values(this.client.ruleStore).map((rule) => rule.getRule()),
-      {
-        to,
-        subject: `Anomalies found for ${label}`,
-      },
-    );
+    return template['id'];
   }
 }

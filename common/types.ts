@@ -15,20 +15,25 @@
  * limitations under the License.
  */
 
-import {
-  PropertyStore,
-  RuleGetter,
-  Values,
-} from 'anomaly_library/main';
+// g3-format-prettier
+
 import {AppsScriptFrontEnd} from './sheet_helpers';
+
+/**
+ * An abstraction for retrieving properties.
+ */
+export interface PropertyStore {
+  setProperty(propertyName: string, value: string): void;
+  getProperty(propertyName: string): string | null;
+  getProperties(): Record<string, string>;
+}
 
 /**
  * The result of a rule executor once the Promise has resolved.
  */
-export type ExecutorResult = {
-  rule: RuleGetter;
+export interface ExecutorResult {
   values: Values;
-};
+}
 
 /**
  * A rule callback is created to enable efficient API calls.
@@ -73,18 +78,14 @@ export type Settings<Params> = SettingMapInterface<{
 export interface BaseClientInterface<
   C extends BaseClientInterface<C, G, A>,
   G extends RuleGranularity<G>,
-  A extends BaseClientArgs<C, G, A>,
+  A extends BaseClientArgs,
 > {
-  readonly settings: A;
+  readonly args: A;
   readonly ruleStore: {
     [ruleName: string]: RuleExecutor<C, G, A, Record<string, ParamDefinition>>;
   };
   readonly properties: PropertyStore;
   getAllCampaigns(): Promise<RecordInfo[]>;
-  getRule(
-    ruleName: string,
-  ): RuleExecutor<C, G, A, Record<string, ParamDefinition>>;
-  getUniqueKey(prefix: string): string;
   validate(): Promise<{
     rules: Record<
       string,
@@ -95,7 +96,7 @@ export interface BaseClientInterface<
 
   addRule<Params extends Record<keyof Params, ParamDefinition>>(
     rule: RuleExecutorClass<C, G, A, Params>,
-    settingsArray: readonly string[][],
+    settingsArray: ReadonlyArray<string[]>,
   ): C;
 }
 
@@ -109,17 +110,15 @@ export interface ParamDefinition {
   numberFormat?: string;
 }
 
-interface EnumLike {
-  toString(): string;
-}
-
 /**
  * Determines how a rule is changed (e.g. at the campaign or ad group level).
  *
  * This includes any and all types of granularity for any and all products.
  * Use the granularity you'd like to appear on your settings page.
  */
-export type RuleGranularity<G extends EnumLike> = {[Property in keyof G]: G};
+export type RuleGranularity<G extends RuleGranularity<G>> = {
+  [Property in keyof G]: G;
+};
 
 /**
  * Actionable object to run a rule.
@@ -127,10 +126,9 @@ export type RuleGranularity<G extends EnumLike> = {[Property in keyof G]: G};
 export interface RuleExecutor<
   C extends BaseClientInterface<C, G, A>,
   G extends RuleGranularity<G>,
-  A extends BaseClientArgs<C, G, A>,
+  A extends BaseClientArgs,
   P extends Record<keyof P, ParamDefinition>,
-> extends RuleUtilities,
-    Omit<RuleDefinition<P, G>, 'callback' | 'defaults' | 'granularity'> {
+> extends Omit<RuleDefinition<P, G>, 'callback' | 'defaults' | 'granularity'> {
   client: C;
   settings: Settings<Record<keyof P, string>>;
   run: Function;
@@ -139,11 +137,20 @@ export interface RuleExecutor<
 }
 
 /**
- * Methods that are used on rule wrappers to get context.
+ * Simple information-level data holder for a rule.
+ *
+ * For more, use the generic {@link RuleDefinition}.
  */
-export interface RuleUtilities {
-  getRule(): RuleGetter;
-  getUniqueKey(): string;
+export interface RuleInfo {
+  name: string;
+  description: string;
+}
+/**
+ * Merger of {@link RuleInfo} and {@link ExecutorResult}.
+ */
+export interface RuleGetter {
+  name: string;
+  values: Values;
 }
 
 /**
@@ -152,10 +159,10 @@ export interface RuleUtilities {
 export interface RuleExecutorClass<
   C extends BaseClientInterface<C, G, A>,
   G extends RuleGranularity<G>,
-  A extends BaseClientArgs<C, G, A>,
+  A extends BaseClientArgs,
   P extends Record<keyof P, P[keyof P]> = Record<string, ParamDefinition>,
 > {
-  new (client: C, settings: readonly string[][]): RuleExecutor<C, G, A, P>;
+  new (client: C, settings: ReadonlyArray<string[]>): RuleExecutor<C, G, A, P>;
   definition: RuleDefinition<P, G>;
 }
 
@@ -165,16 +172,10 @@ export interface RuleExecutorClass<
 export interface RuleDefinition<
   P extends Record<keyof P, ParamDefinition>,
   G extends RuleGranularity<G>,
-> {
-  name: string;
+> extends RuleInfo {
   callback: Callback<P>;
   granularity: G;
   params: {[Property in keyof P]: ParamDefinition};
-  uniqueKeyPrefix: string;
-  /**
-   * The description is exported to a
-   */
-  description: string;
   defaults: {[Property in keyof P]: string};
   helper?: string;
   /** The name of the "value" column in the anomaly detector, for reporting. */
@@ -191,13 +192,25 @@ export interface RecordInfo {
 }
 
 /**
+ * Record Info for the new SA360.
+ *
+ * SA360 no longer uses advertiser IDs, instead using customer IDs.
+ */
+export interface RecordInfoV2 {
+  customerId: string;
+  id: string;
+  displayName: string;
+}
+
+/**
  * Represents a client-specific set of client arguments to initialize a client.
  */
-export interface BaseClientArgs<
-  C extends BaseClientInterface<C, G, A>,
-  G extends RuleGranularity<G>,
-  A extends BaseClientArgs<C, G, A>,
-> {}
+export interface BaseClientArgs {
+  /**
+   * The name of the client. Distinguishable for emails.
+   */
+  label: string;
+}
 
 /**
  * A rule class that can instantiate a {@link RuleExecutor} object.
@@ -205,10 +218,10 @@ export interface BaseClientArgs<
 export interface RuleExecutorClass<
   C extends BaseClientInterface<C, G, A>,
   G extends RuleGranularity<G>,
-  A extends BaseClientArgs<C, G, A>,
+  A extends BaseClientArgs,
   P extends Record<keyof P, P[keyof P]> = Record<string, ParamDefinition>,
 > {
-  new (client: C, settings: readonly string[][]): RuleExecutor<C, G, A, P>;
+  new (client: C, settings: ReadonlyArray<string[]>): RuleExecutor<C, G, A, P>;
   definition: RuleDefinition<P, G>;
 }
 
@@ -227,7 +240,7 @@ export interface RuleExecutorClass<
 export interface RuleStoreEntry<
   C extends BaseClientInterface<C, G, A>,
   G extends RuleGranularity<G>,
-  A extends BaseClientArgs<C, G, A>,
+  A extends BaseClientArgs,
   P extends Record<
     keyof ParamDefinition,
     ParamDefinition[keyof ParamDefinition]
@@ -236,7 +249,7 @@ export interface RuleStoreEntry<
   /**
    * Contains a rule's metadata.
    */
-  rule: RuleExecutorClass<C, G, A, P>;
+  rule: RuleExecutorClass<C, G, A>;
 
   /**
    * Content in the form of {advertiserId: {paramKey: paramValue}}.
@@ -246,10 +259,13 @@ export interface RuleStoreEntry<
   settings: Settings<P>;
 }
 
+/**
+ * Sheets interface. Writes parameters to and from Google Sheets.
+ */
 export interface RuleRangeInterface<
   C extends BaseClientInterface<C, G, A>,
   G extends RuleGranularity<G>,
-  A extends BaseClientArgs<C, G, A>,
+  A extends BaseClientArgs,
 > {
   setRow(category: string, campaignId: string, column: string[]): void;
 
@@ -289,7 +305,7 @@ export interface RuleRangeInterface<
 export interface FrontEndArgs<
   C extends BaseClientInterface<C, G, A>,
   G extends RuleGranularity<G>,
-  A extends BaseClientArgs<C, G, A>,
+  A extends BaseClientArgs,
   F extends AppsScriptFrontEnd<C, G, A, F>,
 > {
   readonly ruleRangeClass: {
@@ -298,21 +314,21 @@ export interface FrontEndArgs<
   readonly rules: ReadonlyArray<
     RuleExecutorClass<C, G, A, Record<string, ParamDefinition>>
   >;
-  readonly clientClass: {new (clientArgs: A, properties: PropertyStore): C};
+  readonly clientInitializer: (clientArgs: A, properties: PropertyStore) => C;
   readonly version: string;
   readonly migrations: Record<string, (frontend: F) => void>;
   readonly properties: PropertyStore;
 }
 
 /**
- * Parameters for a rule, with `this` methods from {@link RuleUtilities}.
+ * Parameters for a rule.
  */
 export type RuleParams<
   C extends BaseClientInterface<C, G, A>,
   G extends RuleGranularity<G>,
-  A extends BaseClientArgs<C, G, A>,
+  A extends BaseClientArgs,
   P extends Record<keyof P, ParamDefinition>,
-> = RuleDefinition<P, G> & ThisType<RuleExecutor<C, G, A, P> & RuleUtilities>;
+> = RuleDefinition<P, G> & ThisType<RuleExecutor<C, G, A, P>>;
 
 /**
  * A list of available and required Apps Script functions for Launch Monitor.
@@ -324,3 +340,33 @@ export type AppsScriptFunctions =
   | 'launchMonitor'
   | 'displaySetupGuide'
   | 'displayGlossary';
+
+/**
+ * An object mapping values to their anomalous status.
+ */
+export interface Values {
+  [key: string]: Value;
+}
+
+/**
+ * Represents a value that can be returned by an executed check.
+ */
+export interface Value {
+  value: Readonly<string>;
+  anomalous: Readonly<boolean>;
+  alertedAt?: Readonly<number>;
+  fields: Readonly<{[key: string]: string}>;
+}
+
+/**
+ * A check is a callback that can be executed.
+ */
+export type Check = (
+  // Keeping this value flexible. Child functions will implement type.
+  // tslint:disable-next-line:no-any
+  test: any,
+  // Keeping this value flexible. Child functions will implement type.
+  // tslint:disable-next-line:no-any
+  value: any,
+  fields: {[key: string]: string},
+) => Value;

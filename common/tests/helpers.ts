@@ -15,57 +15,88 @@
  * limitations under the License.
  */
 
-import {
-  Rule,
-  RuleInstructions,
-} from 'anomaly_library/main';
-import {FakePropertyStore} from 'anomaly_library/testing/mock_apps_script';
+/**
+ * @fileoverview Test helpers for the common library.
+ */
 
-import {AbstractRuleRange} from '../sheet_helpers';
+// g3-format-prettier
+
+import {AdsClientArgs} from 'common/ads_api_types';
+import {FakePropertyStore} from 'common/test_helpers/mock_apps_script';
+
 import {
+  CredentialManager,
+  GET_LEAF_ACCOUNTS_REPORT,
+  GoogleAdsApi,
+  GoogleAdsApiFactory,
+  ReportFactory,
+} from '../ads_api';
+import {AbstractRuleRange, AppsScriptFrontEnd} from '../sheet_helpers';
+import {
+  AppsScriptFunctions,
   BaseClientArgs,
   BaseClientInterface,
-  Callback,
   ExecutorResult,
+  FrontEndArgs,
   ParamDefinition,
   RecordInfo,
   RuleExecutor,
   RuleExecutorClass,
+  RuleGetter,
 } from '../types';
 
+/**
+ * Test granularity for use in tests.
+ */
 export enum Granularity {
   DEFAULT = 'default',
 }
 
+/**
+ * Test client interface for use in tests.
+ */
 export interface TestClientInterface
   extends BaseClientInterface<
     TestClientInterface,
     Granularity,
-    TestClientArgs
+    BaseClientArgs
   > {
   id: string;
   getAllCampaigns(): Promise<RecordInfo[]>;
 }
-export class TestClientArgs
-  implements BaseClientArgs<TestClientInterface, Granularity, TestClientArgs> {}
 
+/**
+ * Test ad client interface for use in tests.
+ */
+export interface AdsClientInterface
+  extends BaseClientInterface<AdsClientInterface, Granularity, AdsClientArgs> {
+  id: string;
+  getAllCampaigns(): Promise<RecordInfo[]>;
+}
+
+/**
+ * Stub for rule range
+ */
 export class RuleRange extends AbstractRuleRange<
   TestClientInterface,
   Granularity,
-  TestClientArgs
+  BaseClientArgs
 > {
   async getRows() {
     return [{id: '1', displayName: 'Campaign 1', advertiserId: '1'}];
   }
 }
 
-export class Client implements TestClientInterface {
-  readonly settings: TestClientArgs = {};
+/**
+ * Test client for use in tests.
+ */
+export class FakeClient implements TestClientInterface {
+  readonly args: BaseClientArgs = {label: 'test'};
   readonly ruleStore: {
     [ruleName: string]: RuleExecutor<
       TestClientInterface,
       Granularity,
-      TestClientArgs,
+      BaseClientArgs,
       Record<string, ParamDefinition>
     >;
   } = {};
@@ -76,7 +107,7 @@ export class Client implements TestClientInterface {
   ): RuleExecutor<
     TestClientInterface,
     Granularity,
-    TestClientArgs,
+    BaseClientArgs,
     Record<string, ParamDefinition>
   > {
     throw new Error('Method not implemented.');
@@ -90,7 +121,7 @@ export class Client implements TestClientInterface {
       RuleExecutor<
         TestClientInterface,
         Granularity,
-        TestClientArgs,
+        BaseClientArgs,
         Record<string, ParamDefinition>
       >
     >;
@@ -102,23 +133,163 @@ export class Client implements TestClientInterface {
     rule: RuleExecutorClass<
       TestClientInterface,
       Granularity,
-      TestClientArgs,
+      BaseClientArgs,
       Params
     >,
-    settingsArray: readonly string[][],
+    settingsArray: ReadonlyArray<string[]>,
   ): TestClientInterface {
     throw new Error('Method not implemented.');
   }
-  id: string = 'something';
+  id = 'something';
 
   getAllCampaigns(): Promise<[]> {
     return Promise.resolve([]);
   }
+}
 
-  newRule(
-    rule: (instructions: RuleInstructions) => Rule,
-    instructions: Omit<RuleInstructions, 'propertyStore'>,
+/**
+ * A fake frontend for testing.
+ */
+export class FakeFrontEnd extends AppsScriptFrontEnd<
+  TestClientInterface,
+  Granularity,
+  BaseClientArgs,
+  FakeFrontEnd
+> {
+  readonly calls: Record<AppsScriptFunctions, number> = {
+    onOpen: 0,
+    initializeSheets: 0,
+    launchMonitor: 0,
+    preLaunchQa: 0,
+    displaySetupGuide: 0,
+    displayGlossary: 0,
+  };
+  private readonly messages: GoogleAppsScript.Mail.MailAdvancedParameters[] =
+    [];
+
+  constructor(
+    args: FrontEndArgs<
+      TestClientInterface,
+      Granularity,
+      BaseClientArgs,
+      FakeFrontEnd
+    >,
   ) {
-    return rule({...instructions, propertyStore: this.properties});
+    scaffoldSheetWithNamedRanges();
+    super('Fake', args);
   }
+
+  getIdentity(): BaseClientArgs {
+    return {label: 'test'};
+  }
+
+  override async onOpen() {
+    this.calls.onOpen++;
+  }
+
+  override async initializeSheets() {
+    this.calls.initializeSheets++;
+    await super.initializeSheets();
+  }
+
+  override async preLaunchQa() {
+    this.calls.preLaunchQa++;
+  }
+
+  override async launchMonitor() {
+    this.calls.launchMonitor++;
+  }
+
+  override async sendEmailAlert(
+    rules: RuleGetter[],
+    message: GoogleAppsScript.Mail.MailAdvancedParameters,
+  ) {
+    const noop: GoogleAppsScript.Mail.MailApp['sendEmail'] = ((
+      message: GoogleAppsScript.Mail.MailAdvancedParameters,
+    ) => {}) as GoogleAppsScript.Mail.MailApp['sendEmail'];
+    super.sendEmailAlert(rules, message, noop);
+
+    this.messages.push(message);
+  }
+
+  getMessages() {
+    return this.messages.splice(0, this.messages.length);
+  }
+}
+
+/**
+ * Set up named ranges so basic things can work in frontend.
+ */
+export function scaffoldSheetWithNamedRanges() {
+  for (const [i, [constName, value]] of [
+    ['ENTITY_ID', '1'],
+    ['ID_TYPE', 'Advertiser'],
+    ['EMAIL_LIST', ''],
+    ['LABEL', 'Acme Inc.'],
+  ].entries()) {
+    const range = SpreadsheetApp.getActive()
+      .getActiveSheet()
+      .getRange(`$A$${i + 1}`);
+    SpreadsheetApp.getActive().setNamedRange(constName, range);
+    SpreadsheetApp.getActive().getRangeByName(constName)!.setValue(value);
+  }
+}
+
+const FAKE_API_ENDPOINT = {
+  url: 'my://url',
+  version: 'v0',
+  call: 'fake:call',
+};
+
+/**
+ * Set up a Google Ads API for testing.
+ */
+export function bootstrapGoogleAdsApi(
+  {
+    mockLeafAccounts = {'1': ['123']},
+    spyOnLeaf = true,
+  }: {mockLeafAccounts: Record<string, string[]>; spyOnLeaf: boolean} = {
+    mockLeafAccounts: {'1': ['123']},
+    spyOnLeaf: true,
+  },
+) {
+  const apiFactory = new GoogleAdsApiFactory({
+    developerToken: '',
+    credentialManager: new CredentialManager(),
+    apiEndpoint: FAKE_API_ENDPOINT,
+  });
+  const reportFactory = new ReportFactory(apiFactory, {
+    loginCustomerId: 'la1',
+    customerIds: Object.keys(mockLeafAccounts).join(','),
+    label: 'test',
+  });
+  if (spyOnLeaf) {
+    spyOn(reportFactory, 'leafAccounts').and.returnValue(['1']);
+  }
+  const api = new GoogleAdsApi({
+    developerToken: '',
+    loginCustomerId: 'la1',
+    credentialManager: {
+      getToken() {
+        return '';
+      },
+    },
+    apiEndpoint: FAKE_API_ENDPOINT,
+  });
+  const mockQuery: jasmine.Spy = spyOn(api, 'queryOne');
+  spyOn(apiFactory, 'create').and.callFake(() => api);
+  return {api, reportFactory, mockQuery};
+}
+
+/**
+ * Like TestClientInterface only for Ads.
+ */
+export interface AdsClientInterface
+  extends BaseClientInterface<AdsClientInterface, Granularity, AdsClientArgs> {}
+
+/**
+ * Create an iterator from a list of options.
+ */
+export function iterator<T>(...a: T[]): IterableIterator<T> {
+  return a[Symbol.iterator]();
 }

@@ -19,12 +19,14 @@
  * @fileoverview Apps Script handlers.
  */
 
+// g3-format-prettier
+
 import {
   lazyLoadApp,
   toExport,
 } from 'common/sheet_helpers';
+import {PropertyStore} from 'common/types';
 
-import {PropertyStore} from 'anomaly_library/main';
 import {Client, RuleRange} from './client';
 import {DisplayVideoFrontEnd, migrations} from './frontend';
 import {
@@ -60,7 +62,9 @@ export function getFrontEnd(properties: PropertyStore) {
       impressionsByGeoTarget,
     ],
     version: CURRENT_SHEET_VERSION,
-    clientClass: Client,
+    clientInitializer(clientArgs, properties) {
+      return new Client(clientArgs, properties);
+    },
     migrations,
     properties,
   });
