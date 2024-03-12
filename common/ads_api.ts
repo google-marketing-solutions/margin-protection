@@ -19,7 +19,15 @@
  * @fileoverview DAO for the Google Ads API and SA360 API
  */
 
-import {AccountMap, AdsRow, AdsSearchRequest, AdsSearchResponse, CampaignReport} from './ads_api_types';
+// g3-format-prettier
+
+import {
+  AccountMap,
+  AdsRow,
+  AdsSearchRequest,
+  AdsSearchResponse,
+  CampaignReport,
+} from './ads_api_types';
 
 import URLFetchRequestOptions = GoogleAppsScript.URL_Fetch.URLFetchRequestOptions;
 
@@ -72,11 +80,13 @@ export const SA360_API_ENDPOINT = {
 export class GoogleAdsApiFactory {
   private readonly cache = new Map<string, GoogleAdsApi>();
 
-  constructor(private readonly factoryArgs: {
-      developerToken: string,
-      credentialManager: CredentialManager,
-      apiEndpoint: ApiEndpoint,
-  }) {}
+  constructor(
+    private readonly factoryArgs: {
+      developerToken: string;
+      credentialManager: CredentialManager;
+      apiEndpoint: ApiEndpoint;
+    },
+  ) {}
 
   create(loginCustomerId: string) {
     let api = this.cache.get(loginCustomerId);
@@ -112,13 +122,14 @@ export class CredentialManager {
  * Ads API client
  */
 export class GoogleAdsApi {
-  
-  constructor(private readonly apiInstructions: {
-    developerToken: string,
-    loginCustomerId: string,
-    credentialManager: CredentialManager,
-    apiEndpoint: ApiEndpoint,
-  }) {}
+  constructor(
+    private readonly apiInstructions: {
+      developerToken: string;
+      loginCustomerId: string;
+      credentialManager: CredentialManager;
+      apiEndpoint: ApiEndpoint;
+    },
+  ) {}
 
   private requestHeaders() {
     const token = this.apiInstructions.credentialManager.getToken();
@@ -129,7 +140,7 @@ export class GoogleAdsApi {
     };
   }
 
-  * query(customerId: string, query: string): IterableIterator<AdsRow> {
+  *query(customerId: string, query: string): IterableIterator<AdsRow> {
     const url = `https://${this.apiInstructions.apiEndpoint.url}/${this.apiInstructions.apiEndpoint.version}/customers/${customerId}/googleAds:search`;
     const params: AdsSearchRequest = {
       pageSize: MAX_PAGE_SIZE,
@@ -145,8 +156,8 @@ export class GoogleAdsApi {
         payload: JSON.stringify({...params, pageToken}),
       };
       const res = JSON.parse(
-                      UrlFetchApp.fetch(url, req).getContentText(),
-                      ) as AdsSearchResponse;
+        UrlFetchApp.fetch(url, req).getContentText(),
+      ) as AdsSearchResponse;
       pageToken = res.nextPageToken;
       for (const row of res.results || []) {
         yield row;

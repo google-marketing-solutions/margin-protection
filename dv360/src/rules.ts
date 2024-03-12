@@ -19,6 +19,8 @@
  * @fileoverview Contains rules tailored for the current client.
  */
 
+// g3-format-prettier
+
 import {
   AssignedTargetingOption,
   InsertionOrder,
@@ -31,11 +33,11 @@ import {
   equalTo,
   inRange,
   lessThanOrEqualTo,
-} from 'anomaly_library/absoluteRule';
+} from 'google3/third_party/professional_services/solutions/appsscript_anomaly_library/lib/absoluteRule';
 import {
   Rule,
   Values,
-} from 'anomaly_library/main';
+} from 'google3/third_party/professional_services/solutions/appsscript_anomaly_library/lib/main';
 
 import {Settings} from 'common/types';
 

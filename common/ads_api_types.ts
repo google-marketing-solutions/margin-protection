@@ -18,6 +18,9 @@
 /**
  * Represents a AdsRow result.
  */
+
+// g3-format-prettier
+
 export declare interface AdsRow {
   campaign?: {id?: number; descriptiveName?: string; status?: string};
   customer?: {id?: number; descriptiveName?: string};

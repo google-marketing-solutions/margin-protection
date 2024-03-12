@@ -15,7 +15,9 @@
  * limitations under the License.
  */
 
-import {mockAppsScript} from 'anomaly_library/testing/mock_apps_script';
+// g3-format-prettier
+
+import {mockAppsScript} from 'google3/third_party/professional_services/solutions/appsscript_anomaly_library/lib/testing/mock_apps_script';
 import {BudgetReport, ImpressionReport} from '../api';
 import {IDType} from '../types';
 import {BudgetMatchTable, ImpressionMatchTable} from './dbm_test_helpers';

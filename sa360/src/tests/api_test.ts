@@ -15,8 +15,10 @@
  * limitations under the License.
  */
 
-import {AppsScriptPropertyStore} from 'anomaly_library/main';
-import {mockAppsScript} from 'anomaly_library/testing/mock_apps_script';
+// g3-format-prettier
+
+import {AppsScriptPropertyStore} from 'google3/third_party/professional_services/solutions/appsscript_anomaly_library/lib/main';
+import {mockAppsScript} from 'google3/third_party/professional_services/solutions/appsscript_anomaly_library/lib/testing/mock_apps_script';
 import * as api from 'sa360/src/api';
 
 import {MatchTable, moreMocks} from './match_table';
@@ -206,7 +208,10 @@ describe('Build an AdGroupTargetReport with aggregation', () => {
 
     expect(obj).toEqual({
       'A1': {ageTargetAgeRange: 'A', genderTargetGenderType: 'B'},
-    } as unknown as Record<string, api.ReportRecord<typeof api.adGroupTargetColumns>>);
+    } as unknown as Record<
+      string,
+      api.ReportRecord<typeof api.adGroupTargetColumns>
+    >);
   });
 });
 

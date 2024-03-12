@@ -15,13 +15,18 @@
  * limitations under the License.
  */
 
+/**
+ * @fileoverview Helpers for Apps Script based front-ends.
+ */
+
+// g3-format-prettier
+
 import {
   AppsScriptPropertyStore,
-  getRule,
   PropertyStore,
   Value,
   Values,
-} from 'anomaly_library/main';
+} from 'google3/third_party/professional_services/solutions/appsscript_anomaly_library/lib/main';
 
 import {
   AppsScriptFunctions,
@@ -35,11 +40,8 @@ import {
   RuleExecutor,
   RuleExecutorClass,
   RuleGranularity,
-  RuleParams,
   RuleRangeInterface,
-  RuleUtilities,
   SettingMapInterface,
-  Settings,
 } from './types';
 
 const FOLDER = 'application/vnd.google-apps.folder';
@@ -99,13 +101,16 @@ export class SettingMap<P extends {[Property in keyof P]: P[keyof P]}>
     const defaultValue =
       this.map.get('default') || ({} as Record<keyof P, string>);
     const campaignValue = this.map.get(id) || ({} as Record<keyof P, string>);
-    return this.keys.reduce((prev, key) => {
-      prev[key] =
-        (!(key in campaignValue) || campaignValue[key] === ''
-          ? defaultValue[key]
-          : campaignValue[key]) ?? '';
-      return prev;
-    }, {} as Record<keyof P, string>) as P;
+    return this.keys.reduce(
+      (prev, key) => {
+        prev[key] =
+          (!(key in campaignValue) || campaignValue[key] === ''
+            ? defaultValue[key]
+            : campaignValue[key]) ?? '';
+        return prev;
+      },
+      {} as Record<keyof P, string>,
+    ) as P;
   }
 
   entries(): ReadonlyArray<[string, string[]]> {
@@ -540,12 +545,15 @@ export abstract class AppsScriptFrontEnd<
    */
   async initializeRules() {
     const numberOfHeaders = 3;
-    const sheets = this.injectedArgs.rules.reduce((prev, rule) => {
-      (prev[rule.definition.granularity.toString()] ??= [] as Array<
-        RuleExecutorClass<C, G, A>
-      >).push(rule);
-      return prev;
-    }, {} as Record<string, Array<RuleExecutorClass<C, G, A>>>);
+    const sheets = this.injectedArgs.rules.reduce(
+      (prev, rule) => {
+        (prev[rule.definition.granularity.toString()] ??= [] as Array<
+          RuleExecutorClass<C, G, A>
+        >).push(rule);
+        return prev;
+      },
+      {} as Record<string, Array<RuleExecutorClass<C, G, A>>>,
+    );
 
     for (const [sheetName, ruleClasses] of Object.entries(sheets)) {
       const ruleSheet = getOrCreateSheet(
@@ -1032,77 +1040,6 @@ export abstract class AppsScriptFrontEnd<
       range.writeBack(granularity);
     }
   }
-}
-
-/**
- * Creates new rule with the metadata needed to generate settings.
- *
- * Wrapping in this function gives us access to all methods in {@link
- * RuleUtilities} as part of `this` in our `callback`.
- *
- * Example:
- *
- * ```
- * newRule({
- *   //...
- *   callback(client, settings) {
- *     const rule = this.getRule(); // the `RuleGetter`
- *     const rule = rule.getValues();
- *     //...
- *   }
- * });
- * ```
- */
-export function newRuleBuilder<
-  C extends BaseClientInterface<C, G, A>,
-  G extends RuleGranularity<G>,
-  A extends BaseClientArgs<C, G, A>,
->(): <P extends Record<keyof P, ParamDefinition>>(
-  p: RuleParams<C, G, A, P>,
-) => RuleExecutorClass<C, G, A, P> {
-  return function newRule<P extends Record<keyof P, ParamDefinition>>(
-    ruleDefinition: RuleParams<C, G, A, P>,
-  ): RuleExecutorClass<C, G, A, P> {
-    const ruleClass = class implements RuleExecutor<C, G, A, P> {
-      readonly uniqueKeyPrefix: string = '';
-      readonly description = ruleDefinition.description;
-      readonly settings: Settings<Record<keyof P, string>>;
-      readonly name: string = ruleDefinition.name;
-      readonly params = ruleDefinition.params;
-      readonly helper = ruleDefinition.helper ?? '';
-      // Auto-added to unblock TS5.0 migration
-      // @ts-ignore(go/ts50upgrade): This syntax requires an imported helper
-      // named
-      // '__setFunctionName' which does not exist in 'tslib'. Consider upgrading
-      // your version of 'tslib'.
-      readonly granularity: G = ruleDefinition.granularity;
-      readonly valueFormat = ruleDefinition.valueFormat;
-      // TODO: go/ts50upgrade - Auto-added to unblock TS5.0 migration
-      //   TS2343: This syntax requires an imported helper named '__setFunctionName' which does not exist in 'tslib'. Consider upgrading your version of 'tslib'.
-      // @ts-ignore
-      static definition = ruleDefinition;
-
-      constructor(readonly client: C, settingsArray: readonly string[][]) {
-        this.uniqueKeyPrefix = ruleDefinition.uniqueKeyPrefix;
-        this.settings = transformToParamValues(settingsArray, this.params);
-      }
-
-      async run() {
-        return await ruleDefinition.callback.bind(this)();
-      }
-
-      getRule() {
-        return getRule(this.getUniqueKey(), this.client.properties);
-      }
-
-      getUniqueKey() {
-        return this.client.getUniqueKey(ruleDefinition.uniqueKeyPrefix);
-      }
-    };
-
-    Object.defineProperty(ruleClass, 'name', {value: ruleDefinition.name});
-    return ruleClass;
-  };
 }
 
 // Lazy load frontend.

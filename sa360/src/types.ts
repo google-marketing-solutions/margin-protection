@@ -15,6 +15,8 @@
  * limitations under the License.
  */
 
+// g3-format-prettier
+
 import {
   BaseClientArgs,
   BaseClientInterface,

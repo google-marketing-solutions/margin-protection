@@ -15,16 +15,18 @@
  * limitations under the License.
  */
 
+// g3-format-prettier
+
 import {
   AppsScriptPropertyStore,
   PropertyStore,
   Values,
-} from 'anomaly_library/main';
+} from 'google3/third_party/professional_services/solutions/appsscript_anomaly_library/lib/main';
 import {
   FakePropertyStore,
   FakeUtilitiesService,
   mockAppsScript,
-} from 'anomaly_library/testing/mock_apps_script';
+} from 'google3/third_party/professional_services/solutions/appsscript_anomaly_library/lib/testing/mock_apps_script';
 import {GENERAL_SETTINGS_SHEET} from 'common/sheet_helpers';
 
 import {lazyLoadApp} from '../../../common/sheet_helpers';

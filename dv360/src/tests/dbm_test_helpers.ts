@@ -20,6 +20,8 @@
  *
  */
 
+// g3-format-prettier
+
 import {DBM_API_VERSION, DBM_URL} from '../api';
 
 interface Params {
@@ -137,7 +139,7 @@ abstract class MatchTable {
     this.storedQueries.push(query);
   }
 
-  private postRun(params: Params, key: string = '') {
+  private postRun(params: Params, key = '') {
     ++this.runPostHits;
     return JSON.stringify({
       'metadata': {
@@ -196,6 +198,9 @@ export class BudgetMatchTable extends MatchTable {
   }
 }
 
+/**
+ * Simplified api calls for testing integration with impressions.
+ */
 export class ImpressionMatchTable extends MatchTable {
   protected override getReport() {
     return (

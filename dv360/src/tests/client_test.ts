@@ -15,9 +15,11 @@
  * limitations under the License.
  */
 
-import {AbsoluteRule} from 'anomaly_library/absoluteRule';
-import {Value} from 'anomaly_library/main';
-import {mockAppsScript} from 'anomaly_library/testing/mock_apps_script';
+// g3-format-prettier
+
+import {AbsoluteRule} from 'google3/third_party/professional_services/solutions/appsscript_anomaly_library/lib/absoluteRule';
+import {Value} from 'google3/third_party/professional_services/solutions/appsscript_anomaly_library/lib/main';
+import {mockAppsScript} from 'google3/third_party/professional_services/solutions/appsscript_anomaly_library/lib/testing/mock_apps_script';
 
 import {Client, newRule} from '../client';
 import {RuleGranularity} from '../types';

@@ -19,6 +19,9 @@
  * @fileoverview Contains helpers for testing the DBM.
  *
  */
+
+// g3-format-prettier
+
 import {
   SA360_API_VERSION,
   SA360_URL,

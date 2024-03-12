@@ -15,13 +15,15 @@
  * limitations under the License.
  */
 
+// g3-format-prettier
+
 import {
   SettingMap,
   transformToParamValues,
 } from 'common/sheet_helpers';
 import {RuleRange, getDate} from '../client';
 
-import {mockAppsScript} from 'anomaly_library/testing/mock_apps_script';
+import {mockAppsScript} from 'google3/third_party/professional_services/solutions/appsscript_anomaly_library/lib/testing/mock_apps_script';
 import {generateTestClient} from './client_helpers';
 
 describe('transformToParamValues', () => {

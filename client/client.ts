@@ -21,6 +21,8 @@
  *   ops teams to update code in a central location.
  */
 
+// g3-format-prettier
+
 declare global {
   const LaunchMonitor: Exported;
 }
@@ -28,7 +30,7 @@ declare global {
 import {
   AppsScriptPropertyStore,
   PropertyStore,
-} from 'anomaly_library/main';
+} from 'google3/third_party/professional_services/solutions/appsscript_anomaly_library/lib/main';
 
 interface Exported {
   onOpen(properties: PropertyStore): void;

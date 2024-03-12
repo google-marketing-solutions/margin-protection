@@ -15,7 +15,9 @@
  * limitations under the License.
  */
 
-import {PropertyStore} from 'anomaly_library/main';
+// g3-format-prettier
+
+import {PropertyStore} from 'google3/third_party/professional_services/solutions/appsscript_anomaly_library/lib/main';
 import {
   adGroupColumns,
   AdGroupReport,

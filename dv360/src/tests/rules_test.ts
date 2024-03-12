@@ -15,19 +15,15 @@
  * limitations under the License.
  */
 
+// g3-format-prettier
+
 import {AssignedTargetingOption} from 'dv360_api/dv360_resources';
 import {
   ApiDate,
   TARGETING_TYPE,
 } from 'dv360_api/dv360_types';
-import {
-  AppsScriptPropertyStore,
-  getRule,
-} from 'anomaly_library/main';
-import {
-  FakePropertyStore,
-  mockAppsScript,
-} from 'anomaly_library/testing/mock_apps_script';
+import {AppsScriptPropertyStore} from 'google3/third_party/professional_services/solutions/appsscript_anomaly_library/lib/main';
+import {mockAppsScript} from 'google3/third_party/professional_services/solutions/appsscript_anomaly_library/lib/testing/mock_apps_script';
 
 import {RuleExecutorClass} from 'common/types';
 import {Client} from '../client';
@@ -102,7 +98,7 @@ async function generateReportWithDateValues(
   rule: typeof budgetPacingDaysAheadRule | typeof dailyBudgetRule,
   startDate: number,
   endDate: number,
-  includeInsertionOrderBudgetSegments: boolean = true,
+  includeInsertionOrderBudgetSegments = true,
 ) {
   return await generateInsertionOrderTestData(
     rule,
@@ -647,8 +643,8 @@ async function generateInsertionOrderTestData<
     allInsertionOrders,
     fakeSpendAmount,
   });
-  // tslint:disable-next-line:no-any simplification for testing
   const addRule = client.addRule.bind(client) as (
+    // tslint:disable-next-line:no-any simplification for testing
     rule: any,
     paramMap: string[][],
   ) => Client;

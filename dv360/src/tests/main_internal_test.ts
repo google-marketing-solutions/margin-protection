@@ -25,6 +25,8 @@
  * was feature complete.
  */
 
+// g3-format-prettier
+
 import {
   HtmlOutput,
   setUpAppsScriptSimulator,
@@ -32,11 +34,11 @@ import {
 } from 'google3/javascript/apps/maestro/simulator/closure_apps_script_simulator-closurized';
 import {AssignedTargetingOption} from 'dv360_api/dv360_resources';
 import {TARGETING_TYPE} from 'dv360_api/dv360_types';
-import {equalTo} from 'anomaly_library/absoluteRule';
+import {equalTo} from 'google3/third_party/professional_services/solutions/appsscript_anomaly_library/lib/absoluteRule';
 import {
   FakePropertyStore,
   FakeUtilitiesService,
-} from 'anomaly_library/testing/mock_apps_script';
+} from 'google3/third_party/professional_services/solutions/appsscript_anomaly_library/lib/testing/mock_apps_script';
 import {
   HELPERS,
   lazyLoadApp,
@@ -64,7 +66,7 @@ import HtmlTemplate = GoogleAppsScript.HTML.HtmlTemplate;
 
 const FOLDER = 'application/vnd.google-apps.folder';
 
-describe('Rule value filling', async () => {
+describe('Rule value filling', () => {
   let client: Client;
   let rules: RuleRange;
 
@@ -195,14 +197,14 @@ describe('Rule value filling', async () => {
   });
 });
 
-describe('Pre-Launch QA menu option', async () => {
+describe('Pre-Launch QA menu option', () => {
   let frontend: DisplayVideoFrontEnd;
 
   beforeEach(async () => {
     setUp();
     frontend = scaffoldFrontEnd(testData({}));
     HtmlService.createTemplateFromFile = (filename: string) =>
-      ({evaluate: () => new HtmlOutput()} as unknown as HtmlTemplate);
+      ({evaluate: () => new HtmlOutput()}) as unknown as HtmlTemplate;
     scaffoldSheetWithNamedRanges();
     // force private methods to be visible, so we can manipulate them.
     fillInSheetStubs();
@@ -296,7 +298,7 @@ function testData(params: {
   });
 }
 
-describe('Matrix to CSV', async () => {
+describe('Matrix to CSV', () => {
   let frontend: DisplayVideoFrontEnd;
 
   beforeEach(() => {
@@ -386,7 +388,7 @@ const fakeFiles: FakeFiles = {
   },
 };
 
-describe('Export as CSV', async () => {
+describe('Export as CSV', () => {
   let frontend: DisplayVideoFrontEnd;
   let oldDrive: GoogleAppsScript.Drive;
 
@@ -439,7 +441,7 @@ describe('Export as CSV', async () => {
   });
 });
 
-describe('Fill rule values', async () => {
+describe('Fill rule values', () => {
   let rules: RuleRange;
   let frontend: DisplayVideoFrontEnd;
 
@@ -464,7 +466,7 @@ describe('Fill rule values', async () => {
   });
 });
 
-describe('getMatrixOfResults', async () => {
+describe('getMatrixOfResults', () => {
   let frontend: DisplayVideoFrontEnd;
 
   beforeEach(() => {
@@ -500,7 +502,7 @@ describe('getMatrixOfResults', async () => {
   });
 });
 
-describe('initializeRules', async () => {
+describe('initializeRules', () => {
   const allCampaigns: {[advertiserId: string]: CampaignTemplateConverter[]} =
     {};
   const expectedValues = [
@@ -573,7 +575,7 @@ describe('initializeRules', async () => {
   });
 });
 
-describe('Migrations', async () => {
+describe('Migrations', () => {
   let frontend: DisplayVideoFrontEnd;
 
   beforeEach(() => {

@@ -15,7 +15,9 @@
  * limitations under the License.
  */
 
-import {getRule} from 'anomaly_library/main';
+// g3-format-prettier
+
+import {getRule} from 'google3/third_party/professional_services/solutions/appsscript_anomaly_library/lib/main';
 import {transformToParamValues} from './sheet_helpers';
 import {
   BaseClientArgs,
@@ -73,7 +75,10 @@ export function newRuleBuilder<
       readonly valueFormat = ruleDefinition.valueFormat;
       static definition = ruleDefinition;
 
-      constructor(readonly client: C, settingsArray: readonly string[][]) {
+      constructor(
+        readonly client: C,
+        settingsArray: ReadonlyArray<string[]>,
+      ) {
         this.uniqueKeyPrefix = ruleDefinition.uniqueKeyPrefix;
         this.settings = transformToParamValues(settingsArray, this.params);
       }

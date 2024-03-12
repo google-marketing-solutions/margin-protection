@@ -19,6 +19,8 @@
  * @fileoverview Contains a DAO for DBM access.
  */
 
+// g3-format-prettier
+
 import {IDType, QueryReportParams} from './types';
 
 /** The API version to use. Exposed for testing. */
@@ -152,6 +154,9 @@ abstract class Report {
   protected abstract queryBody(): QueryBody;
 }
 
+/**
+ * Contains calls associated with getting an impression report.
+ */
 export class ImpressionReport
   extends Report
   implements ImpressionReportInterface
@@ -304,14 +309,17 @@ export class BudgetReport extends Report implements BudgetReportInterface {
     const mediaCost = headers['Billable Cost (USD)'];
     const startDate = headers['Budget Segment Start Date'];
     const endDate = headers['Budget Segment End Date'];
-    return report.slice(1, report.length).reduce((prev, curr) => {
-      const startTime = new Date(curr[startDate]).getTime();
-      const endTime = new Date(curr[endDate]).getTime();
-      const key = `${curr[insertionOrderId]},${startTime},${endTime}`;
-      prev[key] ??= 0;
-      prev[key] += Number(curr[mediaCost]);
-      return prev;
-    }, {} as {[insertionOrderId: string]: number});
+    return report.slice(1, report.length).reduce(
+      (prev, curr) => {
+        const startTime = new Date(curr[startDate]).getTime();
+        const endTime = new Date(curr[endDate]).getTime();
+        const key = `${curr[insertionOrderId]},${startTime},${endTime}`;
+        prev[key] ??= 0;
+        prev[key] += Number(curr[mediaCost]);
+        return prev;
+      },
+      {} as {[insertionOrderId: string]: number},
+    );
   }
 }
 

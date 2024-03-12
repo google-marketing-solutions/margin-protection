@@ -15,10 +15,12 @@
  * limitations under the License.
  */
 
+// g3-format-prettier
+
 import {
   FakePropertyStore,
   mockAppsScript,
-} from 'anomaly_library/testing/mock_apps_script';
+} from 'google3/third_party/professional_services/solutions/appsscript_anomaly_library/lib/testing/mock_apps_script';
 import {ParamDefinition} from 'common/types';
 
 import {

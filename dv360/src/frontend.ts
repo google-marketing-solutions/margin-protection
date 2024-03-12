@@ -15,10 +15,12 @@
  * limitations under the License.
  */
 
+// g3-format-prettier
+
 import {
   AppsScriptPropertyStore,
   sendEmailAlert,
-} from 'anomaly_library/main';
+} from 'google3/third_party/professional_services/solutions/appsscript_anomaly_library/lib/main';
 import {
   AppsScriptFrontEnd,
   HELPERS,

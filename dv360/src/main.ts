@@ -19,12 +19,14 @@
  * @fileoverview Apps Script handlers.
  */
 
+// g3-format-prettier
+
 import {
   lazyLoadApp,
   toExport,
 } from 'common/sheet_helpers';
 
-import {PropertyStore} from 'anomaly_library/main';
+import {PropertyStore} from 'google3/third_party/professional_services/solutions/appsscript_anomaly_library/lib/main';
 import {Client, RuleRange} from './client';
 import {DisplayVideoFrontEnd, migrations} from './frontend';
 import {

@@ -15,17 +15,18 @@
  * limitations under the License.
  */
 
+// g3-format-prettier
+
 import {
   Rule,
   RuleInstructions,
-} from 'anomaly_library/main';
-import {FakePropertyStore} from 'anomaly_library/testing/mock_apps_script';
+} from 'google3/third_party/professional_services/solutions/appsscript_anomaly_library/lib/main';
+import {FakePropertyStore} from 'google3/third_party/professional_services/solutions/appsscript_anomaly_library/lib/testing/mock_apps_script';
 
 import {AbstractRuleRange} from '../sheet_helpers';
 import {
   BaseClientArgs,
   BaseClientInterface,
-  Callback,
   ExecutorResult,
   ParamDefinition,
   RecordInfo,
@@ -33,10 +34,16 @@ import {
   RuleExecutorClass,
 } from '../types';
 
+/**
+ * Test granularity for use in tests.
+ */
 export enum Granularity {
   DEFAULT = 'default',
 }
 
+/**
+ * Test client interface for use in tests.
+ */
 export interface TestClientInterface
   extends BaseClientInterface<
     TestClientInterface,
@@ -46,9 +53,16 @@ export interface TestClientInterface
   id: string;
   getAllCampaigns(): Promise<RecordInfo[]>;
 }
+
+/**
+ * Test client args for use in tests.
+ */
 export class TestClientArgs
   implements BaseClientArgs<TestClientInterface, Granularity, TestClientArgs> {}
 
+/**
+ * Test rule range for use in tests.
+ */
 export class RuleRange extends AbstractRuleRange<
   TestClientInterface,
   Granularity,
@@ -59,6 +73,9 @@ export class RuleRange extends AbstractRuleRange<
   }
 }
 
+/**
+ * Test client for use in tests.
+ */
 export class Client implements TestClientInterface {
   readonly settings: TestClientArgs = {};
   readonly ruleStore: {
@@ -109,7 +126,7 @@ export class Client implements TestClientInterface {
   ): TestClientInterface {
     throw new Error('Method not implemented.');
   }
-  id: string = 'something';
+  id = 'something';
 
   getAllCampaigns(): Promise<[]> {
     return Promise.resolve([]);

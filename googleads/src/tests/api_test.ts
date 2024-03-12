@@ -15,19 +15,21 @@
  * limitations under the License.
  */
 
+// g3-format-prettier
+
 import 'jasmine';
 
 import {
-    AdsRow,
-    AdsSearchRequest,
+  AdsRow,
+  AdsSearchRequest,
 } from 'common/ads_api_types';
 
 import {
-    GoogleAdsApi, 
-    GoogleAdsApiFactory, 
-    ReportGenerator,
-    GOOGLEADS_API_ENDPOINT,
-    CredentialManager,
+  CredentialManager,
+  GOOGLEADS_API_ENDPOINT,
+  GoogleAdsApi,
+  GoogleAdsApiFactory,
+  ReportGenerator,
 } from 'common/ads_api';
 
 import {AccountMap} from '../types';
@@ -320,7 +322,7 @@ function createClient(
     developerToken,
     loginCustomerId,
     credentialManager,
-    apiEndpoint: GOOGLEADS_API_ENDPOINT
+    apiEndpoint: GOOGLEADS_API_ENDPOINT,
   });
 }
 

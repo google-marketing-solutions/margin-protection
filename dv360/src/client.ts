@@ -15,6 +15,12 @@
  * limitations under the License.
  */
 
+/**
+ * @fileoverview Client class for DV360.
+ */
+
+// g3-format-prettier
+
 import {
   Advertisers,
   AssignedTargetingOptions,
@@ -31,13 +37,11 @@ import {
   PropertyStore,
   Rule,
   RuleInstructions,
-} from 'anomaly_library/main';
+} from 'google3/third_party/professional_services/solutions/appsscript_anomaly_library/lib/main';
+import {newRuleBuilder} from 'common/client_helpers';
+
+import {AbstractRuleRange} from 'common/sheet_helpers';
 import {
-  AbstractRuleRange,
-  newRuleBuilder,
-} from 'common/sheet_helpers';
-import {
-  Callback,
   ExecutorResult,
   ParamDefinition,
   RecordInfo,
@@ -208,9 +212,12 @@ export class Client implements ClientInterface {
     >;
     const thresholds: Array<[Executor, Function]> = Object.values(
       this.ruleStore,
-    ).reduce((prev, rule) => {
-      return [...prev, [rule, rule.run.bind(rule)]];
-    }, [] as Array<[Executor, Function]>);
+    ).reduce(
+      (prev, rule) => {
+        return [...prev, [rule, rule.run.bind(rule)]];
+      },
+      [] as Array<[Executor, Function]>,
+    );
     const rules: Record<string, Executor> = {};
     const results: Record<string, ExecutorResult> = {};
     for (const [rule, thresholdCallable] of thresholds) {
