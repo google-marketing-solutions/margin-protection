@@ -21,7 +21,9 @@
 
 // g3-format-prettier
 
+import * as AdTypes from 'common/ads_api_types';
 import {AdsClientArgs} from 'common/ads_api_types';
+
 import {
   BaseClientArgs,
   BaseClientInterface,
@@ -48,30 +50,31 @@ export interface ClientInterface
 }
 
 /**
- * Extends the base client interface with SA360-specific features.
- */
-export interface ClientInterfaceV2
-  extends BaseClientInterface<
-    ClientInterfaceV2,
-    RuleGranularity,
-    ClientArgsV2
-  > {
-  getCampaignReport(): Promise<CampaignReport>;
-  getCampaignTargetReport(): Promise<CampaignTargetReport>;
-  getAdGroupReport(): Promise<AdGroupReport>;
-  getAdGroupTargetReport(): Promise<AdGroupTargetReport>;
-  getAllAdGroups(): Promise<RecordInfo[]>;
-  args: ClientArgsV2;
-}
-
-/**
  * Args for the new SA360 API.
  */
-export interface ClientArgsV2 extends BaseClientArgs {
-  customerId: string;
-  loginCustomerId?: string;
+export interface ClientArgsV2 extends AdsClientArgs {
   fullFetch?: boolean;
 }
+
+/**
+ * Convenience wrapper for a {@link AdTypes.ReportInterface}.
+ */
+export interface ReportInterface<
+  Q extends AdTypes.QueryBuilder<Params, Joins>,
+  Output extends string,
+  Params extends string,
+  Joins extends AdTypes.JoinType<Params> | undefined = AdTypes.JoinType<Params>,
+> extends AdTypes.ReportInterface<Q, Output, Params, Joins> {}
+
+/**
+ * Convenience wrapper for a {@link AdTypes.ReportClass}.
+ */
+export interface ReportClass<
+  Q extends AdTypes.QueryBuilder<Params, Joins>,
+  Output extends string,
+  Params extends string,
+  Joins extends AdTypes.JoinType<Params> | undefined = AdTypes.JoinType<Params>,
+> extends AdTypes.ReportClass<Q, Output, Params, Joins> {}
 
 /**
  * Extends the base client interface with SA360-specific features.
@@ -82,21 +85,15 @@ export interface ClientInterfaceV2
     RuleGranularity,
     ClientArgsV2
   > {
-  getCampaignReport(): Promise<CampaignReport>;
-  getCampaignTargetReport(): Promise<CampaignTargetReport>;
-  getAdGroupReport(): Promise<AdGroupReport>;
-  getAdGroupTargetReport(): Promise<AdGroupTargetReport>;
   getAllAdGroups(): Promise<RecordInfo[]>;
-  settings: ClientArgsV2;
-}
-
-/**
- * Client args for SA360's new API
- */
-export interface ClientArgsV2 extends AdsClientArgs {
-  customerId: string;
-  loginCustomerId?: string;
-  fullFetch?: boolean;
+  getReport<
+    Q extends AdTypes.QueryBuilder<Params, Joins>,
+    Output extends string,
+    Params extends string,
+    Joins extends AdTypes.JoinType<Params>,
+  >(
+    Report: ReportClass<Q, Output, Params>,
+  ): ReportInterface<Q, Output, Params, Joins>;
 }
 
 /**

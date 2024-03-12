@@ -132,9 +132,10 @@ class FakeRange {
 }
 
 class FakeSheet {
-  readonly cells: string[][] = Array.from({length: 100}).map((unused) =>
-    Array.from({length: 30}),
-  );
+  readonly cells: string[][] = Array.from({length: 100})
+                                   .map(
+                                       () => Array.from({length: 30}),
+                                   );
   lastRow = 1;
   lastColumn = 1;
 
@@ -175,7 +176,7 @@ class FakeSheet {
 }
 
 class FakeHtmlService {
-  createTemplateFromFile(file: string) {
+  createTemplateFromFile() {
     throw new Error('Not implemented. Stub me.');
   }
 }
