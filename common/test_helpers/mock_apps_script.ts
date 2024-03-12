@@ -40,7 +40,7 @@ function a1NotationToRowColumn(a1Notation: string, start = true) {
       start                    ? 1 :
                                  100_000;
   for (i = 0; i < letters.length; i++) {
-    column += letters.charCodeAt(i) - a;
+    column += letters.charCodeAt(i) - a + 1;
   }
 
   return {row, column};

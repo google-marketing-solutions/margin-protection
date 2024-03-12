@@ -453,7 +453,7 @@ describe('ApiV2', () => {
               campaignCriterion: {
                 resourceName: 'customers/1/campaignCriteria/209618821~c1',
                 type: 'USER_LIST',
-                userList: {userList: 'customers/1/userLists/ul1'},
+                userList: {userList: `customers/1/userLists/ul${x}`},
                 criterionId: `ul${x}`,
               },
               campaignAudienceView: {
@@ -465,7 +465,7 @@ describe('ApiV2', () => {
           return iterator(
             ...[...Array.from({length: 5}).keys()].map((x) => ({
               userList: {
-                resourceName: 'customers/1/userLists/ul1',
+                resourceName: `customers/1/userLists/ul${x}`,
                 type: 'RULE_BASED',
                 name: `All visitors ${x}`,
                 id: `ul${x}`,
@@ -531,13 +531,13 @@ describe('ApiV2', () => {
               campaign: {resourceName: 'customers/1/campaigns/c1', id: 'c1'},
               adGroup: {id: 'ag1'},
               adGroupCriterion: {
-                resourceName: 'customers/1/campaignCriteria/209618821~c1',
+                resourceName: `customers/1/campaignCriteria/209618821~c${x}`,
                 type: 'USER_LIST',
-                userList: {userList: 'customers/1/userLists/ul1'},
+                userList: {userList: `customers/1/userLists/ul${x}`},
                 criterionId: `ul${x}`,
               },
               campaignAudienceView: {
-                resourceName: 'customers/1/campaignAudienceViews/c1~ul1',
+                resourceName: `customers/1/campaignAudienceViews/c1~ul${x}`,
               },
             })),
           );
@@ -545,7 +545,7 @@ describe('ApiV2', () => {
           return iterator(
             ...[...Array.from({length: 5}).keys()].map((x) => ({
               userList: {
-                resourceName: 'customers/1/userLists/ul1',
+                resourceName: `customers/1/userLists/ul${x}`,
                 type: 'RULE_BASED',
                 name: `All visitors ${x}`,
                 id: `ul${x}`,

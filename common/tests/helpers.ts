@@ -23,6 +23,7 @@
 
 import {AdsClientArgs} from 'common/ads_api_types';
 import {FakePropertyStore} from 'common/test_helpers/mock_apps_script';
+
 import {
   CredentialManager,
   GoogleAdsApiFactory,

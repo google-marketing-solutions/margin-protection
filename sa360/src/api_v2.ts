@@ -271,7 +271,7 @@ export const USER_LIST_REPORT = makeReport({
   }),
   transform(result) {
     return [
-      result.userList.id as string,
+      result.userList.resourceName as string,
       {
         userListName: result.userList.name as string,
         userListType: result.userList.type as string,
@@ -305,14 +305,14 @@ export const CAMPAIGN_USER_LIST_REPORT = makeReport({
     ],
     queryFrom: 'campaign_audience_view',
     joins: {
-      'campaignCriterion.criterionId': USER_LIST_REPORT,
+      'campaignCriterion.userList.userList': USER_LIST_REPORT,
     },
     queryWheres: ['campaign_criterion.type = "USER_LIST"'],
   }),
   transform(result, joins) {
     const userList =
-      joins['campaignCriterion.criterionId'][
-        result.campaignCriterion.criterionId as string
+      joins['campaignCriterion.userList.userList'][
+        result.campaignCriterion.userList.userList as string
       ];
     return [
       result.campaignCriterion.criterionId as string,
@@ -354,14 +354,14 @@ export const AD_GROUP_USER_LIST_REPORT = makeReport({
     ],
     queryFrom: 'ad_group_audience_view',
     joins: {
-      'adGroupCriterion.criterionId': USER_LIST_REPORT,
+      'adGroupCriterion.userList.userList': USER_LIST_REPORT,
     },
     queryWheres: ['ad_group_criterion.type = "USER_LIST"'],
   }),
   transform(result, joins) {
     const userList =
-      joins['adGroupCriterion.criterionId'][
-        result.adGroupCriterion.criterionId as string
+      joins['adGroupCriterion.userList.userList'][
+        result.adGroupCriterion.userList.userList as string
       ];
     return [
       result.adGroupCriterion.criterionId as string,
