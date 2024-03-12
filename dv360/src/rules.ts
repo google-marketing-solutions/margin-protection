@@ -115,12 +115,11 @@ export const geoTargetRule = newRule({
       id,
       displayName,
     } of await this.client.getAllCampaigns()) {
-      const targetingOptionApi =
-        new this.client.settings.assignedTargetingOptions!(
-          TARGETING_TYPE.GEO_REGION,
-          advertiserId,
-          {campaignId: id},
-        );
+      const targetingOptionApi = new this.client.args.assignedTargetingOptions!(
+        TARGETING_TYPE.GEO_REGION,
+        advertiserId,
+        {campaignId: id},
+      );
       let hasOnlyValidGeo = true;
       const campaignSettings = this.settings.getOrDefault(id);
 
@@ -203,8 +202,7 @@ export const budgetPacingPercentageRule = newRule({
     const rules: {[campaignId: string]: AbridgedCheck} = {};
     const values: Values = {};
 
-    let earliestStartDate: Date | undefined = undefined;
-    let latestEndDate: Date | undefined = undefined;
+    const dateRange: {earliestStartDate?: Date; latestEndDate?: Date} = {};
 
     const results: Array<{
       budget: number;
@@ -235,17 +233,14 @@ export const budgetPacingPercentageRule = newRule({
         ) {
           continue;
         }
-        // TODO: go/ts50upgrade - Auto-added to unblock TS5.0 migration
-        //   TS2365: Operator '<' cannot be applied to types 'never' and 'Date'.
-        // @ts-ignore
-        earliestStartDate = earliestStartDate && earliestStartDate < startDate ?
-            earliestStartDate :
-            startDate;
-        latestEndDate =
-          // TODO: go/ts50upgrade - Auto-added to unblock TS5.0 migration
-          //   TS2365: Operator '<' cannot be applied to types 'never' and 'Date'.
-          // @ts-ignore
-          latestEndDate && latestEndDate < endDate ? latestEndDate : endDate;
+        dateRange.earliestStartDate =
+          dateRange.earliestStartDate && dateRange.earliestStartDate < startDate
+            ? dateRange.earliestStartDate
+            : startDate;
+        dateRange.latestEndDate =
+          dateRange.latestEndDate && dateRange.latestEndDate < endDate
+            ? dateRange.latestEndDate
+            : endDate;
         results.push({
           campaignId: insertionOrder.getCampaignId(),
           displayName,
@@ -256,12 +251,12 @@ export const budgetPacingPercentageRule = newRule({
         });
       }
     }
-    if (!earliestStartDate || !latestEndDate) {
+    if (!dateRange.earliestStartDate || !dateRange.latestEndDate) {
       return {values};
     }
     const budgetReport = this.client.getBudgetReport({
-      startDate: earliestStartDate,
-      endDate: latestEndDate,
+      startDate: dateRange.earliestStartDate,
+      endDate: dateRange.latestEndDate,
     });
     for (const {
       budget,
@@ -378,8 +373,7 @@ export const budgetPacingDaysAheadRule = newRule({
       startDate: Date;
       endDate: Date;
     }> = [];
-    let earliestStartDate: Date | undefined = undefined;
-    let latestEndDate: Date | undefined = undefined;
+    const dateRange: {earliestStartDate?: Date; latestEndDate?: Date} = {};
     const today = Date.now();
     const todayDate = new Date(today);
     for (const insertionOrder of this.client.getAllInsertionOrders()) {
@@ -402,13 +396,14 @@ export const budgetPacingDaysAheadRule = newRule({
           continue;
         }
 
-        // @ts-ignore(go/ts50upgrade): Operator '<' cannot be applied to types 'never' and 'Date'.
-        earliestStartDate = earliestStartDate && earliestStartDate < startDate ?
-            earliestStartDate :
-            startDate;
-        latestEndDate =
-          // @ts-ignore(go/ts50upgrade): Operator '>' cannot be applied to types 'never' and 'Date'.
-          latestEndDate && latestEndDate > endDate ? latestEndDate : endDate;
+        dateRange.earliestStartDate =
+          dateRange.earliestStartDate && dateRange.earliestStartDate < startDate
+            ? dateRange.earliestStartDate
+            : startDate;
+        dateRange.latestEndDate =
+          dateRange.latestEndDate && dateRange.latestEndDate > endDate
+            ? dateRange.latestEndDate
+            : endDate;
         result.push({
           campaignId: insertionOrder.getCampaignId(),
           displayName,
@@ -419,12 +414,12 @@ export const budgetPacingDaysAheadRule = newRule({
         });
       }
     }
-    if (!earliestStartDate || !latestEndDate) {
+    if (!dateRange.earliestStartDate || !dateRange.latestEndDate) {
       return {values};
     }
     const budgetReport = this.client.getBudgetReport({
-      startDate: earliestStartDate,
-      endDate: latestEndDate,
+      startDate: dateRange.earliestStartDate,
+      endDate: dateRange.latestEndDate,
     });
     for (const {
       campaignId,
@@ -611,12 +606,9 @@ export const impressionsByGeoTarget = newRule({
   async callback() {
     const values: Values = {};
 
-    const range = {
+    const range: {startDate: Date | undefined; endDate: Date | undefined} = {
       startDate: undefined,
       endDate: undefined,
-    } as {
-      startDate: Date | undefined;
-      endDate: Date | undefined;
     };
 
     const today = Date.now();
@@ -638,10 +630,13 @@ export const impressionsByGeoTarget = newRule({
     if (!range.startDate || !range.endDate) {
       return {values};
     }
-    const impressionReport = new this.client.settings.impressionReport!({
-      idType: this.client.settings.idType,
-      id: this.client.settings.id,
-      ...(range as {startDate: Date; endDate: Date}),
+    const impressionReport = new this.client.args.impressionReport!({
+      idType: this.client.args.idType,
+      id: this.client.args.id,
+      ...(range as {
+        startDate: Date;
+        endDate: Date;
+      }),
     });
 
     for (const [insertionOrderId, {campaignId, displayName}] of Object.entries(

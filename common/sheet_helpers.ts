@@ -121,6 +121,7 @@ export class SettingMap<P extends {[Property in keyof P]: P[keyof P]}>
             : campaignValue[key]) ?? '';
         return prev;
       },
+
       {} as Record<keyof P, string>,
     ) as P;
   }
@@ -160,7 +161,7 @@ export class SettingMap<P extends {[Property in keyof P]: P[keyof P]}>
  */
 export function transformToParamValues<
   MapType extends Record<keyof MapType, ParamDefinition>,
->(rawSettings: readonly string[][], mapper: MapType) {
+>(rawSettings: ReadonlyArray<string[]>, mapper: MapType) {
   if (rawSettings.length < 2) {
     throw new Error(
       'Expected a grid with row and column headers of at least size 2',
@@ -220,7 +221,7 @@ interface MetadataForCsv {
 export abstract class AbstractRuleRange<
   C extends BaseClientInterface<C, G, A>,
   G extends RuleGranularity<G>,
-  A extends BaseClientArgs<C, G, A>,
+  A extends BaseClientArgs,
 > implements RuleRangeInterface<C, G, A>
 {
   private rowIndex: Record<string, number> = {};
@@ -507,7 +508,7 @@ export function getTemplateSetting(
 export abstract class AppsScriptFrontEnd<
   C extends BaseClientInterface<C, G, A>,
   G extends RuleGranularity<G>,
-  A extends BaseClientArgs<C, G, A>,
+  A extends BaseClientArgs,
   F extends AppsScriptFrontEnd<C, G, A, F>,
 > {
   readonly client: C;
@@ -1209,7 +1210,7 @@ export abstract class AppsScriptFrontEnd<
 export function newRuleBuilder<
   C extends BaseClientInterface<C, G, A>,
   G extends RuleGranularity<G>,
-  A extends BaseClientArgs<C, G, A>,
+  A extends BaseClientArgs,
 >(): <P extends Record<keyof P, ParamDefinition>>(
   p: RuleParams<C, G, A, P>,
 ) => RuleExecutorClass<C, G, A, P> {
@@ -1249,7 +1250,7 @@ export function newRuleBuilder<
 function load<
   C extends BaseClientInterface<C, G, A>,
   G extends RuleGranularity<G>,
-  A extends BaseClientArgs<C, G, A>,
+  A extends BaseClientArgs,
   F extends AppsScriptFrontEnd<C, G, A, F>,
 >(frontEndCaller: ScriptFunction<F>, fnName: ScriptEntryPoints) {
   return (
@@ -1284,7 +1285,7 @@ function load<
 function applyBinding<
   C extends BaseClientInterface<C, G, A>,
   G extends RuleGranularity<G>,
-  A extends BaseClientArgs<C, G, A>,
+  A extends BaseClientArgs,
   F extends AppsScriptFrontEnd<C, G, A, F>,
 >(frontEndCaller: ScriptFunction<F>): ScriptFunction<F> {
   return (scriptProperties: PropertyStore) => {
@@ -1308,7 +1309,7 @@ function applyBinding<
 export function lazyLoadApp<
   C extends BaseClientInterface<C, G, A>,
   G extends RuleGranularity<G>,
-  A extends BaseClientArgs<C, G, A>,
+  A extends BaseClientArgs,
   F extends AppsScriptFrontEnd<C, G, A, F>,
 >(frontEndCaller: ScriptFunction<F>): ScriptFunction<F> {
   const binders = applyBinding<C, G, A, F>(frontEndCaller);

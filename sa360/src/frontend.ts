@@ -15,17 +15,19 @@
  * limitations under the License.
  */
 
+/**
+ * @fileoverview frontend/apps script hooks for SA360 launch monitor
+ */
+
 // g3-format-prettier
 
 import {
-  addSettingWithDescription,
   AppsScriptFrontEnd,
   AppsScriptPropertyStore,
-  EMAIL_LIST_RANGE,
+  RULE_SETTINGS_SHEET,
+  addSettingWithDescription,
   getOrCreateSheet,
   getTemplateSetting,
-  LABEL_RANGE,
-  RULE_SETTINGS_SHEET,
 } from 'common/sheet_helpers';
 import {
   FrontEndArgs,
@@ -44,6 +46,16 @@ import {RuleGranularity} from './types';
  * The name of the general settings sheet.
  */
 export const GENERAL_SETTINGS_SHEET = 'General/Settings';
+
+/**
+ * The name of the label range in Apps Script.
+ */
+export const LABEL_RANGE = 'LABEL';
+
+/**
+ * The name of the email list range in Apps Script.
+ */
+export const EMAIL_LIST_RANGE = 'EMAIL_LIST';
 
 const AGENCY_ID = 'AGENCY_ID';
 const ADVERTISER_ID = 'ADVERTISER_ID';
@@ -262,15 +274,17 @@ export class SearchAdsFrontEnd extends AppsScriptFrontEnd<
       this.getRangeByName(ADVERTISER_ID).getValue() || '';
     const htmlOutput = template.evaluate().setWidth(350).setHeight(400);
     SpreadsheetApp.getUi().showModalDialog(htmlOutput, 'Set up');
+
+    return template['advertiserID'];
   }
 
   override async preLaunchQa() {
-    this.client.settings.fullFetch = true;
+    this.client.args.fullFetch = true;
     await super.preLaunchQa();
   }
 
   override async initializeSheets() {
-    this.client.settings.fullFetch = true;
+    this.client.args.fullFetch = true;
     await super.initializeSheets();
   }
 
@@ -286,6 +300,6 @@ export class SearchAdsFrontEnd extends AppsScriptFrontEnd<
   ) {
     super.saveSettingsBackToSheets(rules);
     getTemplateSetting(FULL_FETCH_RANGE).setValue('FALSE');
-    this.client.settings.fullFetch = false;
+    this.client.args.fullFetch = false;
   }
 }

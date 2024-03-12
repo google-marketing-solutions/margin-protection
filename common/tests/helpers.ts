@@ -50,36 +50,19 @@ export interface TestClientInterface
   extends BaseClientInterface<
     TestClientInterface,
     Granularity,
-    TestClientArgs
+    BaseClientArgs
   > {
   id: string;
   getAllCampaigns(): Promise<RecordInfo[]>;
-  getRule(
-    ruleName: string,
-  ): RuleExecutor<
-    TestClientInterface,
-    Granularity,
-    TestClientArgs,
-    Record<string, ParamDefinition>
-  >;
 }
 
 /**
- * Test client args for use in tests.
- */
-export class TestClientArgs
-  implements BaseClientArgs<TestClientInterface, Granularity, TestClientArgs>
-{
-  readonly label = 'test';
-}
-
-/**
- * Test rule range for use in tests.
+ * Stub for rule range
  */
 export class RuleRange extends AbstractRuleRange<
   TestClientInterface,
   Granularity,
-  TestClientArgs
+  BaseClientArgs
 > {
   async getRows() {
     return [{id: '1', displayName: 'Campaign 1', advertiserId: '1'}];
@@ -90,14 +73,12 @@ export class RuleRange extends AbstractRuleRange<
  * Test client for use in tests.
  */
 export class FakeClient implements TestClientInterface {
-  readonly settings: TestClientArgs = {
-    label: 'test',
-  };
+  readonly args: BaseClientArgs = {label: 'test'};
   readonly ruleStore: {
     [ruleName: string]: RuleExecutor<
       TestClientInterface,
       Granularity,
-      TestClientArgs,
+      BaseClientArgs,
       Record<string, ParamDefinition>
     >;
   } = {};
@@ -108,9 +89,12 @@ export class FakeClient implements TestClientInterface {
   ): RuleExecutor<
     TestClientInterface,
     Granularity,
-    TestClientArgs,
+    BaseClientArgs,
     Record<string, ParamDefinition>
   > {
+    throw new Error('Method not implemented.');
+  }
+  getUniqueKey(prefix: string): string {
     throw new Error('Method not implemented.');
   }
   validate(): Promise<{
@@ -119,7 +103,7 @@ export class FakeClient implements TestClientInterface {
       RuleExecutor<
         TestClientInterface,
         Granularity,
-        TestClientArgs,
+        BaseClientArgs,
         Record<string, ParamDefinition>
       >
     >;
@@ -131,10 +115,10 @@ export class FakeClient implements TestClientInterface {
     rule: RuleExecutorClass<
       TestClientInterface,
       Granularity,
-      TestClientArgs,
+      BaseClientArgs,
       Params
     >,
-    settingsArray: readonly string[][],
+    settingsArray: ReadonlyArray<string[]>,
   ): TestClientInterface {
     throw new Error('Method not implemented.');
   }
@@ -151,7 +135,7 @@ export class FakeClient implements TestClientInterface {
 export class FakeFrontEnd extends AppsScriptFrontEnd<
   TestClientInterface,
   Granularity,
-  TestClientArgs,
+  BaseClientArgs,
   FakeFrontEnd
 > {
   readonly calls: Record<AppsScriptFunctions, number> = {
@@ -169,7 +153,7 @@ export class FakeFrontEnd extends AppsScriptFrontEnd<
     args: FrontEndArgs<
       TestClientInterface,
       Granularity,
-      TestClientArgs,
+      BaseClientArgs,
       FakeFrontEnd
     >,
   ) {
@@ -177,7 +161,7 @@ export class FakeFrontEnd extends AppsScriptFrontEnd<
     super('Fake', args);
   }
 
-  getIdentity(): TestClientArgs {
+  getIdentity(): BaseClientArgs {
     return {label: 'test'};
   }
 

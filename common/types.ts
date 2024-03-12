@@ -78,9 +78,9 @@ export type Settings<Params> = SettingMapInterface<{
 export interface BaseClientInterface<
   C extends BaseClientInterface<C, G, A>,
   G extends RuleGranularity<G>,
-  A extends BaseClientArgs<C, G, A>,
+  A extends BaseClientArgs,
 > {
-  readonly settings: A;
+  readonly args: A;
   readonly ruleStore: {
     [ruleName: string]: RuleExecutor<C, G, A, Record<string, ParamDefinition>>;
   };
@@ -96,7 +96,7 @@ export interface BaseClientInterface<
 
   addRule<Params extends Record<keyof Params, ParamDefinition>>(
     rule: RuleExecutorClass<C, G, A, Params>,
-    settingsArray: readonly string[][],
+    settingsArray: ReadonlyArray<string[]>,
   ): C;
 }
 
@@ -110,17 +110,15 @@ export interface ParamDefinition {
   numberFormat?: string;
 }
 
-interface EnumLike {
-  toString(): string;
-}
-
 /**
  * Determines how a rule is changed (e.g. at the campaign or ad group level).
  *
  * This includes any and all types of granularity for any and all products.
  * Use the granularity you'd like to appear on your settings page.
  */
-export type RuleGranularity<G extends EnumLike> = {[Property in keyof G]: G};
+export type RuleGranularity<G extends RuleGranularity<G>> = {
+  [Property in keyof G]: G;
+};
 
 /**
  * Actionable object to run a rule.
@@ -128,7 +126,7 @@ export type RuleGranularity<G extends EnumLike> = {[Property in keyof G]: G};
 export interface RuleExecutor<
   C extends BaseClientInterface<C, G, A>,
   G extends RuleGranularity<G>,
-  A extends BaseClientArgs<C, G, A>,
+  A extends BaseClientArgs,
   P extends Record<keyof P, ParamDefinition>,
 > extends Omit<RuleDefinition<P, G>, 'callback' | 'defaults' | 'granularity'> {
   client: C;
@@ -161,10 +159,10 @@ export interface RuleGetter {
 export interface RuleExecutorClass<
   C extends BaseClientInterface<C, G, A>,
   G extends RuleGranularity<G>,
-  A extends BaseClientArgs<C, G, A>,
+  A extends BaseClientArgs,
   P extends Record<keyof P, P[keyof P]> = Record<string, ParamDefinition>,
 > {
-  new (client: C, settings: readonly string[][]): RuleExecutor<C, G, A, P>;
+  new (client: C, settings: ReadonlyArray<string[]>): RuleExecutor<C, G, A, P>;
   definition: RuleDefinition<P, G>;
 }
 
@@ -195,13 +193,20 @@ export interface RecordInfo {
 }
 
 /**
+ * Record Info for the new SA360.
+ *
+ * SA360 no longer uses advertiser IDs, instead using customer IDs.
+ */
+export interface RecordInfoV2 {
+  customerId: string;
+  id: string;
+  displayName: string;
+}
+
+/**
  * Represents a client-specific set of client arguments to initialize a client.
  */
-export interface BaseClientArgs<
-  C extends BaseClientInterface<C, G, A>,
-  G extends RuleGranularity<G>,
-  A extends BaseClientArgs<C, G, A>,
-> {
+export interface BaseClientArgs {
   /**
    * The name of the client. Distinguishable for emails.
    */
@@ -214,10 +219,10 @@ export interface BaseClientArgs<
 export interface RuleExecutorClass<
   C extends BaseClientInterface<C, G, A>,
   G extends RuleGranularity<G>,
-  A extends BaseClientArgs<C, G, A>,
+  A extends BaseClientArgs,
   P extends Record<keyof P, P[keyof P]> = Record<string, ParamDefinition>,
 > {
-  new (client: C, settings: readonly string[][]): RuleExecutor<C, G, A, P>;
+  new (client: C, settings: ReadonlyArray<string[]>): RuleExecutor<C, G, A, P>;
   definition: RuleDefinition<P, G>;
 }
 
@@ -236,7 +241,7 @@ export interface RuleExecutorClass<
 export interface RuleStoreEntry<
   C extends BaseClientInterface<C, G, A>,
   G extends RuleGranularity<G>,
-  A extends BaseClientArgs<C, G, A>,
+  A extends BaseClientArgs,
   P extends Record<
     keyof ParamDefinition,
     ParamDefinition[keyof ParamDefinition]
@@ -245,7 +250,7 @@ export interface RuleStoreEntry<
   /**
    * Contains a rule's metadata.
    */
-  rule: RuleExecutorClass<C, G, A, P>;
+  rule: RuleExecutorClass<C, G, A>;
 
   /**
    * Content in the form of {advertiserId: {paramKey: paramValue}}.
@@ -255,10 +260,13 @@ export interface RuleStoreEntry<
   settings: Settings<P>;
 }
 
+/**
+ * Sheets interface. Writes parameters to and from Google Sheets.
+ */
 export interface RuleRangeInterface<
   C extends BaseClientInterface<C, G, A>,
   G extends RuleGranularity<G>,
-  A extends BaseClientArgs<C, G, A>,
+  A extends BaseClientArgs,
 > {
   setRow(category: string, campaignId: string, column: string[]): void;
 
@@ -298,7 +306,7 @@ export interface RuleRangeInterface<
 export interface FrontEndArgs<
   C extends BaseClientInterface<C, G, A>,
   G extends RuleGranularity<G>,
-  A extends BaseClientArgs<C, G, A>,
+  A extends BaseClientArgs,
   F extends AppsScriptFrontEnd<C, G, A, F>,
 > {
   readonly ruleRangeClass: {
@@ -319,7 +327,7 @@ export interface FrontEndArgs<
 export type RuleParams<
   C extends BaseClientInterface<C, G, A>,
   G extends RuleGranularity<G>,
-  A extends BaseClientArgs<C, G, A>,
+  A extends BaseClientArgs,
   P extends Record<keyof P, ParamDefinition>,
 > = RuleDefinition<P, G> & ThisType<RuleExecutor<C, G, A, P>>;
 

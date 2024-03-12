@@ -15,34 +15,39 @@
  * limitations under the License.
  */
 
+/**
+ * @fileoverview Tests for sheet helpers.
+ */
+
 // g3-format-prettier
 
-import {
-  AppsScriptPropertyStore,
-  getOrCreateSheet,
-  HELPERS,
-  lazyLoadApp,
-  SettingMap,
-  sortMigrations,
-  toExport,
-  transformToParamValues,
-} from 'common/sheet_helpers';
 import {
   FakePropertyStore,
   mockAppsScript,
 } from 'common/test_helpers/mock_apps_script';
 import {
+  BaseClientArgs,
   ParamDefinition,
   RuleExecutorClass,
   RuleGetter,
 } from 'common/types';
 
 import {
+  AppsScriptPropertyStore,
+  HELPERS,
+  SettingMap,
+  getOrCreateSheet,
+  lazyLoadApp,
+  sortMigrations,
+  toExport,
+  transformToParamValues,
+} from '../sheet_helpers';
+
+import {
   FakeClient,
   FakeFrontEnd,
   Granularity,
   RuleRange,
-  TestClientArgs,
   TestClientInterface,
 } from './helpers';
 
@@ -54,7 +59,7 @@ describe('Check globals', () => {
     frontend = lazyLoadApp<
       TestClientInterface,
       Granularity,
-      TestClientArgs,
+      BaseClientArgs,
       FakeFrontEnd
     >((properties) => {
       return new FakeFrontEnd({
@@ -124,7 +129,7 @@ describe('Test migration order', () => {
     return lazyLoadApp<
       TestClientInterface,
       Granularity,
-      TestClientArgs,
+      BaseClientArgs,
       FakeFrontEnd
     >((properties) => {
       return new FakeFrontEnd({
@@ -471,7 +476,7 @@ describe('Test emails', () => {
     frontend = lazyLoadApp<
       TestClientInterface,
       Granularity,
-      TestClientArgs,
+      BaseClientArgs,
       FakeFrontEnd
     >((properties) => {
       return new FakeFrontEnd({
@@ -568,9 +573,6 @@ function generateTestClient(params: {id?: string}): TestClientInterface {
     async getAllCampaigns() {
       return [];
     },
-    getRule(ruleName: string) {
-      throw new Error('Not implemented.');
-    },
     validate() {
       throw new Error('Not implemented.');
     },
@@ -578,13 +580,13 @@ function generateTestClient(params: {id?: string}): TestClientInterface {
       rule: RuleExecutorClass<
         TestClientInterface,
         Granularity,
-        TestClientArgs,
+        BaseClientArgs,
         {}
       >,
     ): TestClientInterface => {
       throw new Error('Not implemented.');
     },
-    settings: {label: 'test'},
+    args: {label: 'test'},
     properties: new FakePropertyStore(),
   };
 }

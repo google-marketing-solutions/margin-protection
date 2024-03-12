@@ -15,6 +15,10 @@
  * limitations under the License.
  */
 
+/**
+ * @fileoverview types for Google Ads
+ */
+
 // g3-format-prettier
 
 import {
@@ -39,14 +43,39 @@ export interface ClientInterface
   getAdGroupReport(): Promise<AdGroupReport>;
   getAdGroupTargetReport(): Promise<AdGroupTargetReport>;
   getAllAdGroups(): Promise<RecordInfo[]>;
-  settings: ClientArgs;
+  args: ClientArgs;
+}
+
+/**
+ * Extends the base client interface with SA360-specific features.
+ */
+export interface ClientInterfaceV2
+  extends BaseClientInterface<
+    ClientInterfaceV2,
+    RuleGranularity,
+    ClientArgsV2
+  > {
+  getCampaignReport(): Promise<CampaignReport>;
+  getCampaignTargetReport(): Promise<CampaignTargetReport>;
+  getAdGroupReport(): Promise<AdGroupReport>;
+  getAdGroupTargetReport(): Promise<AdGroupTargetReport>;
+  getAllAdGroups(): Promise<RecordInfo[]>;
+  args: ClientArgsV2;
+}
+
+/**
+ * Args for the new SA360 API.
+ */
+export interface ClientArgsV2 extends BaseClientArgs {
+  customerId: string;
+  loginCustomerId?: string;
+  fullFetch?: boolean;
 }
 
 /**
  * An agency ID and, optionally, an advertiser ID to narrow down.
  */
-export interface ClientArgs
-  extends BaseClientArgs<ClientInterface, RuleGranularity, ClientArgs> {
+export interface ClientArgs extends BaseClientArgs {
   agencyId: string;
   advertiserId?: string;
 
@@ -57,6 +86,9 @@ export interface ClientArgs
   fullFetch?: boolean;
 }
 
+/**
+ * SA360 granularity options.
+ */
 export enum RuleGranularity {
   CAMPAIGN = 'Campaign',
   AD_GROUP = 'Ad Group',

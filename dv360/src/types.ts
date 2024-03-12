@@ -15,6 +15,10 @@
  * limitations under the License.
  */
 
+/**
+ * @fileoverview Types for DV360
+ */
+
 // g3-format-prettier
 
 import {
@@ -91,8 +95,7 @@ export interface ClientInterface
 /**
  * An agency ID and, optionally, an advertiser ID to narrow down.
  */
-export interface ClientArgs
-  extends BaseClientArgs<ClientInterface, RuleGranularity, ClientArgs> {
+export interface ClientArgs extends BaseClientArgs {
   idType: IDType;
   id: Readonly<string>;
   advertisers?: typeof Advertisers;

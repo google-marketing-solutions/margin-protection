@@ -15,6 +15,10 @@
  * limitations under the License.
  */
 
+/**
+ * @fileoverview Client helpers - frontend agnostic.
+ */
+
 // g3-format-prettier
 
 import {transformToParamValues} from './sheet_helpers';
@@ -48,10 +52,13 @@ import {
  * });
  * ```
  */
+
+// This returns a function that is self-typed.
+// tslint:disable-next-line:no-return-only-generics
 export function newRuleBuilder<
   C extends BaseClientInterface<C, G, A>,
   G extends RuleGranularity<G>,
-  A extends BaseClientArgs<C, G, A>,
+  A extends BaseClientArgs,
 >(): <P extends Record<keyof P, ParamDefinition>>(
   p: RuleParams<C, G, A, P>,
 ) => RuleExecutorClass<C, G, A, P> {
@@ -65,12 +72,7 @@ export function newRuleBuilder<
       readonly description: string = ruleDefinition.description;
       readonly params = ruleDefinition.params;
       readonly helper = ruleDefinition.helper ?? '';
-      // Auto-added to unblock TS5.0 migration
-      // @ts-ignore(go/ts50upgrade): This syntax requires an imported helper
-      // named
-      // '__setFunctionName' which does not exist in 'tslib'. Consider upgrading
-      // your version of 'tslib'.
-      readonly granularity: RuleGranularity = ruleDefinition.granularity;
+      readonly granularity: G = ruleDefinition.granularity;
       readonly valueFormat = ruleDefinition.valueFormat;
       static definition = ruleDefinition;
 

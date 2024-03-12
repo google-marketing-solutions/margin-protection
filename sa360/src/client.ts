@@ -78,7 +78,7 @@ export class Client implements ClientInterface {
   private adGroups: RecordInfo[] | undefined;
 
   constructor(
-    readonly settings: ClientArgs,
+    readonly args: ClientArgs,
     readonly properties: PropertyStore,
   ) {
     this.ruleStore = {};
@@ -86,7 +86,7 @@ export class Client implements ClientInterface {
 
   async getCampaignReport(): Promise<CampaignReport> {
     if (!this.campaignReport) {
-      this.campaignReport = await CampaignReport.buildReport(this.settings);
+      this.campaignReport = await CampaignReport.buildReport(this.args);
     }
     return this.campaignReport;
   }
@@ -94,7 +94,7 @@ export class Client implements ClientInterface {
   async getCampaignTargetReport(): Promise<CampaignTargetReport> {
     if (!this.campaignTargetReport) {
       this.campaignTargetReport = await CampaignTargetReport.buildReport(
-        this.settings,
+        this.args,
       );
     }
     return this.campaignTargetReport;
@@ -102,7 +102,7 @@ export class Client implements ClientInterface {
 
   async getAdGroupReport(): Promise<AdGroupReport> {
     if (!this.adGroupReport) {
-      this.adGroupReport = await AdGroupReport.buildReport(this.settings);
+      this.adGroupReport = await AdGroupReport.buildReport(this.args);
     }
 
     return this.adGroupReport;
@@ -111,7 +111,7 @@ export class Client implements ClientInterface {
   async getAdGroupTargetReport(): Promise<AdGroupTargetReport> {
     if (!this.adGroupTargetReport) {
       this.adGroupTargetReport = await AdGroupTargetReport.buildReport(
-        this.settings,
+        this.args,
       );
     }
 
@@ -132,7 +132,7 @@ export class Client implements ClientInterface {
       ClientArgs,
       Params
     >,
-    settingsArray: readonly string[][],
+    settingsArray: ReadonlyArray<string[]>,
   ) {
     this.ruleStore[rule.definition.name] = new rule(this, settingsArray);
     return this;
@@ -143,9 +143,7 @@ export class Client implements ClientInterface {
   }
 
   getUniqueKey(prefix: string) {
-    return `${prefix}-${this.settings.agencyId}-${
-      this.settings.advertiserId ?? 'a'
-    }`;
+    return `${prefix}-${this.args.agencyId}-${this.args.advertiserId ?? 'a'}`;
   }
 
   /**
@@ -198,7 +196,7 @@ export class Client implements ClientInterface {
 }
 
 /**
- * SA360 rule settings splits.
+ * SA360 rule args splits.
  */
 export class RuleRange extends AbstractRuleRange<
   ClientInterface,

@@ -31,8 +31,7 @@ export interface ClientInterface
 /**
  * Necessary Ads API request metadata
  */
-export interface ClientArgs
-  extends BaseClientArgs<ClientInterface, RuleGranularity, ClientArgs> {
+export interface ClientArgs extends BaseClientArgs {
   developerToken: string;
 }
 

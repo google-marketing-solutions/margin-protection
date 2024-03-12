@@ -15,7 +15,20 @@
  * limitations under the License.
  */
 
-import {addSettingWithDescription, AppsScriptFrontEnd, AppsScriptPropertyStore, getOrCreateSheet, HELPERS, LABEL_RANGE} from 'common/sheet_helpers';
+/**
+ * @fileoverview frontend/apps script hooks for DV360 launch monitor
+ */
+
+// g3-format-prettier
+
+import {
+  AppsScriptFrontEnd,
+  AppsScriptPropertyStore,
+  HELPERS,
+  LABEL_RANGE,
+  addSettingWithDescription,
+  getOrCreateSheet,
+} from 'common/sheet_helpers';
 import {FrontEndArgs} from 'common/types';
 import {RuleRange} from 'dv360/src/client';
 import {
@@ -165,5 +178,6 @@ export class DisplayVideoFrontEnd extends AppsScriptFrontEnd<
     template['idType'] = this.getRangeByName(ID_TYPE).getValue() || '';
     const htmlOutput = template.evaluate().setWidth(350).setHeight(400);
     SpreadsheetApp.getUi().showModalDialog(htmlOutput, 'Set up');
+    return template['id'];
   }
 }
