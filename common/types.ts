@@ -349,3 +349,16 @@ export interface Value {
   alertedAt?: Readonly<number>;
   fields: Readonly<{[key: string]: string}>;
 }
+
+/**
+ * A check is a callback that can be executed.
+ */
+export type Check = (
+  // Keeping this value flexible. Child functions will implement type.
+  // tslint:disable-next-line:no-any
+  test: any,
+  // Keeping this value flexible. Child functions will implement type.
+  // tslint:disable-next-line:no-any
+  value: any,
+  fields: {[key: string]: string},
+) => Value;
