@@ -281,7 +281,7 @@ export interface ReportInterface<
             >
           >
         >,
-  ): readonly [key: string, record: Record<ArrayToUnion<Output[]>, string>];
+  ): readonly [key: string, record: Record<Output, string>];
 }
 
 /**
