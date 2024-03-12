@@ -18,26 +18,189 @@
 // g3-format-prettier
 
 import {
+  AppsScriptPropertyStore,
+  getOrCreateSheet,
+  HELPERS,
+  lazyLoadApp,
+  SettingMap,
+  sortMigrations,
+  toExport,
+  transformToParamValues,
+} from 'common/sheet_helpers';
+import {
   FakePropertyStore,
   mockAppsScript,
 } from 'common/test_helpers/mock_apps_script';
-import {ParamDefinition} from 'common/types';
+import {
+  ParamDefinition,
+  RuleExecutorClass,
+} from 'common/types';
 
 import {
-  getOrCreateSheet,
-  HELPERS,
-  SettingMap,
-  sortMigrations,
-  transformToParamValues,
-} from '../sheet_helpers';
-import {RuleExecutorClass} from '../types';
-
-import {
+  FakeClient,
+  FakeFrontEnd,
   Granularity,
   RuleRange,
   TestClientArgs,
   TestClientInterface,
 } from './helpers';
+
+describe('Check globals', () => {
+  let frontend: FakeFrontEnd;
+
+  beforeEach(() => {
+    setUp();
+    frontend = lazyLoadApp<
+      TestClientInterface,
+      Granularity,
+      TestClientArgs,
+      FakeFrontEnd
+    >((properties) => {
+      return new FakeFrontEnd({
+        ruleRangeClass: RuleRange,
+        rules: [],
+        version: '1.0',
+        clientClass: FakeClient,
+        migrations: {},
+        properties,
+      });
+    })(new AppsScriptPropertyStore());
+  });
+
+  it('exists in `toExport`', () => {
+    expect(toExport.onOpen).toBeDefined();
+    expect(toExport.initializeSheets).toBeDefined();
+    expect(toExport.launchMonitor).toBeDefined();
+    expect(toExport.preLaunchQa).toBeDefined();
+  });
+
+  it('calls frontend version', () => {
+    const calls = {...frontend.calls};
+
+    toExport.onOpen();
+    toExport.initializeSheets();
+    toExport.launchMonitor();
+    toExport.preLaunchQa();
+
+    expect(calls.onOpen).toEqual(0);
+    expect(calls.initializeSheets).toEqual(0);
+    expect(calls.launchMonitor).toEqual(0);
+    expect(calls.preLaunchQa).toEqual(0);
+    expect(frontend.calls.onOpen).toEqual(1);
+    expect(frontend.calls.initializeSheets).toEqual(1);
+    expect(frontend.calls.launchMonitor).toEqual(1);
+    expect(frontend.calls.preLaunchQa).toEqual(1);
+  });
+});
+
+function setUp() {
+  mockAppsScript();
+  spyOn(HELPERS, 'insertRows').and.callFake((range) => range);
+}
+
+describe('Test migration order', () => {
+  const list: string[] = [];
+  const CURRENT_SHEET_VERSION = '2.2.0';
+  const migrations = {
+    '3.0': () => list.push('3.0'),
+    '2.1.4': () => list.push('2.1.4'),
+    '2.0': () => list.push('2.0'),
+    '2.1.0': () => list.push('2.1.0'),
+    '2.2.0': () => list.push('2.2.0'),
+  };
+
+  function setFrontEnd({
+    expectedVersion,
+    currentVersion,
+  }: {
+    expectedVersion: string;
+    currentVersion: string;
+  }) {
+    PropertiesService.getScriptProperties().setProperty(
+      'sheet_version',
+      currentVersion,
+    );
+    return lazyLoadApp<
+      TestClientInterface,
+      Granularity,
+      TestClientArgs,
+      FakeFrontEnd
+    >((properties) => {
+      return new FakeFrontEnd({
+        ruleRangeClass: RuleRange,
+        rules: [],
+        version: expectedVersion,
+        clientClass: FakeClient,
+        migrations,
+        properties,
+      });
+    })(new AppsScriptPropertyStore());
+  }
+
+  beforeEach(() => {
+    mockAppsScript();
+  });
+
+  afterEach(() => {
+    list.splice(0, list.length);
+  });
+
+  it('migrates all', () => {
+    const frontend = setFrontEnd({
+      expectedVersion: '5.0',
+      currentVersion: '1.0',
+    });
+    frontend.migrate();
+    expect(list).toEqual(['2.0', '2.1.0', '2.1.4', '2.2.0', '3.0']);
+  });
+
+  it('partially migrates', () => {
+    const frontend = setFrontEnd({
+      expectedVersion: '5.0',
+      currentVersion: '2.1.0',
+    });
+    frontend.migrate();
+    expect(list).toEqual(['2.1.4', '2.2.0', '3.0']);
+  });
+
+  it('runs when initializeSheets runs', async () => {
+    const frontend = setFrontEnd({
+      expectedVersion: CURRENT_SHEET_VERSION,
+      currentVersion: '1.0',
+    });
+    mockAppsScript();
+    spyOn(HtmlService, 'createTemplateFromFile').and.stub();
+    PropertiesService.getScriptProperties().setProperty('sheet_version', '0.1');
+    await frontend.initializeSheets();
+    expect(
+      PropertiesService.getScriptProperties().getProperty('sheet_version'),
+    ).toEqual(String(CURRENT_SHEET_VERSION));
+  });
+
+  it('does not run migrations if version is up-to-date', () => {
+    const frontend = setFrontEnd({
+      expectedVersion: CURRENT_SHEET_VERSION,
+      currentVersion: '1.0',
+    });
+    // NOTE - do not change this test. Change `CURRENT_SHEET_VERSION` instead.
+    PropertiesService.getScriptProperties().setProperty(
+      'sheet_version',
+      String(CURRENT_SHEET_VERSION),
+    );
+    const numberRun = frontend.migrate();
+    expect(numberRun).toEqual(0);
+  });
+
+  it('migrates only to specified version cap', () => {
+    const frontend = setFrontEnd({
+      expectedVersion: '2.1.0',
+      currentVersion: '2.1.0',
+    });
+    const numberOfMigrations = frontend.migrate();
+    expect(list).toEqual([]);
+    expect(numberOfMigrations).toEqual(0);
+  });
+});
 
 describe('2-D array', () => {
   let array2d: string[][];
@@ -252,7 +415,7 @@ function generateTestClient(params: {id?: string}): TestClientInterface {
     ): TestClientInterface => {
       throw new Error('Not implemented.');
     },
-    settings: {},
+    settings: {label: 'Test'},
     properties: new FakePropertyStore(),
   };
 }

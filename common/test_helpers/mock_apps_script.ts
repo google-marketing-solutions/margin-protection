@@ -121,6 +121,11 @@ class FakeRange {
     return this;
   }
 
+  setValue(value: string) {
+    this.arrayRange[0][0] = value;
+    return this;
+  }
+
   clearDataValidations(): FakeRange {
     return this;
   }
@@ -169,12 +174,19 @@ class FakeSheet {
   }
 }
 
+class FakeHtmlService {
+  createTemplateFromFile(file: string) {
+    throw new Error('Not implemented. Stub me.');
+  }
+}
+
 class FakeSpreadsheet {
   private static lastNum = 1;
   private readonly namedRange: Record<string, FakeRange> = {};
   private readonly sheets: Record<string, FakeSheet> = {
     'Sheet1': new FakeSheet(),
   };
+  private lastActive = 'Sheet1';
 
   insertSheet(sheetName: string) {
     const computedSheetName = sheetName || `Sheet${++FakeSpreadsheet.lastNum}`;
@@ -192,6 +204,10 @@ class FakeSpreadsheet {
 
   getSheetByName(sheetName: keyof typeof this.sheets) {
     return this.sheets[sheetName];
+  }
+
+  getActiveSheet() {
+    return this.sheets[this.lastActive];
   }
 }
 
@@ -219,6 +235,8 @@ export function mockAppsScript() {
     new FakeSpreadsheetApp();
   (globalThis.ScriptApp as unknown as FakeScriptApp) = new FakeScriptApp();
   (globalThis.Utilities as unknown as FakeUtilities) = new FakeUtilities();
+  (globalThis.HtmlService as unknown as FakeHtmlService) =
+    new FakeHtmlService();
 }
 
 class FakeScriptApp {
