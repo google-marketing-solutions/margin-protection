@@ -252,3 +252,77 @@ export const GENDER_TARGET_REPORT = makeReport({
     ] as const;
   },
 });
+
+/**
+ * User list report.
+ *
+ * Exposed for testing.
+ */
+export const USER_LIST_REPORT = makeReport({
+  output: ['userListName', 'userListType'],
+  query: buildQuery({
+    queryParams: [
+      'user_list.resource_name',
+      'user_list.name',
+      'user_list.type',
+      'user_list.id',
+    ],
+    queryFrom: 'user_list',
+  }),
+  transform(result) {
+    return [
+      result.userList.id as string,
+      {
+        userListName: result.userList.name as string,
+        userListType: result.userList.type as string,
+      },
+    ] as const;
+  },
+});
+
+/**
+ * Campaign audience user list report.
+ *
+ * Exposed for testing.
+ */
+export const CAMPAIGN_USER_LIST_REPORT = makeReport({
+  output: [
+    'criterionId',
+    'customerId',
+    'customerName',
+    'campaignId',
+    'userListName',
+  ],
+  query: buildQuery({
+    queryParams: [
+      'customer.id',
+      'customer.name',
+      'campaign.id',
+      'campaign_criterion.resource_name',
+      'campaign_criterion.user_list.user_list',
+      'campaign_criterion.type',
+      'campaign_criterion.criterion_id',
+    ],
+    queryFrom: 'campaign_audience_view',
+    joins: {
+      'campaignCriterion.criterionId': USER_LIST_REPORT,
+    },
+    queryWheres: ['campaign_criterion.type = "USER_LIST"'],
+  }),
+  transform(result, joins) {
+    const userList =
+      joins['campaignCriterion.criterionId'][
+        result.campaignCriterion.criterionId as string
+      ];
+    return [
+      result.campaignCriterion.criterionId as string,
+      {
+        criterionId: result.campaignCriterion.criterionId as string,
+        customerId: result.customer.id as string,
+        customerName: result.customer.name as string,
+        campaignId: result.campaign.id as string,
+        userListName: userList.userListName,
+      },
+    ] as const;
+  },
+});

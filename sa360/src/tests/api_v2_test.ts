@@ -41,6 +41,7 @@ import {
   AGE_TARGET_REPORT,
   CAMPAIGN_REPORT,
   CAMPAIGN_TARGET_REPORT,
+  CAMPAIGN_USER_LIST_REPORT,
   GENDER_TARGET_REPORT,
 } from 'sa360/src/api_v2';
 
@@ -428,6 +429,85 @@ describe('ApiV2', () => {
           campaignId: 'c1',
           adGroupId: 'ag1',
           gender: 'Gender Type 4',
+        },
+      });
+    });
+  });
+
+  describe('Campaign user list report', () => {
+    it('returns expected results', () => {
+      const mockQuery: jasmine.Spy = spyOn(api, 'query');
+      mockQuery.and.callFake((customerId, query) => {
+        if (query === CAMPAIGN_USER_LIST_REPORT.query) {
+          return iterator(
+            ...[...Array.from({length: 5}).keys()].map((x) => ({
+              customer: {
+                resourceName: 'customers/1',
+                id: '1',
+                name: 'Customer 1',
+              },
+              campaign: {resourceName: 'customers/1/campaigns/c1', id: 'c1'},
+              campaignCriterion: {
+                resourceName: 'customers/1/campaignCriteria/209618821~c1',
+                type: 'USER_LIST',
+                userList: {userList: 'customers/1/userLists/ul1'},
+                criterionId: `ul${x}`,
+              },
+              campaignAudienceView: {
+                resourceName: 'customers/1/campaignAudienceViews/c1~ul1',
+              },
+            })),
+          );
+        } else {
+          return iterator(
+            ...[...Array.from({length: 5}).keys()].map((x) => ({
+              userList: {
+                resourceName: 'customers/1/userLists/ul1',
+                type: 'RULE_BASED',
+                name: `All visitors ${x}`,
+                id: `ul${x}`,
+              },
+            })),
+          );
+        }
+      });
+
+      const report = reportFactory.create(CAMPAIGN_USER_LIST_REPORT);
+      expect(report.fetch()).toEqual({
+        'ul0': {
+          criterionId: 'ul0',
+          customerId: '1',
+          customerName: 'Customer 1',
+          campaignId: 'c1',
+          userListName: 'All visitors 0',
+        },
+        'ul1': {
+          criterionId: 'ul1',
+          customerId: '1',
+          customerName: 'Customer 1',
+          campaignId: 'c1',
+          userListName: 'All visitors 1',
+        },
+        'ul2': {
+          criterionId: 'ul2',
+          customerId: '1',
+          customerName: 'Customer 1',
+          campaignId: 'c1',
+          userListName: 'All visitors 2',
+        },
+        'ul3': {
+          criterionId: 'ul3',
+          customerId: '1',
+          customerName: 'Customer 1',
+          campaignId: 'c1',
+          userListName: 'All visitors 3',
+        },
+        'ul4': {
+          criterionId: 'ul4',
+          customerId: '1',
+          customerName: 'Customer 1',
+          campaignId: 'c1',
+          userListName: 'All visitors 4',
         },
       });
     });
