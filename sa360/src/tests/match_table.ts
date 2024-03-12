@@ -32,38 +32,6 @@ interface Params {
   headers: {[key: string]: string};
 }
 
-class FakeScriptApp {
-  getOAuthToken() {
-    return 'token';
-  }
-}
-
-class FakeUtilities {
-  parseCsv(text: string) {
-    // We don't need a special package because this test CSV is very
-    // basic. No escaping, etc.
-    const lines = text.split('\n').map((line: string) => line.split(','));
-    return lines;
-  }
-}
-
-/**
- * Mock some extra stuff.
- *
- * Exported as a function in addition to getting immediately called, in case
- * it gets overwritten.
- */
-export function moreMocks() {
-  // tslint:disable-next-line:enforce-name-casing This is to mock existing variables.
-  (globalThis as unknown as {ScriptApp: FakeScriptApp}).ScriptApp =
-    new FakeScriptApp();
-  // tslint:disable-next-line:enforce-name-casing This is to mock existing variables.
-  (globalThis as unknown as {Utilities: FakeUtilities}).Utilities =
-    new FakeUtilities();
-}
-
-moreMocks();
-
 interface MatchTableQueries {
   [url: string]: {
     get?: (params: Params) => string;

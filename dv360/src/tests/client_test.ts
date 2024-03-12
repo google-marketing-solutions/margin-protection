@@ -19,7 +19,7 @@
 
 import {AbsoluteRule} from 'google3/third_party/professional_services/solutions/appsscript_anomaly_library/lib/absoluteRule';
 import {Value} from 'google3/third_party/professional_services/solutions/appsscript_anomaly_library/lib/main';
-import {mockAppsScript} from 'google3/third_party/professional_services/solutions/appsscript_anomaly_library/lib/testing/mock_apps_script';
+import {mockAppsScript} from 'common/test_helpers/mock_apps_script';
 
 import {Client, newRule} from '../client';
 import {RuleGranularity} from '../types';

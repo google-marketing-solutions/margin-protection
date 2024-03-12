@@ -18,17 +18,16 @@
 // g3-format-prettier
 
 import {AppsScriptPropertyStore} from 'google3/third_party/professional_services/solutions/appsscript_anomaly_library/lib/main';
-import {mockAppsScript} from 'google3/third_party/professional_services/solutions/appsscript_anomaly_library/lib/testing/mock_apps_script';
+import {mockAppsScript} from 'common/test_helpers/mock_apps_script';
 import * as api from 'sa360/src/api';
 
-import {MatchTable, moreMocks} from './match_table';
+import {MatchTable} from './match_table';
 
 describe('SA360 report aggregation', () => {
   let router: MatchTable;
   beforeEach(() => {
-    moreMocks();
-    router = new MatchTable();
     mockAppsScript();
+    router = new MatchTable();
     Utilities.formatDate = (date) => date.toISOString().split('T')[0];
     spyOn(Utilities, 'formatDate').and.callFake(
       (date) => date.toISOString().split('T')[0],

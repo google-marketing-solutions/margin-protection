@@ -22,12 +22,12 @@ import {
   PropertyStore,
   Values,
 } from 'google3/third_party/professional_services/solutions/appsscript_anomaly_library/lib/main';
+import {GENERAL_SETTINGS_SHEET} from 'common/sheet_helpers';
 import {
   FakePropertyStore,
   FakeUtilitiesService,
   mockAppsScript,
-} from 'google3/third_party/professional_services/solutions/appsscript_anomaly_library/lib/testing/mock_apps_script';
-import {GENERAL_SETTINGS_SHEET} from 'common/sheet_helpers';
+} from 'common/test_helpers/mock_apps_script';
 
 import {lazyLoadApp} from '../../../common/sheet_helpers';
 import {Client} from '../client';
@@ -92,7 +92,7 @@ describe('Migrations', async () => {
 
   it('upgrades to v2.0', () => {
     const store = new AppsScriptPropertyStore();
-    const values: Values = {'123': {value: 'v', anomalous: true}};
+    const values: Values = {'123': {value: 'v', anomalous: true, fields: {}}};
     store.setProperty('test', JSON.stringify(values));
     jasmine.clock().install();
     jasmine.clock().mockDate(new Date('2020-01-01T00:00:00.000Z'));

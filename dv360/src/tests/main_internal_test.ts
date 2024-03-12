@@ -36,14 +36,14 @@ import {AssignedTargetingOption} from 'dv360_api/dv360_resources';
 import {TARGETING_TYPE} from 'dv360_api/dv360_types';
 import {equalTo} from 'google3/third_party/professional_services/solutions/appsscript_anomaly_library/lib/absoluteRule';
 import {
-  FakePropertyStore,
-  FakeUtilitiesService,
-} from 'google3/third_party/professional_services/solutions/appsscript_anomaly_library/lib/testing/mock_apps_script';
-import {
   HELPERS,
   lazyLoadApp,
   RULE_SETTINGS_SHEET,
 } from 'common/sheet_helpers';
+import {
+  FakePropertyStore,
+  FakeUtilitiesService,
+} from 'common/test_helpers/mock_apps_script';
 import {
   Callback,
   ParamDefinition,

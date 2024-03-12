@@ -17,12 +17,18 @@
 
 // g3-format-prettier
 
-import {
-  PropertyStore,
-  RuleGetter,
-  Values,
-} from 'google3/third_party/professional_services/solutions/appsscript_anomaly_library/lib/main';
+import {RuleGetter} from 'google3/third_party/professional_services/solutions/appsscript_anomaly_library/lib/main';
+
 import {AppsScriptFrontEnd} from './sheet_helpers';
+
+/**
+ * An abstraction for retrieving properties.
+ */
+export interface PropertyStore {
+  setProperty(propertyName: string, value: string): void;
+  getProperty(propertyName: string): string | null;
+  getProperties(): Record<string, string>;
+}
 
 /**
  * The result of a rule executor once the Promise has resolved.
@@ -326,3 +332,20 @@ export type AppsScriptFunctions =
   | 'launchMonitor'
   | 'displaySetupGuide'
   | 'displayGlossary';
+
+/**
+ * An object mapping values to their anomalous status.
+ */
+export interface Values {
+  [key: string]: Value;
+}
+
+/**
+ * Represents a value that can be returned by an executed check.
+ */
+export interface Value {
+  value: Readonly<string>;
+  anomalous: Readonly<boolean>;
+  alertedAt?: Readonly<number>;
+  fields: Readonly<{[key: string]: string}>;
+}

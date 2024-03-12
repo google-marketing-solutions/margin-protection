@@ -36,7 +36,7 @@ import {
   PerformanceGoal,
 } from 'dv360_api/dv360_types';
 import {FilterExpression} from 'dv360_api/utils';
-import {FakePropertyStore} from 'google3/third_party/professional_services/solutions/appsscript_anomaly_library/lib/testing/mock_apps_script';
+import {FakePropertyStore} from 'common/test_helpers/mock_apps_script';
 
 import {BudgetReport, ImpressionReport} from '../api';
 import {Client} from '../client';

@@ -20,7 +20,7 @@
 import {
   FakePropertyStore,
   mockAppsScript,
-} from 'google3/third_party/professional_services/solutions/appsscript_anomaly_library/lib/testing/mock_apps_script';
+} from 'common/test_helpers/mock_apps_script';
 import {ParamDefinition} from 'common/types';
 
 import {

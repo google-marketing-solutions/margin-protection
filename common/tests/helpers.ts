@@ -21,7 +21,7 @@ import {
   Rule,
   RuleInstructions,
 } from 'google3/third_party/professional_services/solutions/appsscript_anomaly_library/lib/main';
-import {FakePropertyStore} from 'google3/third_party/professional_services/solutions/appsscript_anomaly_library/lib/testing/mock_apps_script';
+import {FakePropertyStore} from 'common/test_helpers/mock_apps_script';
 
 import {AbstractRuleRange} from '../sheet_helpers';
 import {
