@@ -81,10 +81,10 @@ function setUpConfigSheets() {
 
   budgetConfigSheet = createOrClearSheet(budgetConfigSheetName);
 
-  range = budgetConfigSheet.getRange("A1:G1");
+  range = budgetConfigSheet.getRange("A1:F1");
   range.merge();
   richText = SpreadsheetApp.newRichTextValue()
-    .setText("Complete desired max budgets (daily or total, not both) AND/OR % Allowed over avg. historical budget. If no preference for a single campaign, leave blank (empty)")
+    .setText("Complete desired max daily or total budgets (not both). If no preference for a single campaign, leave blank (empty)")
     .setTextStyle(SpreadsheetApp.newTextStyle().setBold(true).build())
     .build();
 
@@ -101,7 +101,6 @@ function setUpConfigSheets() {
   budgetConfigSheet.setColumnWidths(3, 1, 120);
   budgetConfigSheet.setColumnWidths(4, 1, 300);
   budgetConfigSheet.setColumnWidths(5, 2, 120);
-  budgetConfigSheet.setColumnWidths(7, 1, 300);
 
 
   budgetConfigSheet.appendRow([
@@ -110,13 +109,14 @@ function setUpConfigSheets() {
     "Campaign ID",
     "Campaign name",
     "Max daily budget",
-    "Max total budget",
-    "% Allowed over average historical budget"
+    "Max total budget"
+    // TODO: UNCOMMENT IF SOLVED
+    // "% Allowed over average historical budget"
   ]);
   budgetConfigSheet.insertRowBefore(2);
-  range = budgetConfigSheet.getRange("A3:G3");
+  range = budgetConfigSheet.getRange("A3:F3");
   range.setBorder(null, null, true, null, null, null, "#000000", SpreadsheetApp.BorderStyle.SOLID);
-  range = budgetConfigSheet.getRange("A3:G999");
+  range = budgetConfigSheet.getRange("A3:F999");
   range.setBorder(null, null, null, null, true, null, "#000000", SpreadsheetApp.BorderStyle.SOLID);
 }
 
