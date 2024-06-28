@@ -184,6 +184,24 @@ function checkSingleCampaignGeoTarget(account, campaign) {
   const campaignId = campaign.getId();
   const campaignName = campaign.getName();
 
+  if (desiredIncludedGeoTargetsNames.length === 0 && desiredExcludedGeoTargetsNames.length === 0) {
+    geoTargetingResult.push({
+      accountId,
+      accountName,
+      campaignId,
+      campaignName,
+      desiredIncludedGeoTargetsNames,
+      actualIncludedGeoTargetsNames,
+      actualIncludedGeoTargetsTypes,
+      desiredExcludedGeoTargetsNames,
+      actualExcludedGeoTargetsNames,
+      actualExcludedGeoTargetsTypes,
+      misconfigured: false
+    })
+    console.log("Ok - No desired config")
+    return;
+  }
+
   // Compare and log discrepancies (if any)
   if (!arraysHaveSameElements(desiredIncludedGeoTargetsNames, actualIncludedGeoTargetsNames) || 
      !arraysHaveSameElements(desiredExcludedGeoTargetsNames, actualExcludedGeoTargetsNames)) {
@@ -330,7 +348,23 @@ function checkSingleCampaignBudget(account, campaign) {
   const campaignId = campaign.getId();
   const campaignName = campaign.getName();
 
-  console.log(campaignName + " - daily budget: " + actualDailyBudget + " - total budget: " + actualTotalBudget)
+  if ((maxDailyBudget === null && maxTotalBudget === null) || (maxDailyBudget === '' && maxTotalBudget === '')) {
+    budgetResult.push({
+      accountId,
+      accountName,
+      campaignId,
+      campaignName,
+      maxDailyBudget,
+      actualDailyBudget,
+      maxTotalBudget,
+      actualTotalBudget,
+      maxPercentageOverAverageHistoricalBudget,
+      actualPercentageOverAverageHistoricalBudget,
+      misconfigured: false
+    })
+    console.log("Ok - No desired config")
+    return;
+  }
 
   if ((actualDailyBudget > maxDailyBudget && actualDailyBudget != -1) || (actualTotalBudget > maxTotalBudget && actualTotalBudget != -1)) {
     budgetResult.push({
