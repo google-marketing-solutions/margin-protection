@@ -276,57 +276,18 @@ function getCampaignActualLocations(campaign) {
   const actualIncludedGeoTargetsTypes = []
   const actualExcludedGeoTargetsTypes = []
 
-  // TODO: UNCOMMENT WHEN pMaxCampaign.targeting() SUPPORTED
-  // const actualIncludedGeoTargets = campaign.targeting().targetedLocations().get();
-  // while (actualIncludedGeoTargets.hasNext()) {
-  //   var target = actualIncludedGeoTargets.next();
-  //   actualIncludedGeoTargetsNames.push(target.getName());
-  //   actualIncludedGeoTargetsTypes.push(target.getTargetType());
-  // }
-
-  // const actualExcludedGeoTargets = campaign.targeting().excludedLocations().get();
-  // while (actualExcludedGeoTargets.hasNext()) {
-  //   var target = actualExcludedGeoTargets.next();
-  //   actualExcludedGeoTargetsNames.push(target.getName());
-  //   actualExcludedGeoTargetsTypes.push(target.getTargetType());
-  // }
-
-
-  // TODO: REMOVE WHEN pMaxCampaign.targeting() SUPPORTED
-  try {
-    const actualIncludedGeoTargets = campaign.targeting().targetedLocations().get();
-    while (actualIncludedGeoTargets.hasNext()) {
-      var target = actualIncludedGeoTargets.next();
-      actualIncludedGeoTargetsNames.push(target.getName());
-      actualIncludedGeoTargetsTypes.push(target.getTargetType());
-    }
-  } catch (e) {
-    const searchCampaign = AdsApp.campaigns().withLimit(1).get().next();
-
-    const targeting = searchCampaign.targeting.call(campaign);
-
-    for (const location of targeting.targetedLocations()) {
-      actualIncludedGeoTargetsNames.push(location.getName());
-      actualIncludedGeoTargetsTypes.push(location.getTargetType());
-    }
+  const actualIncludedGeoTargets = campaign.targeting().targetedLocations().get();
+  while (actualIncludedGeoTargets.hasNext()) {
+    var target = actualIncludedGeoTargets.next();
+    actualIncludedGeoTargetsNames.push(target.getName());
+    actualIncludedGeoTargetsTypes.push(target.getTargetType());
   }
 
-  try {
-    const actualExcludedGeoTargets = campaign.targeting().excludedLocations().get();
-    while (actualExcludedGeoTargets.hasNext()) {
-      var target = actualExcludedGeoTargets.next();
-      actualExcludedGeoTargetsNames.push(target.getName());
-      actualExcludedGeoTargetsTypes.push(target.getTargetType());
-    }
-  } catch (e) {
-    const searchCampaign = AdsApp.campaigns().withLimit(1).get().next();
-
-    const targeting = searchCampaign.targeting.call(campaign);
-
-    for (const location of targeting.excludedLocations()) {
-      actualExcludedGeoTargetsNames.push(location.getName());
-      actualExcludedGeoTargetsTypes.push(location.getTargetType());
-    }
+  const actualExcludedGeoTargets = campaign.targeting().excludedLocations().get();
+  while (actualExcludedGeoTargets.hasNext()) {
+    var target = actualExcludedGeoTargets.next();
+    actualExcludedGeoTargetsNames.push(target.getName());
+    actualExcludedGeoTargetsTypes.push(target.getTargetType());
   }
 
   return {actualIncludedGeoTargetsNames, actualIncludedGeoTargetsTypes, actualExcludedGeoTargetsNames, actualExcludedGeoTargetsTypes};
