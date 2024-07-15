@@ -1,4 +1,5 @@
 .claspignore
-Code.js
+Code.js*
 dv360/dv360_api
 **/node_modules
+**/html/
