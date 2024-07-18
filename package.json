@@ -1,0 +1,30 @@
+{
+  "name": "margin-protection",
+  "version": "1.0.0",
+  "description": "Suite of product solutions to catch common errors in real time.",
+  "main": "index.js",
+  "directories": {
+    "doc": "docs"
+  },
+  "scripts": {
+    "test": "wtr --config web-test-runner.mjs",
+    "test:watch": "yarn test --watch",
+    "prepare": "husky install"
+  },
+  "author": "Sean Capaloff-Jones <seancjones@google.com>",
+  "license": "MIT",
+  "repository": "git@github.com:google-marketing-solutions/margin-protection",
+  "private": true,
+  "devDependencies": {
+    "@types/google-apps-script": "^1.0.83",
+    "@web/dev-server-esbuild": "^1.0.2",
+    "@web/test-runner": "^0.18.2",
+    "concurrently": "^8.2.2",
+    "husky": "^8.0.0",
+    "lint-staged": "^15.2.7",
+    "prettier": "^3.3.3",
+    "rollup-plugin-typescript-paths": "^1.5.0",
+    "typescript": "^5.5.3",
+    "web-test-runner-jasmine": "^0.0.6"
+  }
+}

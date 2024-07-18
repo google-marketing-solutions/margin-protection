@@ -21,7 +21,7 @@
 
 // g3-format-prettier
 
-import {BaseClientArgs} from './types';
+import { BaseClientArgs } from "./types";
 
 /**
  * Manages query (input) and expected output pairs for each report type.
@@ -92,11 +92,11 @@ export interface AdsClientArgs extends BaseClientArgs {
 export type CamelCase<S extends string> =
   S extends `_${infer NextLetter}${infer Rest}`
     ? `${Uppercase<NextLetter>}${CamelCase<Rest>}`
-    : S extends ''
-      ? ''
+    : S extends ""
+      ? ""
       : S extends `${infer NextLetter extends string}${infer Rest}`
         ? `${NextLetter}${CamelCase<Rest>}`
-        : '';
+        : "";
 
 /**
  * A raw type literal that effectively forces objects to be const.
@@ -114,24 +114,24 @@ export type StringLiteral<S extends string> = TypeLiteral<S, string>;
  * Example:
  *   const transformed: DotsToObject<'a.b.c'> = {'a': {'b': {'c': string } } };
  */
-export type DotsToObject<S extends string> = S extends ''
+export type DotsToObject<S extends string> = S extends ""
   ? never
   : S extends `${infer First}.${infer Rest}`
-    ? '' extends First
+    ? "" extends First
       ? {}
-      : {[key in CamelCase<First>]: DotsToObject<Rest>}
-    : '' extends S
+      : { [key in CamelCase<First>]: DotsToObject<Rest> }
+    : "" extends S
       ? {}
-      : {[key in CamelCase<S>]: unknown};
+      : { [key in CamelCase<S>]: unknown };
 
 /**
  * Converts a report format to the expected response output.
  */
 export type ReportResponse<
   Q extends QueryBuilder<P, J>,
-  P extends string = Q['queryParams'][number],
-  J extends JoinType<P> | undefined = Q['joins'],
-> = UnionToIntersection<DotsToObject<Q['queryParams'][number]>> & {};
+  P extends string = Q["queryParams"][number],
+  J extends JoinType<P> | undefined = Q["joins"],
+> = UnionToIntersection<DotsToObject<Q["queryParams"][number]>> & {};
 
 /**
  * Helper method to turn a union into an intersection.
@@ -157,8 +157,8 @@ export declare interface GoogleAdsApiInterface {
    */
   query<
     Q extends QueryBuilder<Params, Joins>,
-    Params extends string = Q['queryParams'][number],
-    Joins extends JoinType<Params> | undefined = Q['joins'],
+    Params extends string = Q["queryParams"][number],
+    Joins extends JoinType<Params> | undefined = Q["joins"],
   >(
     customerIds: string,
     query: Q,
@@ -219,7 +219,7 @@ export type UnknownReportClass = ReportClass<any, any, any>;
  * user definitions of queries that don't require any joins (most of them).
  */
 export type JoinType<Params extends string> = Partial<{
-  [key in Exclude<CamelCase<Params>, ''>]: UnknownReportClass;
+  [key in Exclude<CamelCase<Params>, "">]: UnknownReportClass;
 }>;
 
 /**
@@ -245,8 +245,8 @@ export interface QueryBuilder<
 export interface ReportInterface<
   Q extends QueryBuilder<Params, Joins>,
   Output extends string,
-  Params extends string = Q['queryParams'][number],
-  Joins extends JoinType<Params> | undefined = Q['joins'],
+  Params extends string = Q["queryParams"][number],
+  Joins extends JoinType<Params> | undefined = Q["joins"],
 > {
   /**
    * Returns the full report based on the results of the object.
@@ -276,7 +276,7 @@ export interface ReportInterface<
           Record<
             string,
             Record<
-              Extract<Joins[keyof Joins], UnknownReportClass>['output'][number],
+              Extract<Joins[keyof Joins], UnknownReportClass>["output"][number],
               string
             >
           >
@@ -310,8 +310,8 @@ export interface ReportFactoryInterface {
 export interface ReportClass<
   Q extends QueryBuilder<Params, Joins>,
   Output extends string,
-  Params extends string = Q['queryParams'][number],
-  Joins extends JoinType<Params> | undefined = Q['joins'],
+  Params extends string = Q["queryParams"][number],
+  Joins extends JoinType<Params> | undefined = Q["joins"],
   ChildReport extends ReportInterface<
     Q,
     Output,

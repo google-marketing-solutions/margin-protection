@@ -25,6 +25,7 @@
     "build": "yarn && cp -rf ../common/html/*.html html && webpack",
     "push": "yarn build --mode development --devtool source-map && clasp push",
     "push-dev": "yarn push",
-    "push-client": "cd client && yarn push"
+    "push-client": "cd client && yarn push",
+    "test": "web-test-runner --config web-test-runner.mjs"
   }
 }

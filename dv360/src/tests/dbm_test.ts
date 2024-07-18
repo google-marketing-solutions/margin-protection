@@ -17,24 +17,24 @@
 
 // g3-format-prettier
 
-import {mockAppsScript} from 'common/test_helpers/mock_apps_script';
+import { mockAppsScript } from "common/test_helpers/mock_apps_script";
 
-import {BudgetReport, ImpressionReport} from '../api';
-import {IDType} from '../types';
+import { BudgetReport, ImpressionReport } from "../api";
+import { IDType } from "../types";
 
-import {BudgetMatchTable, ImpressionMatchTable} from './dbm_test_helpers';
+import { BudgetMatchTable, ImpressionMatchTable } from "./dbm_test_helpers";
 
 class FakeScriptApp {
   getOAuthToken() {
-    return 'token';
+    return "token";
   }
 }
 
 // tslint:disable-next-line:enforce-name-casing This is to mock existing variables.
-(globalThis as unknown as {ScriptApp: FakeScriptApp}).ScriptApp =
+(globalThis as unknown as { ScriptApp: FakeScriptApp }).ScriptApp =
   new FakeScriptApp();
 
-describe('BudgetReport#getSpendForInsertionOrder', () => {
+describe("BudgetReport#getSpendForInsertionOrder", () => {
   let router: BudgetMatchTable;
   beforeEach(() => {
     mockAppsScript();
@@ -44,26 +44,26 @@ describe('BudgetReport#getSpendForInsertionOrder', () => {
   // assuming that the API request/responses are sane (these are tested separately)
   // we want to make sure that we get a result from the series of API calls
   // made.
-  it('passes integration.', () => {
-    const advertiserId = '1';
+  it("passes integration.", () => {
+    const advertiserId = "1";
     // note - these aren't testing anything right now.
-    const startDate = new Date('2022/12/17');
-    const endDate = new Date('2022/12/27');
+    const startDate = new Date("2022/12/17");
+    const endDate = new Date("2022/12/27");
 
     const result = new BudgetReport({
       id: advertiserId,
       idType: IDType.ADVERTISER,
       startDate,
       endDate,
-    }).getSpendForInsertionOrder('IO2', startDate.getTime(), endDate.getTime());
+    }).getSpendForInsertionOrder("IO2", startDate.getTime(), endDate.getTime());
     expect(result).toEqual(0.02002);
   });
 
-  it('only pulls report once.', () => {
-    const advertiserId = '1';
+  it("only pulls report once.", () => {
+    const advertiserId = "1";
     // note - these aren't testing anything right now.
-    const startDate = new Date('2022/12/17');
-    const endDate = new Date('2022/12/27');
+    const startDate = new Date("2022/12/17");
+    const endDate = new Date("2022/12/27");
     const budgetReport = new BudgetReport({
       id: advertiserId,
       idType: IDType.ADVERTISER,
@@ -71,17 +71,17 @@ describe('BudgetReport#getSpendForInsertionOrder', () => {
       endDate,
     });
     budgetReport.getSpendForInsertionOrder(
-      'IO2',
+      "IO2",
       startDate.getTime(),
       endDate.getTime(),
     );
-    const hits1 = {...router.getHits()};
+    const hits1 = { ...router.getHits() };
     const result2 = budgetReport.getSpendForInsertionOrder(
-      'IO3',
+      "IO3",
       startDate.getTime(),
       endDate.getTime(),
     );
-    const hits2 = {...router.getHits()};
+    const hits2 = { ...router.getHits() };
 
     expect(hits1).toEqual({
       queryPostHits: 1,
@@ -94,7 +94,7 @@ describe('BudgetReport#getSpendForInsertionOrder', () => {
   });
 });
 
-describe('ImpressionReport#getImpressionPercentOutsideOfGeos', () => {
+describe("ImpressionReport#getImpressionPercentOutsideOfGeos", () => {
   beforeEach(() => {
     mockAppsScript();
     // tslint:disable-next-line:no-unused-expression
@@ -103,59 +103,59 @@ describe('ImpressionReport#getImpressionPercentOutsideOfGeos', () => {
   // assuming that the API request/responses are sane (these are tested separately)
   // we want to make sure that we get a result from the series of API calls
   // made.
-  it('passes integration.', () => {
-    const advertiserId = '1';
+  it("passes integration.", () => {
+    const advertiserId = "1";
     // note - these aren't testing anything right now.
-    const startDate = new Date('2022/12/17');
-    const endDate = new Date('2022/12/27');
+    const startDate = new Date("2022/12/17");
+    const endDate = new Date("2022/12/27");
 
     const result = new ImpressionReport({
       id: advertiserId,
       idType: IDType.ADVERTISER,
       startDate,
       endDate,
-    }).getImpressionPercentOutsideOfGeos('1', ['US', 'UK']);
+    }).getImpressionPercentOutsideOfGeos("1", ["US", "UK"]);
     expect(result).toEqual(12 / 14);
   });
 
-  it('handles empty results', () => {
-    const advertiserId = '1';
+  it("handles empty results", () => {
+    const advertiserId = "1";
     // note - these aren't testing anything right now.
-    const startDate = new Date('2022/12/17');
-    const endDate = new Date('2022/12/27');
+    const startDate = new Date("2022/12/17");
+    const endDate = new Date("2022/12/27");
 
     const result = new ImpressionReport({
       id: advertiserId,
       idType: IDType.ADVERTISER,
       startDate,
       endDate,
-    }).getImpressionPercentOutsideOfGeos('1', ['US', 'UK', 'IT', 'CN']);
+    }).getImpressionPercentOutsideOfGeos("1", ["US", "UK", "IT", "CN"]);
     expect(result).toEqual(0);
   });
 });
 
 // Contains branching logic. Testing this separately from integration test.
-describe('BudgetReport#fetchQueryId()', () => {
+describe("BudgetReport#fetchQueryId()", () => {
   let router: BudgetMatchTable;
   beforeEach(() => {
     mockAppsScript();
     router = new BudgetMatchTable();
   });
 
-  it('returns a query ID from creation', () => {
+  it("returns a query ID from creation", () => {
     const budgetReport = new BudgetReport({
-      id: '1',
+      id: "1",
       idType: IDType.ADVERTISER,
       startDate: new Date(1, 0, 1),
       endDate: new Date(1, 1, 2),
     });
-    expect(budgetReport.fetchQueryId()).toEqual('query1');
+    expect(budgetReport.fetchQueryId()).toEqual("query1");
     expect(router.getHits().queryPostHits).toEqual(1);
   });
 
-  it('returns a query ID from cache', () => {
+  it("returns a query ID from cache", () => {
     const budgetReport = new BudgetReport({
-      id: '1',
+      id: "1",
       idType: IDType.ADVERTISER,
       startDate: new Date(1, 0, 1),
       endDate: new Date(1, 1, 2),
@@ -166,8 +166,8 @@ describe('BudgetReport#fetchQueryId()', () => {
     const queryResult2 = budgetReport.fetchQueryId();
     const hits2 = router.getHits();
 
-    expect(queryResult1).toEqual('query1');
-    expect(queryResult2).toEqual('query1');
+    expect(queryResult1).toEqual("query1");
+    expect(queryResult2).toEqual("query1");
     expect(hits1).toEqual({
       queryPostHits: 1,
       queryGetHits: 1,
@@ -182,21 +182,21 @@ describe('BudgetReport#fetchQueryId()', () => {
     });
   });
 
-  it('returns a query ID from list, matched by title', () => {
+  it("returns a query ID from list, matched by title", () => {
     const budgetReport = new BudgetReport({
-      id: '1',
+      id: "1",
       idType: IDType.ADVERTISER,
       startDate: new Date(1, 0, 1),
       endDate: new Date(1, 1, 2),
     });
     router.addQuery({
-      queryId: 'query1',
+      queryId: "query1",
       metadata: {
-        title: 'Launch Monitor V1 (Spend) A1',
+        title: "Launch Monitor V1 (Spend) A1",
       },
     });
 
-    expect(budgetReport.fetchQueryId()).toEqual('query1');
+    expect(budgetReport.fetchQueryId()).toEqual("query1");
     expect(router.getHits()).toEqual({
       queryPostHits: 1,
       queryGetHits: 1,
@@ -205,26 +205,26 @@ describe('BudgetReport#fetchQueryId()', () => {
     });
   });
 
-  it('correctly skips cache on new query', () => {
+  it("correctly skips cache on new query", () => {
     const budgetReport1 = new BudgetReport({
-      id: '1',
+      id: "1",
       idType: IDType.ADVERTISER,
       startDate: new Date(1, 0, 1),
       endDate: new Date(1, 1, 2),
     });
     budgetReport1.fetchQueryId();
-    const hits1 = {...router.getHits()};
+    const hits1 = { ...router.getHits() };
     const budgetReport2 = new BudgetReport({
-      id: '1',
+      id: "1",
       idType: IDType.ADVERTISER,
       startDate: new Date(1, 0, 1),
       endDate: new Date(1, 1, 2),
     });
     budgetReport2.fetchQueryId();
-    const hits2 = {...router.getHits()};
+    const hits2 = { ...router.getHits() };
 
-    expect(budgetReport1.fetchQueryId()).toEqual('query1');
-    expect(budgetReport2.fetchQueryId()).toEqual('query1');
+    expect(budgetReport1.fetchQueryId()).toEqual("query1");
+    expect(budgetReport2.fetchQueryId()).toEqual("query1");
     expect(hits1).toEqual({
       queryPostHits: 1,
       queryGetHits: 1,

@@ -21,7 +21,7 @@
 
 // g3-format-prettier
 
-import {transformToParamValues} from './sheet_helpers';
+import { transformToParamValues } from "./sheet_helpers";
 import {
   BaseClientArgs,
   BaseClientInterface,
@@ -31,7 +31,7 @@ import {
   RuleGranularity,
   RuleParams,
   Settings,
-} from './types';
+} from "./types";
 
 /**
  * Creates new rule with the metadata needed to generate settings.
@@ -70,7 +70,7 @@ export function newRuleBuilder<
       readonly name: string = ruleDefinition.name;
       readonly description: string = ruleDefinition.description;
       readonly params = ruleDefinition.params;
-      readonly helper = ruleDefinition.helper ?? '';
+      readonly helper = ruleDefinition.helper ?? "";
       readonly granularity: G = ruleDefinition.granularity;
       readonly valueFormat = ruleDefinition.valueFormat;
       static definition = ruleDefinition;
@@ -87,7 +87,7 @@ export function newRuleBuilder<
       }
     };
 
-    Object.defineProperty(ruleClass, 'name', {value: ruleDefinition.name});
+    Object.defineProperty(ruleClass, "name", { value: ruleDefinition.name });
     return ruleClass;
   };
 }

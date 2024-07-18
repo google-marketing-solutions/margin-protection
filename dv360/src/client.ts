@@ -26,15 +26,15 @@ import {
   AssignedTargetingOptions,
   Campaigns,
   InsertionOrders,
-} from 'dv360_api/dv360';
+} from "dv360_api/dv360";
 import {
   Advertiser,
   Campaign,
   InsertionOrder,
-} from 'dv360_api/dv360_resources';
-import {newRuleBuilder} from 'common/client_helpers';
+} from "dv360_api/dv360_resources";
+import { newRuleBuilder } from "common/client_helpers";
 
-import {AbstractRuleRange} from 'common/sheet_helpers';
+import { AbstractRuleRange } from "common/sheet_helpers";
 import {
   ExecutorResult,
   ParamDefinition,
@@ -44,17 +44,17 @@ import {
   RuleExecutor,
   RuleExecutorClass,
   Settings,
-} from 'common/types';
+} from "common/types";
 
-import {RawApiDate} from 'dv360_api/dv360_types';
-import {BudgetReport, BudgetReportInterface, ImpressionReport} from './api';
+import { RawApiDate } from "dv360_api/dv360_types";
+import { BudgetReport, BudgetReportInterface, ImpressionReport } from "./api";
 import {
   ClientArgs,
   ClientInterface,
   IDType,
   QueryReportParams,
   RuleGranularity,
-} from './types';
+} from "./types";
 
 /**
  * A new rule in SA360.
@@ -149,17 +149,17 @@ export class Client implements ClientInterface {
   }
 
   constructor(
-    args: Omit<ClientArgs, 'idType' | 'id'> & {advertiserId: string},
+    args: Omit<ClientArgs, "idType" | "id"> & { advertiserId: string },
     properties: PropertyStore,
   );
   constructor(
-    args: Omit<ClientArgs, 'idType' | 'id'> & {partnerId: string},
+    args: Omit<ClientArgs, "idType" | "id"> & { partnerId: string },
     properties: PropertyStore,
   );
   constructor(args: ClientArgs, properties: PropertyStore);
   constructor(
-    args: Omit<ClientArgs, 'idType' | 'id'> &
-      Partial<Pick<ClientArgs, 'idType' | 'id'>> & {
+    args: Omit<ClientArgs, "idType" | "id"> &
+      Partial<Pick<ClientArgs, "idType" | "id">> & {
         advertiserId?: string;
         partnerId?: string;
       },
@@ -173,7 +173,7 @@ export class Client implements ClientInterface {
         args.idType ?? (args.advertiserId ? IDType.ADVERTISER : IDType.PARTNER),
       id:
         args.id ??
-        (args.advertiserId ? args.advertiserId : args.partnerId ?? ''),
+        (args.advertiserId ? args.advertiserId : (args.partnerId ?? "")),
       label: args.label ?? `${args.idType} ${args.id}`,
       campaigns: args.campaigns || Campaigns,
       insertionOrders: args.insertionOrders || InsertionOrders,
@@ -216,7 +216,7 @@ export class Client implements ClientInterface {
       rules[rule.name] = rule;
     }
 
-    return {rules, results};
+    return { rules, results };
   }
 
   getAllInsertionOrders(): InsertionOrder[] {
@@ -268,7 +268,7 @@ export class Client implements ClientInterface {
   getAllAdvertisersForPartner(): string[] {
     const cache = CacheService.getScriptCache();
     const result: string[] = [];
-    const advertisers = cache.get('advertisers');
+    const advertisers = cache.get("advertisers");
     if (advertisers) {
       return JSON.parse(advertisers) as string[];
     }
@@ -277,12 +277,12 @@ export class Client implements ClientInterface {
       for (const advertiser of advertisers) {
         const id = advertiser.getId();
         if (!id) {
-          throw new Error('Advertiser ID is missing.');
+          throw new Error("Advertiser ID is missing.");
         }
         result.push(id);
       }
     });
-    cache.put('advertisers', JSON.stringify(result), 120);
+    cache.put("advertisers", JSON.stringify(result), 120);
 
     return result;
   }
@@ -314,7 +314,7 @@ export class Client implements ClientInterface {
       for (const campaign of campaigns) {
         const id = campaign.getId();
         if (!id) {
-          throw new Error('Campaign ID is missing.');
+          throw new Error("Campaign ID is missing.");
         }
         result.push({
           advertiserId,
@@ -346,7 +346,7 @@ export class Client implements ClientInterface {
   }
 
   getUniqueKey(prefix: string) {
-    return `${prefix}-${this.args.idType === IDType.PARTNER ? 'P' : 'A'}${
+    return `${prefix}-${this.args.idType === IDType.PARTNER ? "P" : "A"}${
       this.args.id
     }`;
   }

@@ -21,22 +21,19 @@
 
 // g3-format-prettier
 
-import {
-  lazyLoadApp,
-  toExport,
-} from 'common/sheet_helpers';
-import {PropertyStore} from 'common/types';
+import { lazyLoadApp, toExport } from "common/sheet_helpers";
+import { PropertyStore } from "common/types";
 
-import {Client, RuleRange} from './client';
-import {DisplayVideoFrontEnd, migrations} from './frontend';
+import { Client, RuleRange } from "./client";
+import { DisplayVideoFrontEnd, migrations } from "./frontend";
 import {
   budgetPacingDaysAheadRule,
   budgetPacingPercentageRule,
   dailyBudgetRule,
   geoTargetRule,
   impressionsByGeoTarget,
-} from './rules';
-import {ClientArgs, ClientInterface, RuleGranularity} from './types';
+} from "./rules";
+import { ClientArgs, ClientInterface, RuleGranularity } from "./types";
 
 /**
  * The sheet version the app currently has.
@@ -44,7 +41,7 @@ import {ClientArgs, ClientInterface, RuleGranularity} from './types';
  * This is used to manage migrations from one version of Launch Monitor to
  * another.
  */
-export const CURRENT_SHEET_VERSION = '1.5';
+export const CURRENT_SHEET_VERSION = "1.5";
 
 /**
  * Retrieves the front-end as a function.

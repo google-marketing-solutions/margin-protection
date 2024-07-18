@@ -22,7 +22,7 @@
  * libraries (e.g. 'DisplayVideo.Advertisers.list()').
  */
 
-import {BaseApiClient} from './base';
+import { BaseApiClient } from "./base";
 import {
   Advertiser,
   AssignedTargetingOption,
@@ -32,14 +32,14 @@ import {
   InventorySource,
   LineItem,
   TargetingOption,
-} from './dv360_resources';
-import {TargetingType, TARGETING_TYPE} from './dv360_types';
-import {UriUtil} from './utils';
-import {FilterExpression, ListParams, Rule, RuleOperator} from './utils';
-import {STATUS} from './dv360_types';
-const API_SCOPE: string = 'displayvideo';
+} from "./dv360_resources";
+import { TargetingType, TARGETING_TYPE } from "./dv360_types";
+import { UriUtil } from "./utils";
+import { FilterExpression, ListParams, Rule, RuleOperator } from "./utils";
+import { STATUS } from "./dv360_types";
+const API_SCOPE: string = "displayvideo";
 
-const API_VERSION: string = 'v2';
+const API_VERSION: string = "v2";
 
 /**
  * An abstract API client for the DV360 API that extends `BaseApiClient`.
@@ -69,7 +69,7 @@ export abstract class DisplayVideoApiClient extends BaseApiClient {
     requestUri: string,
     requestCallback: (p1: T[]) => void,
     maxPages: number = -1,
-    requestParams: {[key: string]: string} = {'method': 'get'}
+    requestParams: { [key: string]: string } = { method: "get" },
   ) {
     this.executePagedApiRequest(
       requestUri,
@@ -81,12 +81,12 @@ export abstract class DisplayVideoApiClient extends BaseApiClient {
           const resources =
             /** !Array<!Object<string, *>> */
             apiResources.map((resource) =>
-              this.asDisplayVideoResource(resource)
+              this.asDisplayVideoResource(resource),
             );
           requestCallback(resources as T[]);
         }
       },
-      maxPages
+      maxPages,
     );
   }
 
@@ -113,9 +113,9 @@ export abstract class DisplayVideoApiClient extends BaseApiClient {
     return this.asDisplayVideoResource(
       this.executeApiRequest(
         requestUri,
-        /* requestParams= */ {'method': 'get'},
-        /* retryOnFailure= */ true
-      )
+        /* requestParams= */ { method: "get" },
+        /* retryOnFailure= */ true,
+      ),
     );
   }
 
@@ -129,17 +129,17 @@ export abstract class DisplayVideoApiClient extends BaseApiClient {
    */
   createResource(
     requestUri: string,
-    payload: DisplayVideoResource
+    payload: DisplayVideoResource,
   ): DisplayVideoResource {
     return this.asDisplayVideoResource(
       this.executeApiRequest(
         requestUri,
         /* requestParams= */ {
-          'method': 'post',
-          'payload': JSON.stringify(payload),
+          method: "post",
+          payload: JSON.stringify(payload),
         },
-        /* retryOnFailure= */ false
-      )
+        /* retryOnFailure= */ false,
+      ),
     );
   }
 
@@ -154,17 +154,17 @@ export abstract class DisplayVideoApiClient extends BaseApiClient {
    */
   patchResource(
     requestUri: string,
-    payload: DisplayVideoResource
+    payload: DisplayVideoResource,
   ): DisplayVideoResource {
     return this.asDisplayVideoResource(
       this.executeApiRequest(
         requestUri,
         /* requestParams= */ {
-          'method': 'patch',
-          'payload': JSON.stringify(payload),
+          method: "patch",
+          payload: JSON.stringify(payload),
         },
-        /* retryOnFailure= */ true
-      )
+        /* retryOnFailure= */ true,
+      ),
     );
   }
 
@@ -181,17 +181,17 @@ export abstract class DisplayVideoApiClient extends BaseApiClient {
   patchResourceByComparison(
     requestUri: string,
     original: DisplayVideoResource,
-    modified: DisplayVideoResource | null
+    modified: DisplayVideoResource | null,
   ): DisplayVideoResource {
     const changedProperties = original.getChangedPropertiesString(modified);
 
     return this.patchResource(
       UriUtil.modifyUrlQueryString(
         requestUri,
-        'updateMask',
-        encodeURIComponent(changedProperties)
+        "updateMask",
+        encodeURIComponent(changedProperties),
       ),
-      original
+      original,
     );
   }
 
@@ -204,8 +204,8 @@ export abstract class DisplayVideoApiClient extends BaseApiClient {
   deleteResource(requestUri: string) {
     this.executeApiRequest(
       requestUri,
-      /* requestParams= */ {'method': 'delete'},
-      /* retryOnFailure= */ true
+      /* requestParams= */ { method: "delete" },
+      /* retryOnFailure= */ true,
     );
   }
 
@@ -218,7 +218,7 @@ export abstract class DisplayVideoApiClient extends BaseApiClient {
   }
 
   getId(): string {
-    throw new Error('Not Allowed.');
+    throw new Error("Not Allowed.");
   }
 }
 
@@ -234,7 +234,7 @@ export class Advertisers extends DisplayVideoApiClient {
    * @param partnerId The DV360 Partner identifier
    */
   constructor(private readonly partnerId: string) {
-    super('advertisers');
+    super("advertisers");
   }
 
   /**
@@ -259,9 +259,9 @@ export class Advertisers extends DisplayVideoApiClient {
     maxPages: number = -1,
   ) {
     super.listResources(
-      `advertisers?partnerId=${this.getPartnerId()}${buildParamString(params, {prependStr: '&', defaults: {filter: activeEntityFilter()}})}`,
+      `advertisers?partnerId=${this.getPartnerId()}${buildParamString(params, { prependStr: "&", defaults: { filter: activeEntityFilter() } })}`,
       callback,
-      maxPages
+      maxPages,
     );
   }
 
@@ -274,7 +274,7 @@ export class Advertisers extends DisplayVideoApiClient {
    * @throws {!Error} If the API resource object did not contain the expected
    *     properties
    */
-  asDisplayVideoResource(resource: {[key: string]: unknown}): Advertiser {
+  asDisplayVideoResource(resource: { [key: string]: unknown }): Advertiser {
     return Advertiser.fromApiResource(resource);
   }
 
@@ -295,8 +295,8 @@ export class Advertisers extends DisplayVideoApiClient {
    */
   create(advertiserResource: DisplayVideoResource): Advertiser {
     return super.createResource(
-      'advertisers',
-      advertiserResource
+      "advertisers",
+      advertiserResource,
     ) as Advertiser;
   }
 
@@ -313,12 +313,12 @@ export class Advertisers extends DisplayVideoApiClient {
    */
   patch(
     advertiserResource: DisplayVideoResource,
-    changedProperties: string
+    changedProperties: string,
   ): Advertiser {
     return super.patchResource(
       `advertisers/${advertiserResource.getId()}?updateMask=` +
         encodeURIComponent(changedProperties),
-      advertiserResource
+      advertiserResource,
     ) as Advertiser;
   }
 
@@ -351,7 +351,7 @@ export class Campaigns extends DisplayVideoApiClient {
    * @param advertiserId The DV360 Advertiser identifier
    */
   constructor(private readonly advertiserId: string) {
-    super('campaigns');
+    super("campaigns");
   }
 
   /**
@@ -369,12 +369,12 @@ export class Campaigns extends DisplayVideoApiClient {
   list(
     callback: (p1: Campaign[]) => void,
     params?: ListParams,
-    maxPages: number = -1
+    maxPages: number = -1,
   ) {
     super.listResources(
-      `advertisers/${this.getAdvertiserId()}/campaigns${buildParamString(params, {defaults: {filter: activeEntityFilter() }})}`,
+      `advertisers/${this.getAdvertiserId()}/campaigns${buildParamString(params, { defaults: { filter: activeEntityFilter() } })}`,
       callback,
-      maxPages
+      maxPages,
     );
   }
 
@@ -387,7 +387,7 @@ export class Campaigns extends DisplayVideoApiClient {
    * @throws {!Error} If the API resource object did not contain the expected
    *     properties
    */
-  asDisplayVideoResource(resource: {[key: string]: unknown}): Campaign {
+  asDisplayVideoResource(resource: { [key: string]: unknown }): Campaign {
     return Campaign.fromApiResource(resource);
   }
 
@@ -399,7 +399,7 @@ export class Campaigns extends DisplayVideoApiClient {
    */
   get(campaignId: string): Campaign {
     return super.getResource(
-      `advertisers/${this.getAdvertiserId()}/campaigns/${campaignId}`
+      `advertisers/${this.getAdvertiserId()}/campaigns/${campaignId}`,
     ) as Campaign;
   }
 
@@ -414,7 +414,7 @@ export class Campaigns extends DisplayVideoApiClient {
   create(campaignResource: DisplayVideoResource): Campaign {
     return super.createResource(
       `advertisers/${this.getAdvertiserId()}/campaigns`,
-      campaignResource
+      campaignResource,
     ) as Campaign;
   }
 
@@ -430,13 +430,13 @@ export class Campaigns extends DisplayVideoApiClient {
    */
   patch(
     campaignResource: DisplayVideoResource,
-    changedProperties: string
+    changedProperties: string,
   ): Campaign {
     return super.patchResource(
       `advertisers/${this.getAdvertiserId()}/campaigns/` +
         `${campaignResource.getId()}?updateMask=` +
         encodeURIComponent(changedProperties),
-      campaignResource
+      campaignResource,
     ) as Campaign;
   }
 
@@ -447,7 +447,7 @@ export class Campaigns extends DisplayVideoApiClient {
    */
   delete(campaignId: string) {
     super.deleteResource(
-      `advertisers/${this.getAdvertiserId()}/campaigns/${campaignId}`
+      `advertisers/${this.getAdvertiserId()}/campaigns/${campaignId}`,
     );
   }
 
@@ -472,7 +472,7 @@ export class InsertionOrders extends DisplayVideoApiClient {
    * @param advertiserId The DV360 Advertiser identifier
    */
   constructor(private readonly advertiserId: string) {
-    super('insertionOrders');
+    super("insertionOrders");
   }
 
   /**
@@ -490,13 +490,13 @@ export class InsertionOrders extends DisplayVideoApiClient {
   list(
     callback: (p1: InsertionOrder[]) => void,
     params?: ListParams,
-    maxPages: number = -1
+    maxPages: number = -1,
   ) {
     super.listResources(
       `advertisers/${this.getAdvertiserId()}/` +
-        `insertionOrders${buildParamString(params, {defaults: {filter: activeEntityFilter() }})}`,
+        `insertionOrders${buildParamString(params, { defaults: { filter: activeEntityFilter() } })}`,
       callback,
-      maxPages
+      maxPages,
     );
   }
 
@@ -509,7 +509,7 @@ export class InsertionOrders extends DisplayVideoApiClient {
    * @throws {!Error} If the API resource object did not contain the expected
    *     properties
    */
-  asDisplayVideoResource(resource: {[key: string]: unknown}): InsertionOrder {
+  asDisplayVideoResource(resource: { [key: string]: unknown }): InsertionOrder {
     return InsertionOrder.fromApiResource(resource);
   }
 
@@ -524,7 +524,7 @@ export class InsertionOrders extends DisplayVideoApiClient {
   get(insertionOrderId: string): InsertionOrder {
     return super.getResource(
       `advertisers/${this.getAdvertiserId()}/` +
-        `insertionOrders/${insertionOrderId}`
+        `insertionOrders/${insertionOrderId}`,
     ) as InsertionOrder;
   }
 
@@ -540,7 +540,7 @@ export class InsertionOrders extends DisplayVideoApiClient {
   create(insertionOrderResource: DisplayVideoResource): InsertionOrder {
     return super.createResource(
       `advertisers/${this.getAdvertiserId()}/insertionOrders`,
-      insertionOrderResource
+      insertionOrderResource,
     ) as InsertionOrder;
   }
 
@@ -558,13 +558,13 @@ export class InsertionOrders extends DisplayVideoApiClient {
    */
   patch(
     insertionOrderResource: DisplayVideoResource,
-    changedProperties: string
+    changedProperties: string,
   ): InsertionOrder {
     return super.patchResource(
       `advertisers/${this.getAdvertiserId()}/insertionOrders/` +
         `${insertionOrderResource.getId()}?updateMask=` +
         encodeURIComponent(changedProperties),
-      insertionOrderResource
+      insertionOrderResource,
     ) as InsertionOrder;
   }
 
@@ -576,7 +576,7 @@ export class InsertionOrders extends DisplayVideoApiClient {
   delete(insertionOrderId: string) {
     super.deleteResource(
       `advertisers/${this.getAdvertiserId()}/` +
-        `insertionOrders/${insertionOrderId}`
+        `insertionOrders/${insertionOrderId}`,
     );
   }
 
@@ -600,7 +600,7 @@ export class LineItems extends DisplayVideoApiClient {
    * @param advertiserId The DV360 Advertiser identifier
    */
   constructor(private readonly advertiserId: string) {
-    super('lineItems');
+    super("lineItems");
   }
 
   /**
@@ -616,12 +616,12 @@ export class LineItems extends DisplayVideoApiClient {
   list(
     callback: (p1: InsertionOrder[]) => void,
     params?: ListParams,
-    maxPages: number = -1
+    maxPages: number = -1,
   ) {
     super.listResources(
-      `advertisers/${this.getAdvertiserId()}/lineItems${buildParamString(params, {defaults: {filter: activeEntityFilter()}})}`,
+      `advertisers/${this.getAdvertiserId()}/lineItems${buildParamString(params, { defaults: { filter: activeEntityFilter() } })}`,
       callback,
-      maxPages
+      maxPages,
     );
   }
 
@@ -634,7 +634,7 @@ export class LineItems extends DisplayVideoApiClient {
    * @throws {!Error} If the API resource object did not contain the expected
    *     properties
    */
-  asDisplayVideoResource(resource: {[key: string]: unknown}): LineItem {
+  asDisplayVideoResource(resource: { [key: string]: unknown }): LineItem {
     return LineItem.fromApiResource(resource);
   }
 
@@ -646,7 +646,7 @@ export class LineItems extends DisplayVideoApiClient {
    */
   get(lineItemId: string): LineItem {
     return super.getResource(
-      `advertisers/${this.getAdvertiserId()}/lineItems/${lineItemId}`
+      `advertisers/${this.getAdvertiserId()}/lineItems/${lineItemId}`,
     ) as LineItem;
   }
 
@@ -661,7 +661,7 @@ export class LineItems extends DisplayVideoApiClient {
   create(lineItemResource: DisplayVideoResource): LineItem {
     return super.createResource(
       `advertisers/${this.getAdvertiserId()}/lineItems`,
-      lineItemResource
+      lineItemResource,
     ) as LineItem;
   }
 
@@ -677,13 +677,13 @@ export class LineItems extends DisplayVideoApiClient {
    */
   patch(
     lineItemResource: DisplayVideoResource,
-    changedProperties: string
+    changedProperties: string,
   ): LineItem {
     return super.patchResource(
       `advertisers/${this.getAdvertiserId()}/lineItems/` +
         `${lineItemResource.getId()}?updateMask=` +
         encodeURIComponent(changedProperties),
-      lineItemResource
+      lineItemResource,
     ) as LineItem;
   }
 
@@ -694,7 +694,7 @@ export class LineItems extends DisplayVideoApiClient {
    */
   delete(lineItemId: string) {
     super.deleteResource(
-      `advertisers/${this.getAdvertiserId()}/lineItems/${lineItemId}`
+      `advertisers/${this.getAdvertiserId()}/lineItems/${lineItemId}`,
     );
   }
 
@@ -722,8 +722,11 @@ export class InventorySources extends DisplayVideoApiClient {
    *     provided will be used for fetching inventory sources instead of the
    *     'partnerId'
    */
-  constructor(private readonly partnerId: string, private readonly advertiserId: string | null = null) {
-    super('inventorySources');
+  constructor(
+    private readonly partnerId: string,
+    private readonly advertiserId: string | null = null,
+  ) {
+    super("inventorySources");
   }
 
   /**
@@ -741,15 +744,15 @@ export class InventorySources extends DisplayVideoApiClient {
   list(
     callback: (p1: InventorySource[]) => void,
     params?: ListParams,
-    maxPages: number = -1
+    maxPages: number = -1,
   ) {
     const [key, value] = this.getAdvertiserId()
-      ? ['advertiserId', this.getAdvertiserId()]
-      : ['partnerId', this.getPartnerId()];
+      ? ["advertiserId", this.getAdvertiserId()]
+      : ["partnerId", this.getPartnerId()];
     super.listResources(
-      `inventorySources?${key}=${value}${buildParamString(params, {prependStr: '&', defaults: {filter: activeEntityFilter()}})}`,
+      `inventorySources?${key}=${value}${buildParamString(params, { prependStr: "&", defaults: { filter: activeEntityFilter() } })}`,
       callback,
-      maxPages
+      maxPages,
     );
   }
 
@@ -762,7 +765,9 @@ export class InventorySources extends DisplayVideoApiClient {
    * @throws {!Error} If the API resource object did not contain the expected
    *     properties
    */
-  asDisplayVideoResource(resource: {[key: string]: unknown}): InventorySource {
+  asDisplayVideoResource(resource: {
+    [key: string]: unknown;
+  }): InventorySource {
     return InventorySource.fromApiResource(resource);
   }
 
@@ -777,7 +782,7 @@ export class InventorySources extends DisplayVideoApiClient {
   get(inventorySourceId: string): InventorySource {
     return super.getResource(
       `inventorySources/${inventorySourceId}` +
-        `?partnerId=${this.getPartnerId()}`
+        `?partnerId=${this.getPartnerId()}`,
     ) as InventorySource;
   }
 
@@ -786,16 +791,16 @@ export class InventorySources extends DisplayVideoApiClient {
    */
   override createResource(
     requestUri: string,
-    payload: DisplayVideoResource
+    payload: DisplayVideoResource,
   ): DisplayVideoResource {
-    throw new Error('405 Method Not Allowed');
+    throw new Error("405 Method Not Allowed");
   }
 
   /**
    * @throws {!Error} As this method is not allowed for this type
    */
   override patchResource(requestUri: string): DisplayVideoResource {
-    throw new Error('405 Method Not Allowed');
+    throw new Error("405 Method Not Allowed");
   }
 
   /**
@@ -804,16 +809,16 @@ export class InventorySources extends DisplayVideoApiClient {
   override patchResourceByComparison(
     requestUri: string,
     original: DisplayVideoResource,
-    modified: DisplayVideoResource | null
+    modified: DisplayVideoResource | null,
   ): DisplayVideoResource {
-    throw new Error('405 Method Not Allowed');
+    throw new Error("405 Method Not Allowed");
   }
 
   /**
    * @throws {!Error} As this method is not allowed for this type
    */
   override deleteResource(requestUri: string) {
-    throw new Error('405 Method Not Allowed');
+    throw new Error("405 Method Not Allowed");
   }
 
   /**
@@ -847,8 +852,11 @@ export class TargetingOptions extends DisplayVideoApiClient {
    * @param advertiserId The DV360 advertiser identifier to use for
    *     retrieving targeting options
    */
-  constructor(private readonly targetingType: TargetingType, private readonly advertiserId: string) {
-    super('targetingOptions');
+  constructor(
+    private readonly targetingType: TargetingType,
+    private readonly advertiserId: string,
+  ) {
+    super("targetingOptions");
   }
 
   /**
@@ -864,13 +872,13 @@ export class TargetingOptions extends DisplayVideoApiClient {
   list(
     callback: (p1: TargetingOption[]) => void,
     params?: ListParams,
-    maxPages: number = -1
+    maxPages: number = -1,
   ) {
     super.listResources(
       `targetingTypes/${this.getTargetingType()}/targetingOptions` +
-        `?advertiserId=${this.getAdvertiserId()}${buildParamString(params, {prependStr: '&'})}`,
+        `?advertiserId=${this.getAdvertiserId()}${buildParamString(params, { prependStr: "&" })}`,
       callback,
-      maxPages
+      maxPages,
     );
   }
 
@@ -893,21 +901,21 @@ export class TargetingOptions extends DisplayVideoApiClient {
   search(
     query: string,
     callback: (p1: TargetingOption[]) => void,
-    maxPages: number = -1
+    maxPages: number = -1,
   ) {
     if (this.getTargetingType() !== TARGETING_TYPE.GEO_REGION) {
       throw new Error(
-        `Error! "search" is only supported for ${TARGETING_TYPE.GEO_REGION}`
+        `Error! "search" is only supported for ${TARGETING_TYPE.GEO_REGION}`,
       );
     }
     const url =
       `targetingTypes/${this.getTargetingType()}/` +
-      encodeURIComponent('targetingOptions:search');
+      encodeURIComponent("targetingOptions:search");
     const payload = {
       advertiserId: this.getAdvertiserId(),
-      geoRegionSearchTerms: {geoRegionQuery: query},
+      geoRegionSearchTerms: { geoRegionQuery: query },
     };
-    const params = {'method': 'post', 'payload': JSON.stringify(payload)};
+    const params = { method: "post", payload: JSON.stringify(payload) };
     super.listResources(url, callback, maxPages, params);
   }
 
@@ -920,7 +928,9 @@ export class TargetingOptions extends DisplayVideoApiClient {
    * @throws {!Error} If the API resource object did not contain the expected
    *     properties
    */
-  asDisplayVideoResource(resource: {[key: string]: unknown}): TargetingOption {
+  asDisplayVideoResource(resource: {
+    [key: string]: unknown;
+  }): TargetingOption {
     return TargetingOption.fromApiResource(resource);
   }
 
@@ -935,7 +945,7 @@ export class TargetingOptions extends DisplayVideoApiClient {
   get(targetingOptionId: string): TargetingOption {
     return super.getResource(
       `targetingTypes/${this.getTargetingType()}/targetingOptions/` +
-        `${targetingOptionId}?advertiserId=${this.getAdvertiserId()}`
+        `${targetingOptionId}?advertiserId=${this.getAdvertiserId()}`,
     ) as TargetingOption;
   }
 
@@ -944,16 +954,16 @@ export class TargetingOptions extends DisplayVideoApiClient {
    */
   override createResource(
     requestUri: string,
-    payload: DisplayVideoResource
+    payload: DisplayVideoResource,
   ): DisplayVideoResource {
-    throw new Error('405 Method Not Allowed');
+    throw new Error("405 Method Not Allowed");
   }
 
   /**
    * @throws {!Error} As this method is not allowed for this type
    */
   override patchResource(requestUri: string): DisplayVideoResource {
-    throw new Error('405 Method Not Allowed');
+    throw new Error("405 Method Not Allowed");
   }
 
   /**
@@ -962,16 +972,16 @@ export class TargetingOptions extends DisplayVideoApiClient {
   override patchResourceByComparison(
     requestUri: string,
     original: DisplayVideoResource,
-    modified: DisplayVideoResource | null
+    modified: DisplayVideoResource | null,
   ): DisplayVideoResource {
-    throw new Error('405 Method Not Allowed');
+    throw new Error("405 Method Not Allowed");
   }
 
   /**
    * @throws {!Error} As this method is not allowed for this type
    */
   override deleteResource(requestUri: string) {
-    throw new Error('405 Method Not Allowed');
+    throw new Error("405 Method Not Allowed");
   }
 
   /**
@@ -997,7 +1007,6 @@ export class TargetingOptions extends DisplayVideoApiClient {
  * @final
  */
 export class AssignedTargetingOptions extends DisplayVideoApiClient {
-
   private readonly campaignId?: string;
 
   private readonly insertionOrderId?: string;
@@ -1010,9 +1019,21 @@ export class AssignedTargetingOptions extends DisplayVideoApiClient {
    */
   private readonly readOnly: boolean;
 
-  constructor(targetingType: TargetingType, advertiserId: string, assignedTargetingOption: {campaignId: string});
-  constructor(targetingType: TargetingType, advertiserId: string, assignedTargetingOption: {lineItemId: string});
-  constructor(targetingType: TargetingType, advertiserId: string, assignedTargetingOption: {insertionOrderId: string});
+  constructor(
+    targetingType: TargetingType,
+    advertiserId: string,
+    assignedTargetingOption: { campaignId: string },
+  );
+  constructor(
+    targetingType: TargetingType,
+    advertiserId: string,
+    assignedTargetingOption: { lineItemId: string },
+  );
+  constructor(
+    targetingType: TargetingType,
+    advertiserId: string,
+    assignedTargetingOption: { insertionOrderId: string },
+  );
   constructor(targetingType: TargetingType, advertiserId: string);
 
   /**
@@ -1021,9 +1042,13 @@ export class AssignedTargetingOptions extends DisplayVideoApiClient {
   constructor(
     private readonly targetingType: TargetingType,
     private readonly advertiserId: string,
-    assignedTargetingOption?: {campaignId?: string, lineItemId?: string, insertionOrderId?: string},
+    assignedTargetingOption?: {
+      campaignId?: string;
+      lineItemId?: string;
+      insertionOrderId?: string;
+    },
   ) {
-    super('assignedTargetingOptions');
+    super("assignedTargetingOptions");
 
     if (assignedTargetingOption) {
       this.lineItemId = assignedTargetingOption.lineItemId;
@@ -1043,8 +1068,8 @@ export class AssignedTargetingOptions extends DisplayVideoApiClient {
   getBaseUrl(): string {
     const prefix = `advertisers/${this.getAdvertiserId()}/`;
     const suffix =
-        `targetingTypes/${this.getTargetingType()}/` + `assignedTargetingOptions`;
-    let extension = '';
+      `targetingTypes/${this.getTargetingType()}/` + `assignedTargetingOptions`;
+    let extension = "";
 
     if (this.getCampaignId()) {
       extension = `campaigns/${this.getCampaignId()}/`;
@@ -1069,13 +1094,14 @@ export class AssignedTargetingOptions extends DisplayVideoApiClient {
    */
   list(
     callback: (p1: AssignedTargetingOption[]) => void,
-    params?: Exclude<ListParams, 'pageSize'>,
-    maxPages: number = -1
+    params?: Exclude<ListParams, "pageSize">,
+    maxPages: number = -1,
   ) {
     super.listResources(
-      this.getBaseUrl() + buildParamString(params, {defaults: {pageSize: 5000}}),
+      this.getBaseUrl() +
+        buildParamString(params, { defaults: { pageSize: 5000 } }),
       callback,
-      maxPages
+      maxPages,
     );
   }
 
@@ -1106,7 +1132,7 @@ export class AssignedTargetingOptions extends DisplayVideoApiClient {
    */
   get(assignedTargetingOptionId: string): AssignedTargetingOption {
     return super.getResource(
-      `${this.getBaseUrl()}/${assignedTargetingOptionId}`
+      `${this.getBaseUrl()}/${assignedTargetingOptionId}`,
     ) as AssignedTargetingOption;
   }
 
@@ -1121,11 +1147,11 @@ export class AssignedTargetingOptions extends DisplayVideoApiClient {
    * @throws {!Error} If this method is not allowed for this type
    */
   create(
-    assignedTargetingOptionResource: DisplayVideoResource
+    assignedTargetingOptionResource: DisplayVideoResource,
   ): AssignedTargetingOption {
     return this.createResource(
       this.getBaseUrl(),
-      assignedTargetingOptionResource
+      assignedTargetingOptionResource,
     ) as AssignedTargetingOption;
   }
 
@@ -1134,10 +1160,10 @@ export class AssignedTargetingOptions extends DisplayVideoApiClient {
    */
   override createResource(
     requestUri: string,
-    payload: DisplayVideoResource
+    payload: DisplayVideoResource,
   ): DisplayVideoResource {
     if (this.isReadOnly()) {
-      throw new Error('405 Method Not Allowed');
+      throw new Error("405 Method Not Allowed");
     }
     return super.createResource(requestUri, payload);
   }
@@ -1146,7 +1172,7 @@ export class AssignedTargetingOptions extends DisplayVideoApiClient {
    * @throws {!Error} As this method is not allowed for this type
    */
   override patchResource(requestUri: string): DisplayVideoResource {
-    throw new Error('405 Method Not Allowed');
+    throw new Error("405 Method Not Allowed");
   }
 
   /**
@@ -1155,9 +1181,9 @@ export class AssignedTargetingOptions extends DisplayVideoApiClient {
   override patchResourceByComparison(
     requestUri: string,
     original: DisplayVideoResource,
-    modified: DisplayVideoResource | null
+    modified: DisplayVideoResource | null,
   ): DisplayVideoResource {
-    throw new Error('405 Method Not Allowed');
+    throw new Error("405 Method Not Allowed");
   }
 
   /**
@@ -1173,7 +1199,7 @@ export class AssignedTargetingOptions extends DisplayVideoApiClient {
    */
   override deleteResource(requestUri: string) {
     if (this.isReadOnly()) {
-      throw new Error('405 Method Not Allowed');
+      throw new Error("405 Method Not Allowed");
     }
     super.deleteResource(requestUri);
   }
@@ -1233,16 +1259,24 @@ export class AssignedTargetingOptions extends DisplayVideoApiClient {
  */
 export function activeEntityFilter(): FilterExpression {
   return new FilterExpression([
-    new Rule('entityStatus', RuleOperator.EQ, STATUS.ACTIVE),
+    new Rule("entityStatus", RuleOperator.EQ, STATUS.ACTIVE),
   ]);
 }
 
 /**
  * Builds a query string from the provided {@link ListParams}.
  */
-export function buildParamString(params?: ListParams, {prependStr = '?', defaults = {}}: {prependStr?: '?' | '&', defaults?: Partial<ListParams>} = {prependStr: '?'}) {
+export function buildParamString(
+  params?: ListParams,
+  {
+    prependStr = "?",
+    defaults = {},
+  }: { prependStr?: "?" | "&"; defaults?: Partial<ListParams> } = {
+    prependStr: "?",
+  },
+) {
   if (params && params.pageSize !== undefined) {
-    console.warn('pageSize is not supported for override at this time.');
+    console.warn("pageSize is not supported for override at this time.");
     delete params.pageSize;
   }
   const effectiveParams = {
@@ -1250,21 +1284,25 @@ export function buildParamString(params?: ListParams, {prependStr = '?', default
     ...params,
   };
   if (!effectiveParams) {
-    return '';
+    return "";
   }
   const searchParams: Record<string, string> = {};
   if (effectiveParams.filter) {
-    searchParams['filter'] = effectiveParams.filter.toApiQueryString();
+    searchParams["filter"] = effectiveParams.filter.toApiQueryString();
   }
 
   if (effectiveParams.pageSize) {
-    searchParams['pageSize'] = encodeURIComponent(String(effectiveParams.pageSize));
+    searchParams["pageSize"] = encodeURIComponent(
+      String(effectiveParams.pageSize),
+    );
   }
 
   if (effectiveParams.orderBy) {
-    searchParams['orderBy'] = encodeURIComponent(effectiveParams.orderBy);
+    searchParams["orderBy"] = encodeURIComponent(effectiveParams.orderBy);
   }
 
-  const result = Object.entries(searchParams).map(([key, value]) => `${encodeURIComponent(key)}=${value}`).join('&');
-  return result ? prependStr + result : '';
+  const result = Object.entries(searchParams)
+    .map(([key, value]) => `${encodeURIComponent(key)}=${value}`)
+    .join("&");
+  return result ? prependStr + result : "";
 }

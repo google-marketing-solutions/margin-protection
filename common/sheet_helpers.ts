@@ -27,7 +27,7 @@ import {
   Settings,
   Value,
   Values,
-} from 'common/types';
+} from "common/types";
 
 import {
   AppsScriptFunctions,
@@ -44,9 +44,9 @@ import {
   RuleGranularity,
   RuleRangeInterface,
   SettingMapInterface,
-} from './types';
+} from "./types";
 
-const FOLDER = 'application/vnd.google-apps.folder';
+const FOLDER = "application/vnd.google-apps.folder";
 const HEADER_RULE_NAME_INDEX = 0;
 
 /**
@@ -57,30 +57,30 @@ const SHEET_TOP_PADDING = 2;
 /**
  * Used to figure out the list of email addresses to send emails to.
  */
-export const EMAIL_LIST_RANGE = 'EMAIL_LIST';
+export const EMAIL_LIST_RANGE = "EMAIL_LIST";
 /**
  * Used to distinguish between different reports (e.g. advertiser name)
  */
-export const LABEL_RANGE = 'LABEL';
+export const LABEL_RANGE = "LABEL";
 
 type ScriptFunction<F> = (properties: PropertyStore) => F;
 type ScriptEntryPoints =
-  | 'onOpen'
-  | 'initializeSheets'
-  | 'preLaunchQa'
-  | 'launchMonitor'
-  | 'displaySetupGuide'
-  | 'displayGlossary';
+  | "onOpen"
+  | "initializeSheets"
+  | "preLaunchQa"
+  | "launchMonitor"
+  | "displaySetupGuide"
+  | "displayGlossary";
 
 /**
  * The name of the rule settings sheet (before granularity).
  */
-export const RULE_SETTINGS_SHEET = 'Rule Settings';
+export const RULE_SETTINGS_SHEET = "Rule Settings";
 
 /**
  * The name of the general settings sheet.
  */
-export const GENERAL_SETTINGS_SHEET = 'General/Settings';
+export const GENERAL_SETTINGS_SHEET = "General/Settings";
 
 /**
  * Provides a useful data structure to get campaign ID settings.
@@ -88,7 +88,7 @@ export const GENERAL_SETTINGS_SHEET = 'General/Settings';
  * Defaults to the row with campaignId: 'default' if no campaign ID override is
  * set.
  */
-export class SettingMap<P extends {[Property in keyof P]: P[keyof P]}>
+export class SettingMap<P extends { [Property in keyof P]: P[keyof P] }>
   implements SettingMapInterface<P>
 {
   private readonly map: Map<string, P>;
@@ -104,21 +104,21 @@ export class SettingMap<P extends {[Property in keyof P]: P[keyof P]}>
     if (obj) {
       return obj;
     }
-    const newObj = Object.fromEntries(this.keys.map((k) => [k, ''])) as P;
+    const newObj = Object.fromEntries(this.keys.map((k) => [k, ""])) as P;
     this.map.set(id, newObj);
     return newObj;
   }
 
   getOrDefault(id: string): P {
     const defaultValue =
-      this.map.get('default') || ({} as Record<keyof P, string>);
+      this.map.get("default") || ({} as Record<keyof P, string>);
     const campaignValue = this.map.get(id) || ({} as Record<keyof P, string>);
     return this.keys.reduce(
       (prev, key) => {
         prev[key] =
-          (!(key in campaignValue) || campaignValue[key] === ''
+          (!(key in campaignValue) || campaignValue[key] === ""
             ? defaultValue[key]
-            : campaignValue[key]) ?? '';
+            : campaignValue[key]) ?? "";
         return prev;
       },
 
@@ -164,7 +164,7 @@ export function transformToParamValues<
 >(rawSettings: ReadonlyArray<string[]>, mapper: MapType) {
   if (rawSettings.length < 2) {
     throw new Error(
-      'Expected a grid with row and column headers of at least size 2',
+      "Expected a grid with row and column headers of at least size 2",
     );
   }
   const headers = rawSettings[0];
@@ -172,15 +172,15 @@ export function transformToParamValues<
 
   function forEachRow(
     row: readonly string[],
-  ): [string, {[Property in keyof MapType]: string}] {
+  ): [string, { [Property in keyof MapType]: string }] {
     return [
       row[0],
       Object.fromEntries(
-        Object.entries<ParamDefinition>(mapper).map(([param, {label}]) => {
+        Object.entries<ParamDefinition>(mapper).map(([param, { label }]) => {
           const i = headers.indexOf(label);
           return [param, row[i]];
         }),
-      ) as {[Property in keyof MapType]: string},
+      ) as { [Property in keyof MapType]: string },
     ];
   }
   return new SettingMap(body.map(forEachRow));
@@ -227,13 +227,13 @@ export abstract class AbstractRuleRange<
   private rowIndex: Record<string, number> = {};
   private readonly columnOrders: Record<string, Record<string, number>> = {};
   private readonly rules: Record<string, string[][]> &
-    Record<'none', string[][]> = {'none': [[]]};
+    Record<"none", string[][]> = { none: [[]] };
   private length = 0;
 
   constructor(
     range: string[][],
     protected readonly client: C,
-    constantHeaders: string[] = ['ID', 'default'],
+    constantHeaders: string[] = ["ID", "default"],
   ) {
     for (let i = 0; i < constantHeaders.length; i++) {
       this.rowIndex[constantHeaders[i]] = i;
@@ -243,7 +243,7 @@ export abstract class AbstractRuleRange<
   }
 
   setRow(category: string, id: string, column: string[]): void {
-    if (id === '') {
+    if (id === "") {
       return;
     }
     if (this.rowIndex[id] === undefined) {
@@ -254,15 +254,15 @@ export abstract class AbstractRuleRange<
   }
 
   getValues(ruleGranularity?: G): string[][] {
-    const newRowIndex = {...this.rowIndex};
-    const defaultFirstColumns = ['', ''];
+    const newRowIndex = { ...this.rowIndex };
+    const defaultFirstColumns = ["", ""];
 
     const values = Object.entries(this.rules).reduce(
       (combinedRuleRange, [category, rangeRaw]) => {
         const range = rangeRaw.filter((row) => row && row.length);
         if (
           ruleGranularity &&
-          category !== 'none' &&
+          category !== "none" &&
           this.client.ruleStore[category].granularity !== ruleGranularity
         ) {
           return combinedRuleRange;
@@ -275,17 +275,17 @@ export abstract class AbstractRuleRange<
         }
         const ruleSettingColumnOffset = combinedRuleRange[0].length;
         combinedRuleRange[0] = combinedRuleRange[0].concat(
-          Array.from({length: ruleSettingColumnCount}).fill(
-            category === 'none' ? '' : category,
+          Array.from({ length: ruleSettingColumnCount }).fill(
+            category === "none" ? "" : category,
           ) as string[],
         );
 
         combinedRuleRange[1] =
-          category === 'none'
+          category === "none"
             ? defaultFirstColumns
             : combinedRuleRange[1].concat(
-                Array.from<string>({length: ruleSettingColumnCount})
-                  .fill('')
+                Array.from<string>({ length: ruleSettingColumnCount })
+                  .fill("")
                   .map((cell, idx) => {
                     if (
                       idx === 0 &&
@@ -297,7 +297,7 @@ export abstract class AbstractRuleRange<
                         combinedRuleRange[0][idx + ruleSettingColumnOffset]
                       ].helper;
                     } else {
-                      return '';
+                      return "";
                     }
                   }),
               );
@@ -320,7 +320,7 @@ export abstract class AbstractRuleRange<
             combinedRuleRange[offsetRow] = (combinedRuleRange[offsetRow] =
               combinedRuleRange[offsetRow] || []).concat(
               rangeRaw[currentOrdinalValue] ??
-                Array.from<string>({length: ruleSettingColumnCount}).fill(''),
+                Array.from<string>({ length: ruleSettingColumnCount }).fill(""),
             );
             newRowIndex[entityId] = offsetRow;
           },
@@ -331,7 +331,7 @@ export abstract class AbstractRuleRange<
     );
 
     for (let c = values[0].length - 1; c > 0; c--) {
-      values[0][c] = values[0][c - 1] === values[0][c] ? '' : values[0][c];
+      values[0][c] = values[0][c - 1] === values[0][c] ? "" : values[0][c];
     }
 
     this.rowIndex = newRowIndex;
@@ -345,12 +345,12 @@ export abstract class AbstractRuleRange<
     return Object.values(this.rowIndex)
       .filter(
         (index) =>
-          this.rules['none'][index] !== undefined &&
+          this.rules["none"][index] !== undefined &&
           this.rules[ruleName][index] !== undefined,
       )
       .sort((a, b) => a - b)
       .map((index) => {
-        return [this.rules['none'][index][0], ...this.rules[ruleName][index]];
+        return [this.rules["none"][index][0], ...this.rules[ruleName][index]];
       });
   }
 
@@ -379,7 +379,7 @@ export abstract class AbstractRuleRange<
     for (let r = 0; r < range.length; r++) {
       for (const [start, end] of thresholds) {
         this.setRow(
-          range[0][start] || 'none',
+          range[0][start] || "none",
           range[r][0],
           range[r].slice(start, end),
         );
@@ -390,18 +390,18 @@ export abstract class AbstractRuleRange<
   async fillRuleValues<Params>(
     rule: Pick<
       RuleDefinition<Record<keyof Params, ParamDefinition>, G>,
-      'name' | 'params' | 'defaults' | 'granularity'
+      "name" | "params" | "defaults" | "granularity"
     >,
   ) {
     if (!rule.defaults) {
-      throw new Error('Missing default values definition in fillRow');
+      throw new Error("Missing default values definition in fillRow");
     }
 
-    const headersByIndex: {[index: number]: string} = {};
-    const paramsByHeader: {[index: string]: keyof Params} = {};
-    const indexByHeader: {[header: string]: number} = {};
+    const headersByIndex: { [index: number]: string } = {};
+    const paramsByHeader: { [index: string]: keyof Params } = {};
+    const indexByHeader: { [header: string]: number } = {};
     Object.entries<ParamDefinition>(rule.params).forEach(
-      ([key, {label}], index) => {
+      ([key, { label }], index) => {
         headersByIndex[index] = label;
         paramsByHeader[label] = key as keyof Params;
         indexByHeader[label] = index;
@@ -416,16 +416,16 @@ export abstract class AbstractRuleRange<
     );
     const length = Object.keys(rule.params).length;
 
-    this.setRow('none', 'ID', ['ID', `${rule.granularity} Name`]);
-    this.setRow(rule.name, 'ID', [...Object.values(headersByIndex)]);
-    this.setRow('none', 'default', ['default', '']);
+    this.setRow("none", "ID", ["ID", `${rule.granularity} Name`]);
+    this.setRow(rule.name, "ID", [...Object.values(headersByIndex)]);
+    this.setRow("none", "default", ["default", ""]);
     this.setRow(
       rule.name,
-      'default',
-      Array.from({length}).map((unused, index) =>
-        currentSettings && currentSettings['default']
-          ? currentSettings['default'][headersByIndex[index]] ??
-            rule.defaults[paramsByHeader[headersByIndex[index]]]
+      "default",
+      Array.from({ length }).map((unused, index) =>
+        currentSettings && currentSettings["default"]
+          ? (currentSettings["default"][headersByIndex[index]] ??
+            rule.defaults[paramsByHeader[headersByIndex[index]]])
           : rule.defaults[paramsByHeader[headersByIndex[index]]],
       ),
     );
@@ -433,13 +433,13 @@ export abstract class AbstractRuleRange<
       this.setRow(
         rule.name,
         record.id,
-        Array.from({length}).map((unused, index) =>
+        Array.from({ length }).map((unused, index) =>
           currentSettings && currentSettings[record.id]
-            ? currentSettings[record.id][headersByIndex[index]] ?? ''
-            : '',
+            ? (currentSettings[record.id][headersByIndex[index]] ?? "")
+            : "",
         ),
       );
-      this.setRow('none', record.id, [record.id, record.displayName]);
+      this.setRow("none", record.id, [record.id, record.displayName]);
     }
   }
 
@@ -449,7 +449,7 @@ export abstract class AbstractRuleRange<
       `Rule Settings - ${ruleGranularity}`,
     ).getRange(1, 1, values.length, values[0].length);
     range.setValues(values);
-    console.log('done');
+    console.log("done");
   }
 
   abstract getRows(granularity: G): Promise<RecordInfo[]>;
@@ -463,7 +463,7 @@ export function getOrCreateSheet(sheetName: string) {
   return active.getSheetByName(sheetName) || active.insertSheet(sheetName);
 }
 
-const SCRIPT_PULL = 'scriptPull';
+const SCRIPT_PULL = "scriptPull";
 
 /**
  * Helpers that can be stubbed in tests for migrations.
@@ -520,7 +520,7 @@ export abstract class AppsScriptFrontEnd<
   ) {
     const clientArgs = this.getIdentity();
     if (!clientArgs) {
-      throw new Error('Cannot initialize front-end without client ID(s)');
+      throw new Error("Cannot initialize front-end without client ID(s)");
     }
     this.client = injectedArgs.clientInitializer(
       clientArgs,
@@ -537,15 +537,15 @@ export abstract class AppsScriptFrontEnd<
    */
   async onOpen() {
     SpreadsheetApp.getUi()
-      .createMenu('Launch Monitor')
-      .addItem('Sync Campaigns', 'initializeSheets')
-      .addItem('Pre-Launch QA', 'preLaunchQa')
+      .createMenu("Launch Monitor")
+      .addItem("Sync Campaigns", "initializeSheets")
+      .addItem("Pre-Launch QA", "preLaunchQa")
       .addSeparator()
       .addSubMenu(
         SpreadsheetApp.getUi()
-          .createMenu('Guides')
-          .addItem('Show Setup Guide', 'displaySetupGuide')
-          .addItem('Show Glossary', 'displayGlossary'),
+          .createMenu("Guides")
+          .addItem("Show Setup Guide", "displaySetupGuide")
+          .addItem("Show Glossary", "displayGlossary"),
       )
       .addToUi();
   }
@@ -572,7 +572,7 @@ export abstract class AppsScriptFrontEnd<
       const ruleSheet = getOrCreateSheet(
         `${RULE_SETTINGS_SHEET} - ${sheetName}`,
       );
-      ruleSheet.getRange('A:Z').clearDataValidations();
+      ruleSheet.getRange("A:Z").clearDataValidations();
       const rules = new this.injectedArgs.ruleRangeClass(
         ruleSheet.getDataRange().getValues(),
         this.client,
@@ -639,7 +639,7 @@ export abstract class AppsScriptFrontEnd<
     {
       validationFormulas,
       numberFormat,
-    }: Pick<ParamDefinition, 'validationFormulas' | 'numberFormat'>,
+    }: Pick<ParamDefinition, "validationFormulas" | "numberFormat">,
     column: number,
   ) {
     if (!validationFormulas || !validationFormulas.length) {
@@ -666,38 +666,37 @@ export abstract class AppsScriptFrontEnd<
     const identity = this.getIdentity();
     if (!identity) {
       throw new Error(
-        'Missing Advertiser ID - Please fill this out before continuing.',
+        "Missing Advertiser ID - Please fill this out before continuing.",
       );
     }
 
-    const report: {[rule: string]: {[campaignId: string]: Value}} = {};
+    const report: { [rule: string]: { [campaignId: string]: Value } } = {};
     await this.initializeRules();
-    const thresholds: Array<[Rule, Promise<{values: Values}>]> = Object.values(
-      this.client.ruleStore,
-    ).map((rule) => {
-      return [rule, rule.run()];
-    });
+    const thresholds: Array<[Rule, Promise<{ values: Values }>]> =
+      Object.values(this.client.ruleStore).map((rule) => {
+        return [rule, rule.run()];
+      });
 
     for (const [rule, threshold] of thresholds) {
-      const {values} = await threshold;
+      const { values } = await threshold;
       for (const value of Object.values(values)) {
-        const fieldKey = Object.entries(value.fields ?? [['', 'all']])
-          .map(([key, value]) => (key ? `${key}: ${value}` : ''))
-          .join(', ');
+        const fieldKey = Object.entries(value.fields ?? [["", "all"]])
+          .map(([key, value]) => (key ? `${key}: ${value}` : ""))
+          .join(", ");
         report[rule.name] = report[rule.name] || {};
         // overwrite with the latest `Value` until there's nothing left.
         report[rule.name][fieldKey] = value;
       }
     }
 
-    const sheet = getOrCreateSheet('Pre-Launch QA Results');
+    const sheet = getOrCreateSheet("Pre-Launch QA Results");
     const lastUpdated = [
       `Last Updated ${new Date(Date.now()).toISOString()}`,
-      '',
-      '',
-      '',
+      "",
+      "",
+      "",
     ];
-    const headers = ['Rule', 'Field', 'Value', 'Anomaly'];
+    const headers = ["Rule", "Field", "Value", "Anomaly"];
     const valueArray = [
       lastUpdated,
       headers,
@@ -707,7 +706,7 @@ export abstract class AppsScriptFrontEnd<
         });
       }),
     ];
-    sheet.getRange('A:Z').clearDataValidations();
+    sheet.getRange("A:Z").clearDataValidations();
     sheet.clear();
     sheet
       .getRange(1, 1, valueArray.length, valueArray[0].length)
@@ -722,28 +721,28 @@ export abstract class AppsScriptFrontEnd<
    */
   async launchMonitor() {
     await this.initializeSheets();
-    const {rules, results} = await this.client.validate();
+    const { rules, results } = await this.client.validate();
     this.saveSettingsBackToSheets(Object.values(rules));
     this.populateRuleResultsInSheets(rules, results);
     this.maybeSendEmailAlert(
       Object.fromEntries(
         Object.entries(rules).map(([key, ruleInfo]) => [
           key,
-          {name: ruleInfo.name, values: results[key].values},
+          { name: ruleInfo.name, values: results[key].values },
         ]),
       ),
     );
   }
 
   displayGlossary() {
-    const template = HtmlService.createTemplateFromFile('html/glossary');
-    template['rules'] = this.getFrontEndDefinitions();
+    const template = HtmlService.createTemplateFromFile("html/glossary");
+    template["rules"] = this.getFrontEndDefinitions();
     SpreadsheetApp.getUi().showSidebar(template.evaluate());
   }
 
   displaySetupGuide() {
     SpreadsheetApp.getUi().showSidebar(
-      HtmlService.createHtmlOutputFromFile('html/guide'),
+      HtmlService.createHtmlOutputFromFile("html/guide"),
     );
   }
 
@@ -787,32 +786,32 @@ export abstract class AppsScriptFrontEnd<
    */
   matrixToCsv(
     matrix: string[][],
-    {category, sheetId, label, ruleName, currentTime}: MetadataForCsv,
+    { category, sheetId, label, ruleName, currentTime }: MetadataForCsv,
   ): string {
     // note - the arrays we're using get API data, not user input. Not
     // anticipating anything that complicated, but we're adding tests to be
     // sure.
     const headers = [
-      'Category',
-      'Sheet ID',
-      'Label',
-      'Rule Name',
-      'Current Time',
+      "Category",
+      "Sheet ID",
+      "Label",
+      "Rule Name",
+      "Current Time",
       ...matrix[0],
     ]
       .map((col) => `"${col.replaceAll('"', '"""')}"`)
-      .join(',');
+      .join(",");
     return (
       headers +
-      '\n' +
+      "\n" +
       matrix
         .slice(1)
         .map((row) =>
           [category, sheetId, label, ruleName, currentTime, ...row]
             .map((col) => `"${col.replaceAll('"', '"""')}"`)
-            .join(','),
+            .join(","),
         )
-        .join('\n')
+        .join("\n")
     );
   }
 
@@ -820,7 +819,7 @@ export abstract class AppsScriptFrontEnd<
    * Exports rules as a CSV.
    */
   exportAsCsv(ruleName: string, matrix: string[][]) {
-    const folder = this.getOrCreateFolder('reports');
+    const folder = this.getOrCreateFolder("reports");
     const sheetId = HELPERS.getSheetId();
     const label: string = this.getRangeByName(LABEL_RANGE).getValue();
     const currentTime = new Date(Date.now()).toISOString();
@@ -835,13 +834,13 @@ export abstract class AppsScriptFrontEnd<
       }),
     );
     const filename = `${this.category}_${
-      label ? label + '_' : 'report_'
+      label ? label + "_" : "report_"
     }${ruleName}_${sheetId}_${currentTime}`;
     Drive.Files!.insert(
       {
-        parents: [{id: folder}],
+        parents: [{ id: folder }],
         title: `${filename}.csv`,
-        mimeType: 'text/plain',
+        mimeType: "text/plain",
       },
       file,
     );
@@ -858,28 +857,28 @@ export abstract class AppsScriptFrontEnd<
     folderName: string,
     parent?: GoogleAppsScript.Spreadsheet.Range,
   ): string {
-    const parentId = parent ?? this.getRangeByName('DRIVE_ID');
+    const parentId = parent ?? this.getRangeByName("DRIVE_ID");
     if (!parentId || !parentId.getValue()) {
       throw new Error(
-        'Missing a named range and/or a value in named range `DRIVE_ID`.',
+        "Missing a named range and/or a value in named range `DRIVE_ID`.",
       );
     }
     const driveId: string = parentId.getValue().trim();
 
     const file: GoogleAppsScript.Drive.Schema.File | undefined =
       Drive.Files!.get(driveId);
-    let parentName = '';
+    let parentName = "";
     if (file && file.id) {
       if (file.mimeType !== FOLDER) {
         throw new Error(
-          'The selected Google Drive file ID is not a folder. Please delete and/or add a folder ID',
+          "The selected Google Drive file ID is not a folder. Please delete and/or add a folder ID",
         );
       }
       parentName = file.id;
     }
 
     const q =
-      (parentName ? `'${parentName}' in parents and ` : '') +
+      (parentName ? `'${parentName}' in parents and ` : "") +
       `title="${folderName}" and mimeType="${FOLDER}" and not trashed`;
     const args = {
       q,
@@ -892,7 +891,7 @@ export abstract class AppsScriptFrontEnd<
       folder = Drive.Files!.insert({
         title: folderName,
         mimeType: FOLDER,
-        parents: [{id: driveId}],
+        parents: [{ id: driveId }],
       }).id as string;
     }
     return folder;
@@ -942,12 +941,12 @@ export abstract class AppsScriptFrontEnd<
       }
 
       if (
-        getTemplateSetting('LAUNCH_MONITOR_OPTION').getValue() === 'CSV Back-Up'
+        getTemplateSetting("LAUNCH_MONITOR_OPTION").getValue() === "CSV Back-Up"
       ) {
         this.exportAsCsv(rule.name, matrix);
       }
     }
-    getOrCreateSheet('Summary')
+    getOrCreateSheet("Summary")
       .getRange(1, 1, ruleSheets.length, 2)
       .setValues(
         ruleSheets.map((rule, i) => [
@@ -1004,12 +1003,12 @@ export abstract class AppsScriptFrontEnd<
    */
   migrate(): number {
     const sheetVersion =
-      PropertiesService.getScriptProperties().getProperty('sheet_version') ??
-      '0';
+      PropertiesService.getScriptProperties().getProperty("sheet_version") ??
+      "0";
     let numberOfMigrations = 0;
     if (!sheetVersion) {
       PropertiesService.getScriptProperties().setProperty(
-        'sheet_version',
+        "sheet_version",
         this.injectedArgs.version,
       );
     }
@@ -1027,7 +1026,7 @@ export abstract class AppsScriptFrontEnd<
         // write manually each time because we want incremental migrations if
         // anything fails.
         PropertiesService.getScriptProperties().setProperty(
-          'sheet_version',
+          "sheet_version",
           version,
         );
         ++numberOfMigrations;
@@ -1035,7 +1034,7 @@ export abstract class AppsScriptFrontEnd<
     }
     if (sheetVersion !== this.injectedArgs.version) {
       PropertiesService.getScriptProperties().setProperty(
-        'sheet_version',
+        "sheet_version",
         String(this.injectedArgs.version),
       );
     }
@@ -1046,21 +1045,22 @@ export abstract class AppsScriptFrontEnd<
     const peopleToSend = getTemplateSetting(EMAIL_LIST_RANGE).getValue();
     const label = this.getIdentity()?.label;
     if (!label) {
-      throw new Error('Set up sheet before running.');
+      throw new Error("Set up sheet before running.");
     }
-    const SEND_DATE_KEY = 'email_send_dates';
-    const ANOMALY_SEND_DATE_KEY = 'anomaly_send_dates';
+    const SEND_DATE_KEY = "email_send_dates";
+    const ANOMALY_SEND_DATE_KEY = "anomaly_send_dates";
 
     const updateTime = Date.now();
     const emailSendDates = JSON.parse(
-      this.client.properties.getProperty(SEND_DATE_KEY) || '{}',
-    ) as {[author: string]: number};
+      this.client.properties.getProperty(SEND_DATE_KEY) || "{}",
+    ) as { [author: string]: number };
     // never reuse anomaly dates. We should use newAnomalySendDates so we
     // get rid of no-longer-anomalous values.
-    const anomalySendDates: {readonly [id: string]: number} = JSON.parse(
-      this.client.properties.getProperty(ANOMALY_SEND_DATE_KEY) || '{}',
-    ) as {[id: string]: number};
-    const newAnomalySendDates: {[id: string]: number} = {};
+    const anomalySendDates: { readonly [id: string]: number } = JSON.parse(
+      this.client.properties.getProperty(ANOMALY_SEND_DATE_KEY) || "{}",
+    ) as { [id: string]: number };
+    console.log({ anomalySendDates });
+    const newAnomalySendDates: { [id: string]: number } = {};
     let emailSent = false;
 
     const rulesWithAnomalies: readonly RuleGetter[] = Object.values(rules)
@@ -1077,8 +1077,11 @@ export abstract class AppsScriptFrontEnd<
       )
       .filter((anomalies) => Object.keys(anomalies.values).length);
 
+    if (rulesWithAnomalies.length) {
+      console.log({ rulesWithAnomalies });
+    }
     for (const to of Object.values<string>(
-      peopleToSend.replace(';', ',').replace(' ', ',').split(','),
+      peopleToSend.replace(";", ",").replace(" ", ",").split(","),
     ).filter((s) => s)) {
       /**
        * When a recipient has not received the latest anomaly report, flag it.
@@ -1100,6 +1103,7 @@ export abstract class AppsScriptFrontEnd<
         }))
         .filter((rule) => Object.keys(rule.values).length);
       if (unsentAnomalies.length === 0) {
+        console.log("NO UNSENT ANOMALIES");
         continue;
       }
       this.sendEmailAlert(unsentAnomalies, {
@@ -1158,7 +1162,7 @@ export abstract class AppsScriptFrontEnd<
     }
 
     message.body =
-      'The following errors were found:\n\n' + messages.join('\n\n');
+      "The following errors were found:\n\n" + messages.join("\n\n");
     sendEmail(message);
 
     for (const anomaly of anomalies) {
@@ -1233,7 +1237,7 @@ export function newRuleBuilder<
       readonly settings: Settings<Record<keyof P, string>>;
       readonly name: string = ruleDefinition.name;
       readonly params = ruleDefinition.params;
-      readonly helper = ruleDefinition.helper ?? '';
+      readonly helper = ruleDefinition.helper ?? "";
       readonly granularity: G = ruleDefinition.granularity;
       readonly valueFormat = ruleDefinition.valueFormat;
       static definition = ruleDefinition;
@@ -1250,7 +1254,7 @@ export function newRuleBuilder<
       }
     };
 
-    Object.defineProperty(ruleClass, 'name', {value: ruleDefinition.name});
+    Object.defineProperty(ruleClass, "name", { value: ruleDefinition.name });
     return ruleClass;
   };
 }
@@ -1266,27 +1270,27 @@ function load<
     scriptProperties: PropertyStore | GoogleAppsScript.Events.AppsScriptEvent,
   ) => {
     const frontend = frontEndCaller(
-      scriptProperties && scriptProperties.hasOwnProperty('getProperty')
+      scriptProperties && scriptProperties.hasOwnProperty("getProperty")
         ? (scriptProperties as PropertyStore)
         : new AppsScriptPropertyStore(),
     );
     switch (fnName) {
-      case 'onOpen':
+      case "onOpen":
         return frontend.onOpen();
-      case 'initializeSheets':
+      case "initializeSheets":
         return frontend.initializeSheets();
-      case 'preLaunchQa':
+      case "preLaunchQa":
         return frontend.preLaunchQa();
-      case 'launchMonitor':
+      case "launchMonitor":
         return frontend.launchMonitor();
-      case 'displaySetupGuide':
+      case "displaySetupGuide":
         frontend.displaySetupGuide();
         return;
-      case 'displayGlossary':
+      case "displayGlossary":
         frontend.displayGlossary();
         return;
       default:
-        throw new Error('Unsupported function: ${fnName}');
+        throw new Error("Unsupported function: ${fnName}");
     }
   };
 }
@@ -1322,12 +1326,12 @@ export function lazyLoadApp<
   F extends AppsScriptFrontEnd<C, G, A, F>,
 >(frontEndCaller: ScriptFunction<F>): ScriptFunction<F> {
   const binders = applyBinding<C, G, A, F>(frontEndCaller);
-  toExport.onOpen = load<C, G, A, F>(binders, 'onOpen');
-  toExport.initializeSheets = load<C, G, A, F>(binders, 'initializeSheets');
-  toExport.preLaunchQa = load<C, G, A, F>(binders, 'preLaunchQa');
-  toExport.launchMonitor = load<C, G, A, F>(binders, 'launchMonitor');
-  toExport.displayGlossary = load<C, G, A, F>(binders, 'displayGlossary');
-  toExport.displaySetupGuide = load<C, G, A, F>(binders, 'displaySetupGuide');
+  toExport.onOpen = load<C, G, A, F>(binders, "onOpen");
+  toExport.initializeSheets = load<C, G, A, F>(binders, "initializeSheets");
+  toExport.preLaunchQa = load<C, G, A, F>(binders, "preLaunchQa");
+  toExport.launchMonitor = load<C, G, A, F>(binders, "launchMonitor");
+  toExport.displayGlossary = load<C, G, A, F>(binders, "displayGlossary");
+  toExport.displaySetupGuide = load<C, G, A, F>(binders, "displaySetupGuide");
 
   return binders;
 }
@@ -1353,7 +1357,7 @@ export function addSettingWithDescription(
     .build();
   sheet.getRange(rangeName).setRichTextValue(
     SpreadsheetApp.newRichTextValue()
-      .setText(text.join('\n'))
+      .setText(text.join("\n"))
       .setTextStyle(0, text[0].length, bold)
       .setTextStyle(text[0].length, text[0].length + text[1].length, small)
       .build(),
@@ -1382,8 +1386,8 @@ export const toExport: Record<AppsScriptFunctions, Function> = {
  * @param ver2 A semver value
  */
 export function sortMigrations(ver1: string, ver2: string) {
-  const keys1 = ver1.split('.').map(Number);
-  const keys2 = ver2.split('.').map(Number);
+  const keys1 = ver1.split(".").map(Number);
+  const keys2 = ver2.split(".").map(Number);
   let difference = 0;
   for (let i = 0; i < Math.max(keys1.length, keys2.length); i++) {
     difference += ((keys1[i] ?? 0) - (keys2[i] ?? 0)) / 10 ** i;
@@ -1397,7 +1401,7 @@ export function sortMigrations(ver1: string, ver2: string) {
  * This class uses `gzip` to stay within storage quotas for PropertiesService.
  */
 export class AppsScriptPropertyStore implements PropertyStore {
-  private static readonly cache: {[key: string]: string} = {};
+  private static readonly cache: { [key: string]: string } = {};
 
   constructor(
     private readonly properties = PropertiesService.getScriptProperties(),
@@ -1441,7 +1445,7 @@ function compress(content: string): string {
 function extract(content: string): string {
   try {
     const decode = Utilities.base64Decode(content);
-    const blob = Utilities.newBlob(decode, 'application/x-gzip');
+    const blob = Utilities.newBlob(decode, "application/x-gzip");
     return Utilities.ungzip(blob).getDataAsString();
   } catch (e) {
     return content; // already extracted
@@ -1454,7 +1458,7 @@ function extract(content: string): string {
 function emailAlertBody(name: string, values: Value[]) {
   const header = `----------\n${name}:\n----------\n`;
   const anomalyList =
-    header + values.map((value) => `- ${value.value}`).join('\n');
+    header + values.map((value) => `- ${value.value}`).join("\n");
 
   return anomalyList;
 }

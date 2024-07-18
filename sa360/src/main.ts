@@ -31,19 +31,13 @@ import {
   GoogleAdsApiFactory,
   ReportFactory,
   SA360_API_ENDPOINT,
-} from 'common/ads_api';
-import {
-  lazyLoadApp,
-  toExport,
-} from 'common/sheet_helpers';
-import {PropertyStore} from 'common/types';
-import {
-  ClientV2,
-  RuleRangeV2,
-} from 'sa360/src/client';
+} from "common/ads_api";
+import { lazyLoadApp, toExport } from "common/sheet_helpers";
+import { PropertyStore } from "common/types";
+import { ClientV2, RuleRangeV2 } from "sa360/src/client";
 
-import {migrationsV2, NewSearchAdsFrontEnd} from './frontend';
-import {ClientArgsV2, ClientInterfaceV2, RuleGranularity} from './types';
+import { migrationsV2, NewSearchAdsFrontEnd } from "./frontend";
+import { ClientArgsV2, ClientInterfaceV2, RuleGranularity } from "./types";
 
 /**
  * The sheet version the app currently has.
@@ -51,7 +45,7 @@ import {ClientArgsV2, ClientInterfaceV2, RuleGranularity} from './types';
  * This is used to manage migrations from one version of Launch Monitor to
  * another.
  */
-export const CURRENT_SHEET_VERSION = '2.0';
+export const CURRENT_SHEET_VERSION = "2.0";
 
 /**
  * Generate a front-end object for lazy loading.
@@ -63,7 +57,7 @@ export function getFrontEnd(properties: PropertyStore) {
     version: CURRENT_SHEET_VERSION,
     clientInitializer(clientArgs, properties) {
       const apiFactory = new GoogleAdsApiFactory({
-        developerToken: '',
+        developerToken: "",
         credentialManager: new CredentialManager(),
         apiEndpoint: SA360_API_ENDPOINT,
       });

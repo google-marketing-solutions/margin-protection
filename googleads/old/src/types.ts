@@ -21,8 +21,8 @@
 
 // g3-format-prettier
 
-import {AdsClientArgs} from 'common/ads_api_types';
-import {BaseClientInterface} from 'common/types';
+import { AdsClientArgs } from "common/ads_api_types";
+import { BaseClientInterface } from "common/types";
 
 /**
  * Extends the base client interface with Google Ads-specific features.
@@ -70,6 +70,6 @@ export interface CampaignReport {
  * The level at which to apply this rule.
  */
 export enum RuleGranularity {
-  CAMPAIGN = 'Campaign',
-  AD_GROUP = 'Ad Group',
+  CAMPAIGN = "Campaign",
+  AD_GROUP = "Ad Group",
 }

@@ -17,7 +17,7 @@
 
 // g3-format-prettier
 
-import {PropertyStore} from 'common/types';
+import { PropertyStore } from "common/types";
 import {
   adGroupColumns,
   AdGroupReport,
@@ -27,11 +27,11 @@ import {
   CampaignReport,
   campaignTargetColumns,
   CampaignTargetReport,
-} from 'sa360/src/api';
-import {ClientArgs} from 'sa360/src/types';
+} from "sa360/src/api";
+import { ClientArgs } from "sa360/src/types";
 
-import {ColumnType} from '../api';
-import {Client} from '../client';
+import { ColumnType } from "../api";
+import { Client } from "../client";
 
 interface TestDataParams {
   advertiserId: string;
@@ -114,13 +114,13 @@ export class FakeCampaignTargetReport extends CampaignTargetReport {
 export class FakeClient extends Client {
   constructor(
     properties: PropertyStore,
-    args: ClientArgs = {advertiserId: 'AV1', agencyId: 'AY1', label: 'Fake'},
+    args: ClientArgs = { advertiserId: "AV1", agencyId: "AY1", label: "Fake" },
   ) {
     super(
       {
-        advertiserId: args.advertiserId || 'AV1',
-        agencyId: args.agencyId || 'AY1',
-        label: args.label || 'Fake',
+        advertiserId: args.advertiserId || "AV1",
+        agencyId: args.agencyId || "AY1",
+        label: args.label || "Fake",
       },
       properties,
     );

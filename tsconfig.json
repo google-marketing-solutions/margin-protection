@@ -1,7 +1,7 @@
 {
   "compilerOptions": {
-    "baseUrl": "../",
-    "outDir": "sa360_api",
+    "baseUrl": "./",
+    "outDir": "dist",
     "skipLibCheck": true,
     "module": "esnext",
     "moduleResolution": "classic",
@@ -9,9 +9,13 @@
     "lib": ["esnext", "dom"],
     "noImplicitThis": true,
     "paths": {
-      "common": ["common"]
+      "common/*": ["common/*"],
+      "sa360/*": ["sa360/*"],
+      "dv360/*": ["dv360/*"],
+      "dv360_api/*": ["dv360_api/*"],
+      "googleads/*": ["googleads/old/src/*"]
     }
   },
-  "include": ["src/**/*", "../sa360_api/*.ts", "outs.d.ts"],
+  "include": ["**/src/**/*", "outs.d.ts"],
   "exclude": ["node_modules/**/*", "dist/**/*", "**/*_test.ts"]
 }

@@ -21,7 +21,7 @@
 
 // g3-format-prettier
 
-import * as AdTypes from './ads_api_types';
+import * as AdTypes from "./ads_api_types";
 
 import URLFetchRequestOptions = GoogleAppsScript.URL_Fetch.URLFetchRequestOptions;
 
@@ -38,18 +38,18 @@ interface ApiEndpoint {
  * The Google Ads API endpoint.
  */
 export const GOOGLEADS_API_ENDPOINT = {
-  url: 'googleads.googleapis.com',
-  version: 'v11',
-  call: 'googleAds:search',
+  url: "googleads.googleapis.com",
+  version: "v11",
+  call: "googleAds:search",
 };
 
 /**
  * The SA360 API endpoint.
  */
 export const SA360_API_ENDPOINT = {
-  url: 'searchads360.googleapis.com',
-  version: 'v0',
-  call: 'searchAds360:search',
+  url: "searchads360.googleapis.com",
+  version: "v0",
+  call: "searchAds360:search",
 };
 
 /**
@@ -118,32 +118,32 @@ export class GoogleAdsApi implements AdTypes.GoogleAdsApiInterface {
     return {
       ...(this.apiInstructions.developerToken
         ? {
-            'developer-token': this.apiInstructions.developerToken,
+            "developer-token": this.apiInstructions.developerToken,
           }
         : {}),
-      'Authorization': `Bearer ${token}`,
-      'login-customer-id': String(this.apiInstructions.loginCustomerId),
+      Authorization: `Bearer ${token}`,
+      "login-customer-id": String(this.apiInstructions.loginCustomerId),
     };
   }
 
   *query<
     Q extends AdTypes.QueryBuilder<Params, Joins>,
-    Params extends string = Q['queryParams'][number],
-    Joins extends AdTypes.JoinType<Params> | undefined = Q['joins'],
+    Params extends string = Q["queryParams"][number],
+    Joins extends AdTypes.JoinType<Params> | undefined = Q["joins"],
   >(
     customerIds: string,
     query: Q,
     queryWheres: string[] = [],
   ): IterableIterator<AdTypes.ReportResponse<Q>> {
     for (const customerId of splitCids(customerIds)) {
-      yield* this.queryOne({query, customerId, queryWheres});
+      yield* this.queryOne({ query, customerId, queryWheres });
     }
   }
 
   *queryOne<
     Q extends AdTypes.QueryBuilder<Params, Joins>,
-    Params extends string = Q['queryParams'][number],
-    Joins extends AdTypes.JoinType<Params> | undefined = Q['joins'],
+    Params extends string = Q["queryParams"][number],
+    Joins extends AdTypes.JoinType<Params> | undefined = Q["joins"],
   >({
     query,
     customerId,
@@ -162,10 +162,10 @@ export class GoogleAdsApi implements AdTypes.GoogleAdsApiInterface {
     let pageToken;
     do {
       const req: URLFetchRequestOptions = {
-        method: 'post',
+        method: "post",
         headers: this.requestHeaders(),
-        contentType: 'application/json',
-        payload: JSON.stringify({...params, pageToken}),
+        contentType: "application/json",
+        payload: JSON.stringify({ ...params, pageToken }),
       };
       const res = JSON.parse(
         UrlFetchApp.fetch(url, req).getContentText(),
@@ -184,8 +184,8 @@ export class GoogleAdsApi implements AdTypes.GoogleAdsApiInterface {
 export abstract class Report<
   Q extends AdTypes.QueryBuilder<Params, Joins>,
   Output extends string,
-  Params extends string = Q['queryParams'][number],
-  Joins extends AdTypes.JoinType<Params> | undefined = Q['joins'],
+  Params extends string = Q["queryParams"][number],
+  Joins extends AdTypes.JoinType<Params> | undefined = Q["joins"],
 > implements AdTypes.ReportInterface<Q, Output, Params, Joins>
 {
   constructor(
@@ -224,7 +224,7 @@ export abstract class Report<
     type JoinOutputKey = Extract<
       DefinedJoin[JoinKey],
       AdTypes.UnknownReportClass
-    >['output'][number];
+    >["output"][number];
     type JoinDict = Record<
       JoinKey,
       Record<
@@ -233,7 +233,7 @@ export abstract class Report<
           Extract<
             DefinedJoin[JoinKey],
             AdTypes.UnknownReportClass
-          >['query']['output'][number],
+          >["query"]["output"][number],
           string
         >
       >
@@ -306,7 +306,7 @@ export abstract class Report<
           Extract<
             Joins[keyof Joins],
             AdTypes.UnknownReportClass
-          >['query']['output'][number],
+          >["query"]["output"][number],
           string
         >
       >
@@ -336,7 +336,7 @@ export abstract class Report<
                 Extract<
                   Joins[keyof Joins],
                   AdTypes.UnknownReportClass
-                >['output'][number],
+                >["output"][number],
                 string
               >
             >
@@ -378,7 +378,7 @@ export abstract class Report<
         // such that the end result is "1".
         (joinMatchKeys.get(join as keyof Joins) as JoinRows)[1].push(
           join
-            .split('.')
+            .split(".")
             .reduce<AdTypes.RecursiveRecord<string, string | number>>(
               // Reduce functions don't have a way to let your end result be
               // typed as anything other than the input type.
@@ -421,8 +421,8 @@ export class ReportFactory implements AdTypes.ReportFactoryInterface {
   create<
     Q extends AdTypes.QueryBuilder<Params, Joins>,
     Output extends string,
-    Params extends string = Q['queryParams'][number],
-    Joins extends AdTypes.JoinType<Params> | undefined = Q['joins'],
+    Params extends string = Q["queryParams"][number],
+    Joins extends AdTypes.JoinType<Params> | undefined = Q["joins"],
     ChildReport extends AdTypes.ReportInterface<
       Q,
       Output,
@@ -435,7 +435,7 @@ export class ReportFactory implements AdTypes.ReportFactoryInterface {
     const allClientIds = splitCids(this.clientArgs.customerIds);
     if (!this.clientArgs.loginCustomerId && allClientIds.length > 1) {
       throw new Error(
-        'Please provide a single login customer ID for multiple CIDs.',
+        "Please provide a single login customer ID for multiple CIDs.",
       );
     }
     const leafAccounts = this.leafAccounts();
@@ -456,7 +456,7 @@ export class ReportFactory implements AdTypes.ReportFactoryInterface {
    */
   leafAccounts(): string[] {
     if (!this.leafToRoot.size) {
-      for (const customerId of this.clientArgs.customerIds.split(',')) {
+      for (const customerId of this.clientArgs.customerIds.split(",")) {
         const api = this.apiFactory.create(
           this.clientArgs.loginCustomerId || this.clientArgs.customerIds,
         );
@@ -496,12 +496,12 @@ export class ReportFactory implements AdTypes.ReportFactoryInterface {
 export function makeReport<
   Q extends AdTypes.QueryBuilder<Params, Joins>,
   Output extends string,
-  Params extends string = Q['queryParams'][number],
-  Joins extends AdTypes.JoinType<Params> | undefined = Q['joins'],
+  Params extends string = Q["queryParams"][number],
+  Joins extends AdTypes.JoinType<Params> | undefined = Q["joins"],
 >(args: {
   output: Output[];
   query: Q;
-  transform: AdTypes.ReportInterface<Q, Output, Params, Joins>['transform'];
+  transform: AdTypes.ReportInterface<Q, Output, Params, Joins>["transform"];
 }): AdTypes.ReportClass<Q, Output, Params, Joins> {
   return class ReportImpl extends Report<Q, Output, Params, Joins> {
     transform(
@@ -514,7 +514,7 @@ export function makeReport<
             Extract<
               Joins[keyof Joins],
               AdTypes.UnknownReportClass
-            >['output'][number],
+            >["output"][number],
             string
           >
         >
@@ -546,14 +546,14 @@ export function qlifyQuery<
   Q extends AdTypes.QueryBuilder<Params, any>,
   Params extends string,
 >(query: Q, queryWheres: string[] = []): string {
-  const aql = `SELECT ${query.queryParams.join(', ')} FROM ${query.queryFrom}`;
+  const aql = `SELECT ${query.queryParams.join(", ")} FROM ${query.queryFrom}`;
   const allWheres = [...(query.queryWheres ?? []), ...queryWheres];
-  const wheres = allWheres.length ? ` WHERE ${allWheres.join(' AND ')}` : '';
+  const wheres = allWheres.length ? ` WHERE ${allWheres.join(" AND ")}` : "";
   return `${aql}${wheres}`;
 }
 
 function splitCids(customerIdsStr: string) {
-  const customerIds = customerIdsStr.replace(/- /, '').split(',');
+  const customerIds = customerIdsStr.replace(/- /, "").split(",");
   if (customerIds.some((cid) => !cid.match(/^\d+$/))) {
     throw new Error(
       `Invalid customer ids. Expected only numbers, got ${customerIds.filter(
@@ -568,16 +568,16 @@ function splitCids(customerIdsStr: string) {
  * Retrieves leaf accounts from a given CID.
  */
 export const GET_LEAF_ACCOUNTS_REPORT = makeReport({
-  output: ['customerId', 'customerName', 'customerStatus'],
+  output: ["customerId", "customerName", "customerStatus"],
   query: AdTypes.buildQuery({
     queryParams: [
-      'customer_client.id',
-      'customer_client.descriptive_name',
-      'customer.status',
+      "customer_client.id",
+      "customer_client.descriptive_name",
+      "customer.status",
     ],
-    queryFrom: 'customer_client',
+    queryFrom: "customer_client",
     queryWheres: [
-      'customer_client.manager = false',
+      "customer_client.manager = false",
       "customer_client.status = 'ENABLED'",
     ],
   }),
@@ -592,4 +592,3 @@ export const GET_LEAF_ACCOUNTS_REPORT = makeReport({
     ];
   },
 });
-

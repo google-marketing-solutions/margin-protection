@@ -23,15 +23,15 @@
 # This workflow can be built on: Add new views, delete old data, or whatever you like! This is a
 # base that makes logic simple to add without code.
 main:
-    params: [args]
-    steps:
+  params: [args]
+  steps:
     - init:
         assign:
-            - project_id: ${sys.get_env("GOOGLE_CLOUD_PROJECT_ID")}
-            - dataset_id: 'performance_monitor'
-            - drive_id: ${args.drive_id}
-            - cloud_function_url: ${args.cloud_function_url}
-            - after: ''
+          - project_id: ${sys.get_env("GOOGLE_CLOUD_PROJECT_ID")}
+          - dataset_id: "performance_monitor"
+          - drive_id: ${args.drive_id}
+          - cloud_function_url: ${args.cloud_function_url}
+          - after: ""
     - create_dataset:
         call: create_dataset
         args:
@@ -47,7 +47,7 @@ main:
         switch:
           - condition: ${date == ""}
             assign:
-              - after: ''
+              - after: ""
           - condition: ${date != ""}
             assign:
               - after: ${" and createdTime >= \"" + date + "\""}
@@ -63,53 +63,51 @@ main:
     - done:
         return: ${tables}
 
-
 # Returns the last report date from the table.
 # If there is no table then it returns a blank.
 get_last_report_date:
-    params: [project_id, dataset_id]
-    steps:
+  params: [project_id, dataset_id]
+  steps:
     - init:
         assign:
-            - project_id: ${project_id}
-            - dataset_id: ${dataset_id}
-            - items: {rows: [f: [{v: ''}]]}
+          - project_id: ${project_id}
+          - dataset_id: ${dataset_id}
+          - items: { rows: [f: [{ v: "" }]] }
     - get_last_report_date:
-          try:
-            call: googleapis.bigquery.v2.jobs.query
-            args:
-              projectId: ${project_id}
-              body:
-                kind: 'query'
-                defaultDataset:
-                  datasetId: ${dataset_id}
-                  projectId: ${project_id}
-                query: 'SELECT FORMAT_TIMESTAMP("%Y-%m-%dT%H:%M:%SZ", Date) AS date FROM last_report ORDER BY Date DESC LIMIT 1'
-                useLegacySql: false
-            result: items
-          except:
-            as: e
-            steps:
-              - known_errors:
-                  switch:
-                    - condition: '${e.code == 404}'
-                      return: ''
-              - unhandled_exception:
-                  raise: ${e}
+        try:
+          call: googleapis.bigquery.v2.jobs.query
+          args:
+            projectId: ${project_id}
+            body:
+              kind: "query"
+              defaultDataset:
+                datasetId: ${dataset_id}
+                projectId: ${project_id}
+              query: 'SELECT FORMAT_TIMESTAMP("%Y-%m-%dT%H:%M:%SZ", Date) AS date FROM last_report ORDER BY Date DESC LIMIT 1'
+              useLegacySql: false
+          result: items
+        except:
+          as: e
+          steps:
+            - known_errors:
+                switch:
+                  - condition: "${e.code == 404}"
+                    return: ""
+            - unhandled_exception:
+                raise: ${e}
     - output:
         call: sys.log
         args:
           text: ${items}
           severity: INFO
     - route_done:
-          switch:
-            - condition: '${map.get(items, "rows") == null}'
-              next: done_sad
+        switch:
+          - condition: '${map.get(items, "rows") == null}'
+            next: done_sad
     - done_happy:
-          return: ${items.rows[0].f[0].v}
+        return: ${items.rows[0].f[0].v}
     - done_sad:
-          return: ''
-
+        return: ""
 
 retry_logic:
   params: [e]
@@ -121,10 +119,16 @@ retry_logic:
     - fail:
         return: false
 
-
-
 load_files_into_bigquery:
-  params: [drive_id, project_id, dataset_id, cloud_function_url, after, page_token: '']
+  params:
+    [
+      drive_id,
+      project_id,
+      dataset_id,
+      cloud_function_url,
+      after,
+      page_token: "",
+    ]
   steps:
     - init:
         assign:
@@ -145,7 +149,7 @@ load_files_into_bigquery:
               orderBy: createdTime
               pageSize: 200
               q: '${q + " " + after}'
-              pageToken: '${page_token}'
+              pageToken: "${page_token}"
             result: files
     - add_to_bigquery:
         call: add_files_to_bigquery
@@ -162,13 +166,13 @@ load_files_into_bigquery:
           steps:
             - add_to_map_2:
                 assign:
-                  - table_map[table]: ''
+                  - table_map[table]: ""
     - clear_memory:
         assign:
           - files:
     - next_page:
         switch:
-          - condition: '${files == null}'
+          - condition: "${files == null}"
             next: done
           - condition: '${files.body.nextPageToken != ""}'
             call: load_files_into_bigquery
@@ -189,10 +193,9 @@ load_files_into_bigquery:
           steps:
             - add_to_map:
                 assign:
-                  - table_map[table_key]: ''
+                  - table_map[table_key]: ""
     - done:
         return: ${table_map}
-
 
 drive_query:
   params: [q, orderBy, pageSize, pageToken: null]
@@ -205,7 +208,7 @@ drive_query:
               pageSize: ${pageSize}
     - add_page_token:
         switch:
-          - condition: '${pageToken != null}'
+          - condition: "${pageToken != null}"
             assign:
               - query.pageToken: ${pageToken}
     - make_request:
@@ -216,11 +219,10 @@ drive_query:
           auth:
             type: OAuth2
             scopes:
-            - https://www.googleapis.com/auth/drive
+              - https://www.googleapis.com/auth/drive
         result: files
     - done:
         return: ${files}
-
 
 add_files_to_bigquery:
   params: [files, project_id, dataset_id, cloud_function_url]
@@ -238,7 +240,6 @@ add_files_to_bigquery:
         result: tables
     - done:
         return: ${tables}
-
 
 create_dataset:
   params: [project_id, dataset_id]
@@ -262,4 +263,3 @@ create_dataset:
                     return: "Already created"
             - fail:
                 raise: ${e}
-

@@ -22,7 +22,7 @@
 
 // g3-format-prettier
 
-import {DBM_API_VERSION, DBM_URL} from '../api';
+import { DBM_API_VERSION, DBM_URL } from "../api";
 
 interface Params {
   [parameter: string]: unknown;
@@ -50,9 +50,9 @@ class MockUrlFetchApp {
 
   fetch(url: string, params: Params) {
     if (!params) {
-      throw new Error('Missing header values!');
+      throw new Error("Missing header values!");
     }
-    if (!params['payload']) {
+    if (!params["payload"]) {
       return {
         getContentText: () => {
           if (this.matches[url] === undefined) {
@@ -98,17 +98,17 @@ abstract class MatchTable {
 
   constructor(overrides: MatchTableQueries = {}) {
     this.routes = {
-      [getUrl('queries')]: {
+      [getUrl("queries")]: {
         post: this.createQuery.bind(this),
         get: this.listQueries.bind(this),
       },
-      [getUrl('queries/query1:run?synchronous=true')]: {
+      [getUrl("queries/query1:run?synchronous=true")]: {
         post: this.postRun.bind(this),
       },
-      [getUrl('queries/query2:run?synchronous=true')]: {
+      [getUrl("queries/query2:run?synchronous=true")]: {
         post: this.postRun2.bind(this),
       },
-      'https://path/to/report': {
+      "https://path/to/report": {
         get: this.getReport.bind(this),
       },
     };
@@ -121,7 +121,7 @@ abstract class MatchTable {
       }
     }
     // tslint:disable-next-line:enforce-name-casing This is to mock existing variables.
-    (globalThis as unknown as {UrlFetchApp: MockUrlFetchApp}).UrlFetchApp =
+    (globalThis as unknown as { UrlFetchApp: MockUrlFetchApp }).UrlFetchApp =
       new MockUrlFetchApp(Object.assign({}, this.routes));
   }
 
@@ -139,22 +139,22 @@ abstract class MatchTable {
     this.storedQueries.push(query);
   }
 
-  private postRun(params: Params, key = '') {
+  private postRun(params: Params, key = "") {
     ++this.runPostHits;
     return JSON.stringify({
-      'metadata': {
-        'googleCloudStoragePath': `https://path/to/report${key}`,
+      metadata: {
+        googleCloudStoragePath: `https://path/to/report${key}`,
       },
     });
   }
 
   private postRun2(params: Params) {
-    return this.postRun(params, '2');
+    return this.postRun(params, "2");
   }
 
   protected createQuery(params: Params) {
     ++this.queryPostHits;
-    const payload = params['payload'] as string;
+    const payload = params["payload"] as string;
     const title = (JSON.parse(payload) as Query).metadata.title;
     const query: Query = {
       queryId: `query${++this.currentQuery}`,
@@ -169,7 +169,7 @@ abstract class MatchTable {
   private listQueries() {
     ++this.queryGetHits;
     return JSON.stringify({
-      'queries': this.storedQueries,
+      queries: this.storedQueries,
     });
   }
 
@@ -186,14 +186,14 @@ export class BudgetMatchTable extends MatchTable {
   protected override getReport() {
     ++this.reportGetHits;
     return (
-      'Campaign ID,Insertion Order ID,Budget Segment Start Date,Budget Segment End Date,Billable Cost (USD)\n' +
-      '1,IO2,2022/12/17,2022/12/27,0.020020\n' +
-      '1,IO3,2022/12/17,2022/12/27,0.030030\n' +
-      '1,IO4,2022/12/17,2022/12/27,0.040040\n' +
-      '2,IO5,2022/12/17,2022/12/27,0.050050\n' +
-      '\n' +
-      'Report Time:Sometime\n' +
-      'Date Range:The range of time'
+      "Campaign ID,Insertion Order ID,Budget Segment Start Date,Budget Segment End Date,Billable Cost (USD)\n" +
+      "1,IO2,2022/12/17,2022/12/27,0.020020\n" +
+      "1,IO3,2022/12/17,2022/12/27,0.030030\n" +
+      "1,IO4,2022/12/17,2022/12/27,0.040040\n" +
+      "2,IO5,2022/12/17,2022/12/27,0.050050\n" +
+      "\n" +
+      "Report Time:Sometime\n" +
+      "Date Range:The range of time"
     );
   }
 }
@@ -204,21 +204,21 @@ export class BudgetMatchTable extends MatchTable {
 export class ImpressionMatchTable extends MatchTable {
   protected override getReport() {
     return (
-      'Country,Insertion Order ID,Billable Impressions\n' +
-      'US,1,1.00\n' +
-      'UK,1,1.00\n' +
-      'IT,1,8.00\n' +
-      'CN,1,4.00\n' +
-      'US,2,1.00\n' +
-      'UK,2,1.00\n' +
-      'IT,2,8.00\n' +
-      'CN,2,4.00\n' +
-      ',,28.00\n' +
-      '\n' +
-      'Report Time:,2022/12/10 03:34 GMT\n' +
-      'Date Range:,2022/09/04 to 2022/10/30\n' +
-      'Group By:,Region\n' +
-      'MRC Accredited Metrics,Active View metrics are accredited only when Measurement Source = Measured\n' +
+      "Country,Insertion Order ID,Billable Impressions\n" +
+      "US,1,1.00\n" +
+      "UK,1,1.00\n" +
+      "IT,1,8.00\n" +
+      "CN,1,4.00\n" +
+      "US,2,1.00\n" +
+      "UK,2,1.00\n" +
+      "IT,2,8.00\n" +
+      "CN,2,4.00\n" +
+      ",,28.00\n" +
+      "\n" +
+      "Report Time:,2022/12/10 03:34 GMT\n" +
+      "Date Range:,2022/09/04 to 2022/10/30\n" +
+      "Group By:,Region\n" +
+      "MRC Accredited Metrics,Active View metrics are accredited only when Measurement Source = Measured\n" +
       '"Reporting numbers from the previous month are finalized (for billing purposes) on the first of each month, unless communicated otherwise. Some numbers in reports may fluctuate for up to seven days before matching billing numbers."\n'
     );
   }

@@ -24,17 +24,17 @@
  * Defines the logical grouping for filter expressions.
  */
 export enum FilterGrouping {
-  AND = ' AND ',
-  OR = ' OR ',
+  AND = " AND ",
+  OR = " OR ",
 }
 
 /**
  * Defines the supported filter rule equality operators.
  */
 export enum RuleOperator {
-  EQ = '=',
-  GTEQ = '>=',
-  LTEQ = '<=',
+  EQ = "=",
+  GTEQ = ">=",
+  LTEQ = "<=",
 }
 
 /**
@@ -42,7 +42,6 @@ export enum RuleOperator {
  * {@link FilterExpression}.
  */
 export class Rule {
-
   /**
    * Constructs an instance of Rule.
    *
@@ -50,8 +49,11 @@ export class Rule {
    * @param operator The equality operator to use
    * @param value The value to filter for
    */
-  constructor(private readonly field: string, private readonly operator: RuleOperator, private readonly value: string | number) {
-  }
+  constructor(
+    private readonly field: string,
+    private readonly operator: RuleOperator,
+    private readonly value: string | number,
+  ) {}
 
   /**
    * Returns the field.
@@ -104,8 +106,10 @@ export class FilterExpression {
    * @param grouping Optional logical grouping for the given
    *     filter 'rules'. Defaults to AND
    */
-  constructor(private readonly rules: Rule[], private readonly grouping: FilterGrouping = FilterGrouping.AND) {
-  }
+  constructor(
+    private readonly rules: Rule[],
+    private readonly grouping: FilterGrouping = FilterGrouping.AND,
+  ) {}
 
   /**
    * Applies the FilterExpression's grouping to its rules and returns the
@@ -152,37 +156,37 @@ export const UriUtil = {
     let queryString: string;
     let fragment: string;
 
-    if (url.indexOf('?') !== -1) {
-      [baseUrl, queryString] = url.split('?');
+    if (url.indexOf("?") !== -1) {
+      [baseUrl, queryString] = url.split("?");
       fragment =
-        queryString.indexOf('#') !== -1
-          ? queryString.substring(queryString.indexOf('#'))
-          : '';
-      queryString = queryString.replace(fragment, '');
-      const regExp = new RegExp(`(^|&)${key}=[^&]*`, 'g');
+        queryString.indexOf("#") !== -1
+          ? queryString.substring(queryString.indexOf("#"))
+          : "";
+      queryString = queryString.replace(fragment, "");
+      const regExp = new RegExp(`(^|&)${key}=[^&]*`, "g");
       const matches = queryString.match(regExp);
 
       if (matches) {
         let modified = false;
 
         matches.forEach((match) => {
-          let replacement = '';
+          let replacement = "";
 
           if (!modified) {
-            const val = match.substring(match.indexOf('=') + 1);
+            const val = match.substring(match.indexOf("=") + 1);
             replacement = match.replace(val, value);
             modified = true;
           }
           queryString = queryString.replace(match, replacement);
         });
       } else {
-        const separator = queryString.length > 0 ? '&' : '';
+        const separator = queryString.length > 0 ? "&" : "";
         queryString += `${separator}${key}=${value}`;
       }
     } else {
       baseUrl = url;
       queryString = `${key}=${value}`;
-      fragment = '';
+      fragment = "";
     }
     return `${baseUrl}?${queryString}${fragment}`;
   },
@@ -211,10 +215,10 @@ export const ObjectUtil = {
    */
   extend<T extends object | null, E extends object>(
     original: T,
-    extension: E
+    extension: E,
   ): T & E {
     if (original == null) {
-      return {...extension} as T & E;
+      return { ...extension } as T & E;
     }
     for (const key in extension) {
       if (extension.hasOwnProperty(key)) {
@@ -248,10 +252,10 @@ export const ObjectUtil = {
   hasOwnProperties(
     obj: unknown,
     requiredProperties: string[],
-    optionalProperties: string[] = []
+    optionalProperties: string[] = [],
   ): boolean {
     const keys = ObjectUtil.isObject(obj)
-      ? Object.keys(obj as {[key: string]: unknown})
+      ? Object.keys(obj as { [key: string]: unknown })
       : [];
     return (
       keys.length > 0 &&

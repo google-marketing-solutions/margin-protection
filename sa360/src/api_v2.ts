@@ -19,10 +19,8 @@
  * @fileoverview DAO for the SA360 Reporting API
  */
 
-// g3-format-prettier
-
-import {makeReport} from 'common/ads_api';
-import {buildQuery} from 'common/ads_api_types';
+import { makeReport } from "common/ads_api";
+import { buildQuery } from "common/ads_api_types";
 
 /**
  * SA360 campaign-based report.
@@ -31,21 +29,21 @@ import {buildQuery} from 'common/ads_api_types';
  */
 export const CAMPAIGN_REPORT = makeReport({
   output: [
-    'customerId',
-    'customerName',
-    'campaignId',
-    'campaignName',
-    'campaignStatus',
+    "customerId",
+    "customerName",
+    "campaignId",
+    "campaignName",
+    "campaignStatus",
   ],
   query: buildQuery({
     queryParams: [
-      'customer.id',
-      'customer.name',
-      'campaign.id',
-      'campaign.name',
-      'campaign.status',
+      "customer.id",
+      "customer.name",
+      "campaign.id",
+      "campaign.name",
+      "campaign.status",
     ] as const,
-    queryFrom: 'campaign',
+    queryFrom: "campaign",
   }),
 
   transform(result) {
@@ -69,23 +67,23 @@ export const CAMPAIGN_REPORT = makeReport({
  */
 export const AD_GROUP_REPORT = makeReport({
   output: [
-    'customerId',
-    'customerName',
-    'campaignId',
-    'adGroupId',
-    'adGroupName',
-    'adGroupStatus',
+    "customerId",
+    "customerName",
+    "campaignId",
+    "adGroupId",
+    "adGroupName",
+    "adGroupStatus",
   ],
   query: buildQuery({
     queryParams: [
-      'customer.id',
-      'customer.name',
-      'campaign.id',
-      'ad_group.id',
-      'ad_group.name',
-      'ad_group.status',
+      "customer.id",
+      "customer.name",
+      "campaign.id",
+      "ad_group.id",
+      "ad_group.name",
+      "ad_group.status",
     ],
-    queryFrom: 'ad_group',
+    queryFrom: "ad_group",
   }),
   transform(result) {
     return [
@@ -108,15 +106,15 @@ export const AD_GROUP_REPORT = makeReport({
  * Exposed for testing.
  */
 export const GEO_TARGET_REPORT = makeReport({
-  output: ['location'],
+  output: ["location"],
   query: buildQuery({
     queryParams: [
-      'geo_target_constant.resource_name',
-      'geo_target_constant.country_code',
-      'geo_target_constant.id',
-      'geo_target_constant.canonical_name',
+      "geo_target_constant.resource_name",
+      "geo_target_constant.country_code",
+      "geo_target_constant.id",
+      "geo_target_constant.canonical_name",
     ],
-    queryFrom: 'geo_target_constant',
+    queryFrom: "geo_target_constant",
   }),
 
   transform(result) {
@@ -136,24 +134,24 @@ export const GEO_TARGET_REPORT = makeReport({
  */
 export const CAMPAIGN_TARGET_REPORT = makeReport({
   output: [
-    'criterionId',
-    'customerId',
-    'customerName',
-    'campaignId',
-    'location',
+    "criterionId",
+    "customerId",
+    "customerName",
+    "campaignId",
+    "location",
   ],
   query: buildQuery({
     queryParams: [
-      'criterion.id',
-      'customer.id',
-      'customer.name',
-      'campaign.id',
-      'campaign.name',
-      'campaign_criterion.criterion_id',
+      "criterion.id",
+      "customer.id",
+      "customer.name",
+      "campaign.id",
+      "campaign.name",
+      "campaign_criterion.criterion_id",
     ],
-    queryFrom: 'campaign_criterion',
+    queryFrom: "campaign_criterion",
     joins: {
-      'campaignCriterion.criterionId': GEO_TARGET_REPORT,
+      "campaignCriterion.criterionId": GEO_TARGET_REPORT,
     },
   }),
   transform(result, joins) {
@@ -164,7 +162,7 @@ export const CAMPAIGN_TARGET_REPORT = makeReport({
         customerId: result.customer.id as string,
         customerName: result.customer.name as string,
         campaignId: result.campaign.id as string,
-        location: joins['campaignCriterion.criterionId'][
+        location: joins["campaignCriterion.criterionId"][
           result.campaignCriterion.criterionId as string
         ].location as string,
       },
@@ -179,24 +177,24 @@ export const CAMPAIGN_TARGET_REPORT = makeReport({
  */
 export const AGE_TARGET_REPORT = makeReport({
   output: [
-    'criterionId',
-    'customerId',
-    'customerName',
-    'campaignId',
-    'adGroupId',
-    'ageRange',
+    "criterionId",
+    "customerId",
+    "customerName",
+    "campaignId",
+    "adGroupId",
+    "ageRange",
   ],
   query: buildQuery({
     queryParams: [
-      'criterion.id',
-      'customer.id',
-      'customer.name',
-      'campaign.id',
-      'ad_group.id',
-      'ad_group_criterion.age_range.type',
-      'ad_group_criterion.criterion_id',
+      "criterion.id",
+      "customer.id",
+      "customer.name",
+      "campaign.id",
+      "ad_group.id",
+      "ad_group_criterion.age_range.type",
+      "ad_group_criterion.criterion_id",
     ],
-    queryFrom: 'age_range_view',
+    queryFrom: "age_range_view",
   }),
 
   transform(result) {
@@ -221,23 +219,23 @@ export const AGE_TARGET_REPORT = makeReport({
  */
 export const GENDER_TARGET_REPORT = makeReport({
   output: [
-    'criterionId',
-    'customerId',
-    'customerName',
-    'campaignId',
-    'adGroupId',
-    'gender',
+    "criterionId",
+    "customerId",
+    "customerName",
+    "campaignId",
+    "adGroupId",
+    "gender",
   ],
   query: buildQuery({
     queryParams: [
-      'customer.id',
-      'customer.name',
-      'campaign.id',
-      'ad_group.id',
-      'ad_group_criterion.gender.type',
-      'ad_group_criterion.criterion_id',
+      "customer.id",
+      "customer.name",
+      "campaign.id",
+      "ad_group.id",
+      "ad_group_criterion.gender.type",
+      "ad_group_criterion.criterion_id",
     ],
-    queryFrom: 'gender_view',
+    queryFrom: "gender_view",
   }),
 
   transform(result) {
@@ -261,15 +259,15 @@ export const GENDER_TARGET_REPORT = makeReport({
  * Exposed for testing.
  */
 export const USER_LIST_REPORT = makeReport({
-  output: ['userListName', 'userListType'],
+  output: ["userListName", "userListType"],
   query: buildQuery({
     queryParams: [
-      'user_list.resource_name',
-      'user_list.name',
-      'user_list.type',
-      'user_list.id',
+      "user_list.resource_name",
+      "user_list.name",
+      "user_list.type",
+      "user_list.id",
     ],
-    queryFrom: 'user_list',
+    queryFrom: "user_list",
   }),
   transform(result) {
     return [
@@ -289,31 +287,31 @@ export const USER_LIST_REPORT = makeReport({
  */
 export const CAMPAIGN_USER_LIST_REPORT = makeReport({
   output: [
-    'criterionId',
-    'customerId',
-    'customerName',
-    'campaignId',
-    'userListName',
+    "criterionId",
+    "customerId",
+    "customerName",
+    "campaignId",
+    "userListName",
   ],
   query: buildQuery({
     queryParams: [
-      'customer.id',
-      'customer.name',
-      'campaign.id',
-      'campaign_criterion.resource_name',
-      'campaign_criterion.user_list.user_list',
-      'campaign_criterion.type',
-      'campaign_criterion.criterion_id',
+      "customer.id",
+      "customer.name",
+      "campaign.id",
+      "campaign_criterion.resource_name",
+      "campaign_criterion.user_list.user_list",
+      "campaign_criterion.type",
+      "campaign_criterion.criterion_id",
     ],
-    queryFrom: 'campaign_audience_view',
+    queryFrom: "campaign_audience_view",
     joins: {
-      'campaignCriterion.userList.userList': USER_LIST_REPORT,
+      "campaignCriterion.userList.userList": USER_LIST_REPORT,
     },
     queryWheres: ['campaign_criterion.type = "USER_LIST"'],
   }),
   transform(result, joins) {
     const userList =
-      joins['campaignCriterion.userList.userList'][
+      joins["campaignCriterion.userList.userList"][
         result.campaignCriterion.userList.userList as string
       ];
     return [
@@ -336,33 +334,33 @@ export const CAMPAIGN_USER_LIST_REPORT = makeReport({
  */
 export const AD_GROUP_USER_LIST_REPORT = makeReport({
   output: [
-    'criterionId',
-    'customerId',
-    'customerName',
-    'campaignId',
-    'adGroupId',
-    'userListName',
+    "criterionId",
+    "customerId",
+    "customerName",
+    "campaignId",
+    "adGroupId",
+    "userListName",
   ],
   query: buildQuery({
     queryParams: [
-      'customer.id',
-      'customer.name',
-      'campaign.id',
-      'ad_group.id',
-      'ad_group_criterion.resource_name',
-      'ad_group_criterion.user_list.user_list',
-      'ad_group_criterion.type',
-      'ad_group_criterion.criterion_id',
+      "customer.id",
+      "customer.name",
+      "campaign.id",
+      "ad_group.id",
+      "ad_group_criterion.resource_name",
+      "ad_group_criterion.user_list.user_list",
+      "ad_group_criterion.type",
+      "ad_group_criterion.criterion_id",
     ],
-    queryFrom: 'ad_group_audience_view',
+    queryFrom: "ad_group_audience_view",
     joins: {
-      'adGroupCriterion.userList.userList': USER_LIST_REPORT,
+      "adGroupCriterion.userList.userList": USER_LIST_REPORT,
     },
     queryWheres: ['ad_group_criterion.type = "USER_LIST"'],
   }),
   transform(result, joins) {
     const userList =
-      joins['adGroupCriterion.userList.userList'][
+      joins["adGroupCriterion.userList.userList"][
         result.adGroupCriterion.userList.userList as string
       ];
     return [
@@ -383,17 +381,17 @@ export const AD_GROUP_USER_LIST_REPORT = makeReport({
  * A pacing report to check spend vs budgeting.
  */
 export const CAMPAIGN_PACING_REPORT = makeReport({
-  output: ['campaignId', 'campaignName', 'budget', 'spend'],
+  output: ["campaignId", "campaignName", "budget", "spend"],
   query: buildQuery({
     queryParams: [
-      'campaign.id',
-      'campaign.name',
-      'campaign_budget.amount_micros',
-      'campaign.status',
-      'campaign.advertising_channel_type',
-      'metrics.cost_micros',
+      "campaign.id",
+      "campaign.name",
+      "campaign_budget.amount_micros",
+      "campaign.status",
+      "campaign.advertising_channel_type",
+      "metrics.cost_micros",
     ],
-    queryFrom: 'campaign',
+    queryFrom: "campaign",
     queryWheres: ["campaign.status == 'ENABLED'"],
   }),
   transform(result) {
@@ -403,7 +401,7 @@ export const CAMPAIGN_PACING_REPORT = makeReport({
         campaignId: result.campaign.id as string,
         campaignName: result.campaign.name as string,
         budget: result.campaignBudget.amountMicros as string,
-        spend: (result.metrics?.costMicros ?? '') as string,
+        spend: (result.metrics?.costMicros ?? "") as string,
       },
     ];
   },

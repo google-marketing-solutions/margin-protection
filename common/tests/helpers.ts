@@ -21,8 +21,8 @@
 
 // g3-format-prettier
 
-import {AdsClientArgs} from 'common/ads_api_types';
-import {FakePropertyStore} from 'common/test_helpers/mock_apps_script';
+import { AdsClientArgs } from "common/ads_api_types";
+import { FakePropertyStore } from "common/test_helpers/mock_apps_script";
 
 import {
   CredentialManager,
@@ -30,8 +30,8 @@ import {
   GoogleAdsApi,
   GoogleAdsApiFactory,
   ReportFactory,
-} from '../ads_api';
-import {AbstractRuleRange, AppsScriptFrontEnd} from '../sheet_helpers';
+} from "../ads_api";
+import { AbstractRuleRange, AppsScriptFrontEnd } from "../sheet_helpers";
 import {
   AppsScriptFunctions,
   BaseClientArgs,
@@ -43,13 +43,13 @@ import {
   RuleExecutor,
   RuleExecutorClass,
   RuleGetter,
-} from '../types';
+} from "../types";
 
 /**
  * Test granularity for use in tests.
  */
 export enum Granularity {
-  DEFAULT = 'default',
+  DEFAULT = "default",
 }
 
 /**
@@ -83,7 +83,7 @@ export class RuleRange extends AbstractRuleRange<
   BaseClientArgs
 > {
   async getRows() {
-    return [{id: '1', displayName: 'Campaign 1', advertiserId: '1'}];
+    return [{ id: "1", displayName: "Campaign 1", advertiserId: "1" }];
   }
 }
 
@@ -91,7 +91,7 @@ export class RuleRange extends AbstractRuleRange<
  * Test client for use in tests.
  */
 export class FakeClient implements TestClientInterface {
-  readonly args: BaseClientArgs = {label: 'test'};
+  readonly args: BaseClientArgs = { label: "test" };
   readonly ruleStore: {
     [ruleName: string]: RuleExecutor<
       TestClientInterface,
@@ -110,10 +110,10 @@ export class FakeClient implements TestClientInterface {
     BaseClientArgs,
     Record<string, ParamDefinition>
   > {
-    throw new Error('Method not implemented.');
+    throw new Error("Method not implemented.");
   }
   getUniqueKey(prefix: string): string {
-    throw new Error('Method not implemented.');
+    throw new Error("Method not implemented.");
   }
   validate(): Promise<{
     rules: Record<
@@ -127,7 +127,7 @@ export class FakeClient implements TestClientInterface {
     >;
     results: Record<string, ExecutorResult>;
   }> {
-    throw new Error('Method not implemented.');
+    throw new Error("Method not implemented.");
   }
   addRule<Params extends Record<keyof Params, ParamDefinition>>(
     rule: RuleExecutorClass<
@@ -138,9 +138,9 @@ export class FakeClient implements TestClientInterface {
     >,
     settingsArray: ReadonlyArray<string[]>,
   ): TestClientInterface {
-    throw new Error('Method not implemented.');
+    throw new Error("Method not implemented.");
   }
-  id = 'something';
+  id = "something";
 
   getAllCampaigns(): Promise<[]> {
     return Promise.resolve([]);
@@ -166,6 +166,7 @@ export class FakeFrontEnd extends AppsScriptFrontEnd<
   };
   private readonly messages: GoogleAppsScript.Mail.MailAdvancedParameters[] =
     [];
+  private readonly old: GoogleAppsScript.Mail.MailAdvancedParameters[] = [];
 
   constructor(
     args: FrontEndArgs<
@@ -176,11 +177,11 @@ export class FakeFrontEnd extends AppsScriptFrontEnd<
     >,
   ) {
     scaffoldSheetWithNamedRanges();
-    super('Fake', args);
+    super("Fake", args);
   }
 
   getIdentity(): BaseClientArgs {
-    return {label: 'test'};
+    return { label: "test" };
   }
 
   override async onOpen() {
@@ -204,15 +205,16 @@ export class FakeFrontEnd extends AppsScriptFrontEnd<
     rules: RuleGetter[],
     message: GoogleAppsScript.Mail.MailAdvancedParameters,
   ) {
-    const noop: GoogleAppsScript.Mail.MailApp['sendEmail'] = ((
+    const noop: GoogleAppsScript.Mail.MailApp["sendEmail"] = ((
       message: GoogleAppsScript.Mail.MailAdvancedParameters,
-    ) => {}) as GoogleAppsScript.Mail.MailApp['sendEmail'];
+    ) => {}) as GoogleAppsScript.Mail.MailApp["sendEmail"];
     super.sendEmailAlert(rules, message, noop);
 
     this.messages.push(message);
   }
 
   getMessages() {
+    this.old.splice(0, 0, ...this.messages);
     return this.messages.splice(0, this.messages.length);
   }
 }
@@ -222,10 +224,10 @@ export class FakeFrontEnd extends AppsScriptFrontEnd<
  */
 export function scaffoldSheetWithNamedRanges() {
   for (const [i, [constName, value]] of [
-    ['ENTITY_ID', '1'],
-    ['ID_TYPE', 'Advertiser'],
-    ['EMAIL_LIST', ''],
-    ['LABEL', 'Acme Inc.'],
+    ["ENTITY_ID", "1"],
+    ["ID_TYPE", "Advertiser"],
+    ["EMAIL_LIST", ""],
+    ["LABEL", "Acme Inc."],
   ].entries()) {
     const range = SpreadsheetApp.getActive()
       .getActiveSheet()
@@ -236,9 +238,9 @@ export function scaffoldSheetWithNamedRanges() {
 }
 
 const FAKE_API_ENDPOINT = {
-  url: 'my://url',
-  version: 'v0',
-  call: 'fake:call',
+  url: "my://url",
+  version: "v0",
+  call: "fake:call",
 };
 
 /**
@@ -246,39 +248,39 @@ const FAKE_API_ENDPOINT = {
  */
 export function bootstrapGoogleAdsApi(
   {
-    mockLeafAccounts = {'1': ['123']},
+    mockLeafAccounts = { "1": ["123"] },
     spyOnLeaf = true,
-  }: {mockLeafAccounts: Record<string, string[]>; spyOnLeaf: boolean} = {
-    mockLeafAccounts: {'1': ['123']},
+  }: { mockLeafAccounts: Record<string, string[]>; spyOnLeaf: boolean } = {
+    mockLeafAccounts: { "1": ["123"] },
     spyOnLeaf: true,
   },
 ) {
   const apiFactory = new GoogleAdsApiFactory({
-    developerToken: '',
+    developerToken: "",
     credentialManager: new CredentialManager(),
     apiEndpoint: FAKE_API_ENDPOINT,
   });
   const reportFactory = new ReportFactory(apiFactory, {
-    loginCustomerId: 'la1',
-    customerIds: Object.keys(mockLeafAccounts).join(','),
-    label: 'test',
+    loginCustomerId: "la1",
+    customerIds: Object.keys(mockLeafAccounts).join(","),
+    label: "test",
   });
   if (spyOnLeaf) {
-    spyOn(reportFactory, 'leafAccounts').and.returnValue(['1']);
+    spyOn(reportFactory, "leafAccounts").and.returnValue(["1"]);
   }
   const api = new GoogleAdsApi({
-    developerToken: '',
-    loginCustomerId: 'la1',
+    developerToken: "",
+    loginCustomerId: "la1",
     credentialManager: {
       getToken() {
-        return '';
+        return "";
       },
     },
     apiEndpoint: FAKE_API_ENDPOINT,
   });
-  const mockQuery: jasmine.Spy = spyOn(api, 'queryOne');
-  spyOn(apiFactory, 'create').and.callFake(() => api);
-  return {api, reportFactory, mockQuery};
+  const mockQuery: jasmine.Spy = spyOn(api, "queryOne");
+  spyOn(apiFactory, "create").and.callFake(() => api);
+  return { api, reportFactory, mockQuery };
 }
 
 /**

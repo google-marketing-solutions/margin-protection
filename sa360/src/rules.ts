@@ -19,12 +19,12 @@
  * @fileoverview General rules for SA360
  */
 
-import {equalTo, inRange} from 'common/checks';
+import { equalTo, inRange } from "common/checks";
 
-import {Value, Values} from 'common/types';
+import { Value, Values } from "common/types";
 
-import {newRuleV2} from './client';
-import {RuleGranularity} from './types';
+import { newRuleV2 } from "./client";
+import { RuleGranularity } from "./types";
 import {
   AD_GROUP_REPORT,
   AD_GROUP_USER_LIST_REPORT,
@@ -33,10 +33,10 @@ import {
   CAMPAIGN_PACING_REPORT,
   CAMPAIGN_USER_LIST_REPORT,
   GENDER_TARGET_REPORT,
-} from './api_v2';
+} from "./api_v2";
 
 const ONE_DAY = 60 * 60 * 1000 * 24;
-const NO_CHANGES = 'No Changes';
+const NO_CHANGES = "No Changes";
 
 const IS_NUMBER = `=ISNUMBER(INDIRECT(ADDRESS(ROW(), COLUMN())))`;
 
@@ -59,21 +59,21 @@ const RULES = {
  * Pacing rule for SA360.
  */
 export const budgetPacingRule = newRuleV2({
-  name: 'Budget Pacing',
-  description: 'Pacing',
+  name: "Budget Pacing",
+  description: "Pacing",
   granularity: RuleGranularity.CAMPAIGN,
-  valueFormat: {label: 'Budget/Spend'},
+  valueFormat: { label: "Budget/Spend" },
   params: {
     min: {
-      label: 'Min. Percent Ahead/Behind',
+      label: "Min. Percent Ahead/Behind",
       validationFormulas: RULES.LESS_THAN_MAX,
     },
     max: {
-      label: 'Max. Percent Ahead/Behind',
+      label: "Max. Percent Ahead/Behind",
       validationFormulas: RULES.GREATER_THAN_MIN,
     },
   },
-  defaults: {min: '0', max: '0.5'},
+  defaults: { min: "0", max: "0.5" },
   async callback() {
     const values: Values = {};
     const report = this.client.getReport(CAMPAIGN_PACING_REPORT).fetch();
@@ -96,7 +96,7 @@ export const budgetPacingRule = newRuleV2({
       );
     }
 
-    return {values};
+    return { values };
   },
 });
 
@@ -107,7 +107,7 @@ export const budgetPacingRule = newRuleV2({
  * has been set, and this rule might be checked hourly or even ad-hoc.
  */
 export const campaignStatusRule = newRuleV2({
-  name: 'Campaign Status Active after Inactive',
+  name: "Campaign Status Active after Inactive",
   description: `Checks to see if a campaign has become active again after being
     inactive for more than "daysInactive" days. The result is a list of statuses
     times the number of times it appears. For example,
@@ -116,24 +116,24 @@ export const campaignStatusRule = newRuleV2({
     "daysInactive" is ten or less in this example, then it would be an anomaly.`,
   params: {
     daysInactive: {
-      label: 'Max. Days Inactive before Active',
+      label: "Max. Days Inactive before Active",
     },
     status: {
-      label: 'Status',
+      label: "Status",
     },
     lastUpdated: {
-      label: 'Last Updated',
+      label: "Last Updated",
     },
   },
   helper:
-    'Status Code: A=Active, P=Permanently Paused, #=Days Paused, C=Closed, V=Violation',
+    "Status Code: A=Active, P=Permanently Paused, #=Days Paused, C=Closed, V=Violation",
   defaults: {
-    daysInactive: '60',
-    status: '',
-    lastUpdated: '',
+    daysInactive: "60",
+    status: "",
+    lastUpdated: "",
   },
   granularity: RuleGranularity.CAMPAIGN,
-  valueFormat: {label: 'Invalid'},
+  valueFormat: { label: "Invalid" },
   async callback() {
     const values: Values = {};
     const campaignReport = this.client.getReport(CAMPAIGN_REPORT);
@@ -153,42 +153,42 @@ export const campaignStatusRule = newRuleV2({
       const plusDays = isNaN(daysSinceLastUpdate) ? 1 : daysSinceLastUpdate;
       if (plusDays >= 1) {
         setting.lastUpdated = new Date().toISOString();
-        if (reportRow.campaignStatus === 'Paused') {
-          if (statusStr === 'A') {
-            setting.status = '1';
+        if (reportRow.campaignStatus === "Paused") {
+          if (statusStr === "A") {
+            setting.status = "1";
           } else if (!isNaN(statusNum)) {
             setting.status = String(statusNum + plusDays);
-          } else if (setting.status.startsWith('V')) {
+          } else if (setting.status.startsWith("V")) {
             setting.status = String(Number(statusStr.slice(1)) + plusDays);
           } else {
-            setting.status = '';
+            setting.status = "";
           }
-        } else if (reportRow.campaignStatus === 'Active') {
+        } else if (reportRow.campaignStatus === "Active") {
           if (statusNum > Number(thresholdValue)) {
             setting.status = `V${setting.status}`;
           } else {
-            setting.status = 'A';
+            setting.status = "A";
           }
-        } else if (reportRow.campaignStatus === 'Closed') {
-          setting.status = 'C';
+        } else if (reportRow.campaignStatus === "Closed") {
+          setting.status = "C";
         }
       }
       values[campaignId] = equalTo(
         thresholdValue,
-        setting.status === 'C' || String(setting.status).startsWith('V')
+        setting.status === "C" || String(setting.status).startsWith("V")
           ? 0
           : 1,
         {
-          'Customer ID': reportRow.customerId,
-          'Customer': reportRow.customerName,
-          'Campaign ID': reportRow.campaignId,
-          'Campaign': reportRow.campaignName,
-          'Current Status': reportRow.campaignStatus,
+          "Customer ID": reportRow.customerId,
+          Customer: reportRow.customerName,
+          "Campaign ID": reportRow.campaignId,
+          Campaign: reportRow.campaignName,
+          "Current Status": reportRow.campaignStatus,
         },
       );
       this.settings.set(reportRow.campaignId, setting);
     }
-    return {values};
+    return { values };
   },
 });
 
@@ -196,19 +196,19 @@ export const campaignStatusRule = newRuleV2({
  * Anomalous if an ad group has its status change.
  */
 export const adGroupStatusRule = newRuleV2({
-  name: 'Ad Group Status Change',
+  name: "Ad Group Status Change",
   description: `Ensures that an ad group does not change status. Status changes
     should always be set at the campaign level.`,
   params: {
     adGroupActive: {
-      label: 'Ad Group Active',
+      label: "Ad Group Active",
     },
   },
   defaults: {
-    adGroupActive: 'N',
+    adGroupActive: "N",
   },
   granularity: RuleGranularity.AD_GROUP,
-  valueFormat: {label: 'Change'},
+  valueFormat: { label: "Change" },
   async callback() {
     const values: Values = {};
 
@@ -217,28 +217,28 @@ export const adGroupStatusRule = newRuleV2({
       adGroupReport.fetch(),
     )) {
       const adGroupStatusActive =
-        this.settings.getOrDefault(adGroupId).adGroupActive === 'Y';
+        this.settings.getOrDefault(adGroupId).adGroupActive === "Y";
       values[adGroupId] = equalTo(
         1,
-        reportRow.adGroupStatus !== 'Removed' &&
-          (!adGroupStatusActive || reportRow.adGroupStatus === 'Active')
+        reportRow.adGroupStatus !== "Removed" &&
+          (!adGroupStatusActive || reportRow.adGroupStatus === "Active")
           ? 1
           : 0,
         {
-          'Customer ID': reportRow.customerId,
-          'Customer': reportRow.customerName,
-          'Campaign ID': reportRow.campaignId,
-          'Ad Group ID': reportRow.adGroupId,
-          'Ad Group': reportRow.adGroupName,
-          'Status': reportRow.adGroupStatus,
+          "Customer ID": reportRow.customerId,
+          Customer: reportRow.customerName,
+          "Campaign ID": reportRow.campaignId,
+          "Ad Group ID": reportRow.adGroupId,
+          "Ad Group": reportRow.adGroupName,
+          Status: reportRow.adGroupStatus,
         },
       );
 
-      if (reportRow.adGroupStatus === 'Active') {
-        this.settings.set(adGroupId, {adGroupActive: 'Y'});
+      if (reportRow.adGroupStatus === "Active") {
+        this.settings.set(adGroupId, { adGroupActive: "Y" });
       }
     }
-    return {values};
+    return { values };
   },
 });
 
@@ -249,30 +249,30 @@ export const adGroupStatusRule = newRuleV2({
  * if it's empty.
  */
 export const adGroupAudienceTargetRule = newRuleV2({
-  name: 'Ad Group Audience Target Change',
+  name: "Ad Group Audience Target Change",
   description: `Ensures that an audience target doesn't change once set.`,
   params: {
     userLists: {
-      label: 'User Lists',
+      label: "User Lists",
     },
   },
   defaults: {
-    userLists: '',
+    userLists: "",
   },
   granularity: RuleGranularity.AD_GROUP,
-  valueFormat: {label: 'Change'},
+  valueFormat: { label: "Change" },
   async callback() {
     const values: Values = {};
     const audienceReport = this.client.getReport(AD_GROUP_USER_LIST_REPORT);
 
     const aggregatedReport = aggregateReport(
       audienceReport.fetch(),
-      'userListName',
+      "userListName",
     );
     for (const [adGroupId, [targets, fields]] of Object.entries(
       aggregatedReport,
     )) {
-      const setting = this.settings.get(adGroupId).userLists.split(',');
+      const setting = this.settings.get(adGroupId).userLists.split(",");
 
       values[adGroupId] = trackSettingsChanges({
         stored: setting,
@@ -280,10 +280,10 @@ export const adGroupAudienceTargetRule = newRuleV2({
         fields,
       });
       this.settings.set(adGroupId, {
-        userLists: setting.join(','),
+        userLists: setting.join(","),
       });
     }
-    return {values};
+    return { values };
   },
 });
 
@@ -294,37 +294,37 @@ export const adGroupAudienceTargetRule = newRuleV2({
  * if it's empty.
  */
 export const ageTargetRule = newRuleV2({
-  name: 'Age Target Change',
+  name: "Age Target Change",
   description: `Ensures that an age target doesn't change once set.`,
   params: {
     ageTargetAgeRange: {
-      label: 'Age Range',
+      label: "Age Range",
     },
   },
   defaults: {
-    ageTargetAgeRange: '',
+    ageTargetAgeRange: "",
   },
   granularity: RuleGranularity.AD_GROUP,
-  valueFormat: {label: 'Change'},
+  valueFormat: { label: "Change" },
   async callback() {
     const values: Values = {};
 
     const ageReport = this.client.getReport(AGE_TARGET_REPORT);
 
-    const aggregatedReport = aggregateReport(ageReport.fetch(), 'ageRange');
+    const aggregatedReport = aggregateReport(ageReport.fetch(), "ageRange");
     for (const [adGroupId, [targets, fields]] of Object.entries(
       aggregatedReport,
     )) {
-      const setting = this.settings.get(adGroupId).ageTargetAgeRange.split(',');
+      const setting = this.settings.get(adGroupId).ageTargetAgeRange.split(",");
 
       values[adGroupId] = trackSettingsChanges({
         stored: setting,
         targets,
         fields,
       });
-      this.settings.set(adGroupId, {ageTargetAgeRange: setting.join(',')});
+      this.settings.set(adGroupId, { ageTargetAgeRange: setting.join(",") });
     }
-    return {values};
+    return { values };
   },
 });
 
@@ -335,39 +335,41 @@ export const ageTargetRule = newRuleV2({
  * if it's empty.
  */
 export const genderTargetRule = newRuleV2({
-  name: 'Gender Target Change',
+  name: "Gender Target Change",
   description: `Ensures that a gender target doesn't change once set.`,
   params: {
     genderTargetGenderType: {
-      label: 'Gender Type',
+      label: "Gender Type",
     },
   },
   defaults: {
-    genderTargetGenderType: '',
+    genderTargetGenderType: "",
   },
   granularity: RuleGranularity.AD_GROUP,
-  valueFormat: {label: 'Change'},
+  valueFormat: { label: "Change" },
   async callback() {
     const values: Values = {};
 
     const genderReport = this.client.getReport(GENDER_TARGET_REPORT);
 
-    const aggregatedReport = aggregateReport(genderReport.fetch(), 'gender');
+    const aggregatedReport = aggregateReport(genderReport.fetch(), "gender");
     for (const [adGroupId, [targets, fields]] of Object.entries(
       aggregatedReport,
     )) {
       const setting = this.settings
         .get(adGroupId)
-        .genderTargetGenderType.split(',');
+        .genderTargetGenderType.split(",");
 
       values[adGroupId] = trackSettingsChanges({
         stored: setting,
         targets,
         fields,
       });
-      this.settings.set(adGroupId, {genderTargetGenderType: setting.join(',')});
+      this.settings.set(adGroupId, {
+        genderTargetGenderType: setting.join(","),
+      });
     }
-    return {values};
+    return { values };
   },
 });
 
@@ -378,20 +380,20 @@ export const genderTargetRule = newRuleV2({
  * if it's empty.
  */
 export const geoTargetRule = newRuleV2({
-  name: 'Geo Target Change',
+  name: "Geo Target Change",
   description: `Ensures that a geotarget doesn't change once set.`,
   params: {
     criteriaIds: {
-      label: 'Criteria IDs',
+      label: "Criteria IDs",
     },
   },
   defaults: {
-    criteriaIds: '',
+    criteriaIds: "",
   },
   granularity: RuleGranularity.AD_GROUP,
   helper: `=HYPERLINK(
     "https://developers.google.com/google-ads/api/reference/data/geotargets", "Refer to the Criteria ID found in this report.")`,
-  valueFormat: {label: 'Change'},
+  valueFormat: { label: "Change" },
   async callback() {
     const values: Values = {};
 
@@ -399,21 +401,21 @@ export const geoTargetRule = newRuleV2({
 
     const aggregatedReport = aggregateReport(
       genderReport.fetch(),
-      'criterionId',
+      "criterionId",
     );
     for (const [campaignId, [targets, fields]] of Object.entries(
       aggregatedReport,
     )) {
-      const setting = this.settings.get(campaignId).criteriaIds.split(',');
+      const setting = this.settings.get(campaignId).criteriaIds.split(",");
 
       values[campaignId] = trackSettingsChanges({
         stored: setting,
         targets,
         fields,
       });
-      this.settings.set(campaignId, {criteriaIds: setting.join(',')});
+      this.settings.set(campaignId, { criteriaIds: setting.join(",") });
     }
-    return {values};
+    return { values };
   },
 });
 
@@ -424,30 +426,30 @@ export const geoTargetRule = newRuleV2({
  * if it's empty.
  */
 export const campaignAudienceTargetRule = newRuleV2({
-  name: 'Campaign Audience Target Change',
+  name: "Campaign Audience Target Change",
   description: `Ensures that an audience target doesn't change once set.`,
   params: {
     userLists: {
-      label: 'User Lists',
+      label: "User Lists",
     },
   },
   defaults: {
-    userLists: '',
+    userLists: "",
   },
   granularity: RuleGranularity.CAMPAIGN,
-  valueFormat: {label: 'Change'},
+  valueFormat: { label: "Change" },
   async callback() {
     const values: Values = {};
 
     const audienceReport = this.client.getReport(CAMPAIGN_USER_LIST_REPORT);
     const aggregatedReport = aggregateReport(
       audienceReport.fetch(),
-      'userListName',
+      "userListName",
     );
     for (const [adGroupId, [targets, fields]] of Object.entries(
       aggregatedReport,
     )) {
-      const setting = this.settings.get(adGroupId).userLists.split(',');
+      const setting = this.settings.get(adGroupId).userLists.split(",");
 
       values[adGroupId] = trackSettingsChanges({
         stored: setting,
@@ -455,10 +457,10 @@ export const campaignAudienceTargetRule = newRuleV2({
         fields,
       });
       this.settings.set(adGroupId, {
-        userLists: setting.join(','),
+        userLists: setting.join(","),
       });
     }
-    return {values};
+    return { values };
   },
 });
 
@@ -479,7 +481,7 @@ interface TrackSettingsChangeArgs {
   /**
    * Extra metadata that's used in reporting.
    */
-  fields: {[key: string]: string};
+  fields: { [key: string]: string };
 }
 
 /**
@@ -497,7 +499,7 @@ export function trackSettingsChanges(
   const settings = new Set(settingsChangeArgs.stored);
   // targets are in the format ['a,b,c', 'd,e,f'] so we need to combine then
   // re-split them.
-  const targetsSet = new Set(settingsChangeArgs.targets.join(',').split(','));
+  const targetsSet = new Set(settingsChangeArgs.targets.join(",").split(","));
   const newValues: string[] = [];
   for (const setting of settings) {
     if (setting && !targetsSet.has(setting)) {
@@ -508,7 +510,7 @@ export function trackSettingsChanges(
   }
   for (const target of targetsSet) {
     newValues.push(`${target} ADDED`);
-    if (settingsChangeArgs.stored.join(',') === '') {
+    if (settingsChangeArgs.stored.join(",") === "") {
       settings.add(target);
     }
   }
@@ -518,13 +520,13 @@ export function trackSettingsChanges(
     ...settings,
   );
   return objectEquals(
-    newValues.join(', ') || NO_CHANGES,
+    newValues.join(", ") || NO_CHANGES,
     settingsChangeArgs.fields,
   );
 }
 
-function objectEquals(value: string, fields: {[fieldName: string]: string}) {
-  return {value, anomalous: value !== NO_CHANGES, fields};
+function objectEquals(value: string, fields: { [fieldName: string]: string }) {
+  return { value, anomalous: value !== NO_CHANGES, fields };
 }
 
 function aggregateReport<
@@ -534,28 +536,28 @@ function aggregateReport<
     campaignId: string;
   },
   CampaignLevel extends boolean = false,
->(report: {[criterionId: string]: ReportRow}, key: keyof ReportRow) {
+>(report: { [criterionId: string]: ReportRow }, key: keyof ReportRow) {
   const aggregatedReport: {
     [adGroupId: string]: [
       values: string[],
-      fields: {[fieldName: string]: string},
+      fields: { [fieldName: string]: string },
     ];
   } = {};
 
-  type ContextualReportRow = ReportRow & {adGroupId?: string};
+  type ContextualReportRow = ReportRow & { adGroupId?: string };
   for (const reportRow of Object.values<ContextualReportRow>(
-    report as unknown as {[criterionId: string]: ContextualReportRow},
+    report as unknown as { [criterionId: string]: ContextualReportRow },
   )) {
     if (!aggregatedReport[reportRow.adGroupId ?? reportRow.campaignId]) {
       aggregatedReport[reportRow.adGroupId ?? reportRow.campaignId] = [
         [],
         {
-          'Customer ID': reportRow.customerId,
-          'Customer Name': reportRow.customerName,
-          'Campaign ID': reportRow.campaignId,
+          "Customer ID": reportRow.customerId,
+          "Customer Name": reportRow.customerName,
+          "Campaign ID": reportRow.campaignId,
           ...(reportRow.adGroupId
             ? {
-                'Ad Group ID': reportRow.adGroupId,
+                "Ad Group ID": reportRow.adGroupId,
               }
             : {}),
         },
