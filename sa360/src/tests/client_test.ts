@@ -15,8 +15,6 @@
  * limitations under the License.
  */
 
-// g3-format-prettier
-
 import {equalTo} from 'common/checks';
 import {AppsScriptPropertyStore} from 'common/sheet_helpers';
 import {mockAppsScript} from 'common/test_helpers/mock_apps_script';

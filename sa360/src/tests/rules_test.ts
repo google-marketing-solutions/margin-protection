@@ -687,29 +687,3 @@ export async function generateGeoTargetTestData(
   }
   return values;
 }
-
-function writeBackToColumns(
-  rules: Record<
-    string,
-    RuleExecutor<
-      ClientInterfaceV2,
-      RuleGranularity,
-      ClientArgsV2,
-      Record<string, ParamDefinition>
-    >
-  >,
-  columns: string[][],
-) {
-  for (const rule of Object.values(rules)) {
-    for (let i = 1; i < columns.length; i++) {
-      if (columns[i].slice(2).filter((c) => c).length) {
-        continue;
-      }
-      columns[i] = [
-        columns[i][0],
-        columns[i][1],
-        ...Object.values<string>(rule.settings.get(columns[i][0])),
-      ];
-    }
-  }
-}

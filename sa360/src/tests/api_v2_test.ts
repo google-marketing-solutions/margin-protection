@@ -19,10 +19,6 @@
  * @fileoverview Tests for the SA360 API V2.
  */
 
-// g3-format-prettier
-
-import 'jasmine';
-
 import {
   CredentialManager,
   GoogleAdsApi,
