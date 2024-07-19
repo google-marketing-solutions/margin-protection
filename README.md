@@ -20,6 +20,7 @@ This space is the home of SA360, DV360+DBM, and other product-specific
 launch monitor implementations, with a common folder for shared logic.
 
 ## Building DV360 & SA360
+
 DV360 and SA360 are written in TypeScript and need to be built to be deployed to
 Apps Script. The badge statuses above represent whether building is working or
 not.
@@ -44,8 +45,10 @@ If you're just testing the script, this is an easier installation path.
 5. Give people access to your script in read only and share the link with them (replacing **edit/** with **copy/** in the URL).
 
 ## Building Google Ads
+
 Google Ads uses Google Ads Script and can simply be copied into an Ads Script
 as-is.
 
 ## Building CM360
+
 Run `clasp create && clasp push`
