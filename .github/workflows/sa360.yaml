@@ -1,0 +1,37 @@
+name: Build and test SA360
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  lint-and-test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Set bash to strict mode
+        run: set -euox pipefail
+
+      - name: Set Node.js 18.x
+        uses: actions/setup-node@v3
+        with:
+          node-version: 18.x
+
+      - name: Install yarn
+        run: npm -g install yarn
+
+      - name: Build sa360
+        run: yarn build --cwd ./sa360
+
+      - name: Build-dev sa360
+        run: yarn build-dev --cwd ./sa360
+
+      - name: Print errors
+        run: find . -name "*.warn" -type f -exec cat {} \;
+
+      - name: Fail on errors
+        if: ${{ steps.build-sa360.outputs.error || steps.build-dev-sa360.outputs.error }}
+        run: exit 1

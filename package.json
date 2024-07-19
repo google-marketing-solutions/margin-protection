@@ -3,6 +3,7 @@
   "version": "1.0.0",
   "description": "Suite of product solutions to catch common errors in real time.",
   "main": "index.js",
+  "type": "module",
   "directories": {
     "doc": "docs"
   },
@@ -19,12 +20,16 @@
     "@types/google-apps-script": "^1.0.83",
     "@web/dev-server-esbuild": "^1.0.2",
     "@web/test-runner": "^0.18.2",
-    "concurrently": "^8.2.2",
+    "common": "^0.2.5",
     "husky": "^8.0.0",
+    "jasmine": "^5.1.0",
     "lint-staged": "^15.2.7",
     "prettier": "^3.3.3",
     "rollup-plugin-typescript-paths": "^1.5.0",
     "typescript": "^5.5.3",
     "web-test-runner-jasmine": "^0.0.6"
+  },
+  "dependencies": {
+    "puppeteer": "^22.13.1"
   }
 }
