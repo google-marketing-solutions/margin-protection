@@ -1059,7 +1059,6 @@ export abstract class AppsScriptFrontEnd<
     const anomalySendDates: { readonly [id: string]: number } = JSON.parse(
       this.client.properties.getProperty(ANOMALY_SEND_DATE_KEY) || "{}",
     ) as { [id: string]: number };
-    console.log({ anomalySendDates });
     const newAnomalySendDates: { [id: string]: number } = {};
     let emailSent = false;
 
@@ -1077,9 +1076,6 @@ export abstract class AppsScriptFrontEnd<
       )
       .filter((anomalies) => Object.keys(anomalies.values).length);
 
-    if (rulesWithAnomalies.length) {
-      console.log({ rulesWithAnomalies });
-    }
     for (const to of Object.values<string>(
       peopleToSend.replace(";", ",").replace(" ", ",").split(","),
     ).filter((s) => s)) {
@@ -1103,7 +1099,6 @@ export abstract class AppsScriptFrontEnd<
         }))
         .filter((rule) => Object.keys(rule.values).length);
       if (unsentAnomalies.length === 0) {
-        console.log("NO UNSENT ANOMALIES");
         continue;
       }
       this.sendEmailAlert(unsentAnomalies, {
