@@ -24,13 +24,13 @@ jobs:
         run: npm -g install yarn
 
       - name: Install dependencies
-        run: yarn
+        run: npx yarn
 
       - name: Lint
-        run: yarn lint-staged
+        run: npx yarn lint-staged
 
       - name: Test
-        run: yarn test
+        run: npx yarn test
 
       - name: Print errors
         run: find . -name "*.warn" -type f -exec cat {} \;

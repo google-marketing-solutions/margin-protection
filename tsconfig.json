@@ -8,6 +8,7 @@
     "target": "es2020",
     "lib": ["esnext", "dom"],
     "noImplicitThis": true,
+    "useDefineForClassFields": true,
     "paths": {
       "common/*": ["common/*"],
       "sa360/*": ["sa360/*"],
