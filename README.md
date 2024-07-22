@@ -52,3 +52,11 @@ as-is.
 ## Building CM360
 
 Run `clasp create && clasp push`
+
+## Adding to Launch Monitor Source Code
+
+To develop within Launch Monitor, run `yarn` at the base level. It will install
+development dependencies and ensure you can commit without lint errors getting
+in the way.
+
+See [Contributing](docs/contributing.md) for important information.
