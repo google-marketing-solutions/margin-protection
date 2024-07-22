@@ -61,8 +61,8 @@ import {
   StatusMapper,
   TargetingType,
   TargetingTypeMapper,
-} from "./dv360_types";
-import { ObjectUtil } from "./utils";
+} from './dv360_types';
+import { ObjectUtil } from './utils';
 
 /** A base class for DV360 resources that are accessible via the API. */
 export class DisplayVideoResource {
@@ -99,10 +99,10 @@ export class DisplayVideoResource {
       changedProperties.push(...this.getMutableProperties());
     } else {
       if (this.getDisplayName() !== other.getDisplayName()) {
-        changedProperties.push("displayName");
+        changedProperties.push('displayName');
       }
       if (this.getStatus() !== other.getStatus()) {
-        changedProperties.push("entityStatus");
+        changedProperties.push('entityStatus');
       }
     }
     return changedProperties;
@@ -117,7 +117,7 @@ export class DisplayVideoResource {
    *     between this and 'other'
    */
   getChangedPropertiesString(other: DisplayVideoResource | null): string {
-    return this.getChangedProperties(other).join(",");
+    return this.getChangedProperties(other).join(',');
   }
 
   /**
@@ -126,7 +126,7 @@ export class DisplayVideoResource {
    * @return An array of properties that are modifiable
    */
   getMutableProperties(): string[] {
-    return ["displayName", "entityStatus"];
+    return ['displayName', 'entityStatus'];
   }
 
   /**
@@ -225,19 +225,19 @@ export class Advertiser extends DisplayVideoResource {
    */
   static fromApiResource(resource: { [key: string]: unknown }): Advertiser {
     const properties = [
-      "advertiserId",
-      "displayName",
-      "partnerId",
-      "entityStatus",
-      "generalConfig",
-      "adServerConfig",
+      'advertiserId',
+      'displayName',
+      'partnerId',
+      'entityStatus',
+      'generalConfig',
+      'adServerConfig',
     ];
     if (ObjectUtil.hasOwnProperties(resource, properties)) {
       const generalConfig = resource[
-        "generalConfig"
+        'generalConfig'
       ] as AdvertiserGeneralConfig;
       const adServerConfig = resource[
-        "adServerConfig"
+        'adServerConfig'
       ] as AdvertiserAdServerConfig;
       const mappedGeneralConfig =
         AdvertiserGeneralConfigMapper.map(generalConfig);
@@ -247,21 +247,21 @@ export class Advertiser extends DisplayVideoResource {
       if (mappedGeneralConfig && mappedAdServerConfig) {
         return new Advertiser(
           {
-            id: String(resource["advertiserId"]),
-            displayName: String(resource["displayName"]),
-            partnerId: String(resource["partnerId"]),
+            id: String(resource['advertiserId']),
+            displayName: String(resource['displayName']),
+            partnerId: String(resource['partnerId']),
             generalConfig: mappedGeneralConfig,
           },
           {
             adServerConfig: mappedAdServerConfig ?? null,
-            status: StatusMapper.map(resource["entityStatus"] as RawStatus),
+            status: StatusMapper.map(resource['entityStatus'] as RawStatus),
           },
         );
       }
     }
     throw new Error(
-      "Error! Encountered an invalid API resource object " +
-        "while mapping to an instance of Advertiser.",
+      'Error! Encountered an invalid API resource object ' +
+        'while mapping to an instance of Advertiser.',
     );
   }
 
@@ -301,7 +301,7 @@ export class Advertiser extends DisplayVideoResource {
       other instanceof Advertiser &&
       this.getGeneralConfig().domainUrl !== other.getGeneralConfig().domainUrl
     ) {
-      changedProperties.push("generalConfig.domainUrl");
+      changedProperties.push('generalConfig.domainUrl');
     }
     return changedProperties;
   }
@@ -312,7 +312,7 @@ export class Advertiser extends DisplayVideoResource {
    * @return An array of properties that are modifiable
    */
   override getMutableProperties(): string[] {
-    return [...super.getMutableProperties(), "generalConfig.domainUrl"];
+    return [...super.getMutableProperties(), 'generalConfig.domainUrl'];
   }
 
   /**
@@ -419,19 +419,19 @@ export class Campaign extends DisplayVideoResource {
    */
   static fromApiResource(resource: { [key: string]: unknown }): Campaign {
     const properties = [
-      "campaignId",
-      "displayName",
-      "advertiserId",
-      "entityStatus",
-      "campaignGoal",
-      "campaignFlight",
-      "frequencyCap",
+      'campaignId',
+      'displayName',
+      'advertiserId',
+      'entityStatus',
+      'campaignGoal',
+      'campaignFlight',
+      'frequencyCap',
     ];
     if (ObjectUtil.hasOwnProperties(resource, properties)) {
-      const campaignBudgets = resource["campaignBudgets"] as CampaignBudget[];
-      const campaignGoal = resource["campaignGoal"] as CampaignGoal;
-      const campaignFlight = resource["campaignFlight"] as CampaignFlight;
-      const frequencyCap = resource["frequencyCap"] as FrequencyCap;
+      const campaignBudgets = resource['campaignBudgets'] as CampaignBudget[];
+      const campaignGoal = resource['campaignGoal'] as CampaignGoal;
+      const campaignFlight = resource['campaignFlight'] as CampaignFlight;
+      const frequencyCap = resource['frequencyCap'] as FrequencyCap;
       const mappedCampaignBudgets = CampaignBudgetMapper.map(campaignBudgets);
       const mappedCampaignGoal = CampaignGoalMapper.map(campaignGoal);
       const mappedCampaignFlight = CampaignFlightMapper.map(campaignFlight);
@@ -440,9 +440,9 @@ export class Campaign extends DisplayVideoResource {
       if (mappedCampaignGoal && mappedCampaignFlight && mappedFrequencyCap) {
         return new Campaign(
           {
-            id: String(resource["campaignId"]),
-            displayName: String(resource["displayName"]),
-            advertiserId: String(resource["advertiserId"]),
+            id: String(resource['campaignId']),
+            displayName: String(resource['displayName']),
+            advertiserId: String(resource['advertiserId']),
             campaignGoal: mappedCampaignGoal,
             frequencyCap: mappedFrequencyCap,
           },
@@ -450,15 +450,15 @@ export class Campaign extends DisplayVideoResource {
             campaignBudgets: mappedCampaignBudgets,
             campaignFlight: mappedCampaignFlight,
             status: StatusMapper.map(
-              String(resource["entityStatus"]) as RawStatus,
+              String(resource['entityStatus']) as RawStatus,
             ),
           },
         );
       }
     }
     throw new Error(
-      "Error! Encountered an invalid API resource object " +
-        "while mapping to an instance of Campaign.",
+      'Error! Encountered an invalid API resource object ' +
+        'while mapping to an instance of Campaign.',
     );
   }
 
@@ -502,7 +502,7 @@ export class Campaign extends DisplayVideoResource {
           this.getCampaignStartDate(),
         )!.getChangedProperties(
           other.getCampaignStartDate(),
-          /* prefix= */ "campaignFlight.plannedDates.startDate.",
+          /* prefix= */ 'campaignFlight.plannedDates.startDate.',
         ),
       );
     }
@@ -517,7 +517,7 @@ export class Campaign extends DisplayVideoResource {
   override getMutableProperties(): string[] {
     return [
       ...super.getMutableProperties(),
-      ...ApiDate.getMutableProperties("campaignFlight.plannedDates.startDate."),
+      ...ApiDate.getMutableProperties('campaignFlight.plannedDates.startDate.'),
     ];
   }
 
@@ -652,22 +652,22 @@ export class InsertionOrder extends DisplayVideoResource {
    */
   static fromApiResource(resource: { [key: string]: unknown }): InsertionOrder {
     const properties = [
-      "insertionOrderId",
-      "displayName",
-      "advertiserId",
-      "campaignId",
-      "insertionOrderType",
-      "entityStatus",
-      "pacing",
-      "frequencyCap",
-      "performanceGoal",
-      "budget",
+      'insertionOrderId',
+      'displayName',
+      'advertiserId',
+      'campaignId',
+      'insertionOrderType',
+      'entityStatus',
+      'pacing',
+      'frequencyCap',
+      'performanceGoal',
+      'budget',
     ];
     if (ObjectUtil.hasOwnProperties(resource, properties)) {
-      const pacing = resource["pacing"] as Pacing;
-      const frequencyCap = resource["frequencyCap"] as FrequencyCap;
-      const performanceGoal = resource["performanceGoal"] as PerformanceGoal;
-      const budget = resource["budget"] as InsertionOrderBudget;
+      const pacing = resource['pacing'] as Pacing;
+      const frequencyCap = resource['frequencyCap'] as FrequencyCap;
+      const performanceGoal = resource['performanceGoal'] as PerformanceGoal;
+      const budget = resource['budget'] as InsertionOrderBudget;
       const mappedPacing = PacingMapper.map(pacing);
       const mappedFrequencyCap = FrequencyCapMapper.map(frequencyCap);
       const mappedPerformanceGoal = PerformanceGoalMapper.map(performanceGoal);
@@ -681,23 +681,23 @@ export class InsertionOrder extends DisplayVideoResource {
       ) {
         return new InsertionOrder(
           {
-            id: String(resource["insertionOrderId"]),
-            displayName: String(resource["displayName"]),
-            advertiserId: String(resource["advertiserId"]),
-            campaignId: String(resource["campaignId"]),
-            insertionOrderType: String(resource["insertionOrderType"]),
+            id: String(resource['insertionOrderId']),
+            displayName: String(resource['displayName']),
+            advertiserId: String(resource['advertiserId']),
+            campaignId: String(resource['campaignId']),
+            insertionOrderType: String(resource['insertionOrderType']),
             pacing: mappedPacing,
             frequencyCap: mappedFrequencyCap,
             performanceGoal: mappedPerformanceGoal,
             budget: mappedBudget,
           },
-          StatusMapper.map(resource["entityStatus"] as RawStatus),
+          StatusMapper.map(resource['entityStatus'] as RawStatus),
         );
       }
     }
     throw new Error(
-      "Error! Encountered an invalid API resource object " +
-        "while mapping to an instance of InsertionOrder.",
+      'Error! Encountered an invalid API resource object ' +
+        'while mapping to an instance of InsertionOrder.',
     );
   }
 
@@ -740,13 +740,13 @@ export class InsertionOrder extends DisplayVideoResource {
 
     if (other instanceof InsertionOrder) {
       if (this.getInsertionOrderType() !== other.getInsertionOrderType()) {
-        changedProperties.push("insertionOrderType");
+        changedProperties.push('insertionOrderType');
       }
       if (
         this.getInsertionOrderBudgetSegments() !==
         other.getInsertionOrderBudgetSegments()
       ) {
-        changedProperties.push("budget.budgetSegments");
+        changedProperties.push('budget.budgetSegments');
       }
     }
     return changedProperties;
@@ -760,8 +760,8 @@ export class InsertionOrder extends DisplayVideoResource {
   override getMutableProperties(): string[] {
     return [
       ...super.getMutableProperties(),
-      "insertionOrderType",
-      "budget.budgetSegments",
+      'insertionOrderType',
+      'budget.budgetSegments',
     ];
   }
 
@@ -941,29 +941,29 @@ export class LineItem extends DisplayVideoResource {
    */
   static fromApiResource(resource: { [key: string]: unknown }): LineItem {
     const properties = [
-      "lineItemId",
-      "displayName",
-      "advertiserId",
-      "campaignId",
-      "insertionOrderId",
-      "lineItemType",
-      "entityStatus",
-      "flight",
-      "budget",
-      "pacing",
-      "frequencyCap",
-      "partnerRevenueModel",
-      "bidStrategy",
+      'lineItemId',
+      'displayName',
+      'advertiserId',
+      'campaignId',
+      'insertionOrderId',
+      'lineItemType',
+      'entityStatus',
+      'flight',
+      'budget',
+      'pacing',
+      'frequencyCap',
+      'partnerRevenueModel',
+      'bidStrategy',
     ];
     if (ObjectUtil.hasOwnProperties(resource, properties)) {
-      const flight = resource["flight"] as LineItemFlight;
-      const budget = resource["budget"] as LineItemBudget;
-      const pacing = resource["pacing"] as Pacing;
-      const frequencyCap = resource["frequencyCap"] as FrequencyCap;
+      const flight = resource['flight'] as LineItemFlight;
+      const budget = resource['budget'] as LineItemBudget;
+      const pacing = resource['pacing'] as Pacing;
+      const frequencyCap = resource['frequencyCap'] as FrequencyCap;
       const partnerRevenueModel = resource[
-        "partnerRevenueModel"
+        'partnerRevenueModel'
       ] as LineItemPartnerRevenueModel;
-      const bidStrategy = resource["bidStrategy"] as BiddingStrategy;
+      const bidStrategy = resource['bidStrategy'] as BiddingStrategy;
       const mappedFlight = LineItemFlightMapper.map(flight);
       const mappedBudget = LineItemBudgetMapper.map(budget);
       const mappedPacing = PacingMapper.map(pacing);
@@ -982,12 +982,12 @@ export class LineItem extends DisplayVideoResource {
       ) {
         return new LineItem(
           {
-            id: String(resource["lineItemId"]),
-            displayName: String(resource["displayName"]),
-            advertiserId: String(resource["advertiserId"]),
-            campaignId: String(resource["campaignId"]),
-            insertionOrderId: String(resource["insertionOrderId"]),
-            lineItemType: String(resource["lineItemType"]),
+            id: String(resource['lineItemId']),
+            displayName: String(resource['displayName']),
+            advertiserId: String(resource['advertiserId']),
+            campaignId: String(resource['campaignId']),
+            insertionOrderId: String(resource['insertionOrderId']),
+            lineItemType: String(resource['lineItemType']),
             flight: mappedFlight,
             budget: mappedBudget,
             pacing: mappedPacing,
@@ -995,13 +995,13 @@ export class LineItem extends DisplayVideoResource {
             partnerRevenueModel: mappedPartnerRevenueModel,
             bidStrategy: mappedBidStrategy,
           },
-          StatusMapper.map(resource["entityStatus"] as RawStatus),
+          StatusMapper.map(resource['entityStatus'] as RawStatus),
         );
       }
     }
     throw new Error(
-      "Error! Encountered an invalid API resource object " +
-        "while mapping to an instance of LineItem.",
+      'Error! Encountered an invalid API resource object ' +
+        'while mapping to an instance of LineItem.',
     );
   }
 
@@ -1050,7 +1050,7 @@ export class LineItem extends DisplayVideoResource {
           this.getLineItemFlightEndDate()!,
         )!.getChangedProperties(
           other.getLineItemFlightEndDate(),
-          /* prefix= */ "flight.dateRange.endDate.",
+          /* prefix= */ 'flight.dateRange.endDate.',
         ),
       );
     }
@@ -1065,7 +1065,7 @@ export class LineItem extends DisplayVideoResource {
   override getMutableProperties(): string[] {
     return [
       ...super.getMutableProperties(),
-      ...ApiDate.getMutableProperties("flight.dateRange.endDate."),
+      ...ApiDate.getMutableProperties('flight.dateRange.endDate.'),
     ];
   }
 
@@ -1253,52 +1253,52 @@ export class InventorySource extends DisplayVideoResource {
     [key: string]: unknown;
   }): InventorySource {
     const properties = [
-      "inventorySourceId",
-      "displayName",
-      "inventorySourceType",
-      "rateDetails",
-      "status",
+      'inventorySourceId',
+      'displayName',
+      'inventorySourceType',
+      'rateDetails',
+      'status',
     ];
     if (ObjectUtil.hasOwnProperties(resource, properties)) {
-      const status = resource["status"] as { entityStatus?: RawStatus };
-      const rateDetails = resource["rateDetails"] as InventorySourceRateDetails;
+      const status = resource['status'] as { entityStatus?: RawStatus };
+      const rateDetails = resource['rateDetails'] as InventorySourceRateDetails;
       const mappedRateDetails =
         InventorySourceRateDetailsMapper.map(rateDetails);
 
       if (
         mappedRateDetails &&
-        ObjectUtil.hasOwnProperties(status, ["entityStatus"])
+        ObjectUtil.hasOwnProperties(status, ['entityStatus'])
       ) {
         const requiredParams = {
-          id: String(resource["inventorySourceId"]),
-          displayName: String(resource["displayName"]),
-          inventorySourceType: String(resource["inventorySourceType"]),
+          id: String(resource['inventorySourceId']),
+          displayName: String(resource['displayName']),
+          inventorySourceType: String(resource['inventorySourceType']),
           rateDetails: mappedRateDetails,
         };
         const optionalParams: InventorySourceOptionalParams = {
           status: StatusMapper.map(status.entityStatus!),
         };
-        if (resource["commitment"]) {
-          optionalParams.commitment = resource["commitment"] as string;
+        if (resource['commitment']) {
+          optionalParams.commitment = resource['commitment'] as string;
         }
-        if (resource["deliveryMethod"]) {
-          optionalParams.deliveryMethod = resource["deliveryMethod"] as string;
+        if (resource['deliveryMethod']) {
+          optionalParams.deliveryMethod = resource['deliveryMethod'] as string;
         }
-        if (resource["dealId"]) {
-          optionalParams.dealId = resource["dealId"] as string;
+        if (resource['dealId']) {
+          optionalParams.dealId = resource['dealId'] as string;
         }
-        if (resource["publisherName"]) {
-          optionalParams.publisherName = resource["publisherName"] as string;
+        if (resource['publisherName']) {
+          optionalParams.publisherName = resource['publisherName'] as string;
         }
-        if (resource["exchange"]) {
-          optionalParams.exchange = resource["exchange"] as string;
+        if (resource['exchange']) {
+          optionalParams.exchange = resource['exchange'] as string;
         }
         return new InventorySource(requiredParams, optionalParams);
       }
     }
     throw new Error(
-      "Error! Encountered an invalid API resource object " +
-        "while mapping to an instance of InventorySource.",
+      'Error! Encountered an invalid API resource object ' +
+        'while mapping to an instance of InventorySource.',
     );
   }
 
@@ -1319,19 +1319,19 @@ export class InventorySource extends DisplayVideoResource {
       status: { entityStatus: String(this.getStatus()) },
     };
     if (this.getCommitment()) {
-      result["commitment"] = this.getCommitment();
+      result['commitment'] = this.getCommitment();
     }
     if (this.getDeliveryMethod()) {
-      result["deliveryMethod"] = this.getDeliveryMethod();
+      result['deliveryMethod'] = this.getDeliveryMethod();
     }
     if (this.getDealId()) {
-      result["dealId"] = this.getDealId();
+      result['dealId'] = this.getDealId();
     }
     if (this.getPublisherName()) {
-      result["publisherName"] = this.getPublisherName();
+      result['publisherName'] = this.getPublisherName();
     }
     if (this.getExchange()) {
-      result["exchange"] = this.getExchange();
+      result['exchange'] = this.getExchange();
     }
     return result;
   }
@@ -1425,12 +1425,12 @@ export class TargetingOption extends DisplayVideoResource {
     private readonly targetingType: TargetingType,
     private readonly targetingDetailsKey: string,
     targetingDetails: { [key: string]: unknown },
-    private readonly idProperty: string = "targetingOptionId",
+    private readonly idProperty: string = 'targetingOptionId',
   ) {
     super(
       id /* displayName= */,
-      targetingDetails["displayName"]
-        ? String(targetingDetails["displayName"])
+      targetingDetails['displayName']
+        ? String(targetingDetails['displayName'])
         : null,
     );
 
@@ -1455,14 +1455,14 @@ export class TargetingOption extends DisplayVideoResource {
   static fromApiResource(
     resource: { [key: string]: unknown },
     additionalProperties: string[] = [],
-    idProperty: string = "targetingOptionId",
-    type: string = "TargetingOption",
+    idProperty: string = 'targetingOptionId',
+    type: string = 'TargetingOption',
   ): TargetingOption {
-    const properties = ["targetingType", idProperty, ...additionalProperties];
+    const properties = ['targetingType', idProperty, ...additionalProperties];
 
     if (ObjectUtil.hasOwnProperties(resource, properties)) {
       const keys = Object.keys(resource).filter(
-        (key) => ![...properties, "name"].includes(key),
+        (key) => ![...properties, 'name'].includes(key),
       );
 
       if (keys.length === 1) {
@@ -1473,7 +1473,7 @@ export class TargetingOption extends DisplayVideoResource {
           return new TargetingOption(
             String(resource[idProperty]),
             TargetingTypeMapper.map(
-              resource["targetingType"] as RawTargetingType,
+              resource['targetingType'] as RawTargetingType,
             )!,
             targetingDetailsKey,
             targetingDetails as { [key: string]: unknown },
@@ -1482,7 +1482,7 @@ export class TargetingOption extends DisplayVideoResource {
       }
     }
     throw new Error(
-      "Error! Encountered an invalid API resource object " +
+      'Error! Encountered an invalid API resource object ' +
         `while mapping to an instance of ${type}.`,
     );
   }
@@ -1582,7 +1582,7 @@ export class AssignedTargetingOption extends TargetingOption {
       targetingType,
       targetingDetailsKey,
       targetingDetails,
-      "assignedTargetingOptionId",
+      'assignedTargetingOptionId',
     );
   }
 
@@ -1600,14 +1600,14 @@ export class AssignedTargetingOption extends TargetingOption {
   }): AssignedTargetingOption {
     const targetingOption = TargetingOption.fromApiResource(
       resource,
-      /* additionalProperties= */ ["inheritance"],
-      /* idProperty= */ "assignedTargetingOptionId",
-      /* type= */ "AssignedTargetingOption",
+      /* additionalProperties= */ ['inheritance'],
+      /* idProperty= */ 'assignedTargetingOptionId',
+      /* type= */ 'AssignedTargetingOption',
     );
     return new AssignedTargetingOption(
       targetingOption.getId() as string,
       targetingOption.getTargetingType(),
-      String(resource["inheritance"]),
+      String(resource['inheritance']),
       targetingOption.getTargetingDetailsKey(),
       targetingOption.getTargetingDetails(),
     );
@@ -1623,7 +1623,7 @@ export class AssignedTargetingOption extends TargetingOption {
    */
   override toJSON(): { [key: string]: unknown } {
     const result = super.toJSON();
-    result["inheritance"] = this.getInheritance();
+    result['inheritance'] = this.getInheritance();
 
     return result;
   }

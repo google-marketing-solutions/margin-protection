@@ -69,12 +69,12 @@ function main() {
 
       // Get CM360 Account information
       const accounts = campaignManagerAPI.list(
-        "Accounts",
+        'Accounts',
         null,
-        "accounts",
+        'accounts',
         {},
       );
-      const accountId = accounts.length > 0 ? accounts[0].id : "";
+      const accountId = accounts.length > 0 ? accounts[0].id : '';
       if (!accountId) {
         Logger.log(`Account not found for Profile ID ${profileId}.`);
       }
@@ -107,7 +107,7 @@ function main() {
           );
           return;
         }
-        if (useCase === FLOODLIGHT_TRENDS_KEY && dateRange != "LAST_14_DAYS") {
+        if (useCase === FLOODLIGHT_TRENDS_KEY && dateRange != 'LAST_14_DAYS') {
           logExecutionStatus(
             row,
             `ERROR: Date range for the ${FLOODLIGHT_TRENDS_KEY} use case must be LAST_14_DAYS. Execution skipped.`,
@@ -143,12 +143,12 @@ function main() {
       );
       if (!reportData || reportData.length <= 1) {
         Logger.log(
-          "main: There is no data in the report. Skipping execution...",
+          'main: There is no data in the report. Skipping execution...',
         );
         // Long message... format later
         logExecutionStatus(
           row,
-          "WARNING: The report is not ready or there is no data in the report. Please check the report status directly in CM360 and run again the script or wait for the trigger to run it automatically. Execution was skipped.",
+          'WARNING: The report is not ready or there is no data in the report. Please check the report status directly in CM360 and run again the script or wait for the trigger to run it automatically. Execution was skipped.',
           `${date.toDateString()} ${date.toTimeString()}`,
         );
         return;
@@ -166,45 +166,45 @@ function main() {
       switch (useCase) {
         case GHOST_PLACEMENTS_KEY:
           // Only rule 3 uses a threshold to evaluate the rule
-          if (threshold !== "") {
+          if (threshold !== '') {
             // Override default value from the Use Cases Config tab if value provided in this column
-            config["rules"][2]["ruleThreshold"] = parseFloat(threshold);
+            config['rules'][2]['ruleThreshold'] = parseFloat(threshold);
           }
           issues = getGhostPlacementsAlerts(config, reportData);
           break;
 
         case DEFAULT_ADS_RATE_KEY:
           // Only rule 1 uses a threshold to evaluate the rule
-          if (threshold !== "") {
+          if (threshold !== '') {
             // Override default value from the Use Cases Config tab if value provided in this column
-            config["rules"][0]["ruleThreshold"] = parseFloat(threshold);
+            config['rules'][0]['ruleThreshold'] = parseFloat(threshold);
           }
           issues = getDefaultAdsRateAlerts(config, reportData);
           break;
 
         case FLOODLIGHT_TRENDS_KEY:
           // Only rule 1 uses a threshold to evaluate the rule
-          if (threshold !== "") {
+          if (threshold !== '') {
             // Override default value from the Use Cases Config tab if value provided in this column
-            config["rules"][0]["ruleThreshold"] = parseFloat(threshold);
+            config['rules'][0]['ruleThreshold'] = parseFloat(threshold);
           }
           issues = getFloodlightTrendsAlerts(config, reportData);
           break;
 
         case OUT_OF_FLIGHT_PLACEMENTS_KEY:
           // Only rule 1 uses a threshold to evaluate the rule
-          if (threshold !== "") {
+          if (threshold !== '') {
             // Override default value from the Use Cases Config tab if value provided in this column
-            config["rules"][0]["ruleThreshold"] = parseFloat(threshold);
+            config['rules'][0]['ruleThreshold'] = parseFloat(threshold);
           }
           issues = getOutOfFlightPlacementsAlerts(config, reportData);
           break;
 
         case TRACKING_ADS_KEY:
           // Only rule 1 uses a threshold to evaluate the rule
-          if (threshold !== "") {
+          if (threshold !== '') {
             // Override default value from the Use Cases Config tab if value provided in this column
-            config["rules"][0]["ruleThreshold"] = parseFloat(threshold);
+            config['rules'][0]['ruleThreshold'] = parseFloat(threshold);
           }
           issues = getTrackingAdsAlerts(config, reportData);
           break;
@@ -217,7 +217,7 @@ function main() {
       const dataToSheetStartRow = 1;
       const dataToSheetStartColumn = 1;
       // Replace report data in case the use case returns a different set of data
-      reportData = !issues["data"] ? reportData : issues["data"];
+      reportData = !issues['data'] ? reportData : issues['data'];
       addDataToSheet(
         reportDataSheetName,
         BLUE_RGB_COLOR,
@@ -238,7 +238,7 @@ function main() {
       createFilterForTable(reportDataSheetName, config.rangeToFilter);
 
       // Send email if any issues found
-      if (emails && issues["issues"].length > 0) {
+      if (emails && issues['issues'].length > 0) {
         // Send email only if there are issues
         sendEmail(
           getEmailParameters(

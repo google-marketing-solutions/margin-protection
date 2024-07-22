@@ -15,25 +15,25 @@
  * limitations under the License.
  */
 
-const GasPlugin = require("gas-webpack-plugin");
-const TsConfigPathsPlugin = require("tsconfig-paths-webpack-plugin");
+const GasPlugin = require('gas-webpack-plugin');
+const TsConfigPathsPlugin = require('tsconfig-paths-webpack-plugin');
 
 module.exports = {
   context: __dirname,
-  entry: "./src/main.ts",
-  output: { path: __dirname, filename: "Code.js" },
-  plugins: [new GasPlugin({ autoGlobalExportsFiles: ["**/*.ts"] })],
+  entry: './src/main.ts',
+  output: { path: __dirname, filename: 'Code.js' },
+  plugins: [new GasPlugin({ autoGlobalExportsFiles: ['**/*.ts'] })],
   module: {
     rules: [
       {
         test: /\.tsx?$/,
-        use: "ts-loader",
+        use: 'ts-loader',
         exclude: /node_modules/,
       },
     ],
   },
   resolve: {
-    extensions: [".tsx", ".ts"],
-    plugins: [new TsConfigPathsPlugin({ configFile: "./tsconfig.json" })],
+    extensions: ['.tsx', '.ts'],
+    plugins: [new TsConfigPathsPlugin({ configFile: './tsconfig.json' })],
   },
 };

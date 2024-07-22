@@ -1,28 +1,28 @@
-import { esbuildPlugin } from "@web/dev-server-esbuild";
-import { fromRollup } from "@web/dev-server-rollup";
-import { typescriptPaths } from "rollup-plugin-typescript-paths";
-import { fileURLToPath } from "url";
-import { jasmineTestRunnerConfig } from "web-test-runner-jasmine";
+import { esbuildPlugin } from '@web/dev-server-esbuild';
+import { fromRollup } from '@web/dev-server-rollup';
+import { typescriptPaths } from 'rollup-plugin-typescript-paths';
+import { fileURLToPath } from 'url';
+import { jasmineTestRunnerConfig } from 'web-test-runner-jasmine';
 
-import * as os from "os";
+import * as os from 'os';
 
 const tsPaths = fromRollup(typescriptPaths);
 
 export default {
   ...jasmineTestRunnerConfig(),
   nodeResolve: true,
-  files: ["**/*_test.ts"],
+  files: ['**/*_test.ts'],
   //hostname: os.hostname(),
   plugins: [
     tsPaths({
       preserveExtensions: true,
       absolute: true,
       nonRelative: false,
-      tsConfigPath: "./tsconfig.json",
+      tsConfigPath: './tsconfig.json',
     }),
     esbuildPlugin({
       ts: true,
-      tsconfig: fileURLToPath(new URL("./tsconfig.json", import.meta.url)),
+      tsconfig: fileURLToPath(new URL('./tsconfig.json', import.meta.url)),
     }),
   ],
 };

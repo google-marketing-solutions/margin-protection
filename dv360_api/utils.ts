@@ -24,17 +24,17 @@
  * Defines the logical grouping for filter expressions.
  */
 export enum FilterGrouping {
-  AND = " AND ",
-  OR = " OR ",
+  AND = ' AND ',
+  OR = ' OR ',
 }
 
 /**
  * Defines the supported filter rule equality operators.
  */
 export enum RuleOperator {
-  EQ = "=",
-  GTEQ = ">=",
-  LTEQ = "<=",
+  EQ = '=',
+  GTEQ = '>=',
+  LTEQ = '<=',
 }
 
 /**
@@ -156,37 +156,37 @@ export const UriUtil = {
     let queryString: string;
     let fragment: string;
 
-    if (url.indexOf("?") !== -1) {
-      [baseUrl, queryString] = url.split("?");
+    if (url.indexOf('?') !== -1) {
+      [baseUrl, queryString] = url.split('?');
       fragment =
-        queryString.indexOf("#") !== -1
-          ? queryString.substring(queryString.indexOf("#"))
-          : "";
-      queryString = queryString.replace(fragment, "");
-      const regExp = new RegExp(`(^|&)${key}=[^&]*`, "g");
+        queryString.indexOf('#') !== -1
+          ? queryString.substring(queryString.indexOf('#'))
+          : '';
+      queryString = queryString.replace(fragment, '');
+      const regExp = new RegExp(`(^|&)${key}=[^&]*`, 'g');
       const matches = queryString.match(regExp);
 
       if (matches) {
         let modified = false;
 
         matches.forEach((match) => {
-          let replacement = "";
+          let replacement = '';
 
           if (!modified) {
-            const val = match.substring(match.indexOf("=") + 1);
+            const val = match.substring(match.indexOf('=') + 1);
             replacement = match.replace(val, value);
             modified = true;
           }
           queryString = queryString.replace(match, replacement);
         });
       } else {
-        const separator = queryString.length > 0 ? "&" : "";
+        const separator = queryString.length > 0 ? '&' : '';
         queryString += `${separator}${key}=${value}`;
       }
     } else {
       baseUrl = url;
       queryString = `${key}=${value}`;
-      fragment = "";
+      fragment = '';
     }
     return `${baseUrl}?${queryString}${fragment}`;
   },

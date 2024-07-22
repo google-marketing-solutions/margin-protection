@@ -17,7 +17,7 @@
 
 // g3-format-prettier
 
-import { AppsScriptFrontEnd } from "./sheet_helpers";
+import { AppsScriptFrontEnd } from './sheet_helpers';
 
 /**
  * An abstraction for retrieving properties.
@@ -128,7 +128,7 @@ export interface RuleExecutor<
   G extends RuleGranularity<G>,
   A extends BaseClientArgs,
   P extends Record<keyof P, ParamDefinition>,
-> extends Omit<RuleDefinition<P, G>, "callback" | "defaults" | "granularity"> {
+> extends Omit<RuleDefinition<P, G>, 'callback' | 'defaults' | 'granularity'> {
   client: C;
   settings: Settings<Record<keyof P, string>>;
   run: Function;
@@ -285,7 +285,7 @@ export interface RuleRangeInterface<
   fillRuleValues<Params>(
     rule: Pick<
       RuleDefinition<Record<keyof Params, ParamDefinition>, G>,
-      "name" | "params" | "defaults" | "granularity"
+      'name' | 'params' | 'defaults' | 'granularity'
     >,
   ): Promise<void>;
   getRows(granularity: G): Promise<RecordInfo[]>;
@@ -334,12 +334,12 @@ export type RuleParams<
  * A list of available and required Apps Script functions for Launch Monitor.
  */
 export type AppsScriptFunctions =
-  | "onOpen"
-  | "initializeSheets"
-  | "preLaunchQa"
-  | "launchMonitor"
-  | "displaySetupGuide"
-  | "displayGlossary";
+  | 'onOpen'
+  | 'initializeSheets'
+  | 'preLaunchQa'
+  | 'launchMonitor'
+  | 'displaySetupGuide'
+  | 'displayGlossary';
 
 /**
  * An object mapping values to their anomalous status.

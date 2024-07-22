@@ -1,10 +1,10 @@
-const spreadsheetId = "1qmOv2aY0OPLFJRlpsxR8AyzzRUF70vfs73QHlvASndo"; // Replace with your sheet's ID
+const spreadsheetId = '1qmOv2aY0OPLFJRlpsxR8AyzzRUF70vfs73QHlvASndo'; // Replace with your sheet's ID
 
-const fetchOnlyActiveCampaignsCell = "B7";
+const fetchOnlyActiveCampaignsCell = 'B7';
 
-const geoTargetingConfigSheetName = "Geo Targeting config";
-const budgetConfigSheetName = "Budget config";
-const setupSheetName = "Setup";
+const geoTargetingConfigSheetName = 'Geo Targeting config';
+const budgetConfigSheetName = 'Budget config';
+const setupSheetName = 'Setup';
 
 const spreadsheet = SpreadsheetApp.openById(spreadsheetId);
 const setupSheet = spreadsheet.getSheetByName(setupSheetName);
@@ -23,13 +23,13 @@ function main() {
 
 function syncCampaigns(account) {
   const accountInfoStr =
-    "{" + account.getName() + " - " + account.getCustomerId() + "}";
+    '{' + account.getName() + ' - ' + account.getCustomerId() + '}';
 
-  console.log("Syncing account " + accountInfoStr + "...");
+  console.log('Syncing account ' + accountInfoStr + '...');
   if (isMCCAccount()) {
-    console.log("Account " + accountInfoStr + " is MCC");
+    console.log('Account ' + accountInfoStr + ' is MCC');
     syncCampaignsForSingleAccount(account);
-    console.log("Syncing account " + accountInfoStr + " sub-accounts...");
+    console.log('Syncing account ' + accountInfoStr + ' sub-accounts...');
 
     const accounts = AdsManagerApp.accounts().get();
 
@@ -38,7 +38,7 @@ function syncCampaigns(account) {
       syncCampaignsForSingleAccount(nextAccount);
     }
   } else {
-    console.log("Account " + accountInfoStr + " is not MCC");
+    console.log('Account ' + accountInfoStr + ' is not MCC');
     syncCampaignsForSingleAccount(account);
   }
 }
@@ -46,20 +46,20 @@ function syncCampaigns(account) {
 function setUpConfigSheets() {
   geoTargetingConfigSheet = createOrClearSheet(geoTargetingConfigSheetName);
 
-  var range = geoTargetingConfigSheet.getRange("A1:F1");
+  var range = geoTargetingConfigSheet.getRange('A1:F1');
   range.merge();
   var richText = SpreadsheetApp.newRichTextValue()
     .setText(
-      "Complete desired included and excluded locations for each campaigns. If no preference for a single campaign, leave blank (empty)",
+      'Complete desired included and excluded locations for each campaigns. If no preference for a single campaign, leave blank (empty)',
     )
     .setTextStyle(SpreadsheetApp.newTextStyle().setBold(true).build())
     .build();
 
-  range.setBackground("#ea4335");
-  range.setHorizontalAlignment("center");
-  range.setVerticalAlignment("middle");
+  range.setBackground('#ea4335');
+  range.setHorizontalAlignment('center');
+  range.setVerticalAlignment('middle');
   range.setFontSize(12);
-  range.setFontColor("#FFFFFF");
+  range.setFontColor('#FFFFFF');
   range.setBorder(
     true,
     true,
@@ -67,7 +67,7 @@ function setUpConfigSheets() {
     true,
     null,
     null,
-    "#000000",
+    '#000000',
     SpreadsheetApp.BorderStyle.SOLID_THICK,
   );
   range.setRichTextValue(richText);
@@ -78,16 +78,16 @@ function setUpConfigSheets() {
   geoTargetingConfigSheet.setColumnWidths(4, 3, 300);
 
   geoTargetingConfigSheet.appendRow([
-    "Customer ID",
-    "Customer name",
-    "Campaign ID",
-    "Campaign name",
-    "Desired included locations",
-    "Desired excluded locations",
+    'Customer ID',
+    'Customer name',
+    'Campaign ID',
+    'Campaign name',
+    'Desired included locations',
+    'Desired excluded locations',
     // "Max number of countries (blank = no limit)"
   ]);
   geoTargetingConfigSheet.insertRowBefore(2);
-  range = geoTargetingConfigSheet.getRange("A3:F3");
+  range = geoTargetingConfigSheet.getRange('A3:F3');
   range.setBorder(
     null,
     null,
@@ -95,10 +95,10 @@ function setUpConfigSheets() {
     null,
     null,
     null,
-    "#000000",
+    '#000000',
     SpreadsheetApp.BorderStyle.SOLID,
   );
-  range = geoTargetingConfigSheet.getRange("A3:F999");
+  range = geoTargetingConfigSheet.getRange('A3:F999');
   range.setBorder(
     null,
     null,
@@ -106,26 +106,26 @@ function setUpConfigSheets() {
     null,
     true,
     null,
-    "#000000",
+    '#000000',
     SpreadsheetApp.BorderStyle.SOLID,
   );
 
   budgetConfigSheet = createOrClearSheet(budgetConfigSheetName);
 
-  range = budgetConfigSheet.getRange("A1:F1");
+  range = budgetConfigSheet.getRange('A1:F1');
   range.merge();
   richText = SpreadsheetApp.newRichTextValue()
     .setText(
-      "Complete desired max daily or total budgets (not both). If no preference for a single campaign, leave blank (empty)",
+      'Complete desired max daily or total budgets (not both). If no preference for a single campaign, leave blank (empty)',
     )
     .setTextStyle(SpreadsheetApp.newTextStyle().setBold(true).build())
     .build();
 
-  range.setBackground("#ea4335");
-  range.setHorizontalAlignment("center");
-  range.setVerticalAlignment("middle");
+  range.setBackground('#ea4335');
+  range.setHorizontalAlignment('center');
+  range.setVerticalAlignment('middle');
   range.setFontSize(12);
-  range.setFontColor("#FFFFFF");
+  range.setFontColor('#FFFFFF');
   range.setBorder(
     true,
     true,
@@ -133,7 +133,7 @@ function setUpConfigSheets() {
     true,
     null,
     null,
-    "#000000",
+    '#000000',
     SpreadsheetApp.BorderStyle.SOLID_THICK,
   );
   range.setRichTextValue(richText);
@@ -145,17 +145,17 @@ function setUpConfigSheets() {
   budgetConfigSheet.setColumnWidths(5, 2, 120);
 
   budgetConfigSheet.appendRow([
-    "Customer ID",
-    "Customer name",
-    "Campaign ID",
-    "Campaign name",
-    "Max daily budget",
-    "Max total budget",
+    'Customer ID',
+    'Customer name',
+    'Campaign ID',
+    'Campaign name',
+    'Max daily budget',
+    'Max total budget',
     // TODO: UNCOMMENT IF SOLVED
     // "% Allowed over average historical budget"
   ]);
   budgetConfigSheet.insertRowBefore(2);
-  range = budgetConfigSheet.getRange("A3:F3");
+  range = budgetConfigSheet.getRange('A3:F3');
   range.setBorder(
     null,
     null,
@@ -163,10 +163,10 @@ function setUpConfigSheets() {
     null,
     null,
     null,
-    "#000000",
+    '#000000',
     SpreadsheetApp.BorderStyle.SOLID,
   );
-  range = budgetConfigSheet.getRange("A3:F999");
+  range = budgetConfigSheet.getRange('A3:F999');
   range.setBorder(
     null,
     null,
@@ -174,7 +174,7 @@ function setUpConfigSheets() {
     null,
     true,
     null,
-    "#000000",
+    '#000000',
     SpreadsheetApp.BorderStyle.SOLID,
   );
 }
@@ -191,8 +191,8 @@ function createOrClearSheet(name) {
 
 function syncCampaignsForSingleAccount(account) {
   const accountInfoStr =
-    "{" + account.getName() + " - " + account.getCustomerId() + "}";
-  console.log("Syncing campaigns for account " + accountInfoStr + "...");
+    '{' + account.getName() + ' - ' + account.getCustomerId() + '}';
+  console.log('Syncing campaigns for account ' + accountInfoStr + '...');
 
   if (isMCCAccount()) {
     AdsManagerApp.select(account); // Switch context to the current account
@@ -200,19 +200,19 @@ function syncCampaignsForSingleAccount(account) {
 
   if (fetchOnlyActiveCampaigns) {
     var campaignIterator = AdsApp.campaigns()
-      .withCondition("Status = ENABLED")
+      .withCondition('Status = ENABLED')
       .withCondition("ServingStatus IN ['SERVING']")
       .get();
     var shoppingCampaignIterator = AdsApp.shoppingCampaigns()
-      .withCondition("Status = ENABLED")
+      .withCondition('Status = ENABLED')
       .withCondition("ServingStatus IN ['SERVING']")
       .get();
     var videoCampaignIterator = AdsApp.videoCampaigns()
-      .withCondition("Status = ENABLED")
+      .withCondition('Status = ENABLED')
       .withCondition("ServingStatus IN ['SERVING']")
       .get();
     var performanceMaxCampaignIterator = AdsApp.performanceMaxCampaigns()
-      .withCondition("Status = ENABLED")
+      .withCondition('Status = ENABLED')
       .withCondition("ServingStatus IN ['SERVING']")
       .get();
   } else {
@@ -240,7 +240,7 @@ function addCampaignsToConfigSheets(account, campaignsIterator) {
     const campaign = campaignsIterator.next();
 
     console.log(
-      "Found campaign " + campaign.getId() + " - " + campaign.getName(),
+      'Found campaign ' + campaign.getId() + ' - ' + campaign.getName(),
     );
 
     geoTargetingConfigSheet.appendRow([

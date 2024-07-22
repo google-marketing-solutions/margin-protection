@@ -1,17 +1,17 @@
-const spreadsheetId = "1qmOv2aY0OPLFJRlpsxR8AyzzRUF70vfs73QHlvASndo"; // Replace with your sheet's ID
+const spreadsheetId = '1qmOv2aY0OPLFJRlpsxR8AyzzRUF70vfs73QHlvASndo'; // Replace with your sheet's ID
 
-const geoTargetingConfigSheetName = "Geo Targeting config";
-const budgetConfigSheetName = "Budget config";
+const geoTargetingConfigSheetName = 'Geo Targeting config';
+const budgetConfigSheetName = 'Budget config';
 
-const geoTargetingResultSheetName = "Geo Targeting results";
-const budgetResultSheetName = "Budget results";
-const setupSheetName = "Setup";
+const geoTargetingResultSheetName = 'Geo Targeting results';
+const budgetResultSheetName = 'Budget results';
+const setupSheetName = 'Setup';
 
-const outputModeCell = "B3";
-const emailCell = "B4";
-const folderIdCell = "B5";
-const pauseCampaignsCell = "B6";
-const fetchOnlyActiveCampaignsCell = "B7";
+const outputModeCell = 'B3';
+const emailCell = 'B4';
+const folderIdCell = 'B5';
+const pauseCampaignsCell = 'B6';
+const fetchOnlyActiveCampaignsCell = 'B7';
 
 const spreadsheet = SpreadsheetApp.openById(spreadsheetId);
 const setupSheet = spreadsheet.getSheetByName(setupSheetName);
@@ -51,7 +51,7 @@ function main() {
     sendEmail();
   }
 
-  if (mode === "CSV Back-Up" && folderId) {
+  if (mode === 'CSV Back-Up' && folderId) {
     generateCsvBackup();
   }
 }
@@ -59,17 +59,17 @@ function main() {
 function checkInput() {
   if (!isValidEmailList(emailAddresses)) {
     throw new Error(
-      "Invalid mailing list, must be empty or a comma-separated list of email addresses",
+      'Invalid mailing list, must be empty or a comma-separated list of email addresses',
     );
   }
 
-  if (mode !== "Spreadsheet Only" && mode !== "CSV Back-Up") {
+  if (mode !== 'Spreadsheet Only' && mode !== 'CSV Back-Up') {
     throw new Error(
       'Invalid mode, must be "Spreadsheet Only" or "CSV Back-Up"',
     );
   }
 
-  if (!folderId && mode === "CSV Back-Up") {
+  if (!folderId && mode === 'CSV Back-Up') {
     throw new Error(
       'Invalid Google Drive Folder ID, must be present if mode selected is "CSV Back-Up"',
     );
@@ -77,10 +77,10 @@ function checkInput() {
 }
 
 function isValidEmailList(emailList) {
-  if (emailList === "") return true;
+  if (emailList === '') return true;
 
   // 1. Split the String into Individual Email Addresses
-  const emailAddresses = emailList.split(",").map((email) => email.trim()); // Remove any extra whitespace
+  const emailAddresses = emailList.split(',').map((email) => email.trim()); // Remove any extra whitespace
 
   // 2. Check Each Email Address Against a Regular Expression
   const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/; // Basic email validation regex
@@ -111,13 +111,13 @@ function createOrClearSheet(name) {
 
 function checkAccount(account) {
   const accountInfoStr =
-    "{" + account.getName() + " - " + account.getCustomerId() + "}";
+    '{' + account.getName() + ' - ' + account.getCustomerId() + '}';
 
-  console.log("Checking account " + accountInfoStr + "...");
+  console.log('Checking account ' + accountInfoStr + '...');
   if (isMCCAccount()) {
-    console.log("Account " + accountInfoStr + " is MCC");
+    console.log('Account ' + accountInfoStr + ' is MCC');
     checkCampaigns(account);
-    console.log("Checking account " + accountInfoStr + " sub-accounts...");
+    console.log('Checking account ' + accountInfoStr + ' sub-accounts...');
 
     var accounts = AdsManagerApp.accounts().get();
 
@@ -126,16 +126,16 @@ function checkAccount(account) {
       checkCampaigns(nextAccount);
     }
   } else {
-    console.log("Account " + account.getName() + " is not MCC");
+    console.log('Account ' + account.getName() + ' is not MCC');
     checkCampaigns(account);
   }
 }
 
 function checkCampaigns(account) {
   const accountInfoStr =
-    "{" + account.getName() + " - " + account.getCustomerId() + "}";
+    '{' + account.getName() + ' - ' + account.getCustomerId() + '}';
 
-  console.log("Checking campaigns for account " + accountInfoStr + "...");
+  console.log('Checking campaigns for account ' + accountInfoStr + '...');
 
   if (isMCCAccount()) {
     AdsManagerApp.select(account); // Switch context to the current account
@@ -143,19 +143,19 @@ function checkCampaigns(account) {
 
   if (fetchOnlyActiveCampaigns) {
     var campaignIterator = AdsApp.campaigns()
-      .withCondition("Status = ENABLED")
+      .withCondition('Status = ENABLED')
       .withCondition("ServingStatus IN ['SERVING']")
       .get();
     var shoppingCampaignIterator = AdsApp.shoppingCampaigns()
-      .withCondition("Status = ENABLED")
+      .withCondition('Status = ENABLED')
       .withCondition("ServingStatus IN ['SERVING']")
       .get();
     var videoCampaignIterator = AdsApp.videoCampaigns()
-      .withCondition("Status = ENABLED")
+      .withCondition('Status = ENABLED')
       .withCondition("ServingStatus IN ['SERVING']")
       .get();
     var performanceMaxCampaignIterator = AdsApp.performanceMaxCampaigns()
-      .withCondition("Status = ENABLED")
+      .withCondition('Status = ENABLED')
       .withCondition("ServingStatus IN ['SERVING']")
       .get();
   } else {
@@ -189,11 +189,11 @@ function checkCampaignIterator(account, campaignIterator) {
 
 function checkSingleCampaignGeoTarget(account, campaign) {
   console.log(
-    "Checking campaign " +
+    'Checking campaign ' +
       campaign.getId() +
-      " - " +
+      ' - ' +
       campaign.getName() +
-      "...",
+      '...',
   );
 
   const y = getCampaignDesiredLocations(campaign);
@@ -228,7 +228,7 @@ function checkSingleCampaignGeoTarget(account, campaign) {
       actualExcludedGeoTargetsTypes,
       misconfigured: false,
     });
-    console.log("Ok - No desired config");
+    console.log('Ok - No desired config');
     return;
   }
 
@@ -256,7 +256,7 @@ function checkSingleCampaignGeoTarget(account, campaign) {
       actualExcludedGeoTargetsTypes,
       misconfigured: true,
     });
-    console.log("Misconfigured");
+    console.log('Misconfigured');
   } else {
     geoTargetingResult.push({
       accountId,
@@ -271,7 +271,7 @@ function checkSingleCampaignGeoTarget(account, campaign) {
       actualExcludedGeoTargetsTypes,
       misconfigured: false,
     });
-    console.log("Ok");
+    console.log('Ok');
   }
 }
 
@@ -283,8 +283,8 @@ function getCampaignDesiredLocations(campaign) {
   const campaignId = campaign.getId();
   const campaignName = campaign.getName();
 
-  var desiredIncludedGeotargetsStr = "";
-  var desiredExcludedGeotargetsStr = "";
+  var desiredIncludedGeotargetsStr = '';
+  var desiredExcludedGeotargetsStr = '';
 
   for (var i = 0; i < values.length; i++) {
     if (values[i][2] == campaignId) {
@@ -296,16 +296,16 @@ function getCampaignDesiredLocations(campaign) {
     }
   }
 
-  var desiredIncludedGeotargetsNames = desiredIncludedGeotargetsStr.split(",");
-  var desiredExcludedGeotargetsNames = desiredExcludedGeotargetsStr.split(",");
+  var desiredIncludedGeotargetsNames = desiredIncludedGeotargetsStr.split(',');
+  var desiredExcludedGeotargetsNames = desiredExcludedGeotargetsStr.split(',');
 
   desiredIncludedGeotargetsNames = desiredIncludedGeotargetsNames
     .map((obj) => obj.trim())
-    .filter((obj) => obj !== "" && obj !== "-");
+    .filter((obj) => obj !== '' && obj !== '-');
 
   desiredExcludedGeotargetsNames = desiredExcludedGeotargetsNames
     .map((obj) => obj.trim())
-    .filter((obj) => obj !== "" && obj !== "-");
+    .filter((obj) => obj !== '' && obj !== '-');
 
   return {
     desiredIncludedGeotargetsNames,
@@ -366,7 +366,7 @@ function checkSingleCampaignBudget(account, campaign) {
 
   if (
     (maxDailyBudget === null && maxTotalBudget === null) ||
-    (maxDailyBudget === "" && maxTotalBudget === "")
+    (maxDailyBudget === '' && maxTotalBudget === '')
   ) {
     budgetResult.push({
       accountId,
@@ -381,7 +381,7 @@ function checkSingleCampaignBudget(account, campaign) {
       actualPercentageOverAverageHistoricalBudget,
       misconfigured: false,
     });
-    console.log("Ok - No desired config");
+    console.log('Ok - No desired config');
     return;
   }
 
@@ -402,7 +402,7 @@ function checkSingleCampaignBudget(account, campaign) {
       actualPercentageOverAverageHistoricalBudget,
       misconfigured: true,
     });
-    console.log("Misconfigured");
+    console.log('Misconfigured');
   } else {
     budgetResult.push({
       accountId,
@@ -417,7 +417,7 @@ function checkSingleCampaignBudget(account, campaign) {
       actualPercentageOverAverageHistoricalBudget,
       misconfigured: false,
     });
-    console.log("Ok");
+    console.log('Ok');
   }
 }
 
@@ -442,9 +442,9 @@ function getCampaignDesiredBudget(campaign) {
 }
 
 function convertStringToFloat(value) {
-  if (typeof value === "string") {
+  if (typeof value === 'string') {
     // Replace commas with periods for decimal notation
-    value = value.replace(",", ".");
+    value = value.replace(',', '.');
 
     // Check if the string is a valid floating-point number
     const floatValue = parseFloat(value);
@@ -476,22 +476,22 @@ function getCampaignActualBudget(campaign) {
 }
 
 function writeToResultSheet() {
-  console.log("Writing results to sheets...");
+  console.log('Writing results to sheets...');
   const geoTargetingResultSheet = createOrClearSheet(
     geoTargetingResultSheetName,
   );
   geoTargetingResultSheet.appendRow([
-    "Customer ID",
-    "Customer name",
-    "Campaign ID",
-    "Campaign name",
-    "Desired included locations",
-    "Current included locations",
+    'Customer ID',
+    'Customer name',
+    'Campaign ID',
+    'Campaign name',
+    'Desired included locations',
+    'Current included locations',
     // "Current included location types",
-    "Desired excluded locations",
-    "Current excluded locations",
+    'Desired excluded locations',
+    'Current excluded locations',
     // "Current excluded location types",
-    "MISCONFIGURED",
+    'MISCONFIGURED',
   ]);
   geoTargetingResult.forEach((r) => {
     geoTargetingResultSheet.appendRow([
@@ -500,26 +500,26 @@ function writeToResultSheet() {
       r.campaignId,
       r.campaignName,
       r.desiredIncludedGeoTargetsNames.length !== 0
-        ? r.desiredIncludedGeoTargetsNames.join(", ")
-        : "-",
+        ? r.desiredIncludedGeoTargetsNames.join(', ')
+        : '-',
       r.actualIncludedGeoTargetsNames.length !== 0
-        ? r.actualIncludedGeoTargetsNames.join(", ")
-        : "-",
+        ? r.actualIncludedGeoTargetsNames.join(', ')
+        : '-',
       // r.actualIncludedGeoTargetsTypes.length !== 0 ? r.actualIncludedGeoTargetsTypes.join(', ') : '-',
       r.desiredExcludedGeoTargetsNames.length !== 0
-        ? r.desiredExcludedGeoTargetsNames.join(", ")
-        : "-",
+        ? r.desiredExcludedGeoTargetsNames.join(', ')
+        : '-',
       r.actualExcludedGeoTargetsNames.length !== 0
-        ? r.actualExcludedGeoTargetsNames.join(", ")
-        : "-",
+        ? r.actualExcludedGeoTargetsNames.join(', ')
+        : '-',
       // r.actualExcludedGeoTargetsTypes.length !== 0 ? r.actualExcludedGeoTargetsTypes.join(', ') : '-',
       r.misconfigured,
     ]);
   });
 
-  range = geoTargetingResultSheet.getRange("A1:I1");
+  range = geoTargetingResultSheet.getRange('A1:I1');
 
-  range.setBackground("#D9D9D9");
+  range.setBackground('#D9D9D9');
   range.setBorder(
     null,
     null,
@@ -527,11 +527,11 @@ function writeToResultSheet() {
     null,
     null,
     null,
-    "#000000",
+    '#000000',
     SpreadsheetApp.BorderStyle.SOLID_THICK,
   );
 
-  range = geoTargetingResultSheet.getRange("A2:I999");
+  range = geoTargetingResultSheet.getRange('A2:I999');
   range.setBorder(
     null,
     null,
@@ -539,7 +539,7 @@ function writeToResultSheet() {
     null,
     true,
     null,
-    "#000000",
+    '#000000',
     SpreadsheetApp.BorderStyle.SOLID,
   );
 
@@ -551,18 +551,18 @@ function writeToResultSheet() {
 
   const budgetResultSheet = createOrClearSheet(budgetResultSheetName);
   budgetResultSheet.appendRow([
-    "Customer ID",
-    "Customer name",
-    "Campaign ID",
-    "Campaign name",
-    "Desired max daily budget",
-    "Current daily budget",
-    "Desired max total budget",
-    "Current total budget",
+    'Customer ID',
+    'Customer name',
+    'Campaign ID',
+    'Campaign name',
+    'Desired max daily budget',
+    'Current daily budget',
+    'Desired max total budget',
+    'Current total budget',
     // TODO: UNCOMMENT IF SOLVED
     // "Desired percentage over average historical budget",
     // "Current percentage over average historical budget",
-    "MISCONFIGURED",
+    'MISCONFIGURED',
   ]);
 
   budgetResult.forEach((r) => {
@@ -571,14 +571,14 @@ function writeToResultSheet() {
       r.accountName,
       r.campaignId,
       r.campaignName,
-      r.maxDailyBudget && r.maxDailyBudget !== 0 ? r.maxDailyBudget : "-",
+      r.maxDailyBudget && r.maxDailyBudget !== 0 ? r.maxDailyBudget : '-',
       r.actualDailyBudget && r.actualDailyBudget !== 0
         ? r.actualDailyBudget
-        : "-",
-      r.maxTotalBudget && r.maxTotalBudget !== 0 ? r.maxTotalBudget : "-",
+        : '-',
+      r.maxTotalBudget && r.maxTotalBudget !== 0 ? r.maxTotalBudget : '-',
       r.actualTotalBudget && r.actualTotalBudget !== 0
         ? r.actualTotalBudget
-        : "-",
+        : '-',
       // TODO: UNCOMMENT IF SOLVED
       // r.maxPercentageOverAverageHistoricalBudget && r.maxPercentageOverAverageHistoricalBudget !== 0 ? r.maxPercentageOverAverageHistoricalBudget : '-',
       // r.actualPercentageOverAverageHistoricalBudget && r.actualPercentageOverAverageHistoricalBudget !== 0 ? r.actualPercentageOverAverageHistoricalBudget : '-',
@@ -586,9 +586,9 @@ function writeToResultSheet() {
     ]);
   });
 
-  range = budgetResultSheet.getRange("A1:I1");
+  range = budgetResultSheet.getRange('A1:I1');
 
-  range.setBackground("#D9D9D9");
+  range.setBackground('#D9D9D9');
   range.setBorder(
     null,
     null,
@@ -596,11 +596,11 @@ function writeToResultSheet() {
     null,
     null,
     null,
-    "#000000",
+    '#000000',
     SpreadsheetApp.BorderStyle.SOLID_THICK,
   );
 
-  range = budgetResultSheet.getRange("A2:I999");
+  range = budgetResultSheet.getRange('A2:I999');
   range.setBorder(
     null,
     null,
@@ -608,7 +608,7 @@ function writeToResultSheet() {
     null,
     true,
     null,
-    "#000000",
+    '#000000',
     SpreadsheetApp.BorderStyle.SOLID,
   );
 
@@ -622,8 +622,8 @@ function writeToResultSheet() {
 
 function sendEmail() {
   if (geoTargetingMisconfigured.length > 0 || budgetMisconfigured.length > 0) {
-    console.log("Sending email...");
-    const subject = "[Warning] Google Ads campaigns misconfiguration";
+    console.log('Sending email...');
+    const subject = '[Warning] Google Ads campaigns misconfiguration';
     const body = createEmailBody();
 
     MailApp.sendEmail({
@@ -653,7 +653,7 @@ function createEmailBody() {
     `;
   }
   body += `
-    ${campaignsWerePaused ? "<h2>Campaigns have been PAUSED.<h2>" : "<h2>Campaigns have NOT been PAUSED.<h2>"}
+    ${campaignsWerePaused ? '<h2>Campaigns have been PAUSED.<h2>' : '<h2>Campaigns have NOT been PAUSED.<h2>'}
   </body>
   </html>
   `;
@@ -686,10 +686,10 @@ function createEmailGeoTargetingBodyTable() {
           <td>${c.accountName}</td>
           <td>${c.campaignId}</td>
           <td>${c.campaignName}</td>
-          <td>${c.desiredIncludedGeoTargetsNames.length !== 0 ? c.desiredIncludedGeoTargetsNames.join(", ") : "-"}</td>
-          <td>${c.actualIncludedGeoTargetsNames.length !== 0 ? c.actualIncludedGeoTargetsNames.join(", ") : "-"}</td>
-          <td>${c.desiredExcludedGeoTargetsNames.length !== 0 ? c.desiredExcludedGeoTargetsNames.join(", ") : "-"}</td>
-          <td>${c.actualExcludedGeoTargetsNames.length !== 0 ? c.actualExcludedGeoTargetsNames.join(", ") : "-"}</td>
+          <td>${c.desiredIncludedGeoTargetsNames.length !== 0 ? c.desiredIncludedGeoTargetsNames.join(', ') : '-'}</td>
+          <td>${c.actualIncludedGeoTargetsNames.length !== 0 ? c.actualIncludedGeoTargetsNames.join(', ') : '-'}</td>
+          <td>${c.desiredExcludedGeoTargetsNames.length !== 0 ? c.desiredExcludedGeoTargetsNames.join(', ') : '-'}</td>
+          <td>${c.actualExcludedGeoTargetsNames.length !== 0 ? c.actualExcludedGeoTargetsNames.join(', ') : '-'}</td>
         </tr>
     `;
   });
@@ -727,10 +727,10 @@ function createEmailBudgetBodyTable() {
           <td>${c.accountName}</td>
           <td>${c.campaignId}</td>
           <td>${c.campaignName}</td>
-          <td>${c.maxDailyBudget ? c.maxDailyBudget : "-"}</td>
-          <td>${c.actualDailyBudget ? c.actualDailyBudget : "-"}</td>
-          <td>${c.maxTotalBudget ? c.maxTotalBudget : "-"}</td>
-          <td>${c.actualTotalBudget ? c.actualTotalBudget : "-"}</td>
+          <td>${c.maxDailyBudget ? c.maxDailyBudget : '-'}</td>
+          <td>${c.actualDailyBudget ? c.actualDailyBudget : '-'}</td>
+          <td>${c.maxTotalBudget ? c.maxTotalBudget : '-'}</td>
+          <td>${c.actualTotalBudget ? c.actualTotalBudget : '-'}</td>
         </tr>
     `;
   });
@@ -744,7 +744,7 @@ function createEmailBudgetBodyTable() {
 }
 
 function pauseMisconfiguredCampaigns() {
-  console.log("Pausing campaigns...");
+  console.log('Pausing campaigns...');
 
   const campaignIdsToPause = [
     ...geoTargetingMisconfigured.map((c) => c.campaignId),
@@ -754,7 +754,7 @@ function pauseMisconfiguredCampaigns() {
   const campaignSelector = AdsApp.campaigns().withIds(campaignIdsToPause);
   const campaignIterator = campaignSelector.get();
   if (!campaignIterator.hasNext()) {
-    console.log("No campaigns found with the specified IDs.");
+    console.log('No campaigns found with the specified IDs.');
     return;
   }
 
@@ -801,14 +801,14 @@ function getCurrentAccount() {
 }
 
 function generateCsvBackup() {
-  console.log("Generating csv...");
+  console.log('Generating csv...');
 
   // Create CSV and Save to Drive
   const now = new Date();
   const formattedDateTime = Utilities.formatDate(
     now,
     AdsApp.currentAccount().getTimeZone(),
-    "yyyy-MM-dd_HH:mm",
+    'yyyy-MM-dd_HH:mm',
   );
   const csvData = createCsvData();
   const folder = DriveApp.getFolderById(folderId);
@@ -816,29 +816,29 @@ function generateCsvBackup() {
   var csvFileName = `google_ads_geo_targeting_results_${formattedDateTime}.csv`;
   var blob = Utilities.newBlob(
     csvData.geoTargetingCsvData,
-    "text/csv",
+    'text/csv',
     csvFileName,
   );
   folder.createFile(blob);
 
   csvFileName = `google_ads_budget_results_${formattedDateTime}.csv`;
-  blob = Utilities.newBlob(csvData.budgetCsvData, "text/csv", csvFileName);
+  blob = Utilities.newBlob(csvData.budgetCsvData, 'text/csv', csvFileName);
   folder.createFile(blob);
 }
 
 function createCsvData() {
   let geoTargetingCsvData =
-    "Customer ID," +
-    "Customer name," +
-    "Campaign ID," +
-    "Campaign name," +
-    "Desired included locations," +
-    "Current included locations," +
-    "Current included location types," +
-    "Desired excluded locations,";
-  +"Current excluded locations," +
-    "Current excluded locations types," +
-    "MISCONFIGURED\n";
+    'Customer ID,' +
+    'Customer name,' +
+    'Campaign ID,' +
+    'Campaign name,' +
+    'Desired included locations,' +
+    'Current included locations,' +
+    'Current included location types,' +
+    'Desired excluded locations,';
+  +'Current excluded locations,' +
+    'Current excluded locations types,' +
+    'MISCONFIGURED\n';
 
   geoTargetingResult.forEach((r) => {
     geoTargetingCsvData +=
@@ -846,28 +846,28 @@ function createCsvData() {
       `"${r.accountName}",` +
       `${r.campaignId},` +
       `"${r.campaignName}",` +
-      `"${r.desiredIncludedGeoTargetsNames.join(", ")}",` +
-      `"${r.actualIncludedGeoTargetsNames.join(", ")}",` +
-      `"${r.actualIncludedGeoTargetsTypes.join(", ")}",` +
-      `"${r.desiredExcludedGeoTargetsNames.join(", ")}",` +
-      `"${r.actualExcludedGeoTargetsNames.join(", ")}",` +
-      `"${r.actualExcludedGeoTargetsTypes.join(", ")}",`;
+      `"${r.desiredIncludedGeoTargetsNames.join(', ')}",` +
+      `"${r.actualIncludedGeoTargetsNames.join(', ')}",` +
+      `"${r.actualIncludedGeoTargetsTypes.join(', ')}",` +
+      `"${r.desiredExcludedGeoTargetsNames.join(', ')}",` +
+      `"${r.actualExcludedGeoTargetsNames.join(', ')}",` +
+      `"${r.actualExcludedGeoTargetsTypes.join(', ')}",`;
     +`"${r.misconfigured}"\n`;
   });
 
   let budgetCsvData =
-    "Customer ID," +
-    "Customer name," +
-    "Campaign ID," +
-    "Campaign name," +
-    "Desired max daily budget," +
-    "Current daily budget," +
-    "Desired max total budget," +
-    "Current total budget," +
+    'Customer ID,' +
+    'Customer name,' +
+    'Campaign ID,' +
+    'Campaign name,' +
+    'Desired max daily budget,' +
+    'Current daily budget,' +
+    'Desired max total budget,' +
+    'Current total budget,' +
     // TODO: UNCOMMENT IF SOLVED
     // + "Desired percentage over average historical budget,"
     // + "Current percentage over average historical budget,"
-    "MISCONFIGURED\n";
+    'MISCONFIGURED\n';
 
   budgetResult.forEach((r) => {
     budgetCsvData +=

@@ -24,17 +24,17 @@
 import {
   AssignedTargetingOption,
   InsertionOrder,
-} from "dv360_api/dv360_resources";
+} from 'dv360_api/dv360_resources';
 import {
   InsertionOrderBudgetSegment,
   TARGETING_TYPE,
-} from "dv360_api/dv360_types";
-import { equalTo, inRange, lessThanOrEqualTo } from "common/checks";
-import { Settings, Value, Values } from "common/types";
+} from 'dv360_api/dv360_types';
+import { equalTo, inRange, lessThanOrEqualTo } from 'common/checks';
+import { Settings, Value, Values } from 'common/types';
 
-import { getDate, newRule } from "./client";
-import { DailyBudget } from "./rule_types";
-import { ClientInterface, RuleGranularity } from "./types";
+import { getDate, newRule } from './client';
+import { DailyBudget } from './rule_types';
+import { ClientInterface, RuleGranularity } from './types';
 
 const DAY_DENOMINATOR = 1000 * 24 * 60 * 60;
 
@@ -69,7 +69,7 @@ type AbridgedCheck = (
  * Must have only US targets, and must contain at least one geo-target, to pass.
  */
 export const geoTargetRule = newRule({
-  name: "Geo Targeting",
+  name: 'Geo Targeting',
   description: `Checks to see if a comma separated list of geo targets is set on
     a campaign. If in the "Geo Targets" list, an anomaly will be registered if
     the geo target is not set in the campaign target settings. Likewise, if the
@@ -78,19 +78,19 @@ export const geoTargetRule = newRule({
     must be partial matches of canonical names in
     <a href="https://developers.google.com/google-ads/api/reference/data/geotargets">this list.</a>`,
   valueFormat: {
-    label: "Geo Targets Set?",
+    label: 'Geo Targets Set?',
   },
   helper: `=HYPERLINK(
     "https://developers.google.com/google-ads/api/reference/data/geotargets", "Separate values with commas. Partial match any canonical name linked.")`,
   params: {
     geotargeting: {
-      label: "Geo Targets",
+      label: 'Geo Targets',
       validationFormulas: [
         '=REGEXMATCH(INDIRECT(ADDRESS(ROW(), COLUMN())), "^[a-zA-Z ]+(,\\s*[a-zA-Z ]+)?$")',
       ],
     },
     excludes: {
-      label: "Excluded Geo Targets",
+      label: 'Excluded Geo Targets',
       validationFormulas: [
         '=REGEXMATCH(INDIRECT(ADDRESS(ROW(), COLUMN())), "^[a-zA-Z ]+(,\\s*[a-zA-Z ]+)?$")',
       ],
@@ -98,8 +98,8 @@ export const geoTargetRule = newRule({
   },
   granularity: RuleGranularity.CAMPAIGN,
   defaults: {
-    geotargeting: "United States",
-    excludes: "",
+    geotargeting: 'United States',
+    excludes: '',
   },
   async callback() {
     const values: Values = {};
@@ -123,16 +123,16 @@ export const geoTargetRule = newRule({
         function hasAllowedGeo(targetingOption: AssignedTargetingOption) {
           const displayName = targetingOption.getDisplayName();
           if (!displayName) {
-            throw new Error("Missing display name");
+            throw new Error('Missing display name');
           }
           const geoTargets = campaignSettings.geotargeting
-            .split(",")
+            .split(',')
             .map((country: string) => country.trim());
           const excludes = campaignSettings.excludes
-            .split(",")
+            .split(',')
             .map((country: string) => country.trim());
 
-          if (targetingOption.getTargetingDetails()["negative"]) {
+          if (targetingOption.getTargetingDetails()['negative']) {
             return !excludes.some(
               (geoTarget: string) => displayName.indexOf(geoTarget) >= 0,
             );
@@ -152,10 +152,10 @@ export const geoTargetRule = newRule({
         targetingOptionsLength += targetingOptions.length;
       });
       values[id] = equalTo(1, hasOnlyValidGeo ? 1 : 0, {
-        "Advertiser ID": advertiserId,
-        "Campaign Name": displayName,
-        "Campaign ID": id,
-        "Number of Geos": String(targetingOptionsLength),
+        'Advertiser ID': advertiserId,
+        'Campaign Name': displayName,
+        'Campaign ID': id,
+        'Number of Geos': String(targetingOptionsLength),
       });
     }
 
@@ -169,28 +169,28 @@ export const geoTargetRule = newRule({
  * Compares DBM spend against DV360 budgets over a flight duration.
  */
 export const budgetPacingPercentageRule = newRule({
-  name: "Budget Pacing by Percent Ahead",
+  name: 'Budget Pacing by Percent Ahead',
   description: `For an IO, checks to see if each running budget segment is
     pacing above or behind using the following equation:
     (Current Spend / Time Elapsed from Flight Start) / (Budget Spend / Total Planned Flight Time) - 1.
     If spend is pacing behind at 85% of plan, then the total will be -0.15. If
     the spend is pacing at 115% of plan, then the total will be 1.15.`,
   valueFormat: {
-    label: "% Ahead of Budget",
-    numberFormat: "0.00%",
+    label: '% Ahead of Budget',
+    numberFormat: '0.00%',
   },
   granularity: RuleGranularity.INSERTION_ORDER,
   params: {
     min: {
-      label: "Min. Percent Ahead/Behind",
+      label: 'Min. Percent Ahead/Behind',
       validationFormulas: RULES.LESS_THAN_MAX,
     },
     max: {
-      label: "Max. Percent Ahead/Behind",
+      label: 'Max. Percent Ahead/Behind',
       validationFormulas: RULES.GREATER_THAN_MIN,
     },
   },
-  defaults: { min: "0", max: "0.5" },
+  defaults: { min: '0', max: '0.5' },
   async callback() {
     const rules: { [campaignId: string]: AbridgedCheck } = {};
     const values: Values = {};
@@ -222,7 +222,7 @@ export const budgetPacingPercentageRule = newRule({
         }
         if (
           insertionOrder.getInsertionOrderBudget().budgetUnit !==
-          "BUDGET_UNIT_CURRENCY"
+          'BUDGET_UNIT_CURRENCY'
         ) {
           continue;
         }
@@ -276,23 +276,23 @@ export const budgetPacingPercentageRule = newRule({
       const spendToTimeElapsed = spend / (timeElapsed / DAY_DENOMINATOR);
       const percent = spendToTimeElapsed / budgetToFlightDuration - 1;
       values[insertionOrderId] = rules[insertionOrderId](percent, {
-        "Insertion Order ID": insertionOrderId,
-        "Display Name": displayName,
-        "Campaign ID": campaignId,
-        "Flight Start": startDate.toDateString(),
-        "Flight End": endDate.toDateString(),
+        'Insertion Order ID': insertionOrderId,
+        'Display Name': displayName,
+        'Campaign ID': campaignId,
+        'Flight Start': startDate.toDateString(),
+        'Flight End': endDate.toDateString(),
         Spend: `$${spend.toString()}`,
         Budget: `$${budget.toString()}`,
         Pacing: `${(spendToTimeElapsed / budgetToFlightDuration) * 100}%`,
-        "Days Elapsed": (timeElapsed / DAY_DENOMINATOR).toString(),
-        "Flight Duration": (flightDuration / DAY_DENOMINATOR).toString(),
+        'Days Elapsed': (timeElapsed / DAY_DENOMINATOR).toString(),
+        'Flight Duration': (flightDuration / DAY_DENOMINATOR).toString(),
       });
     }
     return { values };
   },
 });
 
-function getPacingVariables<P extends Record<"min" | "max", string>>(
+function getPacingVariables<P extends Record<'min' | 'max', string>>(
   client: ClientInterface,
   insertionOrder: InsertionOrder,
   settings: Settings<P>,
@@ -316,7 +316,7 @@ function getPacingVariables<P extends Record<"min" | "max", string>>(
   }
   const displayName = insertionOrder.getDisplayName();
   if (!displayName) {
-    throw new Error("Missing ID or Display Name for Insertion Order.");
+    throw new Error('Missing ID or Display Name for Insertion Order.');
   }
   return { insertionOrderId, displayName };
 }
@@ -327,7 +327,7 @@ function getPacingVariables<P extends Record<"min" | "max", string>>(
  * Compares DBM spend against DV360 budgets over a flight duration.
  */
 export const budgetPacingDaysAheadRule = newRule({
-  name: "Budget Pacing by Days Ahead/Behind",
+  name: 'Budget Pacing by Days Ahead/Behind',
   description: `<p>Counts the number of days ahead or behind an IO segment is vs.
     plan. It uses the following formula: <code>((Budget / Plan Days) / 
     (Spend / Time Elapsed Since Duration Start)) * Time Elapsed Since Duration Start 
@@ -336,22 +336,22 @@ export const budgetPacingDaysAheadRule = newRule({
     day one, then <code>(50/1) / (100/10) * 1 - 1 = 50 / 10 * 1 - 1 = 5 * 1 - 1 
     = 4</code> days ahead of budget.</p>`,
   valueFormat: {
-    label: "Days Ahead/Behind",
-    numberFormat: "0.0",
+    label: 'Days Ahead/Behind',
+    numberFormat: '0.0',
   },
   params: {
     min: {
-      label: "Min. Days Ahead/Behind (+/-)",
+      label: 'Min. Days Ahead/Behind (+/-)',
       validationFormulas: RULES.LESS_THAN_MAX,
     },
     max: {
-      label: "Max. Days Ahead/Behind (+/-)",
+      label: 'Max. Days Ahead/Behind (+/-)',
       validationFormulas: RULES.GREATER_THAN_MIN,
     },
   },
   defaults: {
-    min: "-1",
-    max: "1",
+    min: '-1',
+    max: '1',
   },
   granularity: RuleGranularity.INSERTION_ORDER,
   async callback() {
@@ -371,7 +371,7 @@ export const budgetPacingDaysAheadRule = newRule({
     for (const insertionOrder of this.client.getAllInsertionOrders()) {
       if (
         insertionOrder.getInsertionOrderBudget().budgetUnit !==
-        "BUDGET_UNIT_CURRENCY"
+        'BUDGET_UNIT_CURRENCY'
       ) {
         continue;
       }
@@ -439,11 +439,11 @@ export const budgetPacingDaysAheadRule = newRule({
       const days =
         (actualSpendPerDay / budgetPerDay) * daysToToday - daysToToday;
       values[insertionOrderId] = rules[insertionOrderId](days, {
-        "Insertion Order ID": insertionOrderId,
-        "Display Name": displayName,
-        "Campaign ID": campaignId,
-        "Flight Start": startDate.toDateString(),
-        "Flight End": endDate.toDateString(),
+        'Insertion Order ID': insertionOrderId,
+        'Display Name': displayName,
+        'Campaign ID': campaignId,
+        'Flight Start': startDate.toDateString(),
+        'Flight End': endDate.toDateString(),
         Spend: spend.toString(),
         Budget: budget.toString(),
       });
@@ -456,27 +456,27 @@ export const budgetPacingDaysAheadRule = newRule({
  *  Checks if daily spend is outside the specified range `min` and `max`.
  */
 export const dailyBudgetRule = newRule({
-  name: "Budget Per Day",
+  name: 'Budget Per Day',
   description: `The expected daily budget of a campaign. This is a pre-launch
     rule. It's used to ensure that the set budget and flight have the desired
     daily output, ensuring there are no costly flight duration/budget mismatches.`,
   valueFormat: {
-    label: "Daily Budget",
-    numberFormat: "0.00",
+    label: 'Daily Budget',
+    numberFormat: '0.00',
   },
   params: {
     min: {
-      label: "Min. Daily Budget",
+      label: 'Min. Daily Budget',
       validationFormulas: RULES.LESS_THAN_MAX,
     },
     max: {
-      label: "Max. Daily Budget",
+      label: 'Max. Daily Budget',
       validationFormulas: RULES.GREATER_THAN_MIN,
     },
   },
   defaults: {
-    min: "0",
-    max: "1000000",
+    min: '0',
+    max: '1000000',
   },
   granularity: RuleGranularity.INSERTION_ORDER,
   async callback() {
@@ -487,7 +487,7 @@ export const dailyBudgetRule = newRule({
       const campaignSettings = this.settings.getOrDefault(insertionOrderId);
       const displayName = insertionOrder.getDisplayName();
       if (!displayName) {
-        throw new Error("Missing ID or Display Name for Insertion Order.");
+        throw new Error('Missing ID or Display Name for Insertion Order.');
       }
       for (const dailyBudgets of checkPlannedDailyBudget(
         this.client,
@@ -500,10 +500,10 @@ export const dailyBudgetRule = newRule({
           },
           dailyBudgets.dailyBudget,
           {
-            "Insertion Order ID": insertionOrderId,
-            "Display Name": displayName,
+            'Insertion Order ID': insertionOrderId,
+            'Display Name': displayName,
             Budget: dailyBudgets.budget.toString(),
-            "Flight Duration": dailyBudgets.flightDurationDays.toString(),
+            'Flight Duration': dailyBudgets.flightDurationDays.toString(),
           },
         );
       }
@@ -523,7 +523,7 @@ function checkPlannedDailyBudget(
   for (const budgetSegment of insertionOrder.getInsertionOrderBudgetSegments()) {
     if (
       insertionOrder.getInsertionOrderBudget().budgetUnit !==
-      "BUDGET_UNIT_CURRENCY"
+      'BUDGET_UNIT_CURRENCY'
     ) {
       continue;
     }
@@ -573,26 +573,26 @@ function calculateOuterBounds(
  * Compares DBM spend against DV360 budgets over a flight duration.
  */
 export const impressionsByGeoTarget = newRule({
-  name: "Impressions by Geo Target",
+  name: 'Impressions by Geo Target',
   description: `For any insertion order, ensures that there is a maximum of 
     X% impressions from outside of the country (2-digit country code
     from <a href="https://developers.google.com/google-ads/api/reference/data/geotargets">
     This list</a>)`,
   valueFormat: {
-    label: "% Invalid Impressions",
-    numberFormat: "0%",
+    label: '% Invalid Impressions',
+    numberFormat: '0%',
   },
   params: {
-    countries: { label: "Allowed Countries (Comma Separated)" },
+    countries: { label: 'Allowed Countries (Comma Separated)' },
     maxOutside: {
-      label: "Max. Percent Outside Geos",
+      label: 'Max. Percent Outside Geos',
       validationFormulas: RULES.GREATER_THAN_MIN,
     },
   },
   granularity: RuleGranularity.INSERTION_ORDER,
   helper: `=HYPERLINK(
     "https://developers.google.com/google-ads/api/reference/data/geotargets", "Use the 2-digit country codes found in this report.")`,
-  defaults: { countries: "US", maxOutside: "0.01" },
+  defaults: { countries: 'US', maxOutside: '0.01' },
   async callback() {
     const values: Values = {};
 
@@ -613,7 +613,7 @@ export const impressionsByGeoTarget = newRule({
       }
       result[insertionOrder.getId()!] = {
         campaignId: insertionOrder.getCampaignId(),
-        displayName: insertionOrder.getDisplayName() ?? "",
+        displayName: insertionOrder.getDisplayName() ?? '',
       };
     }
 
@@ -637,16 +637,16 @@ export const impressionsByGeoTarget = newRule({
       const impressions = impressionReport.getImpressionPercentOutsideOfGeos(
         insertionOrderId,
         campaignSettings.countries
-          .split(",")
+          .split(',')
           .map((country: string) => country.trim()),
       );
       values[insertionOrderId] = lessThanOrEqualTo(
         Number(campaignSettings.maxOutside),
         impressions,
         {
-          "Insertion Order ID": insertionOrderId,
-          "Display Name": displayName,
-          "Campaign ID": campaignId,
+          'Insertion Order ID': insertionOrderId,
+          'Display Name': displayName,
+          'Campaign ID': campaignId,
         },
       );
     }

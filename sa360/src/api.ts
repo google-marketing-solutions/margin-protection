@@ -21,21 +21,21 @@
 
 // g3-format-prettier
 
-import { HELPERS } from "common/sheet_helpers";
-import { RecordInfo } from "common/types";
-import { SearchAdsTimeRange } from "sa360/src/types";
-import { ClientArgs } from "./types";
+import { HELPERS } from 'common/sheet_helpers';
+import { RecordInfo } from 'common/types';
+import { SearchAdsTimeRange } from 'sa360/src/types';
+import { ClientArgs } from './types';
 import Payload = GoogleAppsScript.URL_Fetch.Payload;
 
 /**
  * The API version, exposed for testing.
  */
-export const SA360_API_VERSION = "v2";
+export const SA360_API_VERSION = 'v2';
 
 /**
  * The API URL, exposed for testing.
  */
-export const SA360_URL = "www.googleapis.com/doubleclicksearch";
+export const SA360_URL = 'www.googleapis.com/doubleclicksearch';
 
 const ONE_MINUTE = 60 * 1000;
 const ONE_HOUR = 60 * ONE_MINUTE;
@@ -45,51 +45,51 @@ const ONE_DAY = ONE_HOUR * 24;
  * Campaign report columns.
  */
 export const campaignColumns = [
-  "agency",
-  "agencyId",
-  "advertiser",
-  "advertiserId",
-  "campaignId",
-  "campaign",
-  "campaignStatus",
+  'agency',
+  'agencyId',
+  'advertiser',
+  'advertiserId',
+  'campaignId',
+  'campaign',
+  'campaignStatus',
 ] as const;
 
 /**
  * Ad Group report columns.
  */
 export const adGroupColumns = [
-  "agency",
-  "agencyId",
-  "advertiser",
-  "advertiserId",
-  "campaignId",
-  "adGroupId",
-  "adGroup",
-  "adGroupStatus",
+  'agency',
+  'agencyId',
+  'advertiser',
+  'advertiserId',
+  'campaignId',
+  'adGroupId',
+  'adGroup',
+  'adGroupStatus',
 ] as const;
 
 /**
  * Ad Group Target report columns.
  */
 export const adGroupTargetColumns = [
-  "agency",
-  "agencyId",
-  "advertiser",
-  "advertiserId",
-  "adGroupId",
-  "campaignId",
-  "genderTargetGenderType",
-  "ageTargetAgeRange",
-  "engineRemarketingList",
+  'agency',
+  'agencyId',
+  'advertiser',
+  'advertiserId',
+  'adGroupId',
+  'campaignId',
+  'genderTargetGenderType',
+  'ageTargetAgeRange',
+  'engineRemarketingList',
 ] as const;
 
 export const campaignTargetColumns = [
-  "agency",
-  "agencyId",
-  "advertiser",
-  "advertiserId",
-  "campaignId",
-  "locationTargetName",
+  'agency',
+  'agencyId',
+  'advertiser',
+  'advertiserId',
+  'campaignId',
+  'locationTargetName',
 ] as const;
 
 type AllowedColumns =
@@ -220,7 +220,7 @@ interface Filter {
     startDate?: string;
     endDate?: string;
   };
-  operator: "equals" | "greaterThan" | "lessThan";
+  operator: 'equals' | 'greaterThan' | 'lessThan';
   values: Array<string | number>;
 }
 
@@ -245,7 +245,7 @@ export abstract class ReportBuilder<Columns extends AllowedColumns> {
    */
   apiParams({
     payload,
-    contentType = "application/json",
+    contentType = 'application/json',
     headers = {},
   }: {
     payload?: Payload;
@@ -258,7 +258,7 @@ export abstract class ReportBuilder<Columns extends AllowedColumns> {
       contentType,
       headers: {
         Authorization: `Bearer ${token}`,
-        Accept: "application/json",
+        Accept: 'application/json',
         ...headers,
       },
     };
@@ -280,7 +280,7 @@ export abstract class ReportBuilder<Columns extends AllowedColumns> {
       }
     }
 
-    throw new Error("Failed to fetch a report after five tries.");
+    throw new Error('Failed to fetch a report after five tries.');
   }
 
   async fetchReportUrl(
@@ -308,13 +308,13 @@ export abstract class ReportBuilder<Columns extends AllowedColumns> {
           isReportReady: boolean;
         };
         if (response.isReportReady) {
-          console.info("done");
+          console.info('done');
           resolve(response.files);
           return;
         }
-        console.info("Report not ready.");
+        console.info('Report not ready.');
       }
-      fail("Failed to get report");
+      fail('Failed to get report');
     });
   }
 
@@ -351,7 +351,7 @@ export abstract class ReportBuilder<Columns extends AllowedColumns> {
     const reports = urls.reduce(
       (prev, { url, byteCount }) => {
         const byteCountInt = Number(byteCount);
-        let partialRow = "";
+        let partialRow = '';
         let headers: Array<ColumnType<Columns>> | undefined;
         const batches = Math.ceil(Number(byteCountInt) / ReportBuilder.step);
         for (let i = 0; i < batches; i++) {
@@ -359,7 +359,7 @@ export abstract class ReportBuilder<Columns extends AllowedColumns> {
           const report = fetch(
             url,
             this.apiParams({
-              contentType: "text/plain",
+              contentType: 'text/plain',
               headers: {
                 Range: `bytes=${ReportBuilder.step * i}-${
                   Math.min(byteCountInt, ReportBuilder.step * (i + 1)) - 1
@@ -368,24 +368,24 @@ export abstract class ReportBuilder<Columns extends AllowedColumns> {
             }),
           )
             .getContentText()
-            .split("\n");
+            .split('\n');
           // get the last row which will be blank at the end of the file.
 
-          report[0] = partialRow + (report[0] ?? "");
+          report[0] = partialRow + (report[0] ?? '');
           partialRow = report.pop() as string;
           if (!report.length) {
             report[0] = partialRow;
             continue;
           }
           if (!headers) {
-            headers = report.shift()!.split(",") as Array<ColumnType<Columns>>;
+            headers = report.shift()!.split(',') as Array<ColumnType<Columns>>;
           }
 
           const indexMap = Object.fromEntries(
             headers.map((columnName, idx) => [columnName, idx]),
           ) as { [Property in ColumnType<Columns>]: number };
           for (const row of report) {
-            const columns: string[] = row.split(",");
+            const columns: string[] = row.split(',');
             const id = columns[this.getKey(indexMap)];
             this.mutateRow(prev, id, headers, columns);
           }
@@ -423,15 +423,15 @@ export abstract class ReportBuilder<Columns extends AllowedColumns> {
       },
       reportType: this.getReportType(),
       columns: this.getColumns().map((columnName) => ({ columnName })),
-      statisticsCurrency: "agency",
+      statisticsCurrency: 'agency',
       ...{ timeRange: this.getTimeRange() },
       maxRowsPerFile: 100_000_000,
-      downloadFormat: "csv",
+      downloadFormat: 'csv',
       ...{ filters },
     });
     const response = JSON.parse(
       fetch(
-        this.getQueryUrl("reports"),
+        this.getQueryUrl('reports'),
         this.apiParams({ payload }),
       ).getContentText(),
     ) as { id: string; byteCount: number };
@@ -470,7 +470,7 @@ class CampaignReportBuilder extends ReportBuilder<typeof campaignColumns> {
   }
 
   protected override getReportType(): string {
-    return "campaign";
+    return 'campaign';
   }
 }
 
@@ -486,15 +486,15 @@ class AdGroupReportBuilder extends ReportBuilder<typeof adGroupColumns> {
   }
 
   protected override getReportType(): string {
-    return "adGroup";
+    return 'adGroup';
   }
 
   protected override getFilters() {
     return [
       {
-        column: { columnName: "campaignStatus" },
-        operator: "equals" as const,
-        values: ["Active"],
+        column: { columnName: 'campaignStatus' },
+        operator: 'equals' as const,
+        values: ['Active'],
       },
     ];
   }
@@ -519,15 +519,15 @@ export class AdGroupTargetReportBuilder extends ReportBuilder<
   }
 
   protected override getReportType() {
-    return "adGroupTarget";
+    return 'adGroupTarget';
   }
 
   protected override getFilters() {
     return [
       {
-        column: { columnName: "campaignStatus" },
-        operator: "equals" as const,
-        values: ["Active"],
+        column: { columnName: 'campaignStatus' },
+        operator: 'equals' as const,
+        values: ['Active'],
       },
     ];
   }
@@ -547,12 +547,12 @@ export class AdGroupTargetReportBuilder extends ReportBuilder<
     for (const [i, column] of filteredColumns) {
       if (
         [
-          "advertiserId",
-          "advertiser",
-          "agencyId",
-          "agency",
-          "adGroupId",
-          "campaignId",
+          'advertiserId',
+          'advertiser',
+          'agencyId',
+          'agency',
+          'adGroupId',
+          'campaignId',
         ].indexOf(headers[i]) >= 0
       ) {
         row[headers[i]] = column;
@@ -595,7 +595,7 @@ export class CampaignTargetReportBuilder extends ReportBuilder<
   }
 
   protected getReportType(): string {
-    return "campaignTarget";
+    return 'campaignTarget';
   }
 
   protected override mutateRow(
@@ -613,11 +613,11 @@ export class CampaignTargetReportBuilder extends ReportBuilder<
     for (const [i, column] of filteredColumns) {
       if (
         [
-          "advertiserId",
-          "advertiser",
-          "agencyId",
-          "agency",
-          "campaignId",
+          'advertiserId',
+          'advertiser',
+          'agencyId',
+          'agency',
+          'campaignId',
         ].indexOf(headers[i]) >= 0
       ) {
         row[headers[i]] = column;

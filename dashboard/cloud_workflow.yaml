@@ -28,10 +28,10 @@ main:
     - init:
         assign:
           - project_id: ${sys.get_env("GOOGLE_CLOUD_PROJECT_ID")}
-          - dataset_id: "performance_monitor"
+          - dataset_id: 'performance_monitor'
           - drive_id: ${args.drive_id}
           - cloud_function_url: ${args.cloud_function_url}
-          - after: ""
+          - after: ''
     - create_dataset:
         call: create_dataset
         args:
@@ -47,7 +47,7 @@ main:
         switch:
           - condition: ${date == ""}
             assign:
-              - after: ""
+              - after: ''
           - condition: ${date != ""}
             assign:
               - after: ${" and createdTime >= \"" + date + "\""}
@@ -72,14 +72,14 @@ get_last_report_date:
         assign:
           - project_id: ${project_id}
           - dataset_id: ${dataset_id}
-          - items: { rows: [f: [{ v: "" }]] }
+          - items: { rows: [f: [{ v: '' }]] }
     - get_last_report_date:
         try:
           call: googleapis.bigquery.v2.jobs.query
           args:
             projectId: ${project_id}
             body:
-              kind: "query"
+              kind: 'query'
               defaultDataset:
                 datasetId: ${dataset_id}
                 projectId: ${project_id}
@@ -91,8 +91,8 @@ get_last_report_date:
           steps:
             - known_errors:
                 switch:
-                  - condition: "${e.code == 404}"
-                    return: ""
+                  - condition: '${e.code == 404}'
+                    return: ''
             - unhandled_exception:
                 raise: ${e}
     - output:
@@ -107,7 +107,7 @@ get_last_report_date:
     - done_happy:
         return: ${items.rows[0].f[0].v}
     - done_sad:
-        return: ""
+        return: ''
 
 retry_logic:
   params: [e]
@@ -127,7 +127,7 @@ load_files_into_bigquery:
       dataset_id,
       cloud_function_url,
       after,
-      page_token: "",
+      page_token: '',
     ]
   steps:
     - init:
@@ -149,7 +149,7 @@ load_files_into_bigquery:
               orderBy: createdTime
               pageSize: 200
               q: '${q + " " + after}'
-              pageToken: "${page_token}"
+              pageToken: '${page_token}'
             result: files
     - add_to_bigquery:
         call: add_files_to_bigquery
@@ -166,13 +166,13 @@ load_files_into_bigquery:
           steps:
             - add_to_map_2:
                 assign:
-                  - table_map[table]: ""
+                  - table_map[table]: ''
     - clear_memory:
         assign:
           - files:
     - next_page:
         switch:
-          - condition: "${files == null}"
+          - condition: '${files == null}'
             next: done
           - condition: '${files.body.nextPageToken != ""}'
             call: load_files_into_bigquery
@@ -193,7 +193,7 @@ load_files_into_bigquery:
           steps:
             - add_to_map:
                 assign:
-                  - table_map[table_key]: ""
+                  - table_map[table_key]: ''
     - done:
         return: ${table_map}
 
@@ -208,7 +208,7 @@ drive_query:
               pageSize: ${pageSize}
     - add_page_token:
         switch:
-          - condition: "${pageToken != null}"
+          - condition: '${pageToken != null}'
             assign:
               - query.pageToken: ${pageToken}
     - make_request:
@@ -253,13 +253,13 @@ create_dataset:
               datasetReference:
                 projectId: ${project_id}
                 datasetId: ${dataset_id}
-              access[].role: "roles/bigquery.dataViewer"
+              access[].role: 'roles/bigquery.dataViewer'
         except:
           as: e
           steps:
             - known_errors:
                 switch:
                   - condition: '${"HttpError" in e.tags}'
-                    return: "Already created"
+                    return: 'Already created'
             - fail:
                 raise: ${e}

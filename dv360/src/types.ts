@@ -26,11 +26,11 @@ import {
   AssignedTargetingOptions,
   Campaigns,
   InsertionOrders,
-} from "dv360_api/dv360";
-import { InsertionOrder } from "dv360_api/dv360_resources";
-import { BaseClientArgs, BaseClientInterface } from "common/types";
+} from 'dv360_api/dv360';
+import { InsertionOrder } from 'dv360_api/dv360_resources';
+import { BaseClientArgs, BaseClientInterface } from 'common/types';
 
-import { ReportConstructor } from "./client";
+import { ReportConstructor } from './client';
 
 /**
  * Defines the type of ID set on the client.
@@ -107,6 +107,6 @@ export interface ClientArgs extends BaseClientArgs {
  * Used to determine which setting page a rule falls into.
  */
 export enum RuleGranularity {
-  CAMPAIGN = "Campaign",
-  INSERTION_ORDER = "Insertion Order",
+  CAMPAIGN = 'Campaign',
+  INSERTION_ORDER = 'Insertion Order',
 }

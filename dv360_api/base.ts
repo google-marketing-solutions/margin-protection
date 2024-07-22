@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-import { ObjectUtil, UriUtil } from "./utils";
+import { ObjectUtil, UriUtil } from './utils';
 
 /**
  * DV360 API resources contain page tokens.
@@ -78,14 +78,14 @@ export class BaseApiClient {
       pageToken = result.nextPageToken;
 
       if (pageToken) {
-        if (requestParams && requestParams["payload"]) {
+        if (requestParams && requestParams['payload']) {
           const payload = JSON.parse(
-            String(requestParams["payload"]),
+            String(requestParams['payload']),
           ) as PagedDisplayVideoResponse;
           payload.pageToken = pageToken;
-          requestParams["payload"] = JSON.stringify(payload);
+          requestParams['payload'] = JSON.stringify(payload);
         } else {
-          url = UriUtil.modifyUrlQueryString(url, "pageToken", pageToken);
+          url = UriUtil.modifyUrlQueryString(url, 'pageToken', pageToken);
         }
       }
       pageCount++;
@@ -137,8 +137,8 @@ export class BaseApiClient {
         );
       } else {
         console.warn(
-          "Retry on failure not supported or all retries " +
-            "have been exhausted... Failing!",
+          'Retry on failure not supported or all retries ' +
+            'have been exhausted... Failing!',
         );
         throw e;
       }
@@ -172,8 +172,8 @@ export class BaseApiClient {
   buildApiParams(requestParams: Params | null): Params {
     const token = ScriptApp.getOAuthToken();
     const baseParams: Params = {
-      contentType: "application/json",
-      headers: { Authorization: `Bearer ${token}`, Accept: "application/json" },
+      contentType: 'application/json',
+      headers: { Authorization: `Bearer ${token}`, Accept: 'application/json' },
     };
     return ObjectUtil.extend(baseParams, requestParams || {});
   }

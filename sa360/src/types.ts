@@ -21,16 +21,16 @@
 
 // g3-format-prettier
 
-import * as AdTypes from "common/ads_api_types";
-import { AdsClientArgs } from "common/ads_api_types";
+import * as AdTypes from 'common/ads_api_types';
+import { AdsClientArgs } from 'common/ads_api_types';
 
-import { BaseClientArgs, BaseClientInterface, RecordInfo } from "common/types";
+import { BaseClientArgs, BaseClientInterface, RecordInfo } from 'common/types';
 import {
   AdGroupReport,
   AdGroupTargetReport,
   CampaignReport,
   CampaignTargetReport,
-} from "sa360/src/api";
+} from 'sa360/src/api';
 
 /**
  * Extends the base client interface with SA360-specific features.
@@ -110,8 +110,8 @@ export interface ClientArgs extends BaseClientArgs {
  * SA360 granularity options.
  */
 export enum RuleGranularity {
-  CAMPAIGN = "Campaign",
-  AD_GROUP = "Ad Group",
+  CAMPAIGN = 'Campaign',
+  AD_GROUP = 'Ad Group',
 }
 
 interface ChangedAttributesSinceTimestamp {

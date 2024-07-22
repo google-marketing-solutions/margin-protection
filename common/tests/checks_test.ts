@@ -15,44 +15,44 @@
  * limitations under the License.
  */
 
-import { equalTo, inRange, lessThanOrEqualTo } from "../checks";
+import { equalTo, inRange, lessThanOrEqualTo } from '../checks';
 
-describe("checks test", () => {
-  describe("inRange", () => {
+describe('checks test', () => {
+  describe('inRange', () => {
     const test = { min: 1, max: 5 };
-    it("handles values in range", () => {
+    it('handles values in range', () => {
       [1, 2, 3, 4, 5].forEach((i) =>
         expect(inRange(test, i, {}).anomalous).toBeFalse(),
       );
     });
 
-    it("errors on handles out of range", () => {
+    it('errors on handles out of range', () => {
       [0, 6].forEach((i) => expect(inRange(test, i, {}).anomalous).toBeTrue());
     });
   });
 
-  describe("equalTo", () => {
+  describe('equalTo', () => {
     const test = 2;
-    it("happy path", () => {
+    it('happy path', () => {
       expect(equalTo(test, 2, {}).anomalous).toBeFalse();
     });
 
-    it("sad path", () => {
-      [1, "2", 2.1, 3].forEach((i) =>
+    it('sad path', () => {
+      [1, '2', 2.1, 3].forEach((i) =>
         expect(equalTo(test, i, {}).anomalous).toBeTrue(),
       );
     });
   });
 
-  describe("lessThanOrEqualTo", () => {
+  describe('lessThanOrEqualTo', () => {
     const test = 2;
-    it("happy path", () => {
+    it('happy path', () => {
       [0, 1, 1.9, 2].forEach((i) =>
         expect(lessThanOrEqualTo(test, i, {}).anomalous).toBeFalse(),
       );
     });
 
-    it("sad path", () => {
+    it('sad path', () => {
       [2.1, 3].forEach((i) =>
         expect(lessThanOrEqualTo(test, i, {}).anomalous).toBeTrue(),
       );

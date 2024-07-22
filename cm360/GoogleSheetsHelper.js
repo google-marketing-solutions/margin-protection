@@ -115,8 +115,8 @@ function addConditionalFormattingToSheet(sheetName, rangeToFormat, alertRules) {
   // Rules might have different color codes
   alertRules.forEach((r) => {
     const rule = SpreadsheetApp.newConditionalFormatRule()
-      .whenTextEqualTo(r["ruleType"])
-      .setBackground(r["color"])
+      .whenTextEqualTo(r['ruleType'])
+      .setBackground(r['color'])
       .setRanges([range])
       .build();
     rules.push(rule);
@@ -154,8 +154,8 @@ function formatTableInSheet(sheetName, headersColor, data) {
   let sheet = spreadsheet.getSheetByName(sheetName);
   let headerRange = sheet.getRange(1, 1, 1, headers.length);
   headerRange.setBackground(headersColor);
-  headerRange.setFontColor("white");
-  headerRange.setFontWeight("bold");
+  headerRange.setFontColor('white');
+  headerRange.setFontWeight('bold');
   let dataRange = sheet.getRange(2, 1, data.length, data[0].length);
   let bandings = sheet.getBandings();
   if (bandings && bandings.length === 0) {

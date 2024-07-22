@@ -21,12 +21,12 @@ import {
   AssignedTargetingOptions,
   Campaigns,
   InsertionOrders,
-} from "dv360_api/dv360";
+} from 'dv360_api/dv360';
 import {
   AssignedTargetingOption,
   Campaign,
   InsertionOrder,
-} from "dv360_api/dv360_resources";
+} from 'dv360_api/dv360_resources';
 import {
   FrequencyCap,
   InsertionOrderBudget,
@@ -34,13 +34,13 @@ import {
   PACING_PERIOD,
   Pacing,
   PerformanceGoal,
-} from "dv360_api/dv360_types";
-import { FilterExpression } from "dv360_api/utils";
-import { FakePropertyStore } from "common/test_helpers/mock_apps_script";
+} from 'dv360_api/dv360_types';
+import { FilterExpression } from 'dv360_api/utils';
+import { FakePropertyStore } from 'common/test_helpers/mock_apps_script';
 
-import { BudgetReport, ImpressionReport } from "../api";
-import { Client } from "../client";
-import { ClientArgs, IDType } from "../types";
+import { BudgetReport, ImpressionReport } from '../api';
+import { Client } from '../client';
+import { ClientArgs, IDType } from '../types';
 
 type Callable<T> = (
   advertisers: T[],
@@ -116,29 +116,29 @@ export interface InsertionOrderTemplate {
  */
 export function generateTestClient(param: TestClientParams) {
   const insertionOrderTemplate: InsertionOrderTemplate = {
-    id: "io1",
-    advertiserId: "1",
-    displayName: "Insertion Order 1",
-    campaignId: "c1",
-    insertionOrderType: "RTB",
+    id: 'io1',
+    advertiserId: '1',
+    displayName: 'Insertion Order 1',
+    campaignId: 'c1',
+    insertionOrderType: 'RTB',
     pacing: {
       pacingPeriod: PACING_PERIOD.FLIGHT,
-      pacingType: "PACING_TYPE_EVEN",
+      pacingType: 'PACING_TYPE_EVEN',
     },
     frequencyCap: {
       unlimited: true,
       maxImpressions: 1,
     },
     performanceGoal: {
-      performanceGoalType: "PERFORMANCE_GOAL_TYPE_CPC",
-      performanceGoalAmountMicros: "100000",
-      performanceGoalString: "",
+      performanceGoalType: 'PERFORMANCE_GOAL_TYPE_CPC',
+      performanceGoalAmountMicros: '100000',
+      performanceGoalString: '',
     },
     budget: {
-      budgetUnit: "BUDGET_UNIT_CURRENCY",
+      budgetUnit: 'BUDGET_UNIT_CURRENCY',
       budgetSegments: [
         {
-          budgetAmountMicros: "100000",
+          budgetAmountMicros: '100000',
           dateRange: {
             startDate: {
               year: 1970,
@@ -157,19 +157,19 @@ export function generateTestClient(param: TestClientParams) {
   };
 
   const campaignTemplate: CampaignTemplate = {
-    id: "c1",
-    advertiserId: "1",
+    id: 'c1',
+    advertiserId: '1',
     campaignGoal: {
-      campaignGoalType: "CAMPAIGN_GOAL_TYPE_UNSPECIFIED",
+      campaignGoalType: 'CAMPAIGN_GOAL_TYPE_UNSPECIFIED',
       performanceGoal: {
-        performanceGoalType: "PERFORMANCE_GOAL_TYPE_CPM",
-        performanceGoalAmountMicros: "10",
+        performanceGoalType: 'PERFORMANCE_GOAL_TYPE_CPM',
+        performanceGoalAmountMicros: '10',
       },
     },
-    displayName: "Campaign 1",
+    displayName: 'Campaign 1',
     frequencyCap: {
       unlimited: false,
-      timeUnit: "TIME_UNIT_LIFETIME",
+      timeUnit: 'TIME_UNIT_LIFETIME',
       timeUnitCount: 1,
       maxImpressions: 10,
     },
@@ -178,11 +178,11 @@ export function generateTestClient(param: TestClientParams) {
   const clientArgs: ClientArgs = {
     id: param.id,
     idType: IDType.ADVERTISER,
-    label: "test",
+    label: 'test',
   };
   if (param.allCampaigns) {
     class FakeCampaigns extends Campaigns {
-      readonly id: string = "c1";
+      readonly id: string = 'c1';
       override list(callback: Callable<Campaign>) {
         callback(
           param.allCampaigns![param.id].map(
@@ -200,7 +200,7 @@ export function generateTestClient(param: TestClientParams) {
       override list(callback: Callable<AssignedTargetingOption>) {
         const campaignId = this.getCampaignId();
         if (!campaignId) {
-          throw new Error("Missing campaign ID");
+          throw new Error('Missing campaign ID');
         }
         callback(param.allAssignedTargetingOptions![param.id][campaignId]);
       }

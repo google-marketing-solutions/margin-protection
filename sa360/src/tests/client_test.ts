@@ -15,36 +15,36 @@
  * limitations under the License.
  */
 
-import { equalTo } from "common/checks";
-import { AppsScriptPropertyStore } from "common/sheet_helpers";
-import { mockAppsScript } from "common/test_helpers/mock_apps_script";
-import { Client, newRule } from "sa360/src/client";
-import { RuleGranularity } from "sa360/src/types";
+import { equalTo } from 'common/checks';
+import { AppsScriptPropertyStore } from 'common/sheet_helpers';
+import { mockAppsScript } from 'common/test_helpers/mock_apps_script';
+import { Client, newRule } from 'sa360/src/client';
+import { RuleGranularity } from 'sa360/src/types';
 
-describe("Client rules are validated", () => {
+describe('Client rules are validated', () => {
   let output: string[] = [];
   let client: Client;
   const test = 42;
   const defaultGrid = [
-    ["", "param1", "param2"],
-    ["default", "1", "2"],
+    ['', 'param1', 'param2'],
+    ['default', '1', '2'],
   ];
 
   beforeEach(() => {
     mockAppsScript();
-    client = generateTestClient({ agencyId: "123" });
+    client = generateTestClient({ agencyId: '123' });
 
-    const values = { "1": equalTo(test, 1, {}), "42": equalTo(test, 42, {}) };
+    const values = { '1': equalTo(test, 1, {}), '42': equalTo(test, 42, {}) };
 
     client.addRule(
       newRule({
         params: {},
-        name: "ruleA",
+        name: 'ruleA',
         description: ``,
         granularity: RuleGranularity.CAMPAIGN,
-        valueFormat: { label: "ruleA" },
+        valueFormat: { label: 'ruleA' },
         async callback() {
-          output.push("ruleA");
+          output.push('ruleA');
           return { values };
         },
         defaults: {},
@@ -54,12 +54,12 @@ describe("Client rules are validated", () => {
     client.addRule(
       newRule({
         params: {},
-        name: "ruleB",
+        name: 'ruleB',
         description: ``,
         granularity: RuleGranularity.CAMPAIGN,
-        valueFormat: { label: "ruleB" },
+        valueFormat: { label: 'ruleB' },
         async callback() {
-          output.push("ruleB");
+          output.push('ruleB');
           return { values };
         },
         defaults: {},
@@ -72,32 +72,32 @@ describe("Client rules are validated", () => {
     output = [];
   });
 
-  it("should not run rules until validate() is run", () => {
+  it('should not run rules until validate() is run', () => {
     expect(output).toEqual([]);
   });
 
-  it("should run rules when validate() is run", async () => {
+  it('should run rules when validate() is run', async () => {
     await client.validate();
-    expect(output).toEqual(["ruleA", "ruleB"]);
+    expect(output).toEqual(['ruleA', 'ruleB']);
   });
 
-  it("should have check results after validate() is run", async () => {
+  it('should have check results after validate() is run', async () => {
     const { results } = await client.validate();
     expect(
-      Object.values(results["ruleA"].values).map((value) => value.anomalous),
+      Object.values(results['ruleA'].values).map((value) => value.anomalous),
     ).toEqual([true, false]);
   });
 });
 
 function generateTestClient({
-  agencyId = "1",
+  agencyId = '1',
   advertiserId = undefined,
 }: {
   agencyId?: string;
   advertiserId?: string;
 }): Client {
   return new Client(
-    { agencyId, advertiserId, label: "Fake" },
+    { agencyId, advertiserId, label: 'Fake' },
     new AppsScriptPropertyStore(),
   );
 }

@@ -21,19 +21,19 @@
 
 // g3-format-prettier
 
-import { PropertyStore } from "common/types";
+import { PropertyStore } from 'common/types';
 
 import Properties = GoogleAppsScript.Properties;
 import Cache = GoogleAppsScript.Cache;
 import Mail = GoogleAppsScript.Mail;
 
 function a1NotationToRowColumn(a1Notation: string, start = true) {
-  const a = "A".charCodeAt(0);
+  const a = 'A'.charCodeAt(0);
   let column = 0;
   let i;
   const parts = a1Notation.toUpperCase().match(/([A-Z]+)([1-9]\d*)?/);
   if (!parts) {
-    throw new Error("Invalid A1 notation");
+    throw new Error('Invalid A1 notation');
   }
   const letters = parts[1];
   const row: number = parts[2]
@@ -69,11 +69,11 @@ class FakeRange {
     return this.getRangeComponent().map((columns) =>
       columns
         .slice(this.column - 1, this.column - 1 + this.numColumns)
-        .map((cell) => cell ?? ""),
+        .map((cell) => cell ?? ''),
     );
   }
   static byA1Notation(sheet: FakeSheet, a1Notation: string) {
-    const parts = a1Notation.split(":");
+    const parts = a1Notation.split(':');
     const { row: row1, column: column1 } = a1NotationToRowColumn(
       parts[0],
       true,
@@ -101,13 +101,13 @@ class FakeRange {
 
   setValues(range: string[][]) {
     if (this.arrayRange.length !== range.length) {
-      throw new Error("Invalid row length");
+      throw new Error('Invalid row length');
     }
     for (const [i, row] of range.entries()) {
       if (row.length === this.arrayRange[0].length) {
         this.arrayRange[i] = row;
       } else {
-        throw new Error("Invalid column length");
+        throw new Error('Invalid column length');
       }
     }
     this.sheet.cells.splice(
@@ -118,7 +118,7 @@ class FakeRange {
           ...row,
           ...Array.from<string>({
             length: this.sheet.cells[0].length - row.length,
-          }).fill(""),
+          }).fill(''),
         ];
         return newArr;
       }),
@@ -158,10 +158,10 @@ class FakeSheet {
     numRows?: number,
     numColumns?: number,
   ) {
-    if (typeof arg1 === "string") {
+    if (typeof arg1 === 'string') {
       return FakeRange.byA1Notation(this, arg1);
     } else if (!column) {
-      throw new Error("Required to include a column");
+      throw new Error('Required to include a column');
     }
     this.lastRow = (numRows ?? 0) + arg1 - 1;
     this.lastColumn = (numColumns ?? 0) + column - 1;
@@ -173,7 +173,7 @@ class FakeSheet {
   }
 
   clear(): FakeSheet {
-    const emptyCells = this.cells.map((row) => row.map((col) => ""));
+    const emptyCells = this.cells.map((row) => row.map((col) => ''));
     this.cells.splice(0, this.cells.length, ...emptyCells);
     return this;
   }
@@ -181,7 +181,7 @@ class FakeSheet {
 
 class FakeHtmlService {
   createTemplateFromFile() {
-    throw new Error("Not implemented. Stub me.");
+    throw new Error('Not implemented. Stub me.');
   }
 }
 
@@ -191,7 +191,7 @@ class FakeSpreadsheet {
   private readonly sheets: Record<string, FakeSheet> = {
     Sheet1: new FakeSheet(),
   };
-  private lastActive = "Sheet1";
+  private lastActive = 'Sheet1';
 
   insertSheet(sheetName: string) {
     const computedSheetName = sheetName || `Sheet${++FakeSpreadsheet.lastNum}`;
@@ -248,7 +248,7 @@ export function mockAppsScript() {
 
 class FakeUrlFetchApp {
   fetch(url: string) {
-    throw new Error("Not implemented. Mock me.");
+    throw new Error('Not implemented. Mock me.');
   }
 }
 
@@ -265,7 +265,7 @@ export function generateFakeHttpResponse(args: { contentText: string }) {
 
 class FakeScriptApp {
   getOAuthToken() {
-    return "token";
+    return 'token';
   }
 }
 
@@ -273,7 +273,7 @@ class FakeUtilities {
   parseCsv(text: string) {
     // We don't need a special package because this test CSV is very
     // basic. No escaping, etc.
-    const lines = text.split("\n").map((line: string) => line.split(","));
+    const lines = text.split('\n').map((line: string) => line.split(','));
     return lines;
   }
 
@@ -342,7 +342,7 @@ class CacheStub implements Cache.Cache {
   expirationInSeconds: number | undefined;
 
   getAll(keys: string[]): Record<string, string> {
-    throw new Error("Method not implemented.");
+    throw new Error('Method not implemented.');
   }
   putAll(values: Record<string, string>): void;
   putAll(values: Record<string, string>, expirationInSeconds: number): void;
@@ -396,7 +396,7 @@ class FakeBlob {
 
 class FakeGzip extends FakeBlob {
   constructor(gzipped: FakeBlob) {
-    super("gzipped:" + gzipped.content);
+    super('gzipped:' + gzipped.content);
   }
 }
 
@@ -405,7 +405,7 @@ class FakeGzip extends FakeBlob {
  */
 export class FakeUtilitiesService {
   newBlob(content: string): FakeBlob {
-    return new FakeBlob(content.replace(/^bytes:/, ""));
+    return new FakeBlob(content.replace(/^bytes:/, ''));
   }
 
   gzip(content: FakeBlob): FakeGzip {
@@ -413,33 +413,33 @@ export class FakeUtilitiesService {
   }
 
   ungzip(blob: FakeGzip | FakeBlob): FakeBlob {
-    if (!blob.content.startsWith("gzipped")) {
-      throw new Error("Not gzipped");
+    if (!blob.content.startsWith('gzipped')) {
+      throw new Error('Not gzipped');
     }
-    const content = blob.content.replace(/^gzipped:/, "");
+    const content = blob.content.replace(/^gzipped:/, '');
     return new FakeBlob(content);
   }
 
   parseCsv(text: string) {
     // We don't need a special package because this test CSV is very
     // basic. No escaping, etc.
-    const lines = text.split("\n").map((line: string) => line.split(","));
+    const lines = text.split('\n').map((line: string) => line.split(','));
     return lines;
   }
 
   base64Encode(text: string) {
-    if (!text.startsWith("bytes:")) {
-      throw new Error("Not bytes");
+    if (!text.startsWith('bytes:')) {
+      throw new Error('Not bytes');
     }
-    return `encoded:${text.replace(/^bytes:/, "")}`;
+    return `encoded:${text.replace(/^bytes:/, '')}`;
   }
 
   base64Decode(text: string) {
-    if (!text.startsWith("encoded")) {
-      throw new Error("Not encoded");
+    if (!text.startsWith('encoded')) {
+      throw new Error('Not encoded');
     }
 
-    return text.replace(/^encoded:/, "bytes:");
+    return text.replace(/^encoded:/, 'bytes:');
   }
 
   sleep(msecs: number) {

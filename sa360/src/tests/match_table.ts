@@ -22,7 +22,7 @@
 
 // g3-format-prettier
 
-import { SA360_API_VERSION, SA360_URL } from "sa360/src/api";
+import { SA360_API_VERSION, SA360_URL } from 'sa360/src/api';
 
 interface Params {
   payload: string;
@@ -44,7 +44,7 @@ class MockUrlFetchApp {
 
   fetch(url: string, params: Params) {
     if (!params) {
-      throw new Error("Missing header values!");
+      throw new Error('Missing header values!');
     }
     if (!params.payload) {
       return {
@@ -83,13 +83,13 @@ export class MatchTable {
 
   private getRoutes(): MatchTableQueries {
     return {
-      [this.getUrl("reports")]: {
+      [this.getUrl('reports')]: {
         post: this.createQuery.bind(this),
       },
-      [this.getUrl("reports/1")]: {
+      [this.getUrl('reports/1')]: {
         get: this.listResults.bind(this),
       },
-      "https://path/to/report": {
+      'https://path/to/report': {
         get: this.getReport.bind(this),
       },
     };
@@ -122,7 +122,7 @@ export class MatchTable {
   private listResults() {
     ++this.runPostHits;
     const obj = {
-      url: "https://path/to/report",
+      url: 'https://path/to/report',
       byteCount: new Blob([this.getReport(this.params)]).size,
     };
     const a = JSON.stringify({
@@ -136,7 +136,7 @@ export class MatchTable {
     ++this.queryPostHits;
     this.params = params;
     return JSON.stringify({
-      id: "1",
+      id: '1',
     });
   }
 
@@ -146,9 +146,9 @@ export class MatchTable {
       reportScope: { agencyId: string };
     };
     const columns = payload.columns;
-    const agencyId2 = payload.reportScope.agencyId === "2";
+    const agencyId2 = payload.reportScope.agencyId === '2';
     function fill() {
-      return Array.from({ length: columns.length }).map((v) => "");
+      return Array.from({ length: columns.length }).map((v) => '');
     }
 
     const matrix: string[][] = [fill()];
@@ -157,17 +157,17 @@ export class MatchTable {
       matrix[0][j] = column.columnName;
       for (let i = 0; i < 4; i++) {
         const headers = [
-          "agency",
-          "agencyId",
-          "advertiser",
-          "advertiserId",
-          "adGroupId",
+          'agency',
+          'agencyId',
+          'advertiser',
+          'advertiserId',
+          'adGroupId',
         ];
         for (let h = 0; h < headers.length; h++) {
           (matrix[i + 1] ??= fill())[h] = `${headers[h]}1`;
           if (agencyId2) {
             (matrix[i + 5] ??= fill())[h] = `${headers[h]}${
-              headers[h] === "adGroupId" ? 1 : 2
+              headers[h] === 'adGroupId' ? 1 : 2
             }`;
           }
         }
@@ -207,30 +207,30 @@ export class MatchTable {
   private getReport(params: Params) {
     ++this.reportGetHits;
     const matrix =
-      (JSON.parse(this.params.payload) as { reportType: "adGroupTarget" })
-        .reportType === "adGroupTarget"
+      (JSON.parse(this.params.payload) as { reportType: 'adGroupTarget' })
+        .reportType === 'adGroupTarget'
         ? this.getAdGroupReport()
         : this.getDefaultReport();
-    const [start, end] = params.headers["Range"]
-      ? params.headers["Range"].split("bytes=")[1].split("-").map(Number)
+    const [start, end] = params.headers['Range']
+      ? params.headers['Range'].split('bytes=')[1].split('-').map(Number)
       : [null, null];
 
     const text =
       matrix.reduce((prevRow, row) => {
         if (prevRow) {
-          prevRow += "\n";
+          prevRow += '\n';
         }
 
         return (
           prevRow +
           row.reduce((prevContent, col) => {
             if (prevContent) {
-              prevContent += ",";
+              prevContent += ',';
             }
             return prevContent + col;
-          }, "")
+          }, '')
         );
-      }, "") + "\n";
+      }, '') + '\n';
 
     if (start !== null && end !== null && text.length >= end - 1) {
       return text.slice(start, end + 1);
