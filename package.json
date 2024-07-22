@@ -29,7 +29,7 @@
     "typescript": "^5.5.3",
     "web-test-runner-jasmine": "^0.0.6"
   },
-  "dependencies": {
-    "puppeteer": "^22.13.1"
+  "prettier": {
+    "singleQuote": true
   }
 }
