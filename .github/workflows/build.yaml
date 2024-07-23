@@ -38,7 +38,7 @@ jobs:
         run: exit 1
 
       - name: Build
-        run: npx yarn playwright install
+        run: npx yarn playwright install-deps && npx yarn playwright install
 
       - name: Test everything
         run: npx yarn test
