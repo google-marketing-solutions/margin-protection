@@ -28,6 +28,6 @@
     "push": "yarn build:dev && clasp push",
     "push:prod": "yarn build:prod && clasp push",
     "push:client": "yarn --cwd ../client push",
-    "test": "web-test-runner --config web-test-runner.mjs"
+    "test": "web-test-runner --config ../web-test-runner.mjs"
   }
 }

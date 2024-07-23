@@ -31,5 +31,8 @@
   },
   "prettier": {
     "singleQuote": true
+  },
+  "dependencies": {
+    "@web/test-runner-playwright": "^0.11.0"
   }
 }

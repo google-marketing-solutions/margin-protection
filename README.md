@@ -5,8 +5,10 @@ in getting this solution to work for you.
 
 ## Status
 
-![General Build Status](https://github.com/google-marketing-solutions/margin-protection/actions/workflows/build.yaml/badge.svg)
+![Whole Repository Health](https://github.com/google-marketing-solutions/margin-protection/actions/workflows/build.yaml/badge.svg)
+
 ![SA360 Launch Monitor Build & Test](https://github.com/google-marketing-solutions/margin-protection/actions/workflows/sa360.yaml/badge.svg)
+
 ![DV360 Launch Monitor Build & Test](https://github.com/google-marketing-solutions/margin-protection/actions/workflows/dv360.yaml/badge.svg)
 
 ## Problem

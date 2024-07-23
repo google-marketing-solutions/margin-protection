@@ -3,6 +3,7 @@ import { fromRollup } from '@web/dev-server-rollup';
 import { typescriptPaths } from 'rollup-plugin-typescript-paths';
 import { fileURLToPath } from 'url';
 import { jasmineTestRunnerConfig } from 'web-test-runner-jasmine';
+import { playwrightLauncher } from '@web/test-runner-playwright';
 
 import * as os from 'os';
 
@@ -25,4 +26,7 @@ export default {
       tsconfig: fileURLToPath(new URL('./tsconfig.json', import.meta.url)),
     }),
   ],
+  browsers: [
+    playwrightLauncher({ product: 'chromium' })
+  ]
 };

@@ -1,4 +1,4 @@
-name: Build and test SA360
+name: SA360 Build
 
 on:
   push:
@@ -6,7 +6,7 @@ on:
       - main
 
 jobs:
-  lint-and-test:
+  build:
     runs-on: ubuntu-latest
 
     steps:
@@ -15,10 +15,10 @@ jobs:
       - name: Set bash to strict mode
         run: set -euox pipefail
 
-      - name: Set Node.js 18.x
+      - name: Set Node.js 22.x
         uses: actions/setup-node@v3
         with:
-          node-version: 18.x
+          node-version: 22.x
 
       - name: Install yarn
         run: npm -g install yarn
