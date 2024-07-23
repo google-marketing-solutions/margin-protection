@@ -1,6 +1,7 @@
 name: DV360 Build
 
 on:
+  pull_request:
   push:
     branches:
       - main

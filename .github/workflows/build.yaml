@@ -1,6 +1,7 @@
 name: General Repo Health and Test Status
 
 on:
+  pull_request:
   push:
     branches:
       - main
