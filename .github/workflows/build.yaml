@@ -1,6 +1,7 @@
-name: Lint everything
+name: General Repo Health and Test Status
 
 on:
+  pull_request:
   push:
     branches:
       - main
@@ -15,10 +16,10 @@ jobs:
       - name: Set bash to strict mode
         run: set -euox pipefail
 
-      - name: Set Node.js 18.x
+      - name: Set Node.js 22.x
         uses: actions/setup-node@v3
         with:
-          node-version: 18.x
+          node-version: 22.x
 
       - name: Install yarn
         run: npm -g install yarn
@@ -29,12 +30,15 @@ jobs:
       - name: Lint
         run: npx yarn lint-staged
 
-      - name: Test
-        run: npx yarn test
-
       - name: Print errors
         run: find . -name "*.warn" -type f -exec cat {} \;
 
       - name: Fail on errors
         if: ${{ steps.lint.outputs.error || steps.test.outputs.error || steps.build-sa360.outputs.error || steps.build-dv360.outputs.error || steps.build-dev-sa360.outputs.error }}
         run: exit 1
+
+      - name: Build
+        run: npx yarn playwright install-deps && npx yarn playwright install
+
+      - name: Test everything
+        run: npx yarn test

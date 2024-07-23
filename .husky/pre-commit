@@ -1,6 +1,8 @@
 #!/usr/bin/env sh
 . "$(dirname -- "$0")/_/husky.sh"
 
+yarn
+yarn playwright install
 yarn test
 yarn lint-staged
 npx tsc -p .

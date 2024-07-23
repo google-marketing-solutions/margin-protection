@@ -1,12 +1,13 @@
-name: Build and test DV360
+name: DV360 Build
 
 on:
+  pull_request:
   push:
     branches:
       - main
 
 jobs:
-  lint-and-test:
+  build-dv360:
     runs-on: ubuntu-latest
 
     steps:
@@ -15,19 +16,16 @@ jobs:
       - name: Set bash to strict mode
         run: set -euox pipefail
 
-      - name: Set Node.js 18.x
+      - name: Set Node.js 22.x
         uses: actions/setup-node@v3
         with:
-          node-version: 18.x
+          node-version: 22.x
 
       - name: Install yarn
         run: npm -g install yarn
 
-      - name: Mock clasp
-        run: >
-          function clasp() {
-            echo "LAST_CMD=$1" >> $GITHUB_ENV
-          }
+      - name: Install dependencies
+        run: npx yarn --cwd ./dv360
 
       - name: Build dv360 prod
         run: npx yarn --cwd ./dv360 build:prod
@@ -35,12 +33,12 @@ jobs:
       - name: Build dv360 dev
         run: npx yarn --cwd ./dv360 build:dev
 
-      - name: Build client
-        run: npx yarn --cwd ./dv360 push:dev
+      - name: Ensure clasp is installed (for yarn push)
+        run: npx yarn --cwd ./dv360 clasp --help
 
       - name: Print errors
         run: find . -name "*.warn" -type f -exec cat {} \;
 
       - name: Fail on errors
-        if: ${{ steps.build-dv360.outputs.error || steps.build-dev-dv360.outputs.error || env.LAST_CMD != 'push' }}
+        if: ${{ steps.build-dv360.outputs.error || steps.build-dev-dv360.outputs.error }}
         run: exit 1

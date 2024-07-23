@@ -1,12 +1,13 @@
-name: Build and test SA360
+name: SA360 Build
 
 on:
+  pull_request:
   push:
     branches:
       - main
 
 jobs:
-  lint-and-test:
+  build-sa360:
     runs-on: ubuntu-latest
 
     steps:
@@ -15,19 +16,13 @@ jobs:
       - name: Set bash to strict mode
         run: set -euox pipefail
 
-      - name: Set Node.js 18.x
+      - name: Set Node.js 22.x
         uses: actions/setup-node@v3
         with:
-          node-version: 18.x
+          node-version: 22.x
 
-      - name: Install yarn
-        run: npm -g install yarn
-
-      - name: Mock clasp
-        run: >
-          function clasp() {
-            echo "LAST_CMD=$1" >> $GITHUB_ENV
-          }
+      - name: Install dependencies
+        run: npx yarn --cwd ./sa360
 
       - name: Build sa360 prod
         run: npx yarn --cwd ./sa360 build:prod
@@ -35,8 +30,8 @@ jobs:
       - name: Build sa360 dev
         run: npx yarn --cwd ./sa360 build:dev
 
-      - name: Build client
-        run: npx yarn --cwd ./sa360 push:dev
+      - name: Ensure clasp is installed (for yarn push)
+        run: npx yarn --cwd ./sa360 clasp --help
 
       - name: Print errors
         run: find . -name "*.warn" -type f -exec cat {} \;
@@ -45,5 +40,5 @@ jobs:
         run: echo $LAST_CMD
 
       - name: Fail on errors
-        if: ${{ steps.build-sa360.outputs.error || steps.build-dev-sa360.outputs.error || env.LAST_CMD != 'push' }}
+        if: ${{ steps.build-sa360.outputs.error || steps.build-dev-sa360.outputs.error }}
         run: exit 1
