@@ -32,18 +32,12 @@ import {
   ReportFactory,
   SA360_API_ENDPOINT,
 } from 'common/ads_api';
-import {
-  lazyLoadApp,
-  toExport,
-} from 'common/sheet_helpers';
-import {PropertyStore} from 'common/types';
-import {
-  ClientV2,
-  RuleRangeV2,
-} from 'sa360/src/client';
+import { lazyLoadApp, toExport } from 'common/sheet_helpers';
+import { PropertyStore } from 'common/types';
+import { ClientV2, RuleRangeV2 } from 'sa360/src/client';
 
-import {migrationsV2, NewSearchAdsFrontEnd} from './frontend';
-import {ClientArgsV2, ClientInterfaceV2, RuleGranularity} from './types';
+import { migrationsV2, NewSearchAdsFrontEnd } from './frontend';
+import { ClientArgsV2, ClientInterfaceV2, RuleGranularity } from './types';
 
 /**
  * The sheet version the app currently has.

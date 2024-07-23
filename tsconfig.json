@@ -1,0 +1,22 @@
+{
+  "compilerOptions": {
+    "baseUrl": "./",
+    "outDir": "dist",
+    "skipLibCheck": true,
+    "module": "esnext",
+    "moduleResolution": "classic",
+    "target": "es2020",
+    "lib": ["esnext", "dom"],
+    "noImplicitThis": true,
+    "useDefineForClassFields": true,
+    "paths": {
+      "common/*": ["common/*"],
+      "sa360/*": ["sa360/*"],
+      "dv360/*": ["dv360/*"],
+      "dv360_api/*": ["dv360_api/*"],
+      "googleads/*": ["googleads/old/src/*"]
+    }
+  },
+  "include": ["**/src/**/*", "outs.d.ts"],
+  "exclude": ["node_modules/**/*", "dist/**/*", "**/*_test.ts"]
+}

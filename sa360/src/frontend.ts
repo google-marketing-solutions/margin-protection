@@ -29,12 +29,8 @@ import {
   getOrCreateSheet,
   getTemplateSetting,
 } from 'common/sheet_helpers';
-import {
-  FrontEndArgs,
-  ParamDefinition,
-  RuleExecutor,
-} from 'common/types';
-import {RuleRange} from 'sa360/src/client';
+import { FrontEndArgs, ParamDefinition, RuleExecutor } from 'common/types';
+import { RuleRange } from 'sa360/src/client';
 import {
   ClientArgs,
   ClientArgsV2,
@@ -171,7 +167,7 @@ export const migrations: Record<string, (frontend: SearchAdsFrontEnd) => void> =
             string,
             {
               value: string;
-              internal: {original: Record<string, Record<string, string>>};
+              internal: { original: Record<string, Record<string, string>> };
             }
           >;
           for (const key of Object.keys(rule)) {

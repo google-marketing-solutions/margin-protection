@@ -35,12 +35,12 @@ import {
   Pacing,
   PerformanceGoal,
 } from 'dv360_api/dv360_types';
-import {FilterExpression} from 'dv360_api/utils';
-import {FakePropertyStore} from 'common/test_helpers/mock_apps_script';
+import { FilterExpression } from 'dv360_api/utils';
+import { FakePropertyStore } from 'common/test_helpers/mock_apps_script';
 
-import {BudgetReport, ImpressionReport} from '../api';
-import {Client} from '../client';
-import {ClientArgs, IDType} from '../types';
+import { BudgetReport, ImpressionReport } from '../api';
+import { Client } from '../client';
+import { ClientArgs, IDType } from '../types';
 
 type Callable<T> = (
   advertisers: T[],
@@ -126,8 +126,8 @@ export function generateTestClient(param: TestClientParams) {
       pacingType: 'PACING_TYPE_EVEN',
     },
     frequencyCap: {
-      'unlimited': true,
-      'maxImpressions': 1,
+      unlimited: true,
+      maxImpressions: 1,
     },
     performanceGoal: {
       performanceGoalType: 'PERFORMANCE_GOAL_TYPE_CPC',
@@ -160,18 +160,18 @@ export function generateTestClient(param: TestClientParams) {
     id: 'c1',
     advertiserId: '1',
     campaignGoal: {
-      'campaignGoalType': 'CAMPAIGN_GOAL_TYPE_UNSPECIFIED',
-      'performanceGoal': {
-        'performanceGoalType': 'PERFORMANCE_GOAL_TYPE_CPM',
-        'performanceGoalAmountMicros': '10',
+      campaignGoalType: 'CAMPAIGN_GOAL_TYPE_UNSPECIFIED',
+      performanceGoal: {
+        performanceGoalType: 'PERFORMANCE_GOAL_TYPE_CPM',
+        performanceGoalAmountMicros: '10',
       },
     },
     displayName: 'Campaign 1',
     frequencyCap: {
-      'unlimited': false,
-      'timeUnit': 'TIME_UNIT_LIFETIME',
-      'timeUnitCount': 1,
-      'maxImpressions': 10,
+      unlimited: false,
+      timeUnit: 'TIME_UNIT_LIFETIME',
+      timeUnitCount: 1,
+      maxImpressions: 10,
     },
   };
 
@@ -186,7 +186,7 @@ export function generateTestClient(param: TestClientParams) {
       override list(callback: Callable<Campaign>) {
         callback(
           param.allCampaigns![param.id].map(
-            (c) => new Campaign(c({...campaignTemplate})),
+            (c) => new Campaign(c({ ...campaignTemplate })),
           ),
         );
       }
@@ -214,7 +214,7 @@ export function generateTestClient(param: TestClientParams) {
       override list(callback: Callable<InsertionOrder>) {
         callback(
           param.allInsertionOrders![param.id].map(
-            (c) => new InsertionOrder(c({...insertionOrderTemplate})),
+            (c) => new InsertionOrder(c({ ...insertionOrderTemplate })),
           ),
         );
       }

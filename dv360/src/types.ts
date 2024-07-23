@@ -27,13 +27,10 @@ import {
   Campaigns,
   InsertionOrders,
 } from 'dv360_api/dv360';
-import {InsertionOrder} from 'dv360_api/dv360_resources';
-import {
-  BaseClientArgs,
-  BaseClientInterface,
-} from 'common/types';
+import { InsertionOrder } from 'dv360_api/dv360_resources';
+import { BaseClientArgs, BaseClientInterface } from 'common/types';
 
-import {ReportConstructor} from './client';
+import { ReportConstructor } from './client';
 
 /**
  * Defines the type of ID set on the client.

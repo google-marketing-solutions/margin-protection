@@ -21,7 +21,7 @@
 
 // g3-format-prettier
 
-import {BaseClientArgs} from './types';
+import { BaseClientArgs } from './types';
 
 /**
  * Manages query (input) and expected output pairs for each report type.
@@ -119,10 +119,10 @@ export type DotsToObject<S extends string> = S extends ''
   : S extends `${infer First}.${infer Rest}`
     ? '' extends First
       ? {}
-      : {[key in CamelCase<First>]: DotsToObject<Rest>}
+      : { [key in CamelCase<First>]: DotsToObject<Rest> }
     : '' extends S
       ? {}
-      : {[key in CamelCase<S>]: unknown};
+      : { [key in CamelCase<S>]: unknown };
 
 /**
  * Converts a report format to the expected response output.

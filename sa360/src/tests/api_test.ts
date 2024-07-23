@@ -17,11 +17,11 @@
 
 // g3-format-prettier
 
-import {AppsScriptPropertyStore} from 'common/sheet_helpers';
-import {mockAppsScript} from 'common/test_helpers/mock_apps_script';
+import { AppsScriptPropertyStore } from 'common/sheet_helpers';
+import { mockAppsScript } from 'common/test_helpers/mock_apps_script';
 import * as api from 'sa360/src/api';
 
-import {MatchTable} from './match_table';
+import { MatchTable } from './match_table';
 
 describe('SA360 report aggregation', () => {
   let router: MatchTable;
@@ -53,14 +53,14 @@ describe('SA360 report aggregation', () => {
 
     expect(report.report['campaignId1']).toEqual(
       jasmine.objectContaining({
-        'campaign': 'campaign1',
-        'campaignStatus': 'campaignStatus1',
+        campaign: 'campaign1',
+        campaignStatus: 'campaignStatus1',
       }),
     );
     expect(report.report['campaignId2']).toEqual(
       jasmine.objectContaining({
-        'campaign': 'campaign2',
-        'campaignStatus': 'campaignStatus2',
+        campaign: 'campaign2',
+        campaignStatus: 'campaignStatus2',
       }),
     );
   });
@@ -73,14 +73,14 @@ describe('SA360 report aggregation', () => {
 
     expect(report.report['adGroupId1']).toEqual(
       jasmine.objectContaining({
-        'adGroup': 'adGroup1',
-        'adGroupStatus': 'adGroupStatus1',
+        adGroup: 'adGroup1',
+        adGroupStatus: 'adGroupStatus1',
       }),
     );
     expect(report.report['adGroupId2']).toEqual(
       jasmine.objectContaining({
-        'adGroup': 'adGroup2',
-        'adGroupStatus': 'adGroupStatus2',
+        adGroup: 'adGroup2',
+        adGroupStatus: 'adGroupStatus2',
       }),
     );
   });
@@ -93,9 +93,9 @@ describe('SA360 report aggregation', () => {
 
     expect(report.report['adGroupId1']).toEqual(
       jasmine.objectContaining({
-        'adGroupId': 'adGroupId1',
-        'ageTargetAgeRange': 'ageTargetAgeRange1',
-        'engineRemarketingList': 'engineRemarketingList1',
+        adGroupId: 'adGroupId1',
+        ageTargetAgeRange: 'ageTargetAgeRange1',
+        engineRemarketingList: 'engineRemarketingList1',
       }),
     );
   });
@@ -108,10 +108,9 @@ describe('SA360 report aggregation', () => {
 
     expect(report.report['adGroupId1']).toEqual(
       jasmine.objectContaining({
-        'adGroupId': 'adGroupId1',
-        'ageTargetAgeRange': 'ageTargetAgeRange1,ageTargetAgeRange2',
-        'engineRemarketingList':
-          'engineRemarketingList1,engineRemarketingList2',
+        adGroupId: 'adGroupId1',
+        ageTargetAgeRange: 'ageTargetAgeRange1,ageTargetAgeRange2',
+        engineRemarketingList: 'engineRemarketingList1,engineRemarketingList2',
       }),
     );
     expect(router.getHits().reportGetHits).toEqual(2);
@@ -141,7 +140,7 @@ describe('SA360 report aggregation', () => {
     });
     expect(report.report['adGroupId1']).toEqual(
       jasmine.objectContaining({
-        'ageTargetAgeRange': 'ageTargetAgeRange1,ageTargetAgeRange2',
+        ageTargetAgeRange: 'ageTargetAgeRange1,ageTargetAgeRange2',
       }),
     );
     expect(router.getHits().reportGetHits).toEqual(9);
@@ -149,7 +148,9 @@ describe('SA360 report aggregation', () => {
   });
 
   it('supports adding from mutateRow', async () => {
-    const reportBuilder = new api.CampaignTargetReportBuilder({agencyId: '1'});
+    const reportBuilder = new api.CampaignTargetReportBuilder({
+      agencyId: '1',
+    });
     const obj: Record<
       string,
       api.ReportRecord<typeof api.campaignTargetColumns>
@@ -179,7 +180,7 @@ describe('SA360 report aggregation', () => {
       ['Agency 1', 'AY1', 'Advertiser 1', 'AV1', '1', 'US'],
     );
     expect(obj).toEqual({
-      'id': {
+      id: {
         agency: 'Agency 1',
         agencyId: 'AY1',
         advertiser: 'Advertiser 1',
@@ -192,7 +193,7 @@ describe('SA360 report aggregation', () => {
 
   it('saves the last report pull in cache', async () => {
     const originalPull = CacheService.getScriptCache().get('scriptPull');
-    await api.AdGroupTargetReport.buildReport({agencyId: '2', label: 'Test'});
+    await api.AdGroupTargetReport.buildReport({ agencyId: '2', label: 'Test' });
     const newPull = CacheService.getScriptCache().get('scriptPull');
     expect(originalPull).not.toEqual(newPull);
     expect(newPull).toEqual(String(new Date('2020-01-01').getTime()));
@@ -224,7 +225,7 @@ describe('Build an AdGroupTargetReport with aggregation', () => {
     );
 
     expect(obj).toEqual({
-      'A1': {ageTargetAgeRange: 'A', genderTargetGenderType: 'B'},
+      A1: { ageTargetAgeRange: 'A', genderTargetGenderType: 'B' },
     } as unknown as Record<
       string,
       api.ReportRecord<typeof api.adGroupTargetColumns>
@@ -234,7 +235,7 @@ describe('Build an AdGroupTargetReport with aggregation', () => {
 
 class TestableAdGroupTargetReportBuilder extends api.AdGroupTargetReportBuilder {
   override mutateRow(
-    obj: {[p: string]: api.ReportRecord<typeof api.adGroupTargetColumns>},
+    obj: { [p: string]: api.ReportRecord<typeof api.adGroupTargetColumns> },
     id: string,
     headers: string[],
     columns: string[],

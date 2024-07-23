@@ -21,7 +21,7 @@
 
 // g3-format-prettier
 
-import {PropertyStore} from 'common/types';
+import { PropertyStore } from 'common/types';
 
 import Properties = GoogleAppsScript.Properties;
 import Cache = GoogleAppsScript.Cache;
@@ -36,25 +36,27 @@ function a1NotationToRowColumn(a1Notation: string, start = true) {
     throw new Error('Invalid A1 notation');
   }
   const letters = parts[1];
-  const row: number = parts[2] ? Number.parseInt(parts[2], 10) :
-      start                    ? 1 :
-                                 100_000;
+  const row: number = parts[2]
+    ? Number.parseInt(parts[2], 10)
+    : start
+      ? 1
+      : 100_000;
   for (i = 0; i < letters.length; i++) {
     column += letters.charCodeAt(i) - a + 1;
   }
 
-  return {row, column};
+  return { row, column };
 }
 
 class FakeRange {
   private readonly arrayRange: string[][];
 
   constructor(
-      private readonly sheet: FakeSheet,
-      private readonly row: number,
-      private readonly column: number,
-      private readonly numRows = 1,
-      private readonly numColumns = 1,
+    private readonly sheet: FakeSheet,
+    private readonly row: number,
+    private readonly column: number,
+    private readonly numRows = 1,
+    private readonly numColumns = 1,
   ) {
     this.arrayRange = this.initializeSheet();
   }
@@ -72,8 +74,11 @@ class FakeRange {
   }
   static byA1Notation(sheet: FakeSheet, a1Notation: string) {
     const parts = a1Notation.split(':');
-    const {row: row1, column: column1} = a1NotationToRowColumn(parts[0], true);
-    const {row: row2, column: column2} = a1NotationToRowColumn(
+    const { row: row1, column: column1 } = a1NotationToRowColumn(
+      parts[0],
+      true,
+    );
+    const { row: row2, column: column2 } = a1NotationToRowColumn(
       parts[1] || parts[0],
       false,
     );
@@ -132,10 +137,9 @@ class FakeRange {
 }
 
 class FakeSheet {
-  readonly cells: string[][] = Array.from({length: 100})
-                                   .map(
-                                       () => Array.from({length: 30}),
-                                   );
+  readonly cells: string[][] = Array.from({ length: 100 }).map(() =>
+    Array.from({ length: 30 }),
+  );
   lastRow = 1;
   lastColumn = 1;
 
@@ -185,7 +189,7 @@ class FakeSpreadsheet {
   private static lastNum = 1;
   private readonly namedRange: Record<string, FakeRange> = {};
   private readonly sheets: Record<string, FakeSheet> = {
-    'Sheet1': new FakeSheet(),
+    Sheet1: new FakeSheet(),
   };
   private lastActive = 'Sheet1';
 
@@ -251,7 +255,7 @@ class FakeUrlFetchApp {
 /**
  * A return value for a FakeUrlFetchApp
  */
-export function generateFakeHttpResponse(args: {contentText: string}) {
+export function generateFakeHttpResponse(args: { contentText: string }) {
   return {
     getContentText() {
       return args.contentText;
@@ -298,13 +302,13 @@ class FakeMailApp {
 }
 
 class PropertyStub implements Properties.Properties {
-  private storage: {[key: string]: string} = {};
+  private storage: { [key: string]: string } = {};
 
   getProperties() {
     return this.storage;
   }
 
-  setProperties(properties: {[key: string]: string}) {
+  setProperties(properties: { [key: string]: string }) {
     this.storage = properties;
     return this;
   }

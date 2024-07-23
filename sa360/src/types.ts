@@ -22,13 +22,9 @@
 // g3-format-prettier
 
 import * as AdTypes from 'common/ads_api_types';
-import {AdsClientArgs} from 'common/ads_api_types';
+import { AdsClientArgs } from 'common/ads_api_types';
 
-import {
-  BaseClientArgs,
-  BaseClientInterface,
-  RecordInfo,
-} from 'common/types';
+import { BaseClientArgs, BaseClientInterface, RecordInfo } from 'common/types';
 import {
   AdGroupReport,
   AdGroupTargetReport,

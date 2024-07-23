@@ -32,13 +32,13 @@ import {
   ReportFactory,
   SA360_API_ENDPOINT,
 } from '../ads_api';
-import {AdsSearchRequest, buildQuery} from '../ads_api_types';
+import { AdsSearchRequest, buildQuery } from '../ads_api_types';
 import {
   generateFakeHttpResponse,
   mockAppsScript,
 } from '../test_helpers/mock_apps_script';
 
-import {bootstrapGoogleAdsApi} from './helpers';
+import { bootstrapGoogleAdsApi } from './helpers';
 
 import HTTPResponse = GoogleAppsScript.URL_Fetch.HTTPResponse;
 
@@ -62,7 +62,7 @@ describe('Google Ads API Factory', () => {
 describe('qlifyQuery', () => {
   it('builds legible queries when there are no wheres', () => {
     const query = qlifyQuery(
-      {queryParams: ['a.one'], queryWheres: [], queryFrom: 'table'},
+      { queryParams: ['a.one'], queryWheres: [], queryFrom: 'table' },
       [],
     );
     expect(query).toEqual('SELECT a.one FROM table');
@@ -70,7 +70,7 @@ describe('qlifyQuery', () => {
 
   it('builds legible queries when there is one where', () => {
     const query = qlifyQuery(
-      {queryParams: ['a.one'], queryWheres: [], queryFrom: 'table'},
+      { queryParams: ['a.one'], queryWheres: [], queryFrom: 'table' },
       ['foo = "1"'],
     );
     expect(query).toEqual('SELECT a.one FROM table WHERE foo = "1"');
@@ -78,7 +78,7 @@ describe('qlifyQuery', () => {
 
   it('builds legible queries when there are multiple wheres', () => {
     const query = qlifyQuery(
-      {queryParams: ['a.one'], queryWheres: [], queryFrom: 'table'},
+      { queryParams: ['a.one'], queryWheres: [], queryFrom: 'table' },
       ['foo = "1"', 'bar = "2"'],
     );
     expect(query).toEqual(
@@ -95,7 +95,7 @@ describe('Google Ads API', () => {
     spyOn(UrlFetchApp, 'fetch').and.callFake((requestUrl) => {
       url = requestUrl;
 
-      return generateFakeHttpResponse({contentText: '{}'});
+      return generateFakeHttpResponse({ contentText: '{}' });
     });
   });
 
@@ -162,6 +162,7 @@ describe('Google Ads API Client', () => {
   }
 
   beforeEach(() => {
+    mockAppsScript();
     fetchApp = globalThis.UrlFetchApp = jasmine.createSpyObj<
       typeof UrlFetchApp
     >(['fetch']);
@@ -221,7 +222,7 @@ describe('Google Ads API Client', () => {
   it('Has query in payload', () => {
     const client = createClient();
     spyOn(
-      client as unknown as {requestHeaders(): {}},
+      client as unknown as { requestHeaders(): {} },
       'requestHeaders',
     ).and.returnValue({});
     client.query('1', FAKE_REPORT.query).next();
@@ -256,7 +257,10 @@ describe('Google Ads API Client', () => {
     const lastPayload = getSearchRequestPayload(1);
     expect(lastPayload.pageToken).toEqual('pointer');
 
-    expect(rows).toEqual([{customer: {id: 456}}, {customer: {id: 123}}]);
+    expect(rows).toEqual([
+      { customer: { id: 456 } },
+      { customer: { id: 123 } },
+    ]);
   });
 
   it('Handles empty results', () => {
@@ -288,20 +292,20 @@ describe('Report Factory', () => {
         apiEndpoint: FAKE_API_ENDPOINT,
       }).create(loginCustomerId);
       const mockQuery: jasmine.Spy = spyOn(api, 'queryOne');
-      mockQuery.and.callFake(({query, customerId}) => {
+      mockQuery.and.callFake(({ query, customerId }) => {
         if (query === FAKE_REPORT.query) {
           return iterator({
-            a: {one: `${customerId}/one`},
-            b: {two: `${customerId}/two`},
-            c: {three: `${customerId}/three`},
+            a: { one: `${customerId}/one` },
+            b: { two: `${customerId}/two` },
+            c: { three: `${customerId}/three` },
           });
         } else {
           return iterator(
             {
-              customerClient: {id: '2'},
+              customerClient: { id: '2' },
             },
             {
-              customerClient: {id: '3'},
+              customerClient: { id: '3' },
             },
           );
         }
@@ -317,8 +321,8 @@ describe('Report Factory', () => {
   it('returns expected results from query', () => {
     const report = reportFactory.create(FAKE_REPORT);
     expect(report.fetch()).toEqual({
-      '2/one': {one: '2/one', two: '2/two', three: '2/three'},
-      '3/one': {one: '3/one', two: '3/two', three: '3/three'},
+      '2/one': { one: '2/one', two: '2/two', three: '2/three' },
+      '3/one': { one: '3/one', two: '3/two', three: '3/three' },
     });
   });
 
@@ -342,8 +346,8 @@ describe('Report Factory', () => {
     const report = multiFactory.create(FAKE_REPORT);
 
     expect(report.fetch()).toEqual({
-      '2/one': {one: '2/one', two: '2/two', three: '2/three'},
-      '3/one': {one: '3/one', two: '3/two', three: '3/three'},
+      '2/one': { one: '2/one', two: '2/two', three: '2/three' },
+      '3/one': { one: '3/one', two: '3/two', three: '3/three' },
     });
   });
 });
@@ -354,28 +358,28 @@ describe('Join Report', () => {
   let mockQuery: jasmine.Spy;
 
   beforeEach(() => {
-    ({reportFactory, api, mockQuery} = bootstrapGoogleAdsApi());
+    ({ reportFactory, api, mockQuery } = bootstrapGoogleAdsApi());
   });
 
   it('returns expected results from query', () => {
-    mockQuery.and.callFake(({query}) => {
+    mockQuery.and.callFake(({ query }) => {
       if (query === JOIN_REPORT.query) {
-        return iterator({d: {one: 'one', nother: 'another'}});
+        return iterator({ d: { one: 'one', nother: 'another' } });
       } else if (query === GET_LEAF_ACCOUNTS_REPORT.query) {
         return iterator({
-          customerClient: {id: '1'},
+          customerClient: { id: '1' },
         });
       } else {
         return iterator({
-          a: {one: 'one'},
-          b: {two: 'two'},
-          c: {another: 'three'},
+          a: { one: 'one' },
+          b: { two: 'two' },
+          c: { another: 'three' },
         });
       }
     });
     const report = reportFactory.create(JOIN_REPORT);
     expect(report.fetch()).toEqual({
-      one: {one: 'one', two: 'two', another: 'another'},
+      one: { one: 'one', two: 'two', another: 'another' },
     });
   });
 });
@@ -384,35 +388,35 @@ describe('Leaf expansion', () => {
   let reportFactory: ReportFactory;
   let api: GoogleAdsApi;
   let mockQuery: jasmine.Spy;
-  const mockLeafAccounts: Record<string, string[]> = {'123': ['1', '2', '3']};
+  const mockLeafAccounts: Record<string, string[]> = { '123': ['1', '2', '3'] };
 
   beforeEach(() => {
-    ({reportFactory, api, mockQuery} = bootstrapGoogleAdsApi({
+    ({ reportFactory, api, mockQuery } = bootstrapGoogleAdsApi({
       mockLeafAccounts,
       spyOnLeaf: false,
     }));
   });
 
   it('checks all expanded accounts are added to the report', () => {
-    mockQuery.and.callFake(({customerId, query}) => {
+    mockQuery.and.callFake(({ customerId, query }) => {
       if (query === GET_LEAF_ACCOUNTS_REPORT.query) {
         return iterator(
           ...mockLeafAccounts[customerId].map((id) => ({
-            customerClient: {id, name: `customer ${id}`, status: 'ENABLED'},
+            customerClient: { id, name: `customer ${id}`, status: 'ENABLED' },
           })),
         );
       } else {
         return iterator({
           customerId,
-          a: {id: customerId},
+          a: { id: customerId },
         });
       }
     });
     const report = reportFactory.create(FAKE_REPORT_2);
     expect(report.fetch()).toEqual({
-      'customers/1/id/a1': {customerId: '1', id: 'a1'},
-      'customers/2/id/a2': {customerId: '2', id: 'a2'},
-      'customers/3/id/a3': {customerId: '3', id: 'a3'},
+      'customers/1/id/a1': { customerId: '1', id: 'a1' },
+      'customers/2/id/a2': { customerId: '2', id: 'a2' },
+      'customers/3/id/a3': { customerId: '3', id: 'a3' },
     });
   });
 });

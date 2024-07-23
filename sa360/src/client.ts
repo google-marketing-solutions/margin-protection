@@ -19,13 +19,10 @@
  * @fileoverview Client for SA360.
  */
 
-import {ReportFactory,} from 'common/ads_api';
-import {
-  JoinType,
-  QueryBuilder,
-} from 'common/ads_api_types';
-import {newRuleBuilder} from 'common/client_helpers';
-import {AbstractRuleRange} from 'common/sheet_helpers';
+import { ReportFactory } from 'common/ads_api';
+import { JoinType, QueryBuilder } from 'common/ads_api_types';
+import { newRuleBuilder } from 'common/client_helpers';
+import { AbstractRuleRange } from 'common/sheet_helpers';
 import {
   ExecutorResult,
   ParamDefinition,
@@ -51,7 +48,7 @@ import {
   RuleGranularity,
 } from 'sa360/src/types';
 
-import {AD_GROUP_REPORT, CAMPAIGN_REPORT} from './api_v2';
+import { AD_GROUP_REPORT, CAMPAIGN_REPORT } from './api_v2';
 
 /**
  * Creates a new rule for SA360.
@@ -193,7 +190,7 @@ export class Client implements ClientInterface {
       rules[rule.name] = rule;
     }
 
-    return {rules, results};
+    return { rules, results };
   }
 
   async getAllCampaigns(): Promise<RecordInfo[]> {
@@ -290,7 +287,7 @@ export class ClientV2 implements ClientInterfaceV2 {
       rules[rule.name] = rule;
     }
 
-    return {rules, results};
+    return { rules, results };
   }
 
   /**

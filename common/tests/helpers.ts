@@ -21,8 +21,8 @@
 
 // g3-format-prettier
 
-import {AdsClientArgs} from 'common/ads_api_types';
-import {FakePropertyStore} from 'common/test_helpers/mock_apps_script';
+import { AdsClientArgs } from 'common/ads_api_types';
+import { FakePropertyStore } from 'common/test_helpers/mock_apps_script';
 
 import {
   CredentialManager,
@@ -31,7 +31,7 @@ import {
   GoogleAdsApiFactory,
   ReportFactory,
 } from '../ads_api';
-import {AbstractRuleRange, AppsScriptFrontEnd} from '../sheet_helpers';
+import { AbstractRuleRange, AppsScriptFrontEnd } from '../sheet_helpers';
 import {
   AppsScriptFunctions,
   BaseClientArgs,
@@ -83,7 +83,7 @@ export class RuleRange extends AbstractRuleRange<
   BaseClientArgs
 > {
   async getRows() {
-    return [{id: '1', displayName: 'Campaign 1', advertiserId: '1'}];
+    return [{ id: '1', displayName: 'Campaign 1', advertiserId: '1' }];
   }
 }
 
@@ -91,7 +91,7 @@ export class RuleRange extends AbstractRuleRange<
  * Test client for use in tests.
  */
 export class FakeClient implements TestClientInterface {
-  readonly args: BaseClientArgs = {label: 'test'};
+  readonly args: BaseClientArgs = { label: 'test' };
   readonly ruleStore: {
     [ruleName: string]: RuleExecutor<
       TestClientInterface,
@@ -166,6 +166,7 @@ export class FakeFrontEnd extends AppsScriptFrontEnd<
   };
   private readonly messages: GoogleAppsScript.Mail.MailAdvancedParameters[] =
     [];
+  private readonly old: GoogleAppsScript.Mail.MailAdvancedParameters[] = [];
 
   constructor(
     args: FrontEndArgs<
@@ -180,7 +181,7 @@ export class FakeFrontEnd extends AppsScriptFrontEnd<
   }
 
   getIdentity(): BaseClientArgs {
-    return {label: 'test'};
+    return { label: 'test' };
   }
 
   override async onOpen() {
@@ -213,6 +214,7 @@ export class FakeFrontEnd extends AppsScriptFrontEnd<
   }
 
   getMessages() {
+    this.old.splice(0, 0, ...this.messages);
     return this.messages.splice(0, this.messages.length);
   }
 }
@@ -246,10 +248,10 @@ const FAKE_API_ENDPOINT = {
  */
 export function bootstrapGoogleAdsApi(
   {
-    mockLeafAccounts = {'1': ['123']},
+    mockLeafAccounts = { '1': ['123'] },
     spyOnLeaf = true,
-  }: {mockLeafAccounts: Record<string, string[]>; spyOnLeaf: boolean} = {
-    mockLeafAccounts: {'1': ['123']},
+  }: { mockLeafAccounts: Record<string, string[]>; spyOnLeaf: boolean } = {
+    mockLeafAccounts: { '1': ['123'] },
     spyOnLeaf: true,
   },
 ) {
@@ -278,7 +280,7 @@ export function bootstrapGoogleAdsApi(
   });
   const mockQuery: jasmine.Spy = spyOn(api, 'queryOne');
   spyOn(apiFactory, 'create').and.callFake(() => api);
-  return {api, reportFactory, mockQuery};
+  return { api, reportFactory, mockQuery };
 }
 
 /**

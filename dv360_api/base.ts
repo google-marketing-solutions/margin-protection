@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-import {ObjectUtil, UriUtil} from './utils';
+import { ObjectUtil, UriUtil } from './utils';
 
 /**
  * DV360 API resources contain page tokens.
@@ -41,8 +41,10 @@ export class BaseApiClient {
    * @param apiScope The API scope
    * @param apiVersion The API version
    */
-  constructor(private readonly apiScope: string, private readonly apiVersion: string) {
-  }
+  constructor(
+    private readonly apiScope: string,
+    private readonly apiVersion: string,
+  ) {}
 
   /**
    * Executes a paged API request (e.g. GET with pageToken). Keeps track of
@@ -60,9 +62,9 @@ export class BaseApiClient {
    */
   executePagedApiRequest(
     requestUri: string,
-    requestParams: {[key: string]: string} | null,
-    requestCallback: (p1: {[key: string]: unknown}) => void,
-    maxPages: number = -1
+    requestParams: { [key: string]: string } | null,
+    requestCallback: (p1: { [key: string]: unknown }) => void,
+    maxPages: number = -1,
   ) {
     let url = this.buildApiUrl(requestUri);
     let pageCount = 1;
@@ -78,7 +80,7 @@ export class BaseApiClient {
       if (pageToken) {
         if (requestParams && requestParams['payload']) {
           const payload = JSON.parse(
-            String(requestParams['payload'])
+            String(requestParams['payload']),
           ) as PagedDisplayVideoResponse;
           payload.pageToken = pageToken;
           requestParams['payload'] = JSON.stringify(payload);
@@ -108,8 +110,8 @@ export class BaseApiClient {
     requestUri: string,
     requestParams: Params | null,
     retryOnFailure: boolean,
-    operationCount: number = 0
-  ): {nextPageToken?: string} {
+    operationCount: number = 0,
+  ): { nextPageToken?: string } {
     const url = this.buildApiUrl(requestUri);
     const params = this.buildApiParams(requestParams);
     const maxRetries = 3;
@@ -131,12 +133,12 @@ export class BaseApiClient {
           url,
           params,
           retryOnFailure,
-          operationCount
+          operationCount,
         );
       } else {
         console.warn(
           'Retry on failure not supported or all retries ' +
-            'have been exhausted... Failing!'
+            'have been exhausted... Failing!',
         );
         throw e;
       }
@@ -170,8 +172,8 @@ export class BaseApiClient {
   buildApiParams(requestParams: Params | null): Params {
     const token = ScriptApp.getOAuthToken();
     const baseParams: Params = {
-      'contentType': 'application/json',
-      'headers': {Authorization: `Bearer ${token}`, Accept: 'application/json'},
+      contentType: 'application/json',
+      headers: { Authorization: `Bearer ${token}`, Accept: 'application/json' },
     };
     return ObjectUtil.extend(baseParams, requestParams || {});
   }

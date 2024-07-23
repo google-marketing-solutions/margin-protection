@@ -19,12 +19,12 @@
  * @fileoverview General rules for SA360
  */
 
-import {equalTo, inRange} from 'common/checks';
+import { equalTo, inRange } from 'common/checks';
 
-import {Value, Values} from 'common/types';
+import { Value, Values } from 'common/types';
 
-import {newRuleV2} from './client';
-import {RuleGranularity} from './types';
+import { newRuleV2 } from './client';
+import { RuleGranularity } from './types';
 import {
   AD_GROUP_REPORT,
   AD_GROUP_USER_LIST_REPORT,
@@ -62,7 +62,7 @@ export const budgetPacingRule = newRuleV2({
   name: 'Budget Pacing',
   description: 'Pacing',
   granularity: RuleGranularity.CAMPAIGN,
-  valueFormat: {label: 'Budget/Spend'},
+  valueFormat: { label: 'Budget/Spend' },
   params: {
     min: {
       label: 'Min. Percent Ahead/Behind',
@@ -73,7 +73,7 @@ export const budgetPacingRule = newRuleV2({
       validationFormulas: RULES.GREATER_THAN_MIN,
     },
   },
-  defaults: {min: '0', max: '0.5'},
+  defaults: { min: '0', max: '0.5' },
   async callback() {
     const values: Values = {};
     const report = this.client.getReport(CAMPAIGN_PACING_REPORT).fetch();
@@ -96,7 +96,7 @@ export const budgetPacingRule = newRuleV2({
       );
     }
 
-    return {values};
+    return { values };
   },
 });
 
@@ -133,7 +133,7 @@ export const campaignStatusRule = newRuleV2({
     lastUpdated: '',
   },
   granularity: RuleGranularity.CAMPAIGN,
-  valueFormat: {label: 'Invalid'},
+  valueFormat: { label: 'Invalid' },
   async callback() {
     const values: Values = {};
     const campaignReport = this.client.getReport(CAMPAIGN_REPORT);
@@ -180,15 +180,15 @@ export const campaignStatusRule = newRuleV2({
           : 1,
         {
           'Customer ID': reportRow.customerId,
-          'Customer': reportRow.customerName,
+          Customer: reportRow.customerName,
           'Campaign ID': reportRow.campaignId,
-          'Campaign': reportRow.campaignName,
+          Campaign: reportRow.campaignName,
           'Current Status': reportRow.campaignStatus,
         },
       );
       this.settings.set(reportRow.campaignId, setting);
     }
-    return {values};
+    return { values };
   },
 });
 
@@ -208,7 +208,7 @@ export const adGroupStatusRule = newRuleV2({
     adGroupActive: 'N',
   },
   granularity: RuleGranularity.AD_GROUP,
-  valueFormat: {label: 'Change'},
+  valueFormat: { label: 'Change' },
   async callback() {
     const values: Values = {};
 
@@ -226,19 +226,19 @@ export const adGroupStatusRule = newRuleV2({
           : 0,
         {
           'Customer ID': reportRow.customerId,
-          'Customer': reportRow.customerName,
+          Customer: reportRow.customerName,
           'Campaign ID': reportRow.campaignId,
           'Ad Group ID': reportRow.adGroupId,
           'Ad Group': reportRow.adGroupName,
-          'Status': reportRow.adGroupStatus,
+          Status: reportRow.adGroupStatus,
         },
       );
 
       if (reportRow.adGroupStatus === 'Active') {
-        this.settings.set(adGroupId, {adGroupActive: 'Y'});
+        this.settings.set(adGroupId, { adGroupActive: 'Y' });
       }
     }
-    return {values};
+    return { values };
   },
 });
 
@@ -260,7 +260,7 @@ export const adGroupAudienceTargetRule = newRuleV2({
     userLists: '',
   },
   granularity: RuleGranularity.AD_GROUP,
-  valueFormat: {label: 'Change'},
+  valueFormat: { label: 'Change' },
   async callback() {
     const values: Values = {};
     const audienceReport = this.client.getReport(AD_GROUP_USER_LIST_REPORT);
@@ -283,7 +283,7 @@ export const adGroupAudienceTargetRule = newRuleV2({
         userLists: setting.join(','),
       });
     }
-    return {values};
+    return { values };
   },
 });
 
@@ -305,7 +305,7 @@ export const ageTargetRule = newRuleV2({
     ageTargetAgeRange: '',
   },
   granularity: RuleGranularity.AD_GROUP,
-  valueFormat: {label: 'Change'},
+  valueFormat: { label: 'Change' },
   async callback() {
     const values: Values = {};
 
@@ -322,9 +322,9 @@ export const ageTargetRule = newRuleV2({
         targets,
         fields,
       });
-      this.settings.set(adGroupId, {ageTargetAgeRange: setting.join(',')});
+      this.settings.set(adGroupId, { ageTargetAgeRange: setting.join(',') });
     }
-    return {values};
+    return { values };
   },
 });
 
@@ -346,7 +346,7 @@ export const genderTargetRule = newRuleV2({
     genderTargetGenderType: '',
   },
   granularity: RuleGranularity.AD_GROUP,
-  valueFormat: {label: 'Change'},
+  valueFormat: { label: 'Change' },
   async callback() {
     const values: Values = {};
 
@@ -365,9 +365,11 @@ export const genderTargetRule = newRuleV2({
         targets,
         fields,
       });
-      this.settings.set(adGroupId, {genderTargetGenderType: setting.join(',')});
+      this.settings.set(adGroupId, {
+        genderTargetGenderType: setting.join(','),
+      });
     }
-    return {values};
+    return { values };
   },
 });
 
@@ -391,7 +393,7 @@ export const geoTargetRule = newRuleV2({
   granularity: RuleGranularity.AD_GROUP,
   helper: `=HYPERLINK(
     "https://developers.google.com/google-ads/api/reference/data/geotargets", "Refer to the Criteria ID found in this report.")`,
-  valueFormat: {label: 'Change'},
+  valueFormat: { label: 'Change' },
   async callback() {
     const values: Values = {};
 
@@ -411,9 +413,9 @@ export const geoTargetRule = newRuleV2({
         targets,
         fields,
       });
-      this.settings.set(campaignId, {criteriaIds: setting.join(',')});
+      this.settings.set(campaignId, { criteriaIds: setting.join(',') });
     }
-    return {values};
+    return { values };
   },
 });
 
@@ -435,7 +437,7 @@ export const campaignAudienceTargetRule = newRuleV2({
     userLists: '',
   },
   granularity: RuleGranularity.CAMPAIGN,
-  valueFormat: {label: 'Change'},
+  valueFormat: { label: 'Change' },
   async callback() {
     const values: Values = {};
 
@@ -458,7 +460,7 @@ export const campaignAudienceTargetRule = newRuleV2({
         userLists: setting.join(','),
       });
     }
-    return {values};
+    return { values };
   },
 });
 
@@ -479,7 +481,7 @@ interface TrackSettingsChangeArgs {
   /**
    * Extra metadata that's used in reporting.
    */
-  fields: {[key: string]: string};
+  fields: { [key: string]: string };
 }
 
 /**
@@ -523,8 +525,8 @@ export function trackSettingsChanges(
   );
 }
 
-function objectEquals(value: string, fields: {[fieldName: string]: string}) {
-  return {value, anomalous: value !== NO_CHANGES, fields};
+function objectEquals(value: string, fields: { [fieldName: string]: string }) {
+  return { value, anomalous: value !== NO_CHANGES, fields };
 }
 
 function aggregateReport<
@@ -534,17 +536,17 @@ function aggregateReport<
     campaignId: string;
   },
   CampaignLevel extends boolean = false,
->(report: {[criterionId: string]: ReportRow}, key: keyof ReportRow) {
+>(report: { [criterionId: string]: ReportRow }, key: keyof ReportRow) {
   const aggregatedReport: {
     [adGroupId: string]: [
       values: string[],
-      fields: {[fieldName: string]: string},
+      fields: { [fieldName: string]: string },
     ];
   } = {};
 
-  type ContextualReportRow = ReportRow & {adGroupId?: string};
+  type ContextualReportRow = ReportRow & { adGroupId?: string };
   for (const reportRow of Object.values<ContextualReportRow>(
-    report as unknown as {[criterionId: string]: ContextualReportRow},
+    report as unknown as { [criterionId: string]: ContextualReportRow },
   )) {
     if (!aggregatedReport[reportRow.adGroupId ?? reportRow.campaignId]) {
       aggregatedReport[reportRow.adGroupId ?? reportRow.campaignId] = [

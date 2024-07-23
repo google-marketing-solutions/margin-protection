@@ -22,14 +22,11 @@
 
 // g3-format-prettier
 
-import {
-  SA360_API_VERSION,
-  SA360_URL,
-} from 'sa360/src/api';
+import { SA360_API_VERSION, SA360_URL } from 'sa360/src/api';
 
 interface Params {
   payload: string;
-  headers: {[key: string]: string};
+  headers: { [key: string]: string };
 }
 
 interface MatchTableQueries {
@@ -110,7 +107,7 @@ export class MatchTable {
       }
     }
     // tslint:disable-next-line:enforce-name-casing This is to mock existing variables.
-    (globalThis as unknown as {UrlFetchApp: MockUrlFetchApp}).UrlFetchApp =
+    (globalThis as unknown as { UrlFetchApp: MockUrlFetchApp }).UrlFetchApp =
       new MockUrlFetchApp(Object.assign({}, this.routes));
   }
 
@@ -125,12 +122,12 @@ export class MatchTable {
   private listResults() {
     ++this.runPostHits;
     const obj = {
-      'url': 'https://path/to/report',
+      url: 'https://path/to/report',
       byteCount: new Blob([this.getReport(this.params)]).size,
     };
     const a = JSON.stringify({
-      'isReportReady': true,
-      'files': [obj],
+      isReportReady: true,
+      files: [obj],
     });
     return a;
   }
@@ -145,13 +142,13 @@ export class MatchTable {
 
   private getAdGroupReport() {
     const payload = JSON.parse(this.params.payload) as {
-      columns: Array<{columnName: string}>;
-      reportScope: {agencyId: string};
+      columns: Array<{ columnName: string }>;
+      reportScope: { agencyId: string };
     };
     const columns = payload.columns;
     const agencyId2 = payload.reportScope.agencyId === '2';
     function fill() {
-      return Array.from({length: columns.length}).map((v) => '');
+      return Array.from({ length: columns.length }).map((v) => '');
     }
 
     const matrix: string[][] = [fill()];
@@ -192,7 +189,9 @@ export class MatchTable {
 
   private getDefaultReport() {
     const columns = (
-      JSON.parse(this.params.payload) as {columns: Array<{columnName: string}>}
+      JSON.parse(this.params.payload) as {
+        columns: Array<{ columnName: string }>;
+      }
     ).columns;
 
     const matrix: string[][] = [[]];
@@ -208,7 +207,7 @@ export class MatchTable {
   private getReport(params: Params) {
     ++this.reportGetHits;
     const matrix =
-      (JSON.parse(this.params.payload) as {reportType: 'adGroupTarget'})
+      (JSON.parse(this.params.payload) as { reportType: 'adGroupTarget' })
         .reportType === 'adGroupTarget'
         ? this.getAdGroupReport()
         : this.getDefaultReport();

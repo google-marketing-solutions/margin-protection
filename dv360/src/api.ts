@@ -21,7 +21,7 @@
 
 // g3-format-prettier
 
-import {IDType, QueryReportParams} from './types';
+import { IDType, QueryReportParams } from './types';
 
 /** The API version to use. Exposed for testing. */
 export const DBM_API_VERSION = 'v2';
@@ -54,10 +54,10 @@ interface QueryBody {
     dataRange:
       | {
           range: 'CUSTOM_DATES';
-          customEndDate: {month: number; year: number; day: number};
-          customStartDate: {month: number; year: number; day: number};
+          customEndDate: { month: number; year: number; day: number };
+          customStartDate: { month: number; year: number; day: number };
         }
-      | {range: string};
+      | { range: string };
     format: string;
     sendNotification: boolean;
   };
@@ -65,7 +65,7 @@ interface QueryBody {
     type: string;
     groupBys: readonly string[];
     metrics: readonly string[];
-    filters: Array<{type: string; value: string}>;
+    filters: Array<{ type: string; value: string }>;
   };
 }
 
@@ -104,7 +104,7 @@ abstract class Report {
       (JSON.parse(
         UrlFetchApp.fetch(
           getQueryUrl('queries'),
-          apiParams({'payload': JSON.stringify(this.queryBody())}),
+          apiParams({ payload: JSON.stringify(this.queryBody()) }),
         ).getContentText(),
       ) as Query);
     this.properties.setProperty(queryTitle, query.queryId);
@@ -131,7 +131,7 @@ abstract class Report {
       UrlFetchApp.fetch(
         getQueryUrl(`queries/${queryId}:run?synchronous=true`),
         apiParams({
-          'payload': JSON.stringify({
+          payload: JSON.stringify({
             dataRange: getDataRange(this.params.startDate, this.params.endDate),
           }),
         }),
@@ -145,7 +145,7 @@ abstract class Report {
   protected fetchReport(reportUrl: string): string[][] {
     const query: string = UrlFetchApp.fetch(
       reportUrl,
-      apiParams({'contentType': undefined}),
+      apiParams({ contentType: undefined }),
     ).getContentText();
 
     return Utilities.parseCsv(query.split('\n\n')[0]);
@@ -169,7 +169,7 @@ export class ImpressionReport
     insertionOrderId: string,
     countries: string[],
   ) {
-    const report = {...this.report};
+    const report = { ...this.report };
     let validImpressions = 0;
     for (const country of countries) {
       const key = `${insertionOrderId},${country}`;
@@ -214,7 +214,7 @@ export class ImpressionReport
         title: this.getQueryTitle(),
         dataRange: {
           // note - this is a placeholder. date range will always be overridden.
-          'range': 'LAST_7_DAYS',
+          range: 'LAST_7_DAYS',
         },
         format: 'CSV',
         sendNotification: false,
@@ -318,7 +318,7 @@ export class BudgetReport extends Report implements BudgetReportInterface {
         prev[key] += Number(curr[mediaCost]);
         return prev;
       },
-      {} as {[insertionOrderId: string]: number},
+      {} as { [insertionOrderId: string]: number },
     );
   }
 }
@@ -331,7 +331,7 @@ function getExistingQueryByName(
 ): Query | null {
   const queryResponse = JSON.parse(
     UrlFetchApp.fetch(getQueryUrl('queries'), apiParams()).getContentText(),
-  ) as {queries: Query[]};
+  ) as { queries: Query[] };
   if (!queryResponse.queries) {
     return null;
   }
@@ -347,13 +347,13 @@ function getExistingQueryByName(
 /**
  * Provides sensible defaults to build a `UrlFetchApp` params object.
  */
-function apiParams(requestParams?: {[key: string]: unknown}) {
+function apiParams(requestParams?: { [key: string]: unknown }) {
   const token = ScriptApp.getOAuthToken();
   const baseParams = {
-    'contentType': 'application/json',
-    'headers': {
-      'Authorization': `Bearer ${token}`,
-      'Accept': 'application/json',
+    contentType: 'application/json',
+    headers: {
+      Authorization: `Bearer ${token}`,
+      Accept: 'application/json',
     },
   };
   return Object.assign({}, baseParams, requestParams || {});

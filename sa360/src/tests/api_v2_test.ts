@@ -19,10 +19,6 @@
  * @fileoverview Tests for the SA360 API V2.
  */
 
-// g3-format-prettier
-
-import 'jasmine';
-
 import {
   CredentialManager,
   GoogleAdsApi,
@@ -31,11 +27,7 @@ import {
   ReportFactory,
   SA360_API_ENDPOINT,
 } from 'common/ads_api';
-import {
-  QueryBuilder,
-  ReportResponse,
-  buildQuery,
-} from 'common/ads_api_types';
+import { QueryBuilder, ReportResponse, buildQuery } from 'common/ads_api_types';
 import {
   AD_GROUP_REPORT,
   AD_GROUP_USER_LIST_REPORT,
@@ -71,14 +63,14 @@ describe('ApiV2', () => {
     mockQuery = spyOn(api, 'query');
     mockQuery.and.returnValue(
       iterator({
-        some: {one: 'one'},
-        other: {two: 'two'},
-        final: {three: 'three'},
+        some: { one: 'one' },
+        other: { two: 'two' },
+        final: { three: 'three' },
       }),
     );
     const report = reportFactory.create(FakeReport);
     expect(report.fetch()).toEqual({
-      one: {one: 'one', two: 'two', three: 'three'},
+      one: { one: 'one', two: 'two', three: 'three' },
     });
   });
 
@@ -87,7 +79,7 @@ describe('ApiV2', () => {
       const mockQuery: jasmine.Spy = spyOn(api, 'query');
       mockQuery.and.returnValue(
         iterator(
-          ...[...Array.from({length: 5}).keys()].map((x: number) => ({
+          ...[...Array.from({ length: 5 }).keys()].map((x: number) => ({
             customer: {
               resourceName: 'customers/1',
               id: '1',
@@ -105,35 +97,35 @@ describe('ApiV2', () => {
       );
       const report = reportFactory.create(CAMPAIGN_REPORT);
       expect(report.fetch()).toEqual({
-        'c0': {
+        c0: {
           customerId: '1',
           customerName: 'Customer 1',
           campaignId: 'c0',
           campaignName: 'Campaign 0',
           campaignStatus: 'ENABLED',
         },
-        'c1': {
+        c1: {
           customerId: '1',
           customerName: 'Customer 1',
           campaignId: 'c1',
           campaignName: 'Campaign 1',
           campaignStatus: 'PAUSED',
         },
-        'c2': {
+        c2: {
           customerId: '1',
           customerName: 'Customer 1',
           campaignId: 'c2',
           campaignName: 'Campaign 2',
           campaignStatus: 'ENABLED',
         },
-        'c3': {
+        c3: {
           customerId: '1',
           customerName: 'Customer 1',
           campaignId: 'c3',
           campaignName: 'Campaign 3',
           campaignStatus: 'REMOVED',
         },
-        'c4': {
+        c4: {
           customerId: '1',
           customerName: 'Customer 1',
           campaignId: 'c4',
@@ -149,7 +141,7 @@ describe('ApiV2', () => {
       const mockQuery: jasmine.Spy = spyOn(api, 'query');
       mockQuery.and.returnValue(
         iterator(
-          ...[...Array.from({length: 5}).keys()].map((x) => ({
+          ...[...Array.from({ length: 5 }).keys()].map((x) => ({
             customer: {
               resourceName: 'customers/1',
               id: '1',
@@ -170,7 +162,7 @@ describe('ApiV2', () => {
       );
       const report = reportFactory.create(AD_GROUP_REPORT);
       expect(report.fetch()).toEqual({
-        'ag0': {
+        ag0: {
           customerId: '1',
           customerName: 'Customer 1',
           campaignId: 'c0',
@@ -178,7 +170,7 @@ describe('ApiV2', () => {
           adGroupName: 'AdGroup 0',
           adGroupStatus: 'ACTIVE',
         },
-        'ag1': {
+        ag1: {
           customerId: '1',
           customerName: 'Customer 1',
           campaignId: 'c0',
@@ -186,7 +178,7 @@ describe('ApiV2', () => {
           adGroupName: 'AdGroup 1',
           adGroupStatus: 'ACTIVE',
         },
-        'ag2': {
+        ag2: {
           customerId: '1',
           customerName: 'Customer 1',
           campaignId: 'c1',
@@ -194,7 +186,7 @@ describe('ApiV2', () => {
           adGroupName: 'AdGroup 2',
           adGroupStatus: 'ACTIVE',
         },
-        'ag3': {
+        ag3: {
           customerId: '1',
           customerName: 'Customer 1',
           campaignId: 'c1',
@@ -202,7 +194,7 @@ describe('ApiV2', () => {
           adGroupName: 'AdGroup 3',
           adGroupStatus: 'PAUSED',
         },
-        'ag4': {
+        ag4: {
           customerId: '1',
           customerName: 'Customer 1',
           campaignId: 'c2',
@@ -220,7 +212,7 @@ describe('ApiV2', () => {
       mockQuery.and.callFake((customerId, query) => {
         if (query === CAMPAIGN_TARGET_REPORT.query) {
           return iterator(
-            ...[...Array.from({length: 5}).keys()].map((x) => ({
+            ...[...Array.from({ length: 5 }).keys()].map((x) => ({
               campaignCriterion: {
                 resourceName: `customers/1/campaignCriteria/c1~gtc${x}`,
                 type: 'LOCATION',
@@ -242,7 +234,7 @@ describe('ApiV2', () => {
           );
         } else {
           return iterator(
-            ...[...Array.from({length: 5}).fill('').keys()].map((x) => ({
+            ...[...Array.from({ length: 5 }).fill('').keys()].map((x) => ({
               geoTargetConstant: {
                 resourceName: `geoTargetConstants/gtc${x}`,
                 id: `gtc${x}`,
@@ -256,35 +248,35 @@ describe('ApiV2', () => {
       });
       const report = reportFactory.create(CAMPAIGN_TARGET_REPORT);
       expect(report.fetch()).toEqual({
-        'gtc0': {
+        gtc0: {
           criterionId: 'gtc0',
           customerId: '1',
           customerName: 'Customer 1',
           campaignId: 'c1',
           location: 'Canonical Name 0',
         },
-        'gtc1': {
+        gtc1: {
           criterionId: 'gtc1',
           customerId: '1',
           customerName: 'Customer 1',
           campaignId: 'c1',
           location: 'Canonical Name 1',
         },
-        'gtc2': {
+        gtc2: {
           criterionId: 'gtc2',
           customerId: '1',
           customerName: 'Customer 1',
           campaignId: 'c1',
           location: 'Canonical Name 2',
         },
-        'gtc3': {
+        gtc3: {
           criterionId: 'gtc3',
           customerId: '1',
           customerName: 'Customer 1',
           campaignId: 'c1',
           location: 'Canonical Name 3',
         },
-        'gtc4': {
+        gtc4: {
           criterionId: 'gtc4',
           customerId: '1',
           customerName: 'Customer 1',
@@ -300,25 +292,25 @@ describe('ApiV2', () => {
       const mockQuery: jasmine.Spy = spyOn(api, 'query');
       mockQuery.and.returnValue(
         iterator(
-          ...[...Array.from({length: 5}).keys()].map((x) => ({
+          ...[...Array.from({ length: 5 }).keys()].map((x) => ({
             customer: {
               resourceName: 'customers/1',
               id: '1',
               name: 'Customer 1',
             },
-            campaign: {resourceName: 'customers/1/campaigns/c1', id: 'c1'},
-            adGroup: {resourceName: 'customers/1/adGroups/ag1', id: 'ag1'},
+            campaign: { resourceName: 'customers/1/campaigns/c1', id: 'c1' },
+            adGroup: { resourceName: 'customers/1/adGroups/ag1', id: 'ag1' },
             adGroupCriterion: {
               resourceName: `customers/1/adGroupCriteria/ag1~agc${x}`,
               criterionId: `agc${x}`,
-              ageRange: {type: `AGE_RANGE_${x}`},
+              ageRange: { type: `AGE_RANGE_${x}` },
             },
           })),
         ),
       );
       const report = reportFactory.create(AGE_TARGET_REPORT);
       expect(report.fetch()).toEqual({
-        'agc0': {
+        agc0: {
           criterionId: 'agc0',
           customerId: '1',
           customerName: 'Customer 1',
@@ -326,7 +318,7 @@ describe('ApiV2', () => {
           adGroupId: 'ag1',
           ageRange: 'AGE_RANGE_0',
         },
-        'agc1': {
+        agc1: {
           criterionId: 'agc1',
           customerId: '1',
           customerName: 'Customer 1',
@@ -334,7 +326,7 @@ describe('ApiV2', () => {
           adGroupId: 'ag1',
           ageRange: 'AGE_RANGE_1',
         },
-        'agc2': {
+        agc2: {
           criterionId: 'agc2',
           customerId: '1',
           customerName: 'Customer 1',
@@ -342,7 +334,7 @@ describe('ApiV2', () => {
           adGroupId: 'ag1',
           ageRange: 'AGE_RANGE_2',
         },
-        'agc3': {
+        agc3: {
           criterionId: 'agc3',
           customerId: '1',
           customerName: 'Customer 1',
@@ -350,7 +342,7 @@ describe('ApiV2', () => {
           adGroupId: 'ag1',
           ageRange: 'AGE_RANGE_3',
         },
-        'agc4': {
+        agc4: {
           criterionId: 'agc4',
           customerId: '1',
           customerName: 'Customer 1',
@@ -367,25 +359,25 @@ describe('ApiV2', () => {
       const mockQuery: jasmine.Spy = spyOn(api, 'query');
       mockQuery.and.returnValue(
         iterator(
-          ...[...Array.from({length: 5}).keys()].map((x) => ({
+          ...[...Array.from({ length: 5 }).keys()].map((x) => ({
             customer: {
               resourceName: 'customers/1',
               id: '1',
               name: 'Customer 1',
             },
-            campaign: {resourceName: 'customers/1/campaigns/c1', id: 'c1'},
-            adGroup: {resourceName: 'customers/c1/adGroups/ag1', id: 'ag1'},
+            campaign: { resourceName: 'customers/1/campaigns/c1', id: 'c1' },
+            adGroup: { resourceName: 'customers/c1/adGroups/ag1', id: 'ag1' },
             adGroupCriterion: {
               resourceName: `customers/1/adGroupCriteria/ag1~agc${x}`,
               criterionId: `agc${x}`,
-              ageRange: {type: `AGE_RANGE_${x}`},
+              ageRange: { type: `AGE_RANGE_${x}` },
             },
           })),
         ),
       );
       const report = reportFactory.create(AGE_TARGET_REPORT);
       expect(report.fetch()).toEqual({
-        'agc0': {
+        agc0: {
           criterionId: 'agc0',
           customerId: '1',
           customerName: 'Customer 1',
@@ -393,7 +385,7 @@ describe('ApiV2', () => {
           adGroupId: 'ag1',
           ageRange: 'AGE_RANGE_0',
         },
-        'agc1': {
+        agc1: {
           criterionId: 'agc1',
           customerId: '1',
           customerName: 'Customer 1',
@@ -401,7 +393,7 @@ describe('ApiV2', () => {
           adGroupId: 'ag1',
           ageRange: 'AGE_RANGE_1',
         },
-        'agc2': {
+        agc2: {
           criterionId: 'agc2',
           customerId: '1',
           customerName: 'Customer 1',
@@ -409,7 +401,7 @@ describe('ApiV2', () => {
           adGroupId: 'ag1',
           ageRange: 'AGE_RANGE_2',
         },
-        'agc3': {
+        agc3: {
           criterionId: 'agc3',
           customerId: '1',
           customerName: 'Customer 1',
@@ -417,7 +409,7 @@ describe('ApiV2', () => {
           adGroupId: 'ag1',
           ageRange: 'AGE_RANGE_3',
         },
-        'agc4': {
+        agc4: {
           criterionId: 'agc4',
           customerId: '1',
           customerName: 'Customer 1',
@@ -434,26 +426,26 @@ describe('ApiV2', () => {
       const mockQuery: jasmine.Spy = spyOn(api, 'query');
       mockQuery.and.returnValue(
         iterator(
-          ...[...Array.from({length: 5}).keys()].map((x) => ({
+          ...[...Array.from({ length: 5 }).keys()].map((x) => ({
             customer: {
               resourceName: 'customers/1',
               id: '1',
               name: 'Customer 1',
             },
-            campaign: {resourceName: 'customers/1/campaigns/c1', id: 'c1'},
-            adGroup: {resourceName: 'customers/c1/adGroups/ag1', id: 'ag1'},
+            campaign: { resourceName: 'customers/1/campaigns/c1', id: 'c1' },
+            adGroup: { resourceName: 'customers/c1/adGroups/ag1', id: 'ag1' },
             adGroupCriterion: {
               resourceName: `customers/1/adGroupCriteria/agc${x}`,
               criterionId: `agc${x}`,
-              gender: {type: `Gender Type ${x}`},
+              gender: { type: `Gender Type ${x}` },
             },
-            genderView: {resourceName: 'customers/1/genderViews/1~${x}'},
+            genderView: { resourceName: 'customers/1/genderViews/1~${x}' },
           })),
         ),
       );
       const report = reportFactory.create(GENDER_TARGET_REPORT);
       expect(report.fetch()).toEqual({
-        'agc0': {
+        agc0: {
           criterionId: 'agc0',
           customerId: '1',
           customerName: 'Customer 1',
@@ -461,7 +453,7 @@ describe('ApiV2', () => {
           adGroupId: 'ag1',
           gender: 'Gender Type 0',
         },
-        'agc1': {
+        agc1: {
           criterionId: 'agc1',
           customerId: '1',
           customerName: 'Customer 1',
@@ -469,7 +461,7 @@ describe('ApiV2', () => {
           adGroupId: 'ag1',
           gender: 'Gender Type 1',
         },
-        'agc2': {
+        agc2: {
           criterionId: 'agc2',
           customerId: '1',
           customerName: 'Customer 1',
@@ -477,7 +469,7 @@ describe('ApiV2', () => {
           adGroupId: 'ag1',
           gender: 'Gender Type 2',
         },
-        'agc3': {
+        agc3: {
           criterionId: 'agc3',
           customerId: '1',
           customerName: 'Customer 1',
@@ -485,7 +477,7 @@ describe('ApiV2', () => {
           adGroupId: 'ag1',
           gender: 'Gender Type 3',
         },
-        'agc4': {
+        agc4: {
           criterionId: 'agc4',
           customerId: '1',
           customerName: 'Customer 1',
@@ -503,17 +495,17 @@ describe('ApiV2', () => {
       mockQuery.and.callFake((customerId, query) => {
         if (query === CAMPAIGN_USER_LIST_REPORT.query) {
           return iterator(
-            ...[...Array.from({length: 5}).keys()].map((x) => ({
+            ...[...Array.from({ length: 5 }).keys()].map((x) => ({
               customer: {
                 resourceName: 'customers/1',
                 id: '1',
                 name: 'Customer 1',
               },
-              campaign: {resourceName: 'customers/1/campaigns/c1', id: 'c1'},
+              campaign: { resourceName: 'customers/1/campaigns/c1', id: 'c1' },
               campaignCriterion: {
                 resourceName: `customers/1/campaignCriteria/209618821~c${x}`,
                 type: 'USER_LIST',
-                userList: {userList: `customers/1/userLists/ul${x}`},
+                userList: { userList: `customers/1/userLists/ul${x}` },
                 criterionId: `ul${x}`,
               },
               campaignAudienceView: {
@@ -523,7 +515,7 @@ describe('ApiV2', () => {
           );
         } else {
           return iterator(
-            ...[...Array.from({length: 5}).keys()].map((x) => ({
+            ...[...Array.from({ length: 5 }).keys()].map((x) => ({
               userList: {
                 resourceName: `customers/1/userLists/ul${x}`,
                 type: 'RULE_BASED',
@@ -537,35 +529,35 @@ describe('ApiV2', () => {
 
       const report = reportFactory.create(CAMPAIGN_USER_LIST_REPORT);
       expect(report.fetch()).toEqual({
-        'ul0': {
+        ul0: {
           criterionId: 'ul0',
           customerId: '1',
           customerName: 'Customer 1',
           campaignId: 'c1',
           userListName: 'All visitors 0',
         },
-        'ul1': {
+        ul1: {
           criterionId: 'ul1',
           customerId: '1',
           customerName: 'Customer 1',
           campaignId: 'c1',
           userListName: 'All visitors 1',
         },
-        'ul2': {
+        ul2: {
           criterionId: 'ul2',
           customerId: '1',
           customerName: 'Customer 1',
           campaignId: 'c1',
           userListName: 'All visitors 2',
         },
-        'ul3': {
+        ul3: {
           criterionId: 'ul3',
           customerId: '1',
           customerName: 'Customer 1',
           campaignId: 'c1',
           userListName: 'All visitors 3',
         },
-        'ul4': {
+        ul4: {
           criterionId: 'ul4',
           customerId: '1',
           customerName: 'Customer 1',
@@ -582,18 +574,18 @@ describe('ApiV2', () => {
       mockQuery.and.callFake((customerId, query) => {
         if (query === AD_GROUP_USER_LIST_REPORT.query) {
           return iterator(
-            ...[...Array.from({length: 5}).keys()].map((x) => ({
+            ...[...Array.from({ length: 5 }).keys()].map((x) => ({
               customer: {
                 resourceName: 'customers/1',
                 id: '1',
                 name: 'Customer 1',
               },
-              campaign: {resourceName: 'customers/1/campaigns/c1', id: 'c1'},
-              adGroup: {id: 'ag1'},
+              campaign: { resourceName: 'customers/1/campaigns/c1', id: 'c1' },
+              adGroup: { id: 'ag1' },
               adGroupCriterion: {
                 resourceName: `customers/1/campaignCriteria/209618821~c${x}`,
                 type: 'USER_LIST',
-                userList: {userList: `customers/1/userLists/ul${x}`},
+                userList: { userList: `customers/1/userLists/ul${x}` },
                 criterionId: `ul${x}`,
               },
               campaignAudienceView: {
@@ -603,7 +595,7 @@ describe('ApiV2', () => {
           );
         } else {
           return iterator(
-            ...[...Array.from({length: 5}).keys()].map((x) => ({
+            ...[...Array.from({ length: 5 }).keys()].map((x) => ({
               userList: {
                 resourceName: `customers/1/userLists/ul${x}`,
                 type: 'RULE_BASED',
@@ -617,7 +609,7 @@ describe('ApiV2', () => {
 
       const report = reportFactory.create(AD_GROUP_USER_LIST_REPORT);
       expect(report.fetch()).toEqual({
-        'ul0': {
+        ul0: {
           criterionId: 'ul0',
           customerId: '1',
           customerName: 'Customer 1',
@@ -625,7 +617,7 @@ describe('ApiV2', () => {
           adGroupId: 'ag1',
           userListName: 'All visitors 0',
         },
-        'ul1': {
+        ul1: {
           criterionId: 'ul1',
           customerId: '1',
           customerName: 'Customer 1',
@@ -633,7 +625,7 @@ describe('ApiV2', () => {
           adGroupId: 'ag1',
           userListName: 'All visitors 1',
         },
-        'ul2': {
+        ul2: {
           criterionId: 'ul2',
           customerId: '1',
           customerName: 'Customer 1',
@@ -641,7 +633,7 @@ describe('ApiV2', () => {
           adGroupId: 'ag1',
           userListName: 'All visitors 2',
         },
-        'ul3': {
+        ul3: {
           criterionId: 'ul3',
           customerId: '1',
           customerName: 'Customer 1',
@@ -649,7 +641,7 @@ describe('ApiV2', () => {
           adGroupId: 'ag1',
           userListName: 'All visitors 3',
         },
-        'ul4': {
+        ul4: {
           criterionId: 'ul4',
           customerId: '1',
           customerName: 'Customer 1',

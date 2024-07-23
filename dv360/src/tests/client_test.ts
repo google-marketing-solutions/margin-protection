@@ -17,14 +17,14 @@
 
 // g3-format-prettier
 
-import {equalTo} from 'common/checks';
-import {mockAppsScript} from 'common/test_helpers/mock_apps_script';
-import {Value} from 'common/types';
+import { equalTo } from 'common/checks';
+import { mockAppsScript } from 'common/test_helpers/mock_apps_script';
+import { Value } from 'common/types';
 
-import {Client, newRule} from '../client';
-import {RuleGranularity} from '../types';
+import { Client, newRule } from '../client';
+import { RuleGranularity } from '../types';
 
-import {generateTestClient} from './client_helpers';
+import { generateTestClient } from './client_helpers';
 
 describe('Client rules are validated', () => {
   let output: string[] = [];
@@ -37,7 +37,7 @@ describe('Client rules are validated', () => {
 
   beforeEach(() => {
     mockAppsScript();
-    client = generateTestClient({id: '123'});
+    client = generateTestClient({ id: '123' });
 
     const values = {
       '1': equalTo(test, 1, {}),
@@ -46,13 +46,13 @@ describe('Client rules are validated', () => {
     client.addRule(
       newRule({
         params: {},
-        valueFormat: {label: 'Some Value'},
+        valueFormat: { label: 'Some Value' },
         name: 'ruleA',
         description: ``,
         granularity: RuleGranularity.CAMPAIGN,
         async callback() {
           output.push('ruleA');
-          return {values};
+          return { values };
         },
         defaults: {},
       }),
@@ -61,13 +61,13 @@ describe('Client rules are validated', () => {
     client.addRule(
       newRule({
         params: {},
-        valueFormat: {label: 'Some Value'},
+        valueFormat: { label: 'Some Value' },
         name: 'ruleB',
         description: ``,
         granularity: RuleGranularity.CAMPAIGN,
         async callback() {
           output.push('ruleB');
-          return {values};
+          return { values };
         },
         defaults: {},
       }),
@@ -89,7 +89,7 @@ describe('Client rules are validated', () => {
   });
 
   it('should have check results after validate() is run', async () => {
-    const {results} = await client.validate();
+    const { results } = await client.validate();
     const ruleValues: Value[] = Object.values(results['ruleA'].values);
     expect(ruleValues.map((value) => value.anomalous)).toEqual([true, false]);
   });

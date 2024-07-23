@@ -21,14 +21,11 @@
 
 // g3-format-prettier
 
-import {
-  lazyLoadApp,
-  toExport,
-} from 'common/sheet_helpers';
-import {PropertyStore} from 'common/types';
+import { lazyLoadApp, toExport } from 'common/sheet_helpers';
+import { PropertyStore } from 'common/types';
 
-import {Client, RuleRange} from './client';
-import {DisplayVideoFrontEnd, migrations} from './frontend';
+import { Client, RuleRange } from './client';
+import { DisplayVideoFrontEnd, migrations } from './frontend';
 import {
   budgetPacingDaysAheadRule,
   budgetPacingPercentageRule,
@@ -36,7 +33,7 @@ import {
   geoTargetRule,
   impressionsByGeoTarget,
 } from './rules';
-import {ClientArgs, ClientInterface, RuleGranularity} from './types';
+import { ClientArgs, ClientInterface, RuleGranularity } from './types';
 
 /**
  * The sheet version the app currently has.

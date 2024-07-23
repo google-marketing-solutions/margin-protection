@@ -2,17 +2,17 @@ const BASE_API_URL = 'https://dfareporting.googleapis.com/dfareporting/v4';
 
 /**
  * Adds a custom menu to the sheet
- * 
+ *
  * @param {obj} e - The sheet event
  */
 function onOpen(e) {
   const ui = SpreadsheetApp.getUi();
   ui.createMenu(`Margin Protection Monitor`)
-    .addItem(`Run`, "main")
+    .addItem(`Run`, 'main')
     .addSeparator()
-    .addItem("Set up Weekly Run Trigger", "weekly")
+    .addItem('Set up Weekly Run Trigger', 'weekly')
     .addSeparator()
-    .addItem("Remove Weekly Trigger", "removeTriggers")
+    .addItem('Remove Weekly Trigger', 'removeTriggers')
     .addToUi();
 }
 
@@ -32,41 +32,39 @@ function weekly() {
 
 /**
  * Set up triggers to execute the tool
- * 
+ *
  * @param {string} cadence - How often the trigger will execute
- * 
+ *
  */
 function setupTriggers(cadence) {
   // Remove previous triggers
   removeTriggers(false);
-  const hour = 5
+  const hour = 5;
   // Create trigger
   if (cadence === 'daily') {
+    ScriptApp.newTrigger('main').timeBased().atHour(hour).everyDays(1).create();
+  } else if (cadence === 'weekly') {
     ScriptApp.newTrigger('main')
-    .timeBased()
-    .atHour(hour)
-    .everyDays(1)
-    .create();
-  } else if(cadence === 'weekly') {
-    ScriptApp.newTrigger('main')
-    .timeBased()
-    .onWeekDay(ScriptApp.WeekDay.MONDAY)
-    .atHour(hour)
-    .everyWeeks(1)
-    .create();
+      .timeBased()
+      .onWeekDay(ScriptApp.WeekDay.MONDAY)
+      .atHour(hour)
+      .everyWeeks(1)
+      .create();
   } else {
-    Logger.log('No trigger was set up.')
-    return
+    Logger.log('No trigger was set up.');
+    return;
   }
   const timeZone = Session.getScriptTimeZone();
-  SpreadsheetApp.getUi().alert(`Success! The Margin Protection Monitor Tool will execute ${cadence} at ${hour}:00 am ${timeZone}`);
+  SpreadsheetApp.getUi().alert(
+    `Success! The Margin Protection Monitor Tool will execute ${cadence} at ${hour}:00 am ${timeZone}`,
+  );
 }
 
 /**
  * Removes all the configured triggers
- * 
+ *
  */
-function removeTriggers(showMessage=true) {
+function removeTriggers(showMessage = true) {
   // Remove triggers
   for (let trigger of ScriptApp.getProjectTriggers()) {
     if (trigger.getEventType() == ScriptApp.EventType.CLOCK) {
@@ -80,27 +78,27 @@ function removeTriggers(showMessage=true) {
 
 /**
  * Makes a call to the Campaign Manager 360 API using the specified URL and options.
- * 
+ *
  *  @param {string} urlSuffix - The API URL suffix.
  *  @param {obj} options - Additional options to be passed to the list API call.
  *  @param {string} baseApiURL - The API URL prefix
- * 
+ *
  *  @return {string} - The content of the response as a string.
- * 
+ *
  */
-function apiCall(urlSuffix, options, baseApiUrl=BASE_API_URL) {
+function apiCall(urlSuffix, options, baseApiUrl = BASE_API_URL) {
   var url = baseApiUrl + urlSuffix;
-  if(!options) {
+  if (!options) {
     options = {};
   }
-  if(!options.headers) {
+  if (!options.headers) {
     options.headers = {};
   }
-  options["muteHttpExceptions"] = true;
-  options.headers['Authorization'] = "Bearer " + ScriptApp.getOAuthToken();
+  options['muteHttpExceptions'] = true;
+  options.headers['Authorization'] = 'Bearer ' + ScriptApp.getOAuthToken();
   var response = UrlFetchApp.fetch(url, options);
-  if(response.getResponseCode() != 200) {
-    throw "Error fetching report " + response.getContentText();
+  if (response.getResponseCode() != 200) {
+    throw 'Error fetching report ' + response.getContentText();
   }
   Logger.log('Successful response from CM reporting API...');
   return response.getContentText();
@@ -119,8 +117,8 @@ function _retry(fn, retries, sleep, entity, secondEntity, options, profileId) {
   try {
     var result = fn(entity, secondEntity, options, profileId);
     return result;
-  } catch(error) {
-    if(isRetriableError(error) && retries > 0) {
+  } catch (error) {
+    if (isRetriableError(error) && retries > 0) {
       Utilities.sleep(sleep);
       return _retry(fn, retries - 1, sleep * 2);
     } else {
@@ -130,46 +128,46 @@ function _retry(fn, retries, sleep, entity, secondEntity, options, profileId) {
 }
 
 /**
-* Given an error raised by an API call, determines if the error has a chance
-* of succeeding if it is retried. A good example of a "retriable" error is
-* rate limit, in which case waiting for a few seconds and trying again might
-* refresh the quota and allow the transaction to go through. This method is
-* desidned to be used by the _retry function.
-*
-*   @param {string} error: Error to verify.
-*
-*   @return {boolean} - True if the error is "retriable", false otherwise
-*/
+ * Given an error raised by an API call, determines if the error has a chance
+ * of succeeding if it is retried. A good example of a "retriable" error is
+ * rate limit, in which case waiting for a few seconds and trying again might
+ * refresh the quota and allow the transaction to go through. This method is
+ * desidned to be used by the _retry function.
+ *
+ *   @param {string} error: Error to verify.
+ *
+ *   @return {boolean} - True if the error is "retriable", false otherwise
+ */
 function isRetriableError(error) {
   var retriableErroMessages = [
-      'failed while accessing document with id',
-      'internal error',
-      'user rate limit exceeded',
-      'quota exceeded',
-      '502',
-      'try again later',
-      'failed while accessing document',
-      'empty response'
+    'failed while accessing document with id',
+    'internal error',
+    'user rate limit exceeded',
+    'quota exceeded',
+    '502',
+    'try again later',
+    'failed while accessing document',
+    'empty response',
   ];
 
   var message = null;
   var result = false;
 
-  if(error) {
-    if(typeof(error) == 'string') {
+  if (error) {
+    if (typeof error == 'string') {
       message = error;
-    } else if(error.message) {
+    } else if (error.message) {
       message = error.message;
-    } else if(error.details && error.details.message) {
+    } else if (error.details && error.details.message) {
       message = error.details.message;
     }
 
     message = message ? message.toLowerCase() : null;
   }
 
-  if(message) {
-    retriableErroMessages.forEach(function(retriableMessage) {
-      if(message.indexOf(retriableMessage) != -1) {
+  if (message) {
+    retriableErroMessages.forEach(function (retriableMessage) {
+      if (message.indexOf(retriableMessage) != -1) {
         result = true;
       }
     });
@@ -179,60 +177,69 @@ function isRetriableError(error) {
 }
 
 /**
-* Sends an email to a list of recipients.
-* 
-*   @param {obj} emailParameters - The email parameters such as email list, subject, cc, etc.
-*/
+ * Sends an email to a list of recipients.
+ *
+ *   @param {obj} emailParameters - The email parameters such as email list, subject, cc, etc.
+ */
 function sendEmail(emailParameters) {
   const htmlBody = HtmlService.createHtmlOutput(emailParameters.body);
   MailApp.sendEmail({
-      to: emailParameters.emails,
-      subject: emailParameters.subject,
-      htmlBody: htmlBody.getContent(),
+    to: emailParameters.emails,
+    subject: emailParameters.subject,
+    htmlBody: htmlBody.getContent(),
   });
 }
 
 /**
-* Builds email parameters for the sendEmail function.
-* 
-*   @param {string} useCase - The error Mitigation use case
-*   @param {string} profileId - The user's profile ID in CM360
-*   @param {string} accountId - The CM360 Network ID
-*   @param {string} reportId - The generated Report ID
-*   @param {string} message - A custom message for the email
-*   @param {list[str]} emails - The list of recipients
-*/
-function getEmailParameters(useCase, profileId, accountId, reportId, message, emails) {
-  message = message ? message : `This is an automated email to let you know that ${useCase} issues have been identified for CM360 Account ${accountId}.`
+ * Builds email parameters for the sendEmail function.
+ *
+ *   @param {string} useCase - The error Mitigation use case
+ *   @param {string} profileId - The user's profile ID in CM360
+ *   @param {string} accountId - The CM360 Network ID
+ *   @param {string} reportId - The generated Report ID
+ *   @param {string} message - A custom message for the email
+ *   @param {list[str]} emails - The list of recipients
+ */
+function getEmailParameters(
+  useCase,
+  profileId,
+  accountId,
+  reportId,
+  message,
+  emails,
+) {
+  message = message
+    ? message
+    : `This is an automated email to let you know that ${useCase} issues have been identified for CM360 Account ${accountId}.`;
   return {
-    'subject': `[ACTION REQUIRED] CM360 ${useCase} Issues identified for account ${accountId}`,
-    'body': `<div style='font-size:16px;'>
+    subject: `[ACTION REQUIRED] CM360 ${useCase} Issues identified for account ${accountId}`,
+    body: `<div style='font-size:16px;'>
       <p>Hi,</p>
       <p>${message}</p>
       <p>For more details, please review the tab '${useCase}-${profileId}-${accountId}-${reportId}' in the <a href='${spreadsheet.getUrl()}'>${useCase} Monitor</a> Google Spreadsheet.</p>
     </div>`,
-    'emails': emails
-  }
+    emails: emails,
+  };
 }
 
 /**
  * Cleans the report data by removing extra headers and footers retrieved in the CSV file.
- * 
+ *
  *  @param {list[list]} data - The data in the report.
  */
 function cleanReportData(data) {
-  if(!data || data.length === 0) {
+  if (!data || data.length === 0) {
     Logger.log(`cleanReportData: There is no data.`);
-    return
+    return;
   }
   let reportStartIndex = 0;
-  for(row = 0; row < data.length; row++) {
+  for (row = 0; row < data.length; row++) {
     const rowData = data[row];
-    const col = (rowData.length > 0) ? rowData[0] : '';
-      if(col === 'Report Fields') {
-        reportStartIndex = row
-        break
-      }
+    const col = rowData.length > 0 ? rowData[0] : '';
+    if (col === 'Report Fields') {
+      reportStartIndex = row;
+      break;
+    }
   }
   // Report data has N headers and 1 footer that should be removed
   data.splice(0, reportStartIndex + 1);
@@ -241,12 +248,18 @@ function cleanReportData(data) {
 
 /**
  * Logs execution status and timestamp
- *  
+ *
  *  @param {int} row - The index of the current row
  *  @param {string} executionStatus - The execution status of the current row/report
  *  @param {string} executionTimestamp - The execution timestamp of the current row/report
  */
 function logExecutionStatus(row, executionStatus, executionTimestamp) {
-  spreadsheet.getSheetByName(REPORTS_CONFIG_SHEET_NAME).getRange(row + 2, REPORTS_CONFIG_EXECUTION_STATUS_COLUMN).setValue(executionStatus);
-  spreadsheet.getSheetByName(REPORTS_CONFIG_SHEET_NAME).getRange(row + 2, REPORTS_CONFIG_LAST_EXECUTION_COLUMN).setValue(executionTimestamp);
+  spreadsheet
+    .getSheetByName(REPORTS_CONFIG_SHEET_NAME)
+    .getRange(row + 2, REPORTS_CONFIG_EXECUTION_STATUS_COLUMN)
+    .setValue(executionStatus);
+  spreadsheet
+    .getSheetByName(REPORTS_CONFIG_SHEET_NAME)
+    .getRange(row + 2, REPORTS_CONFIG_LAST_EXECUTION_COLUMN)
+    .setValue(executionTimestamp);
 }

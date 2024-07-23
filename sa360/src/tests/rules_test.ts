@@ -23,25 +23,15 @@ import {
   FakePropertyStore,
   mockAppsScript,
 } from 'common/test_helpers/mock_apps_script';
-import {
-  bootstrapGoogleAdsApi,
-  iterator,
-} from 'common/tests/helpers';
-import {
-  ParamDefinition,
-  RuleExecutor,
-  Values,
-} from 'common/types';
-import {ClientV2} from 'sa360/src/client';
+import { bootstrapGoogleAdsApi, iterator } from 'common/tests/helpers';
+import { ParamDefinition, RuleExecutor, Values } from 'common/types';
+import { ClientV2 } from 'sa360/src/client';
 import {
   ClientArgsV2,
   ClientInterfaceV2,
   RuleGranularity,
 } from 'sa360/src/types';
-import {
-  ReportClass,
-  ReportInterface,
-} from 'common/ads_api_types';
+import { ReportClass, ReportInterface } from 'common/ads_api_types';
 import {
   AD_GROUP_USER_LIST_REPORT,
   CAMPAIGN_TARGET_REPORT,
@@ -80,8 +70,8 @@ describe('Campaign pacing rule', () => {
 
   it('shows pacing is OK when it is between min and max', async () => {
     const costs = [
-      {budget: 100, spend: 90},
-      {budget: 100, spend: 50},
+      { budget: 100, spend: 90 },
+      { budget: 100, spend: 50 },
     ];
     const value = await generateTestData(costs, [
       [
@@ -99,7 +89,7 @@ describe('Campaign pacing rule', () => {
   });
 
   it('fails to pace when there is no cost', async () => {
-    const costs = [{budget: 100}];
+    const costs = [{ budget: 100 }];
     const value = await generateTestData(costs, [
       [
         'Campaign ID',
@@ -120,10 +110,10 @@ describe('Campaign pacing rule', () => {
  * Generates geo test data for the tests below.
  */
 export async function generateTestData(
-  pacings: Array<{budget: number; spend?: number}>,
+  pacings: Array<{ budget: number; spend?: number }>,
   columns: string[][],
 ) {
-  const {reportFactory, api} = bootstrapGoogleAdsApi();
+  const { reportFactory, api } = bootstrapGoogleAdsApi();
   const client = new ClientV2(
     {
       customerIds: '1',
@@ -146,18 +136,18 @@ export async function generateTestData(
 
   let values: Values = {};
   const mockQuery = spyOn(api, 'query');
-  for (const [i, {budget, spend}] of pacings.entries()) {
+  for (const [i, { budget, spend }] of pacings.entries()) {
     obj.campaign.id = `C${i + 1}`;
     if (spend) {
-      (obj as unknown as {metrics?: {costMicros?: string}}).metrics = {
+      (obj as unknown as { metrics?: { costMicros?: string } }).metrics = {
         costMicros: `${spend * 1e6}`,
       };
     }
     obj.campaignBudget.amountMicros = `${budget * 1e6}`;
     mockQuery.and.returnValue(iterator(obj));
-    const {results, rules} = await client.validate();
+    const { results, rules } = await client.validate();
     writeBackToColumns(rules, columns);
-    values = {...values, ...(results['Budget Pacing']?.values || {})};
+    values = { ...values, ...(results['Budget Pacing']?.values || {}) };
   }
   return values;
 }
@@ -206,7 +196,7 @@ describe('Campaign Status rule (V2)', () => {
   ]) {
     it(`is not anomalous because ${statuses} is not anomalous`, async () => {
       const value = await generateCampaignStatusTestData(
-        statuses.map((campaignStatus: string) => ({campaignStatus})),
+        statuses.map((campaignStatus: string) => ({ campaignStatus })),
         [
           ['Campaign ID', 'Campaign', 'Max. Days Inactive before Active'],
           ['default', '', '1'],
@@ -233,7 +223,7 @@ describe('Campaign Status rule (V2)', () => {
       ',',
     )} is over the threshold.`, async () => {
       const value = await generateCampaignStatusTestData(
-        statuses.map((campaignStatus: string) => ({campaignStatus})),
+        statuses.map((campaignStatus: string) => ({ campaignStatus })),
         [
           [
             'Campaign ID',
@@ -260,7 +250,7 @@ describe('Ad Group status rule', () => {
   });
   it('Status "Removed" is anomalous', async () => {
     const value = await generateAdGroupStatusTestData(
-      [{adGroupStatus: 'Removed'}],
+      [{ adGroupStatus: 'Removed' }],
       [
         ['Campaign ID', 'Campaign'],
         ['default', ''],
@@ -270,7 +260,7 @@ describe('Ad Group status rule', () => {
   });
   it('Status "Paused" is not anomalous if it has never been active', async () => {
     const value = await generateAdGroupStatusTestData(
-      [{adGroupStatus: 'Paused'}],
+      [{ adGroupStatus: 'Paused' }],
       [
         ['Campaign ID', 'Campaign'],
         ['default', ''],
@@ -280,7 +270,7 @@ describe('Ad Group status rule', () => {
   });
   it('Status "Active" is not anomalous', async () => {
     const value = await generateAdGroupStatusTestData(
-      [{adGroupStatus: 'Active'}],
+      [{ adGroupStatus: 'Active' }],
       [
         ['Campaign ID', 'Campaign'],
         ['default', ''],
@@ -290,7 +280,7 @@ describe('Ad Group status rule', () => {
   });
   it('Status "Paused" is anomalous if it follows an "Active" state', async () => {
     const value = await generateAdGroupStatusTestData(
-      [{adGroupStatus: 'Active'}, {adGroupStatus: 'Paused'}],
+      [{ adGroupStatus: 'Active' }, { adGroupStatus: 'Paused' }],
       [
         ['Campaign ID', 'Campaign'],
         ['default', ''],
@@ -309,16 +299,16 @@ describe('Ad Group target rule', () => {
       .getActiveSheet()
       .getRange('A1:D4')
       .setValues(
-        Array.from<string[]>({length: 4}).fill(
-          Array.from<string>({length: 4}).fill(''),
+        Array.from<string[]>({ length: 4 }).fill(
+          Array.from<string>({ length: 4 }).fill(''),
         ),
       );
   });
   it('target unchanged is OK', async () => {
     const value = await generateAdGroupAudienceTestData(
       [
-        {'userLists': 'User List 1,User List 2'},
-        {'userLists': 'User List 1,User List 2'},
+        { userLists: 'User List 1,User List 2' },
+        { userLists: 'User List 1,User List 2' },
       ],
       [
         ['Ad Group ID', 'Ad Group'],
@@ -330,8 +320,8 @@ describe('Ad Group target rule', () => {
   it('has a legible value change value', async () => {
     const value = await generateAdGroupAudienceTestData(
       [
-        {'userLists': 'User List 1,User List 2,User List 3'},
-        {'userLists': 'User List 3,User List 4'},
+        { userLists: 'User List 1,User List 2,User List 3' },
+        { userLists: 'User List 3,User List 4' },
       ],
       [
         ['Ad Group ID', 'User Lists'],
@@ -346,8 +336,8 @@ describe('Ad Group target rule', () => {
   it('respects what is written in the sheet', async () => {
     const value = await generateAdGroupAudienceTestData(
       [
-        {'userLists': 'User List 1,User List 2,User List 3'},
-        {'userLists': 'User List 3,User List 4'},
+        { userLists: 'User List 1,User List 2,User List 3' },
+        { userLists: 'User List 3,User List 4' },
       ],
       [
         ['Ad Group ID', 'User Lists'],
@@ -372,8 +362,8 @@ describe('Campaign user list', () => {
   it('target unchanged is OK', async () => {
     const value = await generateCampaignAudienceTestData(
       [
-        {'userLists': 'User List 1,User List 2'},
-        {'userLists': 'User List 1,User List 2'},
+        { userLists: 'User List 1,User List 2' },
+        { userLists: 'User List 1,User List 2' },
       ],
       [
         ['Campaign ID', 'Ad Group'],
@@ -387,8 +377,8 @@ describe('Campaign user list', () => {
   it('has a legible value change value', async () => {
     const value = await generateCampaignAudienceTestData(
       [
-        {'userLists': 'User List 1,User List 2,User List 3'},
-        {'userLists': 'User List 3,User List 4'},
+        { userLists: 'User List 1,User List 2,User List 3' },
+        { userLists: 'User List 3,User List 4' },
       ],
       [
         ['Campaign ID', 'User Lists'],
@@ -415,9 +405,9 @@ describe('Geo target change', () => {
   it('target unchanged is OK', async () => {
     const value = await generateGeoTargetTestData(
       [
-        {'criterionId': 'criterion/1'},
-        {'criterionId': 'criterion/2'},
-        {'criterionId': 'criterion/1'},
+        { criterionId: 'criterion/1' },
+        { criterionId: 'criterion/2' },
+        { criterionId: 'criterion/1' },
       ],
       [
         ['Campaign ID', 'Criteria IDs'],
@@ -430,7 +420,7 @@ describe('Geo target change', () => {
 
   it('has a legible value change value', async () => {
     const value = await generateGeoTargetTestData(
-      [{'criterionId': 'criterion/1'}, {'criterionId': 'criterion/2'}],
+      [{ criterionId: 'criterion/1' }, { criterionId: 'criterion/2' }],
       [
         ['Campaign ID', 'Criteria IDs'],
         ['default', ''],
@@ -445,10 +435,10 @@ describe('Geo target change', () => {
  * Generates geo test data for the tests below.
  */
 async function generateCampaignStatusTestData(
-  pacings: Array<{campaignStatus: string}>,
+  pacings: Array<{ campaignStatus: string }>,
   columns: string[][],
 ) {
-  const {reportFactory, api} = bootstrapGoogleAdsApi();
+  const { reportFactory, api } = bootstrapGoogleAdsApi();
   const client = new ClientV2(
     {
       customerIds: '1',
@@ -472,11 +462,11 @@ async function generateCampaignStatusTestData(
 
   let values: Values = {};
   const mockQuery = spyOn(api, 'query');
-  for (const [i, {campaignStatus}] of pacings.entries()) {
+  for (const [i, { campaignStatus }] of pacings.entries()) {
     jasmine.clock().mockDate(new Date(60 * 60 * 24 * 1000 * i));
     obj.campaign.status = campaignStatus;
     mockQuery.and.returnValue(iterator(obj));
-    const {results, rules} = await client.validate();
+    const { results, rules } = await client.validate();
     writeBackToColumns(rules, columns);
     values = {
       ...values,
@@ -487,10 +477,10 @@ async function generateCampaignStatusTestData(
 }
 
 async function generateAdGroupStatusTestData(
-  pacings: Array<{adGroupStatus: string}>,
+  pacings: Array<{ adGroupStatus: string }>,
   columns: string[][],
 ) {
-  const {reportFactory, api} = bootstrapGoogleAdsApi();
+  const { reportFactory, api } = bootstrapGoogleAdsApi();
   const client = new ClientV2(
     {
       customerIds: '1',
@@ -515,11 +505,11 @@ async function generateAdGroupStatusTestData(
   };
   let values: Values = {};
   const mockQuery = spyOn(api, 'query');
-  for (const [i, {adGroupStatus}] of pacings.entries()) {
+  for (const [i, { adGroupStatus }] of pacings.entries()) {
     jasmine.clock().mockDate(new Date(60 * 60 * 24 * 1000 * i));
     obj.adGroup.status = adGroupStatus;
     mockQuery.and.returnValue(iterator(obj));
-    const {results, rules} = await client.validate();
+    const { results, rules } = await client.validate();
     writeBackToColumns(rules, columns);
     values = {
       ...values,
@@ -536,7 +526,7 @@ export async function generateAdGroupAudienceTestData(
   overrides: Array<Record<string, string | undefined>>,
   columns: string[][],
 ): Promise<Values> {
-  const {reportFactory} = bootstrapGoogleAdsApi();
+  const { reportFactory } = bootstrapGoogleAdsApi();
   const client = new ClientV2(
     {
       customerIds: 'C1',
@@ -559,23 +549,23 @@ export async function generateAdGroupAudienceTestData(
   > = spyOn(client, 'getReport');
   let values: Values = {};
   const obj = {
-    'criterionId': 'cr1',
-    'customerId': '1',
-    'customerName': 'Customer 1',
-    'campaignId': 'C1',
-    'adGroupId': 'AG1',
-    'adGroupName': 'Ad Group 1',
-    'userListName': '',
+    criterionId: 'cr1',
+    customerId: '1',
+    customerName: 'Customer 1',
+    campaignId: 'C1',
+    adGroupId: 'AG1',
+    adGroupName: 'Ad Group 1',
+    userListName: '',
   };
-  for (const {userLists} of overrides.values()) {
+  for (const { userLists } of overrides.values()) {
     mockQuery.and.callFake((reportClass) => {
       const report = client.reportFactory.create(reportClass);
       const reportGetter = spyOn(report, 'fetch');
       obj.userListName = userLists as string;
-      reportGetter.and.returnValue({'AG1': obj});
+      reportGetter.and.returnValue({ AG1: obj });
       return report;
     });
-    const {results, rules} = await client.validate();
+    const { results, rules } = await client.validate();
     writeBackToColumns(rules, columns);
     values = results['Ad Group Audience Target Change']?.values || {};
   }
@@ -589,7 +579,7 @@ export async function generateCampaignAudienceTestData(
   overrides: Array<Record<string, string | undefined>>,
   columns: string[][],
 ): Promise<Values> {
-  const {reportFactory} = bootstrapGoogleAdsApi();
+  const { reportFactory } = bootstrapGoogleAdsApi();
   const client = new ClientV2(
     {
       customerIds: 'C1',
@@ -622,15 +612,15 @@ export async function generateCampaignAudienceTestData(
     userListName: '',
     userListType: 'USER_LIST',
   };
-  for (const {userLists} of overrides.values()) {
+  for (const { userLists } of overrides.values()) {
     mockQuery.and.callFake((reportClass) => {
       const report = client.reportFactory.create(reportClass);
       const reportGetter = spyOn(report, 'fetch');
       obj.userListName = userLists as string;
-      reportGetter.and.returnValue({'C1': obj});
+      reportGetter.and.returnValue({ C1: obj });
       return report;
     });
-    const {results, rules} = await client.validate();
+    const { results, rules } = await client.validate();
     writeBackToColumns(rules, columns);
     values = results['Campaign Audience Target Change']?.values || {};
   }
@@ -644,7 +634,7 @@ export async function generateGeoTargetTestData(
   overrides: Array<Record<string, string | undefined>>,
   columns: string[][],
 ): Promise<Values> {
-  const {reportFactory} = bootstrapGoogleAdsApi();
+  const { reportFactory } = bootstrapGoogleAdsApi();
   const client = new ClientV2(
     {
       customerIds: 'C1',
@@ -666,50 +656,24 @@ export async function generateGeoTargetTestData(
   let values: Values = {};
 
   const obj = {
-    'criterionId': 'geo1',
-    'customerId': '1',
-    'location': 'Location 1',
-    'customerName': 'Customer 1',
-    'campaignId': 'C1',
-    'campaignName': 'Campaign 1',
+    criterionId: 'geo1',
+    customerId: '1',
+    location: 'Location 1',
+    customerName: 'Customer 1',
+    campaignId: 'C1',
+    campaignName: 'Campaign 1',
   };
-  for (const {criterionId} of overrides.values()) {
+  for (const { criterionId } of overrides.values()) {
     mockQuery.and.callFake((reportClass) => {
       const report = client.reportFactory.create(reportClass);
       const reportGetter = spyOn(report, 'fetch');
       obj.criterionId = criterionId!;
-      reportGetter.and.returnValue({'geo1': obj});
+      reportGetter.and.returnValue({ geo1: obj });
       return report;
     });
-    const {results, rules} = await client.validate();
+    const { results, rules } = await client.validate();
     writeBackToColumns(rules, columns);
     values = results['Geo Target Change']?.values || {};
   }
   return values;
-}
-
-function writeBackToColumns(
-  rules: Record<
-    string,
-    RuleExecutor<
-      ClientInterfaceV2,
-      RuleGranularity,
-      ClientArgsV2,
-      Record<string, ParamDefinition>
-    >
-  >,
-  columns: string[][],
-) {
-  for (const rule of Object.values(rules)) {
-    for (let i = 1; i < columns.length; i++) {
-      if (columns[i].slice(2).filter((c) => c).length) {
-        continue;
-      }
-      columns[i] = [
-        columns[i][0],
-        columns[i][1],
-        ...Object.values<string>(rule.settings.get(columns[i][0])),
-      ];
-    }
-  }
 }

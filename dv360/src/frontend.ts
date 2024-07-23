@@ -29,14 +29,11 @@ import {
   addSettingWithDescription,
   getOrCreateSheet,
 } from 'common/sheet_helpers';
-import {FrontEndArgs} from 'common/types';
-import {RuleRange} from 'dv360/src/client';
-import {
-  ClientArgs,
-  ClientInterface,
-} from 'dv360/src/types';
+import { FrontEndArgs } from 'common/types';
+import { RuleRange } from 'dv360/src/client';
+import { ClientArgs, ClientInterface } from 'dv360/src/types';
 
-import {IDType, RuleGranularity} from './types';
+import { IDType, RuleGranularity } from './types';
 
 const ENTITY_ID = 'ENTITY_ID';
 const ID_TYPE = 'ID_TYPE';
@@ -80,7 +77,7 @@ export const migrations: Record<
   '1.2': (frontend) => {
     // encrypt rules
     const properties = PropertiesService.getScriptProperties().getProperties();
-    const newProperties = {...properties};
+    const newProperties = { ...properties };
     for (const [key, property] of Object.entries(properties)) {
       if (
         [
@@ -126,7 +123,7 @@ export const migrations: Record<
     Object.entries(properties.getProperties()).forEach(([k, v]) => {
       properties.setProperty(
         k,
-        JSON.stringify({values: JSON.parse(v), updated: new Date()}),
+        JSON.stringify({ values: JSON.parse(v), updated: new Date() }),
       );
     });
   },

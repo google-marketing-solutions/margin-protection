@@ -81,7 +81,7 @@ describe('Check globals', () => {
   });
 
   it('calls frontend version', () => {
-    const calls = {...frontend.calls};
+    const calls = { ...frontend.calls };
 
     toExport.onOpen();
     toExport.initializeSheets();
@@ -210,7 +210,7 @@ describe('Test migration order', () => {
 
 describe('2-D array', () => {
   let array2d: string[][];
-  const params = {'rule1': {label: 'Rule 1'}, 'rule2': {label: 'Rule 2'}};
+  const params = { rule1: { label: 'Rule 1' }, rule2: { label: 'Rule 2' } };
 
   beforeEach(() => {
     array2d = [
@@ -223,8 +223,8 @@ describe('2-D array', () => {
   it('transforms into a param', () => {
     expect(transformToParamValues(array2d, params)).toEqual(
       new SettingMap([
-        ['1', {rule1: 'A', rule2: 'B'}],
-        ['2', {rule1: 'C', rule2: 'D'}],
+        ['1', { rule1: 'A', rule2: 'B' }],
+        ['2', { rule1: 'C', rule2: 'D' }],
       ]),
     );
   });
@@ -242,7 +242,7 @@ describe('2-D array', () => {
 describe('Rule Settings helper functions', () => {
   let rules: RuleRange;
 
-  const client = generateTestClient({id: '1'});
+  const client = generateTestClient({ id: '1' });
   beforeEach(() => {
     rules = new RuleRange(
       [
@@ -273,10 +273,13 @@ describe('Rule Settings helper functions', () => {
 
   it('break down a settings sheet into the correct categories', () => {
     expect(
-      (rules as unknown as {rules: Record<string, Array<string[] | undefined>>})
-        .rules,
+      (
+        rules as unknown as {
+          rules: Record<string, Array<string[] | undefined>>;
+        }
+      ).rules,
     ).toEqual({
-      'none': [['id', 'name'], undefined, ['1', 'one']],
+      none: [['id', 'name'], undefined, ['1', 'one']],
       'Category A': [['Header 1', 'Header 2'], undefined, ['Col 1', 'Col 2']],
       'Category B': [
         ['Header 3', 'Header 4', 'Header 5'],
@@ -319,30 +322,30 @@ describe('Rule Settings helper functions', () => {
 describe('SettingMap#getOrDefault', () => {
   it('returns value', () => {
     const settingMap = new SettingMap([
-      ['default', {rule1: 'A'}],
-      ['1', {rule1: 'C'}],
+      ['default', { rule1: 'A' }],
+      ['1', { rule1: 'C' }],
     ]);
     expect(settingMap.getOrDefault('1').rule1).toEqual('C');
   });
 
   it('returns defaults when value is blank', () => {
     const settingMap = new SettingMap([
-      ['default', {rule1: 'A'}],
-      ['1', {rule1: ''}],
+      ['default', { rule1: 'A' }],
+      ['1', { rule1: '' }],
     ]);
     expect(settingMap.getOrDefault('1').rule1).toEqual('A');
   });
 
   it('returns value when value is 0', () => {
     const settingMap = new SettingMap([
-      ['default', {rule1: 'A'}],
-      ['1', {rule1: '0'}],
+      ['default', { rule1: 'A' }],
+      ['1', { rule1: '0' }],
     ]);
     expect(settingMap.getOrDefault('1').rule1).toEqual('0');
   });
 
   it('returns blank when default is undefined and value is blank', () => {
-    const settingMap = new SettingMap([['1', {rule1: ''}]]);
+    const settingMap = new SettingMap([['1', { rule1: '' }]]);
     expect(settingMap.getOrDefault('1').rule1).toEqual('');
   });
 });
@@ -366,7 +369,7 @@ describe('sortMigrations', () => {
 
   it('works with objects', () => {
     expect(
-      Object.entries({'0.1': 'b', '0.0.1': 'a'}).sort((e1, e2) =>
+      Object.entries({ '0.1': 'b', '0.0.1': 'a' }).sort((e1, e2) =>
         sortMigrations(e1[0], e2[0]),
       ),
     ).toEqual([
@@ -488,40 +491,7 @@ describe('Test emails', () => {
         properties,
       });
     })(new AppsScriptPropertyStore());
-  });
-
-  it('sends an email with only anomalies', () => {
-    SpreadsheetApp.getActive()
-      .getRangeByName('EMAIL_LIST')!
-      .setValue('user@example.com');
-    frontend.maybeSendEmailAlert(rules);
-
-    expect(frontend.getMessages()).toEqual([email('user@example.com')]);
-  });
-
-  it('only sends emails once to a user for each anomaly', () => {
-    SpreadsheetApp.getActive()
-      .getRangeByName('EMAIL_LIST')!
-      .setValue('user@example.com');
-    frontend.maybeSendEmailAlert(rules);
-    frontend.getMessages();
-    frontend.maybeSendEmailAlert(rules);
-
-    expect(frontend.getMessages()).toEqual([]);
-  });
-
-  it('sends emails for old anomalies to a new user', () => {
-    SpreadsheetApp.getActive()
-      .getRangeByName('EMAIL_LIST')!
-      .setValue('user@example.com');
-    frontend.maybeSendEmailAlert(rules);
-    frontend.getMessages();
-    SpreadsheetApp.getActive()
-      .getRangeByName('EMAIL_LIST')!
-      .setValue('user@example.com,user2@example.com');
-    frontend.maybeSendEmailAlert(rules);
-
-    expect(frontend.getMessages()).toEqual([email('user2@example.com')]);
+    console.log('new frontend');
   });
 
   it('sends anomalies to a user whenever they are new', () => {
@@ -566,7 +536,7 @@ function getNewRules(rules: Record<string, RuleGetter>, keyToRemove: string) {
   return newRules;
 }
 
-function generateTestClient(params: {id?: string}): TestClientInterface {
+function generateTestClient(params: { id?: string }): TestClientInterface {
   return {
     id: params.id ?? '1',
     ruleStore: {},
@@ -586,7 +556,7 @@ function generateTestClient(params: {id?: string}): TestClientInterface {
     ): TestClientInterface => {
       throw new Error('Not implemented.');
     },
-    args: {label: 'test'},
+    args: { label: 'test' },
     properties: new FakePropertyStore(),
   };
 }

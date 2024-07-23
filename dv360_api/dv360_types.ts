@@ -22,7 +22,7 @@
  * type for an exhaustive and up-to-date list of properties.
  */
 
-import {ObjectUtil} from './utils';
+import { ObjectUtil } from './utils';
 
 /**
  * Defines the `*Mapper` contract.
@@ -34,7 +34,7 @@ import {ObjectUtil} from './utils';
  */
 interface Mapper<T> {
   map(
-    resource: T extends InOut<infer I, unknown> ? I : T
+    resource: T extends InOut<infer I, unknown> ? I : T,
   ): (T extends InOut<unknown, infer O> ? O : T) | undefined;
 }
 
@@ -46,7 +46,7 @@ interface Mapper<T> {
  */
 interface MapperWithJsonOut<T> extends Mapper<T> {
   toJson(
-    resource: T extends InOut<unknown, infer O> ? O : T
+    resource: T extends InOut<unknown, infer O> ? O : T,
   ): T extends InOut<infer I, unknown> ? I : T;
 }
 
@@ -72,7 +72,7 @@ export const STATUS = {
 /**
  * The canonical TargetingType sent to the API
  */
-export type Status = typeof STATUS[keyof typeof STATUS];
+export type Status = (typeof STATUS)[keyof typeof STATUS];
 
 /**
  * A union of the keys and values available to {@link STATUS}.
@@ -95,7 +95,7 @@ export const StatusMapper: MapperWithJsonOut<InOut<RawStatus, Status>> = {
     if (rawStatus) {
       const status = rawStatus.replace(
         'ENTITY_STATUS_',
-        ''
+        '',
       ) as keyof typeof STATUS;
       return STATUS[status] || STATUS.UNSPECIFIED;
     }
@@ -121,7 +121,8 @@ export const TARGETING_TYPE = {
 /**
  * The canonical TargetingType sent to the API.
  */
-export type TargetingType = typeof TARGETING_TYPE[keyof typeof TARGETING_TYPE];
+export type TargetingType =
+  (typeof TARGETING_TYPE)[keyof typeof TARGETING_TYPE];
 
 /**
  * A union of the keys and values available to {@link TARGETING_TYPE}.
@@ -146,7 +147,7 @@ export const TargetingTypeMapper: MapperWithJsonOut<
     if (rawType) {
       const type = rawType.replace(
         'TARGETING_TYPE_',
-        ''
+        '',
       ) as keyof typeof TARGETING_TYPE;
       return TARGETING_TYPE[type] || TARGETING_TYPE.UNSPECIFIED;
     }
@@ -171,7 +172,7 @@ export const PACING_PERIOD = {
 /**
  * The canonical PacingPeriod sent to the API
  */
-export type PacingPeriod = typeof PACING_PERIOD[keyof typeof PACING_PERIOD];
+export type PacingPeriod = (typeof PACING_PERIOD)[keyof typeof PACING_PERIOD];
 
 /**
  * A union of the keys and values available to {@link PACING_PERIOD}.
@@ -236,7 +237,8 @@ export const FrequencyCapMapper: Mapper<FrequencyCap> = {
   map(resource) {
     if (
       (ObjectUtil.hasOwnProperties(resource, ['unlimited']) &&
-          typeof resource.unlimited === 'boolean' && resource.unlimited) ||
+        typeof resource.unlimited === 'boolean' &&
+        resource.unlimited) ||
       (ObjectUtil.hasOwnProperties(resource, [
         'timeUnit',
         'timeUnitCount',
@@ -280,7 +282,7 @@ export const PacingMapper: Mapper<Pacing> = {
     if (ObjectUtil.hasOwnProperties(resource, ['pacingPeriod', 'pacingType'])) {
       const pacingPeriod = resource.pacingPeriod;
       const mappedPacingPeriod = PacingPeriodMapper.map(
-        pacingPeriod as RawPacingPeriod
+        pacingPeriod as RawPacingPeriod,
       );
 
       if (
@@ -289,7 +291,7 @@ export const PacingMapper: Mapper<Pacing> = {
           ObjectUtil.hasOwnProperties(
             resource,
             [],
-            ['dailyMaxMicros', 'dailyMaxImpressions']
+            ['dailyMaxMicros', 'dailyMaxImpressions'],
           ))
       ) {
         return resource;
@@ -334,7 +336,7 @@ export const PerformanceGoalMapper: Mapper<PerformanceGoal> = {
           'performanceGoalAmountMicros',
           'performanceGoalPercentageMicros',
           'performanceGoalString',
-        ]
+        ],
       ) &&
       Object.keys(resource).length >= 1
     ) {
@@ -378,7 +380,7 @@ interface PerformanceGoalBiddingStrategy {
  *
  */
 export interface BiddingStrategy {
-  fixedBid?: {bidAmountMicros: string};
+  fixedBid?: { bidAmountMicros: string };
   maximizeSpendAutoBid?: MaxSpendBiddingStrategy;
   performanceGoalAutoBid?: PerformanceGoalBiddingStrategy;
 }
@@ -401,7 +403,7 @@ export const BiddingStrategyMapper: Mapper<BiddingStrategy> = {
       ObjectUtil.hasOwnProperties(
         resource,
         [],
-        ['fixedBid', 'maximizeSpendAutoBid', 'performanceGoalAutoBid']
+        ['fixedBid', 'maximizeSpendAutoBid', 'performanceGoalAutoBid'],
       )
     ) {
       const fixedBidStrategy = resource.fixedBid;
@@ -503,7 +505,7 @@ export const AdvertiserAdServerConfigMapper: Mapper<AdvertiserAdServerConfig> =
         ObjectUtil.hasOwnProperties(
           resource,
           [],
-          ['thirdPartyOnlyConfig', 'cmHybridConfig']
+          ['thirdPartyOnlyConfig', 'cmHybridConfig'],
         )
       ) {
         const thirdPartyOnlyConfig = resource.thirdPartyOnlyConfig;
@@ -514,7 +516,7 @@ export const AdvertiserAdServerConfigMapper: Mapper<AdvertiserAdServerConfig> =
 
         if (validThirdPartyOnlyConfig) {
           const thirdPartyOnlyConfigKeys = Object.keys(
-            thirdPartyOnlyConfig as {[key: string]: unknown}
+            thirdPartyOnlyConfig as { [key: string]: unknown },
           );
 
           validThirdPartyOnlyConfig =
@@ -555,7 +557,7 @@ export interface CampaignBudget {
   displayName: string;
   budgetUnit: string;
   budgetAmountMicros: string;
-  dateRange: {startDate: RawApiDate; endDate: RawApiDate};
+  dateRange: { startDate: RawApiDate; endDate: RawApiDate };
 }
 
 /**
@@ -599,7 +601,7 @@ export const CampaignBudgetMapper: MapperWithJsonOut<CampaignBudget[]> = {
         console.warn(
           Object.keys(budget),
           'does not match expected',
-          expectedKeys
+          expectedKeys,
         );
       }
     }
@@ -633,7 +635,7 @@ export const CampaignBudgetMapper: MapperWithJsonOut<CampaignBudget[]> = {
  *
  */
 export interface CampaignFlight {
-  plannedDates: {startDate: RawApiDate};
+  plannedDates: { startDate: RawApiDate };
 }
 
 /**
@@ -658,7 +660,7 @@ export const CampaignFlightMapper: MapperWithJsonOut<CampaignFlight> = {
       ObjectUtil.hasOwnProperties(resource.plannedDates, ['startDate'])
     ) {
       const startDateValid = ApiDate.validate(
-        resource.plannedDates['startDate']
+        resource.plannedDates['startDate'],
       );
 
       if (startDateValid) {
@@ -676,7 +678,7 @@ export const CampaignFlightMapper: MapperWithJsonOut<CampaignFlight> = {
    *     `CampaignFlight`
    */
   toJson(flight) {
-    return {plannedDates: {startDate: flight.plannedDates.startDate}};
+    return { plannedDates: { startDate: flight.plannedDates.startDate } };
   },
 };
 
@@ -724,7 +726,7 @@ export const CampaignGoalMapper: Mapper<CampaignGoal> = {
  */
 export interface InsertionOrderBudgetSegment {
   budgetAmountMicros: string;
-  dateRange: {startDate: RawApiDate; endDate: RawApiDate};
+  dateRange: { startDate: RawApiDate; endDate: RawApiDate };
 }
 
 /**
@@ -834,10 +836,10 @@ export const InsertionOrderBudgetMapper: MapperWithJsonOut<InsertionOrderBudget>
      */
     toJson(budget) {
       const segments = budget.budgetSegments.map((segment) =>
-        InsertionOrderBudgetSegmentMapper.toJson(segment)
+        InsertionOrderBudgetSegmentMapper.toJson(segment),
       );
 
-      return {budgetUnit: budget.budgetUnit, budgetSegments: segments};
+      return { budgetUnit: budget.budgetUnit, budgetSegments: segments };
     },
   };
 
@@ -849,7 +851,7 @@ export const InsertionOrderBudgetMapper: MapperWithJsonOut<InsertionOrderBudget>
 export interface LineItemFlight {
   flightDateType: string;
   triggerId?: string;
-  dateRange?: {startDate: RawApiDate; endDate: RawApiDate};
+  dateRange?: { startDate: RawApiDate; endDate: RawApiDate };
 }
 
 /**
@@ -905,7 +907,7 @@ export const LineItemFlightMapper: MapperWithJsonOut<LineItemFlight> = {
           endDate: flight.dateRange.endDate,
         },
       },
-      ...(flight.triggerId ? {triggerId: flight.triggerId} : {})
+      ...(flight.triggerId ? { triggerId: flight.triggerId } : {}),
     };
   },
 };
@@ -1001,7 +1003,7 @@ export const InventorySourceMoneyMapper: Mapper<InventorySourceMoney> = {
       ObjectUtil.hasOwnProperties(
         resource,
         ['currencyCode'],
-        ['units', 'nanos']
+        ['units', 'nanos'],
       )
     ) {
       return resource;
@@ -1074,7 +1076,7 @@ export class ApiDate implements RawApiDate {
   constructor(
     readonly year: number,
     readonly month: number,
-    readonly day: number
+    readonly day: number,
   ) {}
 
   /**
@@ -1089,7 +1091,7 @@ export class ApiDate implements RawApiDate {
       return new ApiDate(
         Number(rawDate.year),
         Number(rawDate.month),
-        Number(rawDate.day)
+        Number(rawDate.day),
       );
     }
     return null;
@@ -1128,7 +1130,7 @@ export class ApiDate implements RawApiDate {
    */
   getChangedProperties(
     other: RawApiDate | null,
-    prefix: string = ''
+    prefix: string = '',
   ): string[] {
     const changedProperties = [];
 
@@ -1157,7 +1159,7 @@ export class ApiDate implements RawApiDate {
    *     `ApiDate` instance
    */
   toJSON(): RawApiDate {
-    return {year: this.getYear(), month: this.getMonth(), day: this.getDay()};
+    return { year: this.getYear(), month: this.getMonth(), day: this.getDay() };
   }
 
   toDate(): Date {

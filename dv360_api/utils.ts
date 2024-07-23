@@ -42,7 +42,6 @@ export enum RuleOperator {
  * {@link FilterExpression}.
  */
 export class Rule {
-
   /**
    * Constructs an instance of Rule.
    *
@@ -50,8 +49,11 @@ export class Rule {
    * @param operator The equality operator to use
    * @param value The value to filter for
    */
-  constructor(private readonly field: string, private readonly operator: RuleOperator, private readonly value: string | number) {
-  }
+  constructor(
+    private readonly field: string,
+    private readonly operator: RuleOperator,
+    private readonly value: string | number,
+  ) {}
 
   /**
    * Returns the field.
@@ -104,8 +106,10 @@ export class FilterExpression {
    * @param grouping Optional logical grouping for the given
    *     filter 'rules'. Defaults to AND
    */
-  constructor(private readonly rules: Rule[], private readonly grouping: FilterGrouping = FilterGrouping.AND) {
-  }
+  constructor(
+    private readonly rules: Rule[],
+    private readonly grouping: FilterGrouping = FilterGrouping.AND,
+  ) {}
 
   /**
    * Applies the FilterExpression's grouping to its rules and returns the
@@ -211,10 +215,10 @@ export const ObjectUtil = {
    */
   extend<T extends object | null, E extends object>(
     original: T,
-    extension: E
+    extension: E,
   ): T & E {
     if (original == null) {
-      return {...extension} as T & E;
+      return { ...extension } as T & E;
     }
     for (const key in extension) {
       if (extension.hasOwnProperty(key)) {
@@ -248,10 +252,10 @@ export const ObjectUtil = {
   hasOwnProperties(
     obj: unknown,
     requiredProperties: string[],
-    optionalProperties: string[] = []
+    optionalProperties: string[] = [],
   ): boolean {
     const keys = ObjectUtil.isObject(obj)
-      ? Object.keys(obj as {[key: string]: unknown})
+      ? Object.keys(obj as { [key: string]: unknown })
       : [];
     return (
       keys.length > 0 &&

@@ -21,7 +21,7 @@
 
 // g3-format-prettier
 
-import {transformToParamValues} from './sheet_helpers';
+import { transformToParamValues } from './sheet_helpers';
 import {
   BaseClientArgs,
   BaseClientInterface,
@@ -87,7 +87,7 @@ export function newRuleBuilder<
       }
     };
 
-    Object.defineProperty(ruleClass, 'name', {value: ruleDefinition.name});
+    Object.defineProperty(ruleClass, 'name', { value: ruleDefinition.name });
     return ruleClass;
   };
 }

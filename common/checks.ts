@@ -23,9 +23,9 @@
  * Ensures that a value is in a range between min and max (inclusive).
  */
 export function inRange(
-  {min, max}: {min: number; max: number},
+  { min, max }: { min: number; max: number },
   value: number,
-  fields: {[fieldName: string]: string},
+  fields: { [fieldName: string]: string },
 ) {
   return {
     value: String(value),
@@ -40,9 +40,9 @@ export function inRange(
 export function equalTo<T>(
   test: T,
   value: T,
-  fields: {[fieldName: string]: string},
+  fields: { [fieldName: string]: string },
 ) {
-  return {value: String(value), anomalous: value !== test, fields};
+  return { value: String(value), anomalous: value !== test, fields };
 }
 
 /**
@@ -51,7 +51,7 @@ export function equalTo<T>(
 export function lessThanOrEqualTo(
   test: number,
   value: number,
-  fields: {[fieldName: string]: string},
+  fields: { [fieldName: string]: string },
 ) {
-  return {value: String(value), anomalous: value > test, fields};
+  return { value: String(value), anomalous: value > test, fields };
 }

@@ -121,7 +121,7 @@ export class GoogleAdsApi implements AdTypes.GoogleAdsApiInterface {
             'developer-token': this.apiInstructions.developerToken,
           }
         : {}),
-      'Authorization': `Bearer ${token}`,
+      Authorization: `Bearer ${token}`,
       'login-customer-id': String(this.apiInstructions.loginCustomerId),
     };
   }
@@ -136,7 +136,7 @@ export class GoogleAdsApi implements AdTypes.GoogleAdsApiInterface {
     queryWheres: string[] = [],
   ): IterableIterator<AdTypes.ReportResponse<Q>> {
     for (const customerId of splitCids(customerIds)) {
-      yield* this.queryOne({query, customerId, queryWheres});
+      yield* this.queryOne({ query, customerId, queryWheres });
     }
   }
 
@@ -165,7 +165,7 @@ export class GoogleAdsApi implements AdTypes.GoogleAdsApiInterface {
         method: 'post',
         headers: this.requestHeaders(),
         contentType: 'application/json',
-        payload: JSON.stringify({...params, pageToken}),
+        payload: JSON.stringify({ ...params, pageToken }),
       };
       const res = JSON.parse(
         UrlFetchApp.fetch(url, req).getContentText(),
@@ -592,4 +592,3 @@ export const GET_LEAF_ACCOUNTS_REPORT = makeReport({
     ];
   },
 });
-

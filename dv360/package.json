@@ -4,22 +4,30 @@
   "devDependencies": {
     "@google/clasp": "^2.4.2",
     "@types/google-apps-script": "^1.0.56",
+    "@web/dev-server-esbuild": "^1.0.2",
+    "@web/test-runner": "^0.18.2",
     "css-loader": "^6.7.3",
     "file-loader": "^6.2.0",
     "gas-webpack-plugin": "^2.3.0",
-    "jasmine": "^4.5.0",
+    "jasmine": "^5.1.0",
+    "rollup-plugin-typescript-paths": "^1.5.0",
     "sass": "^1.57.1",
     "sass-loader": "^13.2.0",
     "style-loader": "^3.3.1",
     "ts-loader": "^9.4.2",
     "tsconfig-paths-webpack-plugin": "^4.0.0",
     "typescript": "^4.9.3",
+    "web-test-runner-jasmine": "^0.0.6",
     "webpack": "^5.75.0",
     "webpack-cli": "^5.0.1"
   },
   "scripts": {
-    "build": "yarn && cp -rf ../common/html/*.html html && webpack",
-    "push-dev": "yarn build --mode development --devtool source-map && clasp push",
-    "push": "yarn build --mode production && clasp push"
+    "build": "yarn && cp -rf ../common/html html && webpack",
+    "build:dev": "yarn build --mode development --devtool source-map",
+    "build:prod": "yarn build --mode production",
+    "push": "yarn build:dev && clasp push",
+    "push:prod": "yarn build:prod && clasp push",
+    "push:client": "yarn --cwd ../client push",
+    "test": "web-test-runner --config web-test-runner.mjs"
   }
 }

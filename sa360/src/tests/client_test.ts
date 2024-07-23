@@ -15,16 +15,11 @@
  * limitations under the License.
  */
 
-// g3-format-prettier
-
-import {equalTo} from 'common/checks';
-import {AppsScriptPropertyStore} from 'common/sheet_helpers';
-import {mockAppsScript} from 'common/test_helpers/mock_apps_script';
-import {
-  Client,
-  newRule,
-} from 'sa360/src/client';
-import {RuleGranularity} from 'sa360/src/types';
+import { equalTo } from 'common/checks';
+import { AppsScriptPropertyStore } from 'common/sheet_helpers';
+import { mockAppsScript } from 'common/test_helpers/mock_apps_script';
+import { Client, newRule } from 'sa360/src/client';
+import { RuleGranularity } from 'sa360/src/types';
 
 describe('Client rules are validated', () => {
   let output: string[] = [];
@@ -37,9 +32,9 @@ describe('Client rules are validated', () => {
 
   beforeEach(() => {
     mockAppsScript();
-    client = generateTestClient({agencyId: '123'});
+    client = generateTestClient({ agencyId: '123' });
 
-    const values = {'1': equalTo(test, 1, {}), '42': equalTo(test, 42, {})};
+    const values = { '1': equalTo(test, 1, {}), '42': equalTo(test, 42, {}) };
 
     client.addRule(
       newRule({
@@ -47,10 +42,10 @@ describe('Client rules are validated', () => {
         name: 'ruleA',
         description: ``,
         granularity: RuleGranularity.CAMPAIGN,
-        valueFormat: {label: 'ruleA'},
+        valueFormat: { label: 'ruleA' },
         async callback() {
           output.push('ruleA');
-          return {values};
+          return { values };
         },
         defaults: {},
       }),
@@ -62,10 +57,10 @@ describe('Client rules are validated', () => {
         name: 'ruleB',
         description: ``,
         granularity: RuleGranularity.CAMPAIGN,
-        valueFormat: {label: 'ruleB'},
+        valueFormat: { label: 'ruleB' },
         async callback() {
           output.push('ruleB');
-          return {values};
+          return { values };
         },
         defaults: {},
       }),
@@ -87,7 +82,7 @@ describe('Client rules are validated', () => {
   });
 
   it('should have check results after validate() is run', async () => {
-    const {results} = await client.validate();
+    const { results } = await client.validate();
     expect(
       Object.values(results['ruleA'].values).map((value) => value.anomalous),
     ).toEqual([true, false]);
@@ -102,7 +97,7 @@ function generateTestClient({
   advertiserId?: string;
 }): Client {
   return new Client(
-    {agencyId, advertiserId, label: 'Fake'},
+    { agencyId, advertiserId, label: 'Fake' },
     new AppsScriptPropertyStore(),
   );
 }

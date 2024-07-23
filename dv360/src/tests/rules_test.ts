@@ -17,15 +17,12 @@
 
 // g3-format-prettier
 
-import {AssignedTargetingOption} from 'dv360_api/dv360_resources';
-import {
-  ApiDate,
-  TARGETING_TYPE,
-} from 'dv360_api/dv360_types';
-import {AppsScriptPropertyStore} from 'common/sheet_helpers';
-import {mockAppsScript} from 'common/test_helpers/mock_apps_script';
-import {RuleExecutorClass} from 'common/types';
-import {Client} from '../client';
+import { AssignedTargetingOption } from 'dv360_api/dv360_resources';
+import { ApiDate, TARGETING_TYPE } from 'dv360_api/dv360_types';
+import { AppsScriptPropertyStore } from 'common/sheet_helpers';
+import { mockAppsScript } from 'common/test_helpers/mock_apps_script';
+import { RuleExecutorClass } from 'common/types';
+import { Client } from '../client';
 import {
   budgetPacingDaysAheadRule,
   budgetPacingPercentageRule,
@@ -33,7 +30,7 @@ import {
   geoTargetRule,
   impressionsByGeoTarget,
 } from '../rules';
-import {ClientArgs, ClientInterface, RuleGranularity} from '../types';
+import { ClientArgs, ClientInterface, RuleGranularity } from '../types';
 
 import {
   CampaignTemplate,
@@ -58,7 +55,9 @@ describe('Geo targeting Rule', () => {
       advertiserId: '123',
       geoTargets: ['United States (Country)'],
     });
-    expect(values['c1']).toEqual(jasmine.objectContaining({anomalous: false}));
+    expect(values['c1']).toEqual(
+      jasmine.objectContaining({ anomalous: false }),
+    );
   });
 
   it('triggers an error when a non-US geo is found', async () => {
@@ -67,7 +66,7 @@ describe('Geo targeting Rule', () => {
       geoTargets: ['United States (Country)', 'Portugal (Country)'],
     });
     expect(values['c1']).toEqual(
-      jasmine.objectContaining({value: '0', anomalous: true}),
+      jasmine.objectContaining({ value: '0', anomalous: true }),
     );
   });
 
@@ -81,14 +80,14 @@ describe('Geo targeting Rule', () => {
       ],
     });
     expect(values['c1']).toEqual(
-      jasmine.objectContaining({value: '0', anomalous: true}),
+      jasmine.objectContaining({ value: '0', anomalous: true }),
     );
   });
 
   it('triggers an error when no geo is found', async () => {
-    const values = await generateGeoTestData({advertiserId: '789'});
+    const values = await generateGeoTestData({ advertiserId: '789' });
     expect(values['c1']).toEqual(
-      jasmine.objectContaining({value: '0', anomalous: true}),
+      jasmine.objectContaining({ value: '0', anomalous: true }),
     );
   });
 });
@@ -150,7 +149,7 @@ async function generateImpressionReport(
     ['', 'Allowed Countries (Comma Separated)', 'Max. Percent Outside Geos'],
     ['default', 'US', '0.01'],
   ];
-  const {results} = await generateTestClient({
+  const { results } = await generateTestClient({
     id: '123',
     allCampaigns,
     allInsertionOrders,
@@ -201,7 +200,7 @@ describe('Percentage Budget Pacing Rule', () => {
       6,
     );
     expect(values).toEqual({
-      'io1': jasmine.objectContaining({
+      io1: jasmine.objectContaining({
         anomalous: true,
       }),
     });
@@ -258,7 +257,7 @@ describe('Percentage Budget Pacing Rule', () => {
       it(`doesn't fail when pacing ${operator} threshold`, async () => {
         const values = await testData(fakeSpendAmount);
         expect(values['io1']).toEqual(
-          jasmine.objectContaining({anomalous: false}),
+          jasmine.objectContaining({ anomalous: false }),
         );
       });
     }
@@ -290,9 +289,9 @@ describe('Percentage Budget Pacing Rule', () => {
       jasmine.objectContaining({
         'Insertion Order ID': 'io1',
         'Display Name': 'Insertion Order 1',
-        'Budget': '$100',
-        'Spend': '$50',
-        'Pacing': '100%',
+        Budget: '$100',
+        Spend: '$50',
+        Pacing: '100%',
         'Days Elapsed': '2',
         'Flight Duration': '4',
       }),
@@ -334,7 +333,7 @@ describe('Daily Budget Pacing Rule', () => {
       6,
     );
     expect(values).toEqual({
-      'io1': jasmine.objectContaining({
+      io1: jasmine.objectContaining({
         anomalous: true,
       }),
     });
@@ -390,7 +389,7 @@ describe('Daily Budget Pacing Rule', () => {
       it(`doesn't fail when pacing ${operator} threshold`, async () => {
         const values = await testData(fakeSpendAmount);
         expect(values['io1']).toEqual(
-          jasmine.objectContaining({anomalous: false}),
+          jasmine.objectContaining({ anomalous: false }),
         );
       });
     }
@@ -493,7 +492,7 @@ describe('Daily Budgets Rule', () => {
       it(`doesn't fail when daily budgets ${operator} range`, async () => {
         const values = await testData(fakeTotalBudget);
         expect(values['io1']).toEqual(
-          jasmine.objectContaining({anomalous: false}),
+          jasmine.objectContaining({ anomalous: false }),
         );
       });
     }
@@ -510,7 +509,7 @@ describe('Daily Budgets Rule', () => {
           endDate,
         );
         expect(values).toEqual({
-          'io1': jasmine.objectContaining({
+          io1: jasmine.objectContaining({
             anomalous: true,
           }),
         });
@@ -539,7 +538,7 @@ describe('impressionsByGeoTarget', () => {
   it('checks rules when in date range', async () => {
     const values = await generateImpressionReport(impressionsByGeoTarget, 1);
     expect(values).toEqual({
-      'io1': jasmine.objectContaining({
+      io1: jasmine.objectContaining({
         anomalous: true,
       }),
     });
@@ -584,7 +583,7 @@ export async function generateGeoTestData({
               TARGETING_TYPE.GEO_REGION,
               '',
               '',
-              {'displayName': geoTarget},
+              { displayName: geoTarget },
             ),
         ),
         ...excludes.map(
@@ -594,14 +593,14 @@ export async function generateGeoTestData({
               TARGETING_TYPE.GEO_REGION,
               '',
               '',
-              {'displayName': geoTarget, 'negative': true},
+              { displayName: geoTarget, negative: true },
             ),
         ),
       ],
     },
   };
 
-  const {results} = await generateTestClient({
+  const { results } = await generateTestClient({
     id: advertiserId,
     allCampaigns,
     allInsertionOrders,
@@ -647,6 +646,6 @@ async function generateInsertionOrderTestData<
     rule: any,
     paramMap: string[][],
   ) => Client;
-  const {results} = await addRule(rule, params).validate();
+  const { results } = await addRule(rule, params).validate();
   return Object.values(results)[0].values;
 }

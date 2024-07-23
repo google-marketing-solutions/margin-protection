@@ -32,9 +32,9 @@ import {
   Campaign,
   InsertionOrder,
 } from 'dv360_api/dv360_resources';
-import {newRuleBuilder} from 'common/client_helpers';
+import { newRuleBuilder } from 'common/client_helpers';
 
-import {AbstractRuleRange} from 'common/sheet_helpers';
+import { AbstractRuleRange } from 'common/sheet_helpers';
 import {
   ExecutorResult,
   ParamDefinition,
@@ -46,8 +46,8 @@ import {
   Settings,
 } from 'common/types';
 
-import {RawApiDate} from 'dv360_api/dv360_types';
-import {BudgetReport, BudgetReportInterface, ImpressionReport} from './api';
+import { RawApiDate } from 'dv360_api/dv360_types';
+import { BudgetReport, BudgetReportInterface, ImpressionReport } from './api';
 import {
   ClientArgs,
   ClientInterface,
@@ -149,11 +149,11 @@ export class Client implements ClientInterface {
   }
 
   constructor(
-    args: Omit<ClientArgs, 'idType' | 'id'> & {advertiserId: string},
+    args: Omit<ClientArgs, 'idType' | 'id'> & { advertiserId: string },
     properties: PropertyStore,
   );
   constructor(
-    args: Omit<ClientArgs, 'idType' | 'id'> & {partnerId: string},
+    args: Omit<ClientArgs, 'idType' | 'id'> & { partnerId: string },
     properties: PropertyStore,
   );
   constructor(args: ClientArgs, properties: PropertyStore);
@@ -173,7 +173,7 @@ export class Client implements ClientInterface {
         args.idType ?? (args.advertiserId ? IDType.ADVERTISER : IDType.PARTNER),
       id:
         args.id ??
-        (args.advertiserId ? args.advertiserId : args.partnerId ?? ''),
+        (args.advertiserId ? args.advertiserId : (args.partnerId ?? '')),
       label: args.label ?? `${args.idType} ${args.id}`,
       campaigns: args.campaigns || Campaigns,
       insertionOrders: args.insertionOrders || InsertionOrders,
@@ -216,7 +216,7 @@ export class Client implements ClientInterface {
       rules[rule.name] = rule;
     }
 
-    return {rules, results};
+    return { rules, results };
   }
 
   getAllInsertionOrders(): InsertionOrder[] {

@@ -88,7 +88,7 @@ export const GENERAL_SETTINGS_SHEET = 'General/Settings';
  * Defaults to the row with campaignId: 'default' if no campaign ID override is
  * set.
  */
-export class SettingMap<P extends {[Property in keyof P]: P[keyof P]}>
+export class SettingMap<P extends { [Property in keyof P]: P[keyof P] }>
   implements SettingMapInterface<P>
 {
   private readonly map: Map<string, P>;
@@ -172,15 +172,15 @@ export function transformToParamValues<
 
   function forEachRow(
     row: readonly string[],
-  ): [string, {[Property in keyof MapType]: string}] {
+  ): [string, { [Property in keyof MapType]: string }] {
     return [
       row[0],
       Object.fromEntries(
-        Object.entries<ParamDefinition>(mapper).map(([param, {label}]) => {
+        Object.entries<ParamDefinition>(mapper).map(([param, { label }]) => {
           const i = headers.indexOf(label);
           return [param, row[i]];
         }),
-      ) as {[Property in keyof MapType]: string},
+      ) as { [Property in keyof MapType]: string },
     ];
   }
   return new SettingMap(body.map(forEachRow));
@@ -227,7 +227,7 @@ export abstract class AbstractRuleRange<
   private rowIndex: Record<string, number> = {};
   private readonly columnOrders: Record<string, Record<string, number>> = {};
   private readonly rules: Record<string, string[][]> &
-    Record<'none', string[][]> = {'none': [[]]};
+    Record<'none', string[][]> = { none: [[]] };
   private length = 0;
 
   constructor(
@@ -254,7 +254,7 @@ export abstract class AbstractRuleRange<
   }
 
   getValues(ruleGranularity?: G): string[][] {
-    const newRowIndex = {...this.rowIndex};
+    const newRowIndex = { ...this.rowIndex };
     const defaultFirstColumns = ['', ''];
 
     const values = Object.entries(this.rules).reduce(
@@ -275,7 +275,7 @@ export abstract class AbstractRuleRange<
         }
         const ruleSettingColumnOffset = combinedRuleRange[0].length;
         combinedRuleRange[0] = combinedRuleRange[0].concat(
-          Array.from({length: ruleSettingColumnCount}).fill(
+          Array.from({ length: ruleSettingColumnCount }).fill(
             category === 'none' ? '' : category,
           ) as string[],
         );
@@ -284,7 +284,7 @@ export abstract class AbstractRuleRange<
           category === 'none'
             ? defaultFirstColumns
             : combinedRuleRange[1].concat(
-                Array.from<string>({length: ruleSettingColumnCount})
+                Array.from<string>({ length: ruleSettingColumnCount })
                   .fill('')
                   .map((cell, idx) => {
                     if (
@@ -320,7 +320,7 @@ export abstract class AbstractRuleRange<
             combinedRuleRange[offsetRow] = (combinedRuleRange[offsetRow] =
               combinedRuleRange[offsetRow] || []).concat(
               rangeRaw[currentOrdinalValue] ??
-                Array.from<string>({length: ruleSettingColumnCount}).fill(''),
+                Array.from<string>({ length: ruleSettingColumnCount }).fill(''),
             );
             newRowIndex[entityId] = offsetRow;
           },
@@ -397,11 +397,11 @@ export abstract class AbstractRuleRange<
       throw new Error('Missing default values definition in fillRow');
     }
 
-    const headersByIndex: {[index: number]: string} = {};
-    const paramsByHeader: {[index: string]: keyof Params} = {};
-    const indexByHeader: {[header: string]: number} = {};
+    const headersByIndex: { [index: number]: string } = {};
+    const paramsByHeader: { [index: string]: keyof Params } = {};
+    const indexByHeader: { [header: string]: number } = {};
     Object.entries<ParamDefinition>(rule.params).forEach(
-      ([key, {label}], index) => {
+      ([key, { label }], index) => {
         headersByIndex[index] = label;
         paramsByHeader[label] = key as keyof Params;
         indexByHeader[label] = index;
@@ -422,10 +422,10 @@ export abstract class AbstractRuleRange<
     this.setRow(
       rule.name,
       'default',
-      Array.from({length}).map((unused, index) =>
+      Array.from({ length }).map((unused, index) =>
         currentSettings && currentSettings['default']
-          ? currentSettings['default'][headersByIndex[index]] ??
-            rule.defaults[paramsByHeader[headersByIndex[index]]]
+          ? (currentSettings['default'][headersByIndex[index]] ??
+            rule.defaults[paramsByHeader[headersByIndex[index]]])
           : rule.defaults[paramsByHeader[headersByIndex[index]]],
       ),
     );
@@ -433,9 +433,9 @@ export abstract class AbstractRuleRange<
       this.setRow(
         rule.name,
         record.id,
-        Array.from({length}).map((unused, index) =>
+        Array.from({ length }).map((unused, index) =>
           currentSettings && currentSettings[record.id]
-            ? currentSettings[record.id][headersByIndex[index]] ?? ''
+            ? (currentSettings[record.id][headersByIndex[index]] ?? '')
             : '',
         ),
       );
@@ -670,16 +670,15 @@ export abstract class AppsScriptFrontEnd<
       );
     }
 
-    const report: {[rule: string]: {[campaignId: string]: Value}} = {};
+    const report: { [rule: string]: { [campaignId: string]: Value } } = {};
     await this.initializeRules();
-    const thresholds: Array<[Rule, Promise<{values: Values}>]> = Object.values(
-      this.client.ruleStore,
-    ).map((rule) => {
-      return [rule, rule.run()];
-    });
+    const thresholds: Array<[Rule, Promise<{ values: Values }>]> =
+      Object.values(this.client.ruleStore).map((rule) => {
+        return [rule, rule.run()];
+      });
 
     for (const [rule, threshold] of thresholds) {
-      const {values} = await threshold;
+      const { values } = await threshold;
       for (const value of Object.values(values)) {
         const fieldKey = Object.entries(value.fields ?? [['', 'all']])
           .map(([key, value]) => (key ? `${key}: ${value}` : ''))
@@ -722,14 +721,14 @@ export abstract class AppsScriptFrontEnd<
    */
   async launchMonitor() {
     await this.initializeSheets();
-    const {rules, results} = await this.client.validate();
+    const { rules, results } = await this.client.validate();
     this.saveSettingsBackToSheets(Object.values(rules));
     this.populateRuleResultsInSheets(rules, results);
     this.maybeSendEmailAlert(
       Object.fromEntries(
         Object.entries(rules).map(([key, ruleInfo]) => [
           key,
-          {name: ruleInfo.name, values: results[key].values},
+          { name: ruleInfo.name, values: results[key].values },
         ]),
       ),
     );
@@ -787,7 +786,7 @@ export abstract class AppsScriptFrontEnd<
    */
   matrixToCsv(
     matrix: string[][],
-    {category, sheetId, label, ruleName, currentTime}: MetadataForCsv,
+    { category, sheetId, label, ruleName, currentTime }: MetadataForCsv,
   ): string {
     // note - the arrays we're using get API data, not user input. Not
     // anticipating anything that complicated, but we're adding tests to be
@@ -839,7 +838,7 @@ export abstract class AppsScriptFrontEnd<
     }${ruleName}_${sheetId}_${currentTime}`;
     Drive.Files!.insert(
       {
-        parents: [{id: folder}],
+        parents: [{ id: folder }],
         title: `${filename}.csv`,
         mimeType: 'text/plain',
       },
@@ -892,7 +891,7 @@ export abstract class AppsScriptFrontEnd<
       folder = Drive.Files!.insert({
         title: folderName,
         mimeType: FOLDER,
-        parents: [{id: driveId}],
+        parents: [{ id: driveId }],
       }).id as string;
     }
     return folder;
@@ -1054,13 +1053,13 @@ export abstract class AppsScriptFrontEnd<
     const updateTime = Date.now();
     const emailSendDates = JSON.parse(
       this.client.properties.getProperty(SEND_DATE_KEY) || '{}',
-    ) as {[author: string]: number};
+    ) as { [author: string]: number };
     // never reuse anomaly dates. We should use newAnomalySendDates so we
     // get rid of no-longer-anomalous values.
-    const anomalySendDates: {readonly [id: string]: number} = JSON.parse(
+    const anomalySendDates: { readonly [id: string]: number } = JSON.parse(
       this.client.properties.getProperty(ANOMALY_SEND_DATE_KEY) || '{}',
-    ) as {[id: string]: number};
-    const newAnomalySendDates: {[id: string]: number} = {};
+    ) as { [id: string]: number };
+    const newAnomalySendDates: { [id: string]: number } = {};
     let emailSent = false;
 
     const rulesWithAnomalies: readonly RuleGetter[] = Object.values(rules)
@@ -1250,7 +1249,7 @@ export function newRuleBuilder<
       }
     };
 
-    Object.defineProperty(ruleClass, 'name', {value: ruleDefinition.name});
+    Object.defineProperty(ruleClass, 'name', { value: ruleDefinition.name });
     return ruleClass;
   };
 }
@@ -1397,7 +1396,7 @@ export function sortMigrations(ver1: string, ver2: string) {
  * This class uses `gzip` to stay within storage quotas for PropertiesService.
  */
 export class AppsScriptPropertyStore implements PropertyStore {
-  private static readonly cache: {[key: string]: string} = {};
+  private static readonly cache: { [key: string]: string } = {};
 
   constructor(
     private readonly properties = PropertiesService.getScriptProperties(),

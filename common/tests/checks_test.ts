@@ -15,11 +15,11 @@
  * limitations under the License.
  */
 
-import {equalTo, inRange, lessThanOrEqualTo} from '../checks';
+import { equalTo, inRange, lessThanOrEqualTo } from '../checks';
 
 describe('checks test', () => {
   describe('inRange', () => {
-    const test = {min: 1, max: 5};
+    const test = { min: 1, max: 5 };
     it('handles values in range', () => {
       [1, 2, 3, 4, 5].forEach((i) =>
         expect(inRange(test, i, {}).anomalous).toBeFalse(),

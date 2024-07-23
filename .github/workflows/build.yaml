@@ -1,0 +1,40 @@
+name: Lint everything
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  lint-and-test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Set bash to strict mode
+        run: set -euox pipefail
+
+      - name: Set Node.js 18.x
+        uses: actions/setup-node@v3
+        with:
+          node-version: 18.x
+
+      - name: Install yarn
+        run: npm -g install yarn
+
+      - name: Install dependencies
+        run: npx yarn
+
+      - name: Lint
+        run: npx yarn lint-staged
+
+      - name: Test
+        run: npx yarn test
+
+      - name: Print errors
+        run: find . -name "*.warn" -type f -exec cat {} \;
+
+      - name: Fail on errors
+        if: ${{ steps.lint.outputs.error || steps.test.outputs.error || steps.build-sa360.outputs.error || steps.build-dv360.outputs.error || steps.build-dev-sa360.outputs.error }}
+        run: exit 1

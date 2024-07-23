@@ -1,13 +1,23 @@
 {
   "timeZone": "America/Los_Angeles",
   "dependencies": {
-    "enabledAdvancedServices": [{
-      "userSymbol": "DoubleClickCampaigns",
-      "serviceId": "dfareporting",
-      "version": "v4"
-    }]
+    "enabledAdvancedServices": [
+      {
+        "userSymbol": "DoubleClickCampaigns",
+        "serviceId": "dfareporting",
+        "version": "v4"
+      }
+    ]
   },
   "exceptionLogging": "STACKDRIVER",
-  "oauthScopes": ["https://www.googleapis.com/auth/dfareporting", "https://www.googleapis.com/auth/dfatrafficking", "https://www.googleapis.com/auth/spreadsheets.currentonly", "https://www.googleapis.com/auth/script.scriptapp", "https://www.googleapis.com/auth/script.external_request", "https://www.googleapis.com/auth/script.send_mail", "https://www.googleapis.com/auth/script.container.ui"],
+  "oauthScopes": [
+    "https://www.googleapis.com/auth/dfareporting",
+    "https://www.googleapis.com/auth/dfatrafficking",
+    "https://www.googleapis.com/auth/spreadsheets.currentonly",
+    "https://www.googleapis.com/auth/script.scriptapp",
+    "https://www.googleapis.com/auth/script.external_request",
+    "https://www.googleapis.com/auth/script.send_mail",
+    "https://www.googleapis.com/auth/script.container.ui"
+  ],
   "runtimeVersion": "V8"
 }
