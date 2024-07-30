@@ -315,6 +315,19 @@ export interface PerformanceGoal {
 }
 
 /**
+ * Defines a performance goal configuration.
+ * @see https://developers.google.com/display-video/api/reference/rest/v1/PerformanceGoal
+ *
+ */
+export interface LineItemPerformanceGoal {
+  /** Should always be set, but for legacy reasons is optional. */
+  kpiType?: string;
+  kpiAmountMicros?: string;
+  kpiPercentageMicros?: string;
+  kpiString?: string;
+}
+
+/**
  * Exports a mapper from an API resource to `PerformanceGoal`
  */
 // tslint:disable-next-line:enforce-name-casing legacy from JS migration
@@ -351,6 +364,38 @@ export const PerformanceGoalMapper: Mapper<PerformanceGoal> = {
   },
 };
 
+/**
+ * Exports a mapper from an API resource to `PerformanceGoal`
+ */
+// tslint:disable-next-line:enforce-name-casing legacy from JS migration
+export const LineItemPerformanceGoalMapper: Mapper<LineItemPerformanceGoal> = {
+  /**
+   * Converts a resource object returned by the API into a concrete
+   * `PerformanceGoal` instance.
+   *
+   * @param resource The API resource object
+   * @return The concrete instance, or null if the resource
+   *     did not contain the expected properties
+   */
+  map(resource) {
+    if (
+      ObjectUtil.hasOwnProperties(
+        resource,
+        [],
+        ['kpiAmountMicros', 'kpiPercentageMicros', 'kpiString'],
+      ) &&
+      Object.keys(resource).length >= 1
+    ) {
+      if (!resource.kpiType) {
+        resource.kpiType = 'KPI_TYPE_UNSPECIFIED';
+      }
+      if (Object.keys(resource).length === 2) {
+        return resource;
+      }
+    }
+    return undefined;
+  },
+};
 /**
  * Defines a maximum spend oriented bidding strategy.
  * @see https://developers.google.com/display-video/api/reference/rest/v1/BiddingStrategy#maximizespendbidstrategy
@@ -744,6 +789,9 @@ export const InsertionOrderBudgetSegmentMapper: MapperWithJsonOut<InsertionOrder
      *     the resource did not contain the expected properties
      */
     map(resource) {
+      if (!resource.hasOwnProperty('budgetAmountMicros')) {
+        resource.budgetAmountMicros = '0';
+      }
       if (
         ObjectUtil.hasOwnProperties(resource, [
           'budgetAmountMicros',

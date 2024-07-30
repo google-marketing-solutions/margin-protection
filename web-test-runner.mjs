@@ -26,7 +26,5 @@ export default {
       tsconfig: fileURLToPath(new URL('./tsconfig.json', import.meta.url)),
     }),
   ],
-  browsers: [
-    playwrightLauncher({ product: 'chromium' })
-  ]
+  browsers: [playwrightLauncher({ product: 'chromium' })],
 };

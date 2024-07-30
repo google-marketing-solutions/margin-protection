@@ -4,7 +4,7 @@
     "outDir": "dist",
     "skipLibCheck": true,
     "module": "esnext",
-    "moduleResolution": "classic",
+    "moduleResolution": "node",
     "target": "es2020",
     "lib": ["esnext", "dom"],
     "noImplicitThis": true,
@@ -18,5 +18,5 @@
     }
   },
   "include": ["**/src/**/*", "outs.d.ts"],
-  "exclude": ["node_modules/**/*", "dist/**/*", "**/*_test.ts"]
+  "exclude": ["**/node_modules/**/*", "**/dist/**/*", "**/*_test.ts"]
 }

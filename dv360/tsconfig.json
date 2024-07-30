@@ -1,5 +1,13 @@
 {
-  "extends": "../tsconfig.json",
+  "compilerOptions": {
+    "baseUrl": "../",
+    "outDir": "dv360",
+    "skipLibCheck": true,
+    "module": "esnext",
+    "moduleResolution": "classic",
+    "target": "es2020",
+    "lib": ["esnext", "dom"]
+  },
   "include": ["src/**/*", "outs.d.ts"],
   "exclude": ["node_modules/**/*", "dist/**/*", "**/*_test.ts"]
 }

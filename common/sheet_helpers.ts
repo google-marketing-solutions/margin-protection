@@ -472,6 +472,18 @@ export const HELPERS = {
   insertRows(range: GoogleAppsScript.Spreadsheet.Range) {
     range.insertCells(SpreadsheetApp.Dimension.ROWS);
   },
+  applyAnomalyHelper(
+    range: GoogleAppsScript.Spreadsheet.Range,
+    column: number,
+  ) {
+    const filter = range.getFilter();
+    // A filter can only be added once to a sheet
+    if (!filter) {
+      const criteria =
+        SpreadsheetApp.newFilterCriteria().whenTextEqualTo('TRUE');
+      range.createFilter().setColumnFilterCriteria(4, criteria.build());
+    }
+  },
   saveLastReportPull(time: number) {
     CacheService.getScriptCache().put(SCRIPT_PULL, time.toString());
   },
@@ -708,9 +720,10 @@ export abstract class AppsScriptFrontEnd<
     ];
     sheet.getRange('A:Z').clearDataValidations();
     sheet.clear();
-    sheet
-      .getRange(1, 1, valueArray.length, valueArray[0].length)
-      .setValues(valueArray);
+
+    const range = sheet.getRange(1, 1, valueArray.length, valueArray[0].length);
+    range.setValues(valueArray);
+    HELPERS.applyAnomalyHelper(range, 4);
   }
 
   /**
