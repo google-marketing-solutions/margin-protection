@@ -19,10 +19,12 @@
  * @fileoverview Contains a DAO for DBM access.
  */
 
+// g3-format-prettier
+
 import { IDType, QueryReportParams } from './types';
 
 /** The API version to use. Exposed for testing. */
-export const DBM_API_VERSION = 'v3';
+export const DBM_API_VERSION = 'v2';
 /** The URL of the API. Exposed for testing. */
 export const DBM_URL = 'doubleclickbidmanager.googleapis.com';
 

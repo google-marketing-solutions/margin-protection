@@ -29,8 +29,6 @@ import {
   InsertionOrderBudgetSegment,
   TARGETING_TYPE,
 } from 'dv360_api/dv360_types';
-import { displayvideo_v3 } from '@googleapis/displayvideo';
-
 import { equalTo, inRange, lessThanOrEqualTo } from 'common/checks';
 import { Settings, Value, Values } from 'common/types';
 

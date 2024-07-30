@@ -19,6 +19,8 @@
  * @fileoverview Client class for DV360.
  */
 
+// g3-format-prettier
+
 import {
   Advertisers,
   AssignedTargetingOptions,
@@ -53,8 +55,6 @@ import {
   QueryReportParams,
   RuleGranularity,
 } from './types';
-
-import { displayvideo_v3 } from '@googleapis/displayvideo';
 
 /**
  * A new rule in SA360.
