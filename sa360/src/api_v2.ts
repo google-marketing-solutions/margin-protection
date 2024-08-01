@@ -90,7 +90,7 @@ export const AD_GROUP_REPORT = makeReport({
       result.adGroup.id as string,
       {
         customerId: result.customer.id as string,
-        customerName: result.customer.resource_name as string,
+        customerName: result.customer.resourceName as string,
         campaignId: result.campaign.id as string,
         adGroupId: result.adGroup.id as string,
         adGroupName: result.adGroup.name as string,
