@@ -15,8 +15,6 @@
  * limitations under the License.
  */
 
-import { AppsScriptFrontend } from './sheet_helpers';
-
 /**
  * An abstraction for retrieving properties.
  */

@@ -115,6 +115,10 @@ export class Client implements ClientInterface {
     rule: RuleExecutorClass<DisplayVideoClientTypes>,
     settingsArray: ReadonlyArray<string[]>,
   ): ClientInterface {
+    const ruule = this.ruleStore[rule.definition.name] as RuleExecutor<
+      DisplayVideoClientTypes,
+      DefinedParameters<Params>
+    >;
     this.ruleStore[rule.definition.name] = new rule(this, settingsArray);
     return this;
   }

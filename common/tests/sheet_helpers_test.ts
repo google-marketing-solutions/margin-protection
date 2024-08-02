@@ -418,6 +418,7 @@ describe('Test emails', () => {
         },
       },
     };
+    mockAppsScript();
     frontend = new FakeFrontend({
       ruleRangeClass: RuleRange,
       rules: [],

@@ -19,8 +19,8 @@
  * @fileoverview Test helpers for the common library.
  */
 
-import { ClientTypes } from '../types';
-import { FakePropertyStore } from '../test_helpers/mock_apps_script';
+import { ClientTypes } from 'common/types';
+import { FakePropertyStore } from 'common/test_helpers/mock_apps_script';
 
 import {
   CredentialManager,
