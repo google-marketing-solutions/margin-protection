@@ -15,8 +15,6 @@
  * limitations under the License.
  */
 
-import { AppsScriptFrontend } from './sheet_helpers';
-
 /**
  * An abstraction for retrieving properties.
  */
@@ -73,29 +71,22 @@ export type Settings<Params> = SettingMapInterface<{
 /**
  * Defines a client object, which is responsible for wrapping.
  */
-export interface BaseClientInterface<
-  C extends BaseClientInterface<C, G, A>,
-  G extends RuleGranularity<G>,
-  A extends BaseClientArgs,
-> {
-  readonly args: A;
+export interface BaseClientInterface<T extends ClientTypes<T>> {
+  readonly args: T['clientArgs'];
   readonly ruleStore: {
-    [ruleName: string]: RuleExecutor<C, G, A, Record<string, ParamDefinition>>;
+    [ruleName: string]: RuleExecutor<T>;
   };
   readonly properties: PropertyStore;
   getAllCampaigns(): Promise<RecordInfo[]>;
   validate(): Promise<{
-    rules: Record<
-      string,
-      RuleExecutor<C, G, A, Record<string, ParamDefinition>>
-    >;
+    rules: Record<string, RuleExecutor<T>>;
     results: Record<string, ExecutorResult>;
   }>;
 
   addRule<Params extends Record<keyof Params, ParamDefinition>>(
-    rule: RuleExecutorClass<C, G, A, Params>,
+    rule: RuleExecutorClass<T, Params>,
     settingsArray: ReadonlyArray<string[]>,
-  ): C;
+  ): T['client'];
 }
 
 /**
@@ -103,6 +94,8 @@ export interface BaseClientInterface<
  */
 export interface ParamDefinition {
   label: string;
+  /** If set, this will be the default parameter value. Unset means there is no default. */
+  defaultValue?: string;
   /** A Google-Sheets formula for validating a column, e.g. "=TRUE". */
   validationFormulas?: string[];
   numberFormat?: string;
@@ -122,16 +115,14 @@ export type RuleGranularity<G extends RuleGranularity<G>> = {
  * Actionable object to run a rule.
  */
 export interface RuleExecutor<
-  C extends BaseClientInterface<C, G, A>,
-  G extends RuleGranularity<G>,
-  A extends BaseClientArgs,
-  P extends Record<keyof P, ParamDefinition>,
-> extends Omit<RuleDefinition<P, G>, 'callback' | 'defaults' | 'granularity'> {
-  client: C;
+  T extends ClientTypes<T>,
+  P extends DefinedParameters<P> = Record<string, ParamDefinition>,
+> extends Omit<RuleDefinition<T, P>, 'callback' | 'defaults' | 'granularity'> {
+  client: T['client'];
   settings: Settings<Record<keyof P, string>>;
   run: Function;
   helper: string;
-  granularity: G;
+  granularity: T['ruleGranularity'];
 }
 
 /**
@@ -152,29 +143,15 @@ export interface RuleGetter {
 }
 
 /**
- * An executable rule.
- */
-export interface RuleExecutorClass<
-  C extends BaseClientInterface<C, G, A>,
-  G extends RuleGranularity<G>,
-  A extends BaseClientArgs,
-  P extends Record<keyof P, P[keyof P]> = Record<string, ParamDefinition>,
-> {
-  new (client: C, settings: ReadonlyArray<string[]>): RuleExecutor<C, G, A, P>;
-  definition: RuleDefinition<P, G>;
-}
-
-/**
  * The type-enforced parameters required to create a rule with `newRule`.
  */
 export interface RuleDefinition<
+  T extends ClientTypes<T>,
   P extends Record<keyof P, ParamDefinition>,
-  G extends RuleGranularity<G>,
 > extends RuleInfo {
   callback: Callback<P>;
-  granularity: G;
+  granularity: T['ruleGranularity'];
   params: { [Property in keyof P]: ParamDefinition };
-  defaults: { [Property in keyof P]: string };
   helper?: string;
   /** The name of the "value" column in the anomaly detector, for reporting. */
   valueFormat: { label: string; numberFormat?: string };
@@ -203,7 +180,7 @@ export interface RecordInfoV2 {
 /**
  * Represents a client-specific set of client arguments to initialize a client.
  */
-export interface BaseClientArgs {
+export interface BaseClientArgs<ChildClass extends BaseClientArgs<ChildClass>> {
   /**
    * The name of the client. Distinguishable for emails.
    */
@@ -211,16 +188,34 @@ export interface BaseClientArgs {
 }
 
 /**
+ * The base front-end wrapper. Contains platform-specific logic.
+ */
+export interface Frontend<T extends ClientTypes<T>> {
+  client: T['client'];
+}
+
+/**
+ * Represents the related interfaces for a given platform's Launch Monitor.
+ */
+export interface ClientTypes<T extends ClientTypes<T>> {
+  client: BaseClientInterface<T>;
+  ruleGranularity: RuleGranularity<T['ruleGranularity']>;
+  clientArgs: BaseClientArgs<T['clientArgs']>;
+  frontend: Frontend<T>;
+}
+
+/**
  * A rule class that can instantiate a {@link RuleExecutor} object.
  */
 export interface RuleExecutorClass<
-  C extends BaseClientInterface<C, G, A>,
-  G extends RuleGranularity<G>,
-  A extends BaseClientArgs,
+  T extends ClientTypes<T>,
   P extends Record<keyof P, P[keyof P]> = Record<string, ParamDefinition>,
 > {
-  new (client: C, settings: ReadonlyArray<string[]>): RuleExecutor<C, G, A, P>;
-  definition: RuleDefinition<P, G>;
+  new (
+    client: T['client'],
+    settings: ReadonlyArray<string[]>,
+  ): RuleExecutor<T, P>;
+  definition: RuleDefinition<T, P>;
 }
 
 /**
@@ -236,9 +231,7 @@ export interface RuleExecutorClass<
  *   special characters.
  */
 export interface RuleStoreEntry<
-  C extends BaseClientInterface<C, G, A>,
-  G extends RuleGranularity<G>,
-  A extends BaseClientArgs,
+  T extends ClientTypes<T>,
   P extends Record<
     keyof ParamDefinition,
     ParamDefinition[keyof ParamDefinition]
@@ -247,7 +240,7 @@ export interface RuleStoreEntry<
   /**
    * Contains a rule's metadata.
    */
-  rule: RuleExecutorClass<C, G, A>;
+  rule: RuleExecutorClass<T>;
 
   /**
    * Content in the form of {advertiserId: {paramKey: paramValue}}.
@@ -260,11 +253,7 @@ export interface RuleStoreEntry<
 /**
  * Sheets interface. Writes parameters to and from Google Sheets.
  */
-export interface RuleRangeInterface<
-  C extends BaseClientInterface<C, G, A>,
-  G extends RuleGranularity<G>,
-  A extends BaseClientArgs,
-> {
+export interface RuleRangeInterface<T extends ClientTypes<T>> {
   setRow(category: string, campaignId: string, column: string[]): void;
 
   /**
@@ -276,22 +265,22 @@ export interface RuleRangeInterface<
    *    header1,header2,header3,header4,header5,header6,header7
    *    none1,none2,cata1,cata2,catb1,catb2,catb3
    */
-  getValues(ruleGranularity?: G): string[][];
+  getValues(ruleGranularity?: T['ruleGranularity']): string[][];
 
   getRule(ruleName: string): string[][];
   getRule(ruleName: string): string[][];
   fillRuleValues<Params>(
     rule: Pick<
-      RuleDefinition<Record<keyof Params, ParamDefinition>, G>,
-      'name' | 'params' | 'defaults' | 'granularity'
+      RuleDefinition<T, Record<keyof Params, ParamDefinition>>,
+      'name' | 'params' | 'granularity'
     >,
   ): Promise<void>;
-  getRows(granularity: G): Promise<RecordInfo[]>;
+  getRows(granularity: T['ruleGranularity']): Promise<RecordInfo[]>;
 
   /**
    * Writes the values of a rule sheet back to the rule.
    */
-  writeBack(granularity: G): void;
+  writeBack(granularity: T['ruleGranularity']): void;
 }
 
 /**
@@ -300,33 +289,31 @@ export interface RuleRangeInterface<
  * This is used to inject arguments into implementations, which determines
  * how the client gets executed.
  */
-export interface FrontendArgs<
-  C extends BaseClientInterface<C, G, A>,
-  G extends RuleGranularity<G>,
-  A extends BaseClientArgs,
-  F extends AppsScriptFrontend<C, G, A, F>,
-> {
+export interface FrontendArgs<T extends ClientTypes<T>> {
   readonly ruleRangeClass: {
-    new (sheet: string[][], client: C): RuleRangeInterface<C, G, A>;
+    new (sheet: string[][], client: T['client']): RuleRangeInterface<T>;
   };
-  readonly rules: ReadonlyArray<
-    RuleExecutorClass<C, G, A, Record<string, ParamDefinition>>
-  >;
-  readonly clientInitializer: (clientArgs: A, properties: PropertyStore) => C;
+  readonly rules: ReadonlyArray<RuleExecutorClass<T>>;
+  readonly clientInitializer: (
+    clientArgs: T['clientArgs'],
+    properties: PropertyStore,
+  ) => T['client'];
   readonly version: string;
-  readonly migrations: Record<string, (frontend: F) => void>;
+  readonly migrations: Record<string, (frontend: T['frontend']) => void>;
   readonly properties: PropertyStore;
+}
+
+export interface FrontendInterface<T extends ClientTypes<T>> {
+  client: T['client'];
 }
 
 /**
  * Parameters for a rule.
  */
 export type RuleParams<
-  C extends BaseClientInterface<C, G, A>,
-  G extends RuleGranularity<G>,
-  A extends BaseClientArgs,
+  T extends ClientTypes<T>,
   P extends Record<keyof P, ParamDefinition>,
-> = RuleDefinition<P, G> & ThisType<RuleExecutor<C, G, A, P>>;
+> = RuleDefinition<T, P> & ThisType<RuleExecutor<T, P>>;
 
 /**
  * A list of available and required Apps Script functions for Launch Monitor.
@@ -368,3 +355,11 @@ export type Check = (
   value: any,
   fields: { [key: string]: string },
 ) => Value;
+
+/**
+ * Identifies a named {@link ParamDefinition}.
+ *
+ * Allows linking the key name of the object to a list of parameters
+ * in a rule.
+ */
+export type DefinedParameters<P> = Record<keyof P, ParamDefinition>;

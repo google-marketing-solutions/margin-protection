@@ -25,12 +25,7 @@ import {
   Settings,
   Value,
   Values,
-} from 'common/types';
-
-import {
-  AppsScriptFunctions,
-  BaseClientArgs,
-  BaseClientInterface,
+  ClientTypes,
   ExecutorResult,
   FrontendArgs,
   ParamDefinition,
@@ -39,10 +34,9 @@ import {
   RuleExecutor,
   RuleExecutorClass,
   RuleGetter,
-  RuleGranularity,
   RuleRangeInterface,
   SettingMapInterface,
-} from './types';
+} from 'common/types';
 
 const FOLDER = 'application/vnd.google-apps.folder';
 const HEADER_RULE_NAME_INDEX = 0;
@@ -218,11 +212,8 @@ interface MetadataForCsv {
  * The range has two headers: Header 1 is category/rule names, and
  * header 2 is the name of the rule setting to be changed.
  */
-export abstract class AbstractRuleRange<
-  C extends BaseClientInterface<C, G, A>,
-  G extends RuleGranularity<G>,
-  A extends BaseClientArgs,
-> implements RuleRangeInterface<C, G, A>
+export abstract class AbstractRuleRange<T extends ClientTypes<T>>
+  implements RuleRangeInterface<T>
 {
   private rowIndex: Record<string, number> = {};
   private readonly columnOrders: Record<string, Record<string, number>> = {};
@@ -232,7 +223,7 @@ export abstract class AbstractRuleRange<
 
   constructor(
     range: string[][],
-    protected readonly client: C,
+    protected readonly client: T['client'],
     constantHeaders: string[] = ['ID', 'default'],
   ) {
     for (let i = 0; i < constantHeaders.length; i++) {
@@ -253,7 +244,7 @@ export abstract class AbstractRuleRange<
       column;
   }
 
-  getValues(ruleGranularity?: G): string[][] {
+  getValues(ruleGranularity?: T['ruleGranularity']): string[][] {
     const newRowIndex = { ...this.rowIndex };
     const defaultFirstColumns = ['', ''];
 
@@ -389,14 +380,10 @@ export abstract class AbstractRuleRange<
 
   async fillRuleValues<Params>(
     rule: Pick<
-      RuleDefinition<Record<keyof Params, ParamDefinition>, G>,
-      'name' | 'params' | 'defaults' | 'granularity'
+      RuleDefinition<T, Record<keyof Params, ParamDefinition>>,
+      'name' | 'params' | 'granularity'
     >,
   ) {
-    if (!rule.defaults) {
-      throw new Error('Missing default values definition in fillRow');
-    }
-
     const headersByIndex: { [index: number]: string } = {};
     const paramsByHeader: { [index: string]: keyof Params } = {};
     const indexByHeader: { [header: string]: number } = {};
@@ -422,11 +409,9 @@ export abstract class AbstractRuleRange<
     this.setRow(
       rule.name,
       'default',
-      Array.from({ length }).map((unused, index) =>
-        currentSettings && currentSettings['default']
-          ? (currentSettings['default'][headersByIndex[index]] ??
-            rule.defaults[paramsByHeader[headersByIndex[index]]])
-          : rule.defaults[paramsByHeader[headersByIndex[index]]],
+      Array.from({ length }).map(
+        (unused, index) =>
+          rule.params[paramsByHeader[headersByIndex[index]]].defaultValue ?? '',
       ),
     );
     for (const record of await this.getRows(rule.granularity)) {
@@ -443,7 +428,7 @@ export abstract class AbstractRuleRange<
     }
   }
 
-  writeBack(ruleGranularity: G) {
+  writeBack(ruleGranularity: T['ruleGranularity']) {
     const values = this.getValues(ruleGranularity);
     const range = getOrCreateSheet(
       `Rule Settings - ${ruleGranularity}`,
@@ -452,7 +437,7 @@ export abstract class AbstractRuleRange<
     console.log('done');
   }
 
-  abstract getRows(granularity: G): Promise<RecordInfo[]>;
+  abstract getRows(granularity: T['ruleGranularity']): Promise<RecordInfo[]>;
 }
 
 /**
@@ -514,21 +499,20 @@ export function getTemplateSetting(
 /**
  * The front-end for Apps Script UIs. This is extensible for customer use-cases.
  *
- * While the default application should cover base needs, customers may want to
- * program custom rules or use Firebase for increased storage space.
+ * The easiest approach to modifying this is to handle changes in {@link injectedArgs}.
+ * It is also possible to extend this class for more in-depth changes.
  */
-export abstract class AppsScriptFrontend<
-  C extends BaseClientInterface<C, G, A>,
-  G extends RuleGranularity<G>,
-  A extends BaseClientArgs,
-  F extends AppsScriptFrontend<C, G, A, F>,
-> {
-  readonly client: C;
-  readonly rules: ReadonlyArray<RuleExecutorClass<C, G, A>>;
+export abstract class AppsScriptFrontend<T extends ClientTypes<T>> {
+  readonly client: T['client'];
+  readonly rules: ReadonlyArray<RuleExecutorClass<T>>;
 
+  /**
+   * @param category The type of Launch Monitor this is (e.g. SA360, DV360)
+   * @param injectedArgs Customizations from the client declaration of Frontend.
+   */
   protected constructor(
     private readonly category: string,
-    private readonly injectedArgs: FrontendArgs<C, G, A, F>,
+    private readonly injectedArgs: FrontendArgs<T>,
   ) {
     const clientArgs = this.getIdentity();
     if (!this.identityComplete()) {
@@ -567,11 +551,11 @@ export abstract class AppsScriptFrontend<
     const sheets = this.injectedArgs.rules.reduce(
       (prev, rule) => {
         (prev[rule.definition.granularity.toString()] ??= [] as Array<
-          RuleExecutorClass<C, G, A>
+          RuleExecutorClass<T>
         >).push(rule);
         return prev;
       },
-      {} as Record<string, Array<RuleExecutorClass<C, G, A>>>,
+      {} as Record<string, Array<RuleExecutorClass<T>>>,
     );
 
     for (const [sheetName, ruleClasses] of Object.entries(sheets)) {
@@ -662,13 +646,13 @@ export abstract class AppsScriptFrontend<
     }
   }
 
-  abstract getIdentity(): A | null;
+  abstract getIdentity(): T['clientArgs'] | null;
 
   /**
    * Runs rules for all campaigns/insertion orders and returns a scorecard.
    */
   async preLaunchQa() {
-    type Rule = RuleExecutor<C, G, A, Record<string, ParamDefinition>>;
+    type Rule = RuleExecutor<T>;
     const identity = this.getIdentity();
     if (!identity) {
       throw new Error(
@@ -744,6 +728,7 @@ export abstract class AppsScriptFrontend<
   displayGlossary() {
     const template = HtmlService.createTemplateFromFile('html/glossary');
     template['rules'] = this.getFrontendDefinitions();
+    template['rules'] = this.getFrontendDefinitions();
     SpreadsheetApp.getUi().showSidebar(template.evaluate());
   }
 
@@ -753,6 +738,7 @@ export abstract class AppsScriptFrontend<
     );
   }
 
+  getFrontendDefinitions() {
   getFrontendDefinitions() {
     return this.rules.map((rule) => rule.definition);
   }
@@ -905,10 +891,7 @@ export abstract class AppsScriptFrontend<
   }
 
   populateRuleResultsInSheets(
-    rules: Record<
-      string,
-      RuleExecutor<C, G, A, Record<string, ParamDefinition>>
-    >,
+    rules: Record<string, RuleExecutor<T>>,
     results: Record<string, ExecutorResult>,
   ) {
     const ruleSheets: string[] = [];
@@ -1041,7 +1024,7 @@ export abstract class AppsScriptFrontend<
         break;
       }
       if (sortMigrations(version, sheetVersion) > 0) {
-        migration(this as unknown as F);
+        migration(this as unknown as T['frontend']);
         // write manually each time because we want incremental migrations if
         // anything fails.
         PropertiesService.getScriptProperties().setProperty(
@@ -1184,10 +1167,8 @@ export abstract class AppsScriptFrontend<
     }
   }
 
-  protected saveSettingsBackToSheets(
-    rules: Array<RuleExecutor<C, G, A, Record<string, ParamDefinition>>>,
-  ) {
-    const ranges = new Map<G, RuleRangeInterface<C, G, A>>();
+  protected saveSettingsBackToSheets(rules: Array<RuleExecutor<T>>) {
+    const ranges = new Map<T['ruleGranularity'], RuleRangeInterface<T>>();
 
     for (const rule of rules) {
       if (!ranges.get(rule.granularity)) {
@@ -1236,28 +1217,26 @@ export abstract class AppsScriptFrontend<
 // This returns a function, a use case that this lint rule doesn't
 // apply to.
 // tslint:disable-next-line:no-return-only-generics
-export function newRuleBuilder<
-  C extends BaseClientInterface<C, G, A>,
-  G extends RuleGranularity<G>,
-  A extends BaseClientArgs,
->(): <P extends Record<keyof P, ParamDefinition>>(
-  p: RuleParams<C, G, A, P>,
-) => RuleExecutorClass<C, G, A, P> {
+export function newRuleBuilder<T extends ClientTypes<T>>(): <
+  P extends Record<keyof P, ParamDefinition>,
+>(
+  p: RuleParams<T, P>,
+) => RuleExecutorClass<T, P> {
   return function newRule<P extends Record<keyof P, ParamDefinition>>(
-    ruleDefinition: RuleParams<C, G, A, P>,
-  ): RuleExecutorClass<C, G, A, P> {
-    const ruleClass = class implements RuleExecutor<C, G, A, P> {
+    ruleDefinition: RuleParams<T, P>,
+  ): RuleExecutorClass<T, P> {
+    const ruleClass = class implements RuleExecutor<T, P> {
       readonly description = ruleDefinition.description;
       readonly settings: Settings<Record<keyof P, string>>;
       readonly name: string = ruleDefinition.name;
       readonly params = ruleDefinition.params;
       readonly helper = ruleDefinition.helper ?? '';
-      readonly granularity: G = ruleDefinition.granularity;
+      readonly granularity: T['ruleGranularity'] = ruleDefinition.granularity;
       readonly valueFormat = ruleDefinition.valueFormat;
       static definition = ruleDefinition;
 
       constructor(
-        readonly client: C,
+        readonly client: T['client'],
         settingsArray: Readonly<string[][]>,
       ) {
         this.settings = transformToParamValues(settingsArray, this.params);
@@ -1271,83 +1250,6 @@ export function newRuleBuilder<
     Object.defineProperty(ruleClass, 'name', { value: ruleDefinition.name });
     return ruleClass;
   };
-}
-
-// Lazy load frontend.
-function load<
-  C extends BaseClientInterface<C, G, A>,
-  G extends RuleGranularity<G>,
-  A extends BaseClientArgs,
-  F extends AppsScriptFrontend<C, G, A, F>,
->(frontEndCaller: ScriptFunction<F>, fnName: ScriptEntryPoints) {
-  return (
-    scriptProperties: PropertyStore | GoogleAppsScript.Events.AppsScriptEvent,
-  ) => {
-    const frontend = frontEndCaller(
-      scriptProperties && scriptProperties.hasOwnProperty('getProperty')
-        ? (scriptProperties as PropertyStore)
-        : new AppsScriptPropertyStore(),
-    );
-    switch (fnName) {
-      case 'onOpen':
-        return frontend.onOpen();
-      case 'initializeSheets':
-        return frontend.initializeSheets();
-      case 'preLaunchQa':
-        return frontend.preLaunchQa();
-      case 'launchMonitor':
-        return frontend.launchMonitor();
-      case 'displaySetupGuide':
-        frontend.displaySetupGuide();
-        return;
-      case 'displayGlossary':
-        frontend.displayGlossary();
-        return;
-      default:
-        throw new Error('Unsupported function: ${fnName}');
-    }
-  };
-}
-
-function applyBinding<
-  C extends BaseClientInterface<C, G, A>,
-  G extends RuleGranularity<G>,
-  A extends BaseClientArgs,
-  F extends AppsScriptFrontend<C, G, A, F>,
->(frontEndCaller: ScriptFunction<F>): ScriptFunction<F> {
-  return (scriptProperties: PropertyStore) => {
-    const frontend = frontEndCaller(scriptProperties);
-    toExport.onOpen = frontend.onOpen.bind(frontend);
-    toExport.initializeSheets = frontend.initializeSheets.bind(frontend);
-    toExport.preLaunchQa = frontend.preLaunchQa.bind(frontend);
-    toExport.launchMonitor = frontend.launchMonitor.bind(frontend);
-
-    return frontend;
-  };
-}
-
-/**
- * Primary entry point for an Apps Script implementation.
- * @param frontEndCaller A callable that late binds {@link toExport} to the
- *   correct functions from a frontend. A correct implementation of this
- *   function will initialize a {@link AppsScriptFrontend} class and assign
- *   all functions the first time it's called.
- */
-export function lazyLoadApp<
-  C extends BaseClientInterface<C, G, A>,
-  G extends RuleGranularity<G>,
-  A extends BaseClientArgs,
-  F extends AppsScriptFrontend<C, G, A, F>,
->(frontEndCaller: ScriptFunction<F>): ScriptFunction<F> {
-  const binders = applyBinding<C, G, A, F>(frontEndCaller);
-  toExport.onOpen = load<C, G, A, F>(binders, 'onOpen');
-  toExport.initializeSheets = load<C, G, A, F>(binders, 'initializeSheets');
-  toExport.preLaunchQa = load<C, G, A, F>(binders, 'preLaunchQa');
-  toExport.launchMonitor = load<C, G, A, F>(binders, 'launchMonitor');
-  toExport.displayGlossary = load<C, G, A, F>(binders, 'displayGlossary');
-  toExport.displaySetupGuide = load<C, G, A, F>(binders, 'displaySetupGuide');
-
-  return binders;
 }
 
 /**
@@ -1377,18 +1279,6 @@ export function addSettingWithDescription(
       .build(),
   );
 }
-
-/***
- * A list of modules we need in the global scope for AppsScript to function.
- */
-export const toExport: Record<AppsScriptFunctions, Function> = {
-  onOpen: () => {},
-  initializeSheets: () => {},
-  preLaunchQa: () => {},
-  launchMonitor: () => {},
-  displayGlossary: () => {},
-  displaySetupGuide: () => {},
-};
 
 /**
  * Given two string semver values, checks to see which one is larger.
