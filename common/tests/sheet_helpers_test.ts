@@ -22,22 +22,20 @@
 import {
   FakePropertyStore,
   mockAppsScript,
-} from 'common/test_helpers/mock_apps_script';
+} from '../test_helpers/mock_apps_script';
 import {
   BaseClientArgs,
   ParamDefinition,
   RuleExecutorClass,
   RuleGetter,
-} from 'common/types';
+} from '../types';
 
 import {
   AppsScriptPropertyStore,
   HELPERS,
   SettingMap,
   getOrCreateSheet,
-  lazyLoadApp,
   sortMigrations,
-  toExport,
   transformToParamValues,
 } from '../sheet_helpers';
 
@@ -47,55 +45,8 @@ import {
   Granularity,
   RuleRange,
   TestClientInterface,
+  TestClientTypes,
 } from './helpers';
-
-describe('Check globals', () => {
-  let frontend: FakeFrontend;
-
-  beforeEach(() => {
-    setUp();
-    frontend = lazyLoadApp<
-      TestClientInterface,
-      Granularity,
-      BaseClientArgs,
-      FakeFrontend
-    >((properties) => {
-      return new FakeFrontend({
-        ruleRangeClass: RuleRange,
-        rules: [],
-        version: '1.0',
-        clientInitializer: () => new FakeClient(),
-        migrations: {},
-        properties,
-      });
-    })(new AppsScriptPropertyStore());
-  });
-
-  it('exists in `toExport`', () => {
-    expect(toExport.onOpen).toBeDefined();
-    expect(toExport.initializeSheets).toBeDefined();
-    expect(toExport.launchMonitor).toBeDefined();
-    expect(toExport.preLaunchQa).toBeDefined();
-  });
-
-  it('calls frontend version', () => {
-    const calls = { ...frontend.calls };
-
-    toExport.onOpen();
-    toExport.initializeSheets();
-    toExport.launchMonitor();
-    toExport.preLaunchQa();
-
-    expect(calls.onOpen).toEqual(0);
-    expect(calls.initializeSheets).toEqual(0);
-    expect(calls.launchMonitor).toEqual(0);
-    expect(calls.preLaunchQa).toEqual(0);
-    expect(frontend.calls.onOpen).toEqual(1);
-    expect(frontend.calls.initializeSheets).toEqual(1);
-    expect(frontend.calls.launchMonitor).toEqual(1);
-    expect(frontend.calls.preLaunchQa).toEqual(1);
-  });
-});
 
 function setUp() {
   mockAppsScript();
@@ -124,21 +75,14 @@ describe('Test migration order', () => {
       'sheet_version',
       currentVersion,
     );
-    return lazyLoadApp<
-      TestClientInterface,
-      Granularity,
-      BaseClientArgs,
-      FakeFrontend
-    >((properties) => {
-      return new FakeFrontend({
-        ruleRangeClass: RuleRange,
-        rules: [],
-        version: expectedVersion,
-        clientInitializer: () => new FakeClient(),
-        migrations,
-        properties,
-      });
-    })(new AppsScriptPropertyStore());
+    return new FakeFrontend({
+      ruleRangeClass: RuleRange,
+      rules: [],
+      version: expectedVersion,
+      clientInitializer: () => new FakeClient(),
+      migrations,
+      properties: new FakePropertyStore(),
+    });
   }
 
   beforeEach(() => {
@@ -474,21 +418,15 @@ describe('Test emails', () => {
       },
     };
     mockAppsScript();
-    frontend = lazyLoadApp<
-      TestClientInterface,
-      Granularity,
-      BaseClientArgs,
-      FakeFrontend
-    >((properties) => {
-      return new FakeFrontend({
-        ruleRangeClass: RuleRange,
-        rules: [],
-        version: '1.0',
-        clientInitializer: (args, properties) => new FakeClient(),
-        migrations: {},
-        properties,
-      });
-    })(new AppsScriptPropertyStore());
+    frontend = new FakeFrontend({
+      ruleRangeClass: RuleRange,
+      rules: [],
+      version: '1.0',
+      clientInitializer: (args, properties) => new FakeClient(),
+      migrations: {},
+      properties: new FakePropertyStore(),
+    });
+    console.log('new frontend');
   });
 
   it('sends anomalies to a user whenever they are new', () => {
@@ -544,12 +482,7 @@ function generateTestClient(params: { id?: string }): TestClientInterface {
       throw new Error('Not implemented.');
     },
     addRule: <P extends Record<keyof P, ParamDefinition>>(
-      rule: RuleExecutorClass<
-        TestClientInterface,
-        Granularity,
-        BaseClientArgs,
-        {}
-      >,
+      rule: RuleExecutorClass<TestClientTypes, {}>,
     ): TestClientInterface => {
       throw new Error('Not implemented.');
     },

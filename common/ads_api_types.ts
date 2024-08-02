@@ -76,7 +76,7 @@ export interface AccountMap {
 /**
  * Ads-specific minimum requirements for client arguments.
  */
-export interface AdsClientArgs extends BaseClientArgs {
+export interface AdsClientArgs extends BaseClientArgs<AdsClientArgs> {
   loginCustomerId?: string;
   customerIds: string;
 }

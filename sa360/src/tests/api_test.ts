@@ -83,7 +83,7 @@ describe('ApiV2', () => {
             customer: {
               resourceName: 'customers/1',
               id: '1',
-              name: 'Customer 1',
+              descriptiveName: 'Customer 1',
             },
             campaign: {
               resourceName: `customers/1/campaigns/c${x}`,
@@ -99,35 +99,35 @@ describe('ApiV2', () => {
       expect(report.fetch()).toEqual({
         c0: {
           customerId: '1',
-          customerName: 'customers/1',
+          customerName: 'Customer 1',
           campaignId: 'c0',
           campaignName: 'Campaign 0',
           campaignStatus: 'ENABLED',
         },
         c1: {
           customerId: '1',
-          customerName: 'customers/1',
+          customerName: 'Customer 1',
           campaignId: 'c1',
           campaignName: 'Campaign 1',
           campaignStatus: 'PAUSED',
         },
         c2: {
           customerId: '1',
-          customerName: 'customers/1',
+          customerName: 'Customer 1',
           campaignId: 'c2',
           campaignName: 'Campaign 2',
           campaignStatus: 'ENABLED',
         },
         c3: {
           customerId: '1',
-          customerName: 'customers/1',
+          customerName: 'Customer 1',
           campaignId: 'c3',
           campaignName: 'Campaign 3',
           campaignStatus: 'REMOVED',
         },
         c4: {
           customerId: '1',
-          customerName: 'customers/1',
+          customerName: 'Customer 1',
           campaignId: 'c4',
           campaignName: 'Campaign 4',
           campaignStatus: 'ENABLED',
@@ -145,7 +145,7 @@ describe('ApiV2', () => {
             customer: {
               resourceName: 'customers/1',
               id: '1',
-              name: 'Customer 1',
+              descriptiveName: 'Customer 1',
             },
             campaign: {
               resourceName: `customers/1/campaigns/c${Math.floor(x / 2)}`,
@@ -164,7 +164,7 @@ describe('ApiV2', () => {
       expect(report.fetch()).toEqual({
         ag0: {
           customerId: '1',
-          customerName: 'customers/1',
+          customerName: 'Customer 1',
           campaignId: 'c0',
           adGroupId: 'ag0',
           adGroupName: 'AdGroup 0',
@@ -172,7 +172,7 @@ describe('ApiV2', () => {
         },
         ag1: {
           customerId: '1',
-          customerName: 'customers/1',
+          customerName: 'Customer 1',
           campaignId: 'c0',
           adGroupId: 'ag1',
           adGroupName: 'AdGroup 1',
@@ -180,7 +180,7 @@ describe('ApiV2', () => {
         },
         ag2: {
           customerId: '1',
-          customerName: 'customers/1',
+          customerName: 'Customer 1',
           campaignId: 'c1',
           adGroupId: 'ag2',
           adGroupName: 'AdGroup 2',
@@ -188,7 +188,7 @@ describe('ApiV2', () => {
         },
         ag3: {
           customerId: '1',
-          customerName: 'customers/1',
+          customerName: 'Customer 1',
           campaignId: 'c1',
           adGroupId: 'ag3',
           adGroupName: 'AdGroup 3',
@@ -196,7 +196,7 @@ describe('ApiV2', () => {
         },
         ag4: {
           customerId: '1',
-          customerName: 'customers/1',
+          customerName: 'Customer 1',
           campaignId: 'c2',
           adGroupId: 'ag4',
           adGroupName: 'AdGroup 4',
@@ -227,7 +227,7 @@ describe('ApiV2', () => {
               },
               customer: {
                 resourceName: 'customers/1',
-                name: 'Customer 1',
+                descriptiveName: 'Customer 1',
                 id: '1',
               },
             })),
@@ -251,35 +251,35 @@ describe('ApiV2', () => {
         gtc0: {
           criterionId: 'gtc0',
           customerId: '1',
-          customerName: 'customers/1',
+          customerName: 'Customer 1',
           campaignId: 'c1',
           location: 'Canonical Name 0',
         },
         gtc1: {
           criterionId: 'gtc1',
           customerId: '1',
-          customerName: 'customers/1',
+          customerName: 'Customer 1',
           campaignId: 'c1',
           location: 'Canonical Name 1',
         },
         gtc2: {
           criterionId: 'gtc2',
           customerId: '1',
-          customerName: 'customers/1',
+          customerName: 'Customer 1',
           campaignId: 'c1',
           location: 'Canonical Name 2',
         },
         gtc3: {
           criterionId: 'gtc3',
           customerId: '1',
-          customerName: 'customers/1',
+          customerName: 'Customer 1',
           campaignId: 'c1',
           location: 'Canonical Name 3',
         },
         gtc4: {
           criterionId: 'gtc4',
           customerId: '1',
-          customerName: 'customers/1',
+          customerName: 'Customer 1',
           campaignId: 'c1',
           location: 'Canonical Name 4',
         },
@@ -296,7 +296,7 @@ describe('ApiV2', () => {
             customer: {
               resourceName: 'customers/1',
               id: '1',
-              name: 'Customer 1',
+              descriptiveName: 'Customer 1',
             },
             campaign: { resourceName: 'customers/1/campaigns/c1', id: 'c1' },
             adGroup: { resourceName: 'customers/1/adGroups/ag1', id: 'ag1' },
@@ -313,7 +313,7 @@ describe('ApiV2', () => {
         agc0: {
           criterionId: 'agc0',
           customerId: '1',
-          customerName: 'customers/1',
+          customerName: 'Customer 1',
           campaignId: 'c1',
           adGroupId: 'ag1',
           ageRange: 'AGE_RANGE_0',
@@ -321,7 +321,7 @@ describe('ApiV2', () => {
         agc1: {
           criterionId: 'agc1',
           customerId: '1',
-          customerName: 'customers/1',
+          customerName: 'Customer 1',
           campaignId: 'c1',
           adGroupId: 'ag1',
           ageRange: 'AGE_RANGE_1',
@@ -329,7 +329,7 @@ describe('ApiV2', () => {
         agc2: {
           criterionId: 'agc2',
           customerId: '1',
-          customerName: 'customers/1',
+          customerName: 'Customer 1',
           campaignId: 'c1',
           adGroupId: 'ag1',
           ageRange: 'AGE_RANGE_2',
@@ -337,7 +337,7 @@ describe('ApiV2', () => {
         agc3: {
           criterionId: 'agc3',
           customerId: '1',
-          customerName: 'customers/1',
+          customerName: 'Customer 1',
           campaignId: 'c1',
           adGroupId: 'ag1',
           ageRange: 'AGE_RANGE_3',
@@ -345,7 +345,7 @@ describe('ApiV2', () => {
         agc4: {
           criterionId: 'agc4',
           customerId: '1',
-          customerName: 'customers/1',
+          customerName: 'Customer 1',
           campaignId: 'c1',
           adGroupId: 'ag1',
           ageRange: 'AGE_RANGE_4',
@@ -363,7 +363,7 @@ describe('ApiV2', () => {
             customer: {
               resourceName: 'customers/1',
               id: '1',
-              name: 'Customer 1',
+              descriptiveName: 'Customer 1',
             },
             campaign: { resourceName: 'customers/1/campaigns/c1', id: 'c1' },
             adGroup: { resourceName: 'customers/c1/adGroups/ag1', id: 'ag1' },
@@ -380,7 +380,7 @@ describe('ApiV2', () => {
         agc0: {
           criterionId: 'agc0',
           customerId: '1',
-          customerName: 'customers/1',
+          customerName: 'Customer 1',
           campaignId: 'c1',
           adGroupId: 'ag1',
           ageRange: 'AGE_RANGE_0',
@@ -388,7 +388,7 @@ describe('ApiV2', () => {
         agc1: {
           criterionId: 'agc1',
           customerId: '1',
-          customerName: 'customers/1',
+          customerName: 'Customer 1',
           campaignId: 'c1',
           adGroupId: 'ag1',
           ageRange: 'AGE_RANGE_1',
@@ -396,7 +396,7 @@ describe('ApiV2', () => {
         agc2: {
           criterionId: 'agc2',
           customerId: '1',
-          customerName: 'customers/1',
+          customerName: 'Customer 1',
           campaignId: 'c1',
           adGroupId: 'ag1',
           ageRange: 'AGE_RANGE_2',
@@ -404,7 +404,7 @@ describe('ApiV2', () => {
         agc3: {
           criterionId: 'agc3',
           customerId: '1',
-          customerName: 'customers/1',
+          customerName: 'Customer 1',
           campaignId: 'c1',
           adGroupId: 'ag1',
           ageRange: 'AGE_RANGE_3',
@@ -412,7 +412,7 @@ describe('ApiV2', () => {
         agc4: {
           criterionId: 'agc4',
           customerId: '1',
-          customerName: 'customers/1',
+          customerName: 'Customer 1',
           campaignId: 'c1',
           adGroupId: 'ag1',
           ageRange: 'AGE_RANGE_4',
@@ -430,7 +430,7 @@ describe('ApiV2', () => {
             customer: {
               resourceName: 'customers/1',
               id: '1',
-              name: 'Customer 1',
+              descriptiveName: 'Customer 1',
             },
             campaign: { resourceName: 'customers/1/campaigns/c1', id: 'c1' },
             adGroup: { resourceName: 'customers/c1/adGroups/ag1', id: 'ag1' },
@@ -448,7 +448,7 @@ describe('ApiV2', () => {
         agc0: {
           criterionId: 'agc0',
           customerId: '1',
-          customerName: 'customers/1',
+          customerName: 'Customer 1',
           campaignId: 'c1',
           adGroupId: 'ag1',
           gender: 'Gender Type 0',
@@ -456,7 +456,7 @@ describe('ApiV2', () => {
         agc1: {
           criterionId: 'agc1',
           customerId: '1',
-          customerName: 'customers/1',
+          customerName: 'Customer 1',
           campaignId: 'c1',
           adGroupId: 'ag1',
           gender: 'Gender Type 1',
@@ -464,7 +464,7 @@ describe('ApiV2', () => {
         agc2: {
           criterionId: 'agc2',
           customerId: '1',
-          customerName: 'customers/1',
+          customerName: 'Customer 1',
           campaignId: 'c1',
           adGroupId: 'ag1',
           gender: 'Gender Type 2',
@@ -472,7 +472,7 @@ describe('ApiV2', () => {
         agc3: {
           criterionId: 'agc3',
           customerId: '1',
-          customerName: 'customers/1',
+          customerName: 'Customer 1',
           campaignId: 'c1',
           adGroupId: 'ag1',
           gender: 'Gender Type 3',
@@ -480,7 +480,7 @@ describe('ApiV2', () => {
         agc4: {
           criterionId: 'agc4',
           customerId: '1',
-          customerName: 'customers/1',
+          customerName: 'Customer 1',
           campaignId: 'c1',
           adGroupId: 'ag1',
           gender: 'Gender Type 4',
@@ -499,7 +499,7 @@ describe('ApiV2', () => {
               customer: {
                 resourceName: 'customers/1',
                 id: '1',
-                name: 'Customer 1',
+                descriptiveName: 'Customer 1',
               },
               campaign: { resourceName: 'customers/1/campaigns/c1', id: 'c1' },
               campaignCriterion: {
@@ -532,35 +532,35 @@ describe('ApiV2', () => {
         ul0: {
           criterionId: 'ul0',
           customerId: '1',
-          customerName: 'customers/1',
+          customerName: 'Customer 1',
           campaignId: 'c1',
           userListName: 'All visitors 0',
         },
         ul1: {
           criterionId: 'ul1',
           customerId: '1',
-          customerName: 'customers/1',
+          customerName: 'Customer 1',
           campaignId: 'c1',
           userListName: 'All visitors 1',
         },
         ul2: {
           criterionId: 'ul2',
           customerId: '1',
-          customerName: 'customers/1',
+          customerName: 'Customer 1',
           campaignId: 'c1',
           userListName: 'All visitors 2',
         },
         ul3: {
           criterionId: 'ul3',
           customerId: '1',
-          customerName: 'customers/1',
+          customerName: 'Customer 1',
           campaignId: 'c1',
           userListName: 'All visitors 3',
         },
         ul4: {
           criterionId: 'ul4',
           customerId: '1',
-          customerName: 'customers/1',
+          customerName: 'Customer 1',
           campaignId: 'c1',
           userListName: 'All visitors 4',
         },
@@ -578,7 +578,7 @@ describe('ApiV2', () => {
               customer: {
                 resourceName: 'customers/1',
                 id: '1',
-                name: 'Customer 1',
+                descriptiveName: 'Customer 1',
               },
               campaign: { resourceName: 'customers/1/campaigns/c1', id: 'c1' },
               adGroup: { id: 'ag1' },
@@ -612,7 +612,7 @@ describe('ApiV2', () => {
         ul0: {
           criterionId: 'ul0',
           customerId: '1',
-          customerName: 'customers/1',
+          customerName: 'Customer 1',
           campaignId: 'c1',
           adGroupId: 'ag1',
           userListName: 'All visitors 0',
@@ -620,7 +620,7 @@ describe('ApiV2', () => {
         ul1: {
           criterionId: 'ul1',
           customerId: '1',
-          customerName: 'customers/1',
+          customerName: 'Customer 1',
           campaignId: 'c1',
           adGroupId: 'ag1',
           userListName: 'All visitors 1',
@@ -628,7 +628,7 @@ describe('ApiV2', () => {
         ul2: {
           criterionId: 'ul2',
           customerId: '1',
-          customerName: 'customers/1',
+          customerName: 'Customer 1',
           campaignId: 'c1',
           adGroupId: 'ag1',
           userListName: 'All visitors 2',
@@ -636,7 +636,7 @@ describe('ApiV2', () => {
         ul3: {
           criterionId: 'ul3',
           customerId: '1',
-          customerName: 'customers/1',
+          customerName: 'Customer 1',
           campaignId: 'c1',
           adGroupId: 'ag1',
           userListName: 'All visitors 3',
@@ -644,7 +644,7 @@ describe('ApiV2', () => {
         ul4: {
           criterionId: 'ul4',
           customerId: '1',
-          customerName: 'customers/1',
+          customerName: 'Customer 1',
           campaignId: 'c1',
           adGroupId: 'ag1',
           userListName: 'All visitors 4',
