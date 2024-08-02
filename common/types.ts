@@ -15,11 +15,8 @@
  * limitations under the License.
  */
 
-<<<<<<< HEAD
-=======
 import { AppsScriptFrontend } from './sheet_helpers';
 
->>>>>>> 496c709 (Minor cleanup (#13))
 /**
  * An abstraction for retrieving properties.
  */
@@ -294,16 +291,7 @@ export interface RuleRangeInterface<T extends ClientTypes<T>> {
  * This is used to inject arguments into implementations, which determines
  * how the client gets executed.
  */
-<<<<<<< HEAD
 export interface FrontendArgs<T extends ClientTypes<T>> {
-=======
-export interface FrontendArgs<
-  C extends BaseClientInterface<C, G, A>,
-  G extends RuleGranularity<G>,
-  A extends BaseClientArgs,
-  F extends AppsScriptFrontend<C, G, A, F>,
-> {
->>>>>>> 496c709 (Minor cleanup (#13))
   readonly ruleRangeClass: {
     new (sheet: string[][], client: T['client']): RuleRangeInterface<T>;
   };
