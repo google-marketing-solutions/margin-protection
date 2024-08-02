@@ -739,7 +739,6 @@ export abstract class AppsScriptFrontend<T extends ClientTypes<T>> {
   }
 
   getFrontendDefinitions() {
-  getFrontendDefinitions() {
     return this.rules.map((rule) => rule.definition);
   }
 
