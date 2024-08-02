@@ -68,13 +68,14 @@ export const budgetPacingRule = newRule({
     min: {
       label: 'Min. Percent Ahead/Behind',
       validationFormulas: RULES.LESS_THAN_MAX,
+      defaultValue: '0',
     },
     max: {
       label: 'Max. Percent Ahead/Behind',
       validationFormulas: RULES.GREATER_THAN_MIN,
+      defaultValue: '0.5',
     },
   },
-  defaults: { min: '0', max: '0.5' },
   async callback() {
     const values: Values = {};
     const report = this.client.getReport(CAMPAIGN_PACING_REPORT).fetch();
@@ -118,21 +119,19 @@ export const campaignStatusRule = newRule({
   params: {
     daysInactive: {
       label: 'Max. Days Inactive before Active',
+      defaultValue: '60',
     },
     status: {
       label: 'Status',
+      defaultValue: '',
     },
     lastUpdated: {
       label: 'Last Updated',
+      defaultValue: '',
     },
   },
   helper:
     'Status Code: A=Active, P=Permanently Paused, #=Days Paused, C=Closed, V=Violation',
-  defaults: {
-    daysInactive: '60',
-    status: '',
-    lastUpdated: '',
-  },
   granularity: RuleGranularity.CAMPAIGN,
   valueFormat: { label: 'Invalid' },
   async callback() {
@@ -203,10 +202,8 @@ export const adGroupStatusRule = newRule({
   params: {
     adGroupActive: {
       label: 'Ad Group Active',
+      defaultValue: 'N',
     },
-  },
-  defaults: {
-    adGroupActive: 'N',
   },
   granularity: RuleGranularity.AD_GROUP,
   valueFormat: { label: 'Change' },
@@ -255,10 +252,8 @@ export const adGroupAudienceTargetRule = newRule({
   params: {
     userLists: {
       label: 'User Lists',
+      defaultValue: '',
     },
-  },
-  defaults: {
-    userLists: '',
   },
   granularity: RuleGranularity.AD_GROUP,
   valueFormat: { label: 'Change' },
@@ -300,10 +295,8 @@ export const ageTargetRule = newRule({
   params: {
     ageTargetAgeRange: {
       label: 'Age Range',
+      defaultValue: '',
     },
-  },
-  defaults: {
-    ageTargetAgeRange: '',
   },
   granularity: RuleGranularity.AD_GROUP,
   valueFormat: { label: 'Change' },
@@ -341,10 +334,8 @@ export const genderTargetRule = newRule({
   params: {
     genderTargetGenderType: {
       label: 'Gender Type',
+      defaultValue: '',
     },
-  },
-  defaults: {
-    genderTargetGenderType: '',
   },
   granularity: RuleGranularity.AD_GROUP,
   valueFormat: { label: 'Change' },
@@ -388,9 +379,6 @@ export const geoTargetRule = newRule({
       label: 'Criteria IDs',
     },
   },
-  defaults: {
-    criteriaIds: '',
-  },
   granularity: RuleGranularity.AD_GROUP,
   helper: `=HYPERLINK(
     "https://developers.google.com/google-ads/api/reference/data/geotargets", "Refer to the Criteria ID found in this report.")`,
@@ -430,9 +418,6 @@ export const campaignAudienceTargetRule = newRule({
     userLists: {
       label: 'User Lists',
     },
-  },
-  defaults: {
-    userLists: '',
   },
   granularity: RuleGranularity.CAMPAIGN,
   valueFormat: { label: 'Change' },

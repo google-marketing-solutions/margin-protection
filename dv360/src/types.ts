@@ -26,9 +26,15 @@ import {
   InsertionOrders,
 } from 'dv360_api/dv360';
 import { InsertionOrder } from 'dv360_api/dv360_resources';
-import { BaseClientArgs, BaseClientInterface } from 'common/types';
-
-import { ReportConstructor } from './client';
+import {
+  BaseClientArgs,
+  BaseClientInterface,
+  ClientTypes,
+  ParamDefinition,
+  RuleDefinition,
+  RuleExecutor,
+  FrontendInterface,
+} from 'common/types';
 
 /**
  * Defines the type of ID set on the client.
@@ -79,7 +85,7 @@ export interface QueryReportParams {
  * Defines a client object, which is responsible for wrapping.
  */
 export interface ClientInterface
-  extends BaseClientInterface<ClientInterface, RuleGranularity, ClientArgs> {
+  extends BaseClientInterface<DisplayVideoClientTypes> {
   getAllInsertionOrders(): InsertionOrder[];
   getBudgetReport(args: {
     startDate: Date;
@@ -90,7 +96,7 @@ export interface ClientInterface
 /**
  * An agency ID and, optionally, an advertiser ID to narrow down.
  */
-export interface ClientArgs extends BaseClientArgs {
+export interface ClientArgs extends BaseClientArgs<ClientArgs> {
   idType: IDType;
   id: Readonly<string>;
   advertisers?: typeof Advertisers;
@@ -107,4 +113,29 @@ export interface ClientArgs extends BaseClientArgs {
 export enum RuleGranularity {
   CAMPAIGN = 'Campaign',
   INSERTION_ORDER = 'Insertion Order',
+}
+
+/**
+ * Represents the related interfaces for DV360.
+ */
+export interface DisplayVideoClientTypes
+  extends ClientTypes<DisplayVideoClientTypes> {
+  client: ClientInterface;
+  ruleGranularity: RuleGranularity;
+  clientArgs: ClientArgs;
+  frontend: FrontendInterface<DisplayVideoClientTypes>;
+}
+
+/**
+ * Parameters for a rule, with `this` methods from {@link RuleUtilities}.
+ */
+export type RuleParams<Params extends Record<keyof Params, ParamDefinition>> =
+  RuleDefinition<DisplayVideoClientTypes, Params> &
+    ThisType<RuleExecutor<DisplayVideoClientTypes, Params>>;
+
+/**
+ * A report class that can return a Report object.
+ */
+export interface ReportConstructor<T> {
+  new (params: QueryReportParams): T;
 }
