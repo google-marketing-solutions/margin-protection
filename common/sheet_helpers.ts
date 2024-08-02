@@ -500,20 +500,9 @@ export function getTemplateSetting(
  * The easiest approach to modifying this is to handle changes in {@link injectedArgs}.
  * It is also possible to extend this class for more in-depth changes.
  */
-<<<<<<< HEAD
 export abstract class AppsScriptFrontend<T extends ClientTypes<T>> {
   readonly client: T['client'];
   readonly rules: ReadonlyArray<RuleExecutorClass<T>>;
-=======
-export abstract class AppsScriptFrontend<
-  C extends BaseClientInterface<C, G, A>,
-  G extends RuleGranularity<G>,
-  A extends BaseClientArgs,
-  F extends AppsScriptFrontend<C, G, A, F>,
-> {
-  readonly client: C;
-  readonly rules: ReadonlyArray<RuleExecutorClass<C, G, A>>;
->>>>>>> 496c709 (Minor cleanup (#13))
 
   /**
    * @param category The type of Launch Monitor this is (e.g. SA360, DV360)
@@ -521,11 +510,7 @@ export abstract class AppsScriptFrontend<
    */
   protected constructor(
     private readonly category: string,
-<<<<<<< HEAD
     private readonly injectedArgs: FrontendArgs<T>,
-=======
-    private readonly injectedArgs: FrontendArgs<C, G, A, F>,
->>>>>>> 496c709 (Minor cleanup (#13))
   ) {
     const clientArgs = this.getIdentity();
     if (!clientArgs) {
@@ -757,7 +742,6 @@ export abstract class AppsScriptFrontend<
     );
   }
 
-  getFrontendDefinitions() {
   getFrontendDefinitions() {
     return this.rules.map((rule) => rule.definition);
   }
@@ -1259,86 +1243,6 @@ export function newRuleBuilder<T extends ClientTypes<T>>(): <
   };
 }
 
-<<<<<<< HEAD
-=======
-// Lazy load frontend.
-function load<
-  C extends BaseClientInterface<C, G, A>,
-  G extends RuleGranularity<G>,
-  A extends BaseClientArgs,
-  F extends AppsScriptFrontend<C, G, A, F>,
->(frontEndCaller: ScriptFunction<F>, fnName: ScriptEntryPoints) {
-  return (
-    scriptProperties: PropertyStore | GoogleAppsScript.Events.AppsScriptEvent,
-  ) => {
-    const frontend = frontEndCaller(
-      scriptProperties && scriptProperties.hasOwnProperty('getProperty')
-        ? (scriptProperties as PropertyStore)
-        : new AppsScriptPropertyStore(),
-    );
-    switch (fnName) {
-      case 'onOpen':
-        return frontend.onOpen();
-      case 'initializeSheets':
-        return frontend.initializeSheets();
-      case 'preLaunchQa':
-        return frontend.preLaunchQa();
-      case 'launchMonitor':
-        return frontend.launchMonitor();
-      case 'displaySetupGuide':
-        frontend.displaySetupGuide();
-        return;
-      case 'displayGlossary':
-        frontend.displayGlossary();
-        return;
-      default:
-        throw new Error('Unsupported function: ${fnName}');
-    }
-  };
-}
-
-function applyBinding<
-  C extends BaseClientInterface<C, G, A>,
-  G extends RuleGranularity<G>,
-  A extends BaseClientArgs,
-  F extends AppsScriptFrontend<C, G, A, F>,
->(frontEndCaller: ScriptFunction<F>): ScriptFunction<F> {
-  return (scriptProperties: PropertyStore) => {
-    const frontend = frontEndCaller(scriptProperties);
-    toExport.onOpen = frontend.onOpen.bind(frontend);
-    toExport.initializeSheets = frontend.initializeSheets.bind(frontend);
-    toExport.preLaunchQa = frontend.preLaunchQa.bind(frontend);
-    toExport.launchMonitor = frontend.launchMonitor.bind(frontend);
-
-    return frontend;
-  };
-}
-
-/**
- * Primary entry point for an Apps Script implementation.
- * @param frontEndCaller A callable that late binds {@link toExport} to the
- *   correct functions from a frontend. A correct implementation of this
- *   function will initialize a {@link AppsScriptFrontend} class and assign
- *   all functions the first time it's called.
- */
-export function lazyLoadApp<
-  C extends BaseClientInterface<C, G, A>,
-  G extends RuleGranularity<G>,
-  A extends BaseClientArgs,
-  F extends AppsScriptFrontend<C, G, A, F>,
->(frontEndCaller: ScriptFunction<F>): ScriptFunction<F> {
-  const binders = applyBinding<C, G, A, F>(frontEndCaller);
-  toExport.onOpen = load<C, G, A, F>(binders, 'onOpen');
-  toExport.initializeSheets = load<C, G, A, F>(binders, 'initializeSheets');
-  toExport.preLaunchQa = load<C, G, A, F>(binders, 'preLaunchQa');
-  toExport.launchMonitor = load<C, G, A, F>(binders, 'launchMonitor');
-  toExport.displayGlossary = load<C, G, A, F>(binders, 'displayGlossary');
-  toExport.displaySetupGuide = load<C, G, A, F>(binders, 'displaySetupGuide');
-
-  return binders;
-}
-
->>>>>>> 496c709 (Minor cleanup (#13))
 /**
  * Create a well-formatted setting with a bold headline and a small description.
  *
