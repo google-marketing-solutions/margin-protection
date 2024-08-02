@@ -28,7 +28,6 @@ import {
 import { AppsScriptPropertyStore } from 'common/sheet_helpers';
 import { PropertyStore } from 'common/types';
 import { Client, RuleRange } from 'sa360/src/client';
-<<<<<<< HEAD
 import {
   budgetPacingRule,
   campaignStatusRule,
@@ -39,15 +38,7 @@ import {
   geoTargetRule,
   campaignAudienceTargetRule,
 } from 'sa360/src/rules';
-=======
-
-<<<<<<< HEAD
->>>>>>> 29d1595 (Minor cleanup (#13))
 import { migrations, SearchAdsFrontend } from './frontend';
-=======
-import { migrationsV2, NewSearchAdsFrontend } from './frontend';
-import { ClientArgsV2, ClientInterfaceV2, RuleGranularity } from './types';
->>>>>>> 496c709 (Minor cleanup (#13))
 
 /**
  * The sheet version the app currently has.
@@ -61,10 +52,8 @@ export const CURRENT_SHEET_VERSION = '2.0';
  * Generate a front-end object for lazy loading.
  */
 export function getFrontend(properties: PropertyStore) {
-<<<<<<< HEAD
   return new SearchAdsFrontend({
     ruleRangeClass: RuleRange,
-<<<<<<< HEAD
     rules: [
       budgetPacingRule,
       campaignStatusRule,
@@ -75,13 +64,6 @@ export function getFrontend(properties: PropertyStore) {
       geoTargetRule,
       campaignAudienceTargetRule,
     ],
-=======
-=======
-  return new NewSearchAdsFrontend({
-    ruleRangeClass: RuleRangeV2,
->>>>>>> 496c709 (Minor cleanup (#13))
-    rules: [],
->>>>>>> 29d1595 (Minor cleanup (#13))
     version: CURRENT_SHEET_VERSION,
     clientInitializer(clientArgs, properties) {
       const apiFactory = new GoogleAdsApiFactory({
