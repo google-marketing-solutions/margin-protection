@@ -19,7 +19,6 @@
  * @fileoverview frontend/apps script hooks for SA360 launch monitor
  */
 
-
 import {
   AppsScriptFrontend,
   AppsScriptPropertyStore,
