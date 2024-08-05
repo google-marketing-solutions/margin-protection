@@ -28,6 +28,7 @@ import {
 import { AppsScriptPropertyStore } from 'common/sheet_helpers';
 import { PropertyStore } from 'common/types';
 import { Client, RuleRange } from 'sa360/src/client';
+
 import {
   budgetPacingRule,
   campaignStatusRule,
