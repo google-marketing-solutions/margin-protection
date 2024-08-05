@@ -30,10 +30,6 @@ import { PropertyStore } from 'common/types';
 import { Client, RuleRange } from 'sa360/src/client';
 
 import { migrations, SearchAdsFrontend } from './frontend';
-<<<<<<< HEAD
-=======
-import { ClientArgs, ClientInterface, RuleGranularity } from './types';
->>>>>>> 32c62a6 (fix main entrypoint)
 
 /**
  * The sheet version the app currently has.
@@ -57,12 +53,8 @@ export function getFrontend(properties: PropertyStore) {
         credentialManager: new CredentialManager(),
         apiEndpoint: SA360_API_ENDPOINT,
       });
-<<<<<<< HEAD
       const reportFactory = new ReportFactory(apiFactory, clientArgs);
       return new Client(clientArgs, properties, reportFactory);
-=======
-      return new Client(clientArgs, properties);
->>>>>>> 32c62a6 (fix main entrypoint)
     },
     migrations: migrations,
     properties,

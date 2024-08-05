@@ -19,20 +19,8 @@
  * @fileoverview frontend/apps script hooks for SA360 launch monitor
  */
 
-<<<<<<< HEAD
 import { AppsScriptFrontend, getTemplateSetting } from 'common/sheet_helpers';
-=======
-import {
-  AppsScriptFrontend,
-  AppsScriptPropertyStore,
-  RULE_SETTINGS_SHEET,
-  addSettingWithDescription,
-  getOrCreateSheet,
-  getTemplateSetting,
-} from 'common/sheet_helpers';
->>>>>>> 06e966e (remove g3-format-prettier)
 import { FrontendArgs, ParamDefinition, RuleExecutor } from 'common/types';
-import { RuleRange } from 'sa360/src/client';
 import { ClientArgs, ClientInterface, RuleGranularity } from 'sa360/src/types';
 
 /**
