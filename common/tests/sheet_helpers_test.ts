@@ -48,6 +48,57 @@ import {
   TestClientTypes,
 } from './helpers';
 
+<<<<<<< HEAD
+=======
+describe('Check globals', () => {
+  let frontend: FakeFrontend;
+
+  beforeEach(() => {
+    setUp();
+    frontend = lazyLoadApp<
+      TestClientInterface,
+      Granularity,
+      BaseClientArgs,
+      FakeFrontend
+    >((properties) => {
+      return new FakeFrontend({
+        ruleRangeClass: RuleRange,
+        rules: [],
+        version: '1.0',
+        clientInitializer: () => new FakeClient(),
+        migrations: {},
+        properties,
+      });
+    })(new AppsScriptPropertyStore());
+  });
+
+  it('exists in `toExport`', () => {
+    expect(toExport.onOpen).toBeDefined();
+    expect(toExport.initializeSheets).toBeDefined();
+    expect(toExport.launchMonitor).toBeDefined();
+    expect(toExport.preLaunchQa).toBeDefined();
+  });
+
+  it('calls frontend version', () => {
+    const calls = { ...frontend.calls };
+
+    toExport.onOpen();
+    toExport.initializeSheets();
+    toExport.launchMonitor();
+    toExport.preLaunchQa();
+
+    expect(calls.onOpen).toEqual(0);
+    expect(calls.initializeSheets).toEqual(0);
+    expect(calls.launchMonitor).toEqual(0);
+    expect(calls.preLaunchQa).toEqual(0);
+    expect(frontend.calls.onOpen).toEqual(1);
+    expect(frontend.calls.initializeSheets).toEqual(1);
+    expect(frontend.calls.launchMonitor).toEqual(1);
+    expect(frontend.calls.preLaunchQa).toEqual(1);
+  });
+});
+
+>>>>>>> 496c709 (Minor cleanup (#13))
 function setUp() {
   mockAppsScript();
   spyOn(HELPERS, 'insertRows').and.callFake((range) => range);
@@ -75,6 +126,7 @@ describe('Test migration order', () => {
       'sheet_version',
       currentVersion,
     );
+<<<<<<< HEAD
     return new FakeFrontend({
       ruleRangeClass: RuleRange,
       rules: [],
@@ -83,6 +135,23 @@ describe('Test migration order', () => {
       migrations,
       properties: new FakePropertyStore(),
     });
+=======
+    return lazyLoadApp<
+      TestClientInterface,
+      Granularity,
+      BaseClientArgs,
+      FakeFrontend
+    >((properties) => {
+      return new FakeFrontend({
+        ruleRangeClass: RuleRange,
+        rules: [],
+        version: expectedVersion,
+        clientInitializer: () => new FakeClient(),
+        migrations,
+        properties,
+      });
+    })(new AppsScriptPropertyStore());
+>>>>>>> 496c709 (Minor cleanup (#13))
   }
 
   beforeEach(() => {
@@ -418,6 +487,7 @@ describe('Test emails', () => {
       },
     };
     mockAppsScript();
+<<<<<<< HEAD
     frontend = new FakeFrontend({
       ruleRangeClass: RuleRange,
       rules: [],
@@ -426,6 +496,23 @@ describe('Test emails', () => {
       migrations: {},
       properties: new FakePropertyStore(),
     });
+=======
+    frontend = lazyLoadApp<
+      TestClientInterface,
+      Granularity,
+      BaseClientArgs,
+      FakeFrontend
+    >((properties) => {
+      return new FakeFrontend({
+        ruleRangeClass: RuleRange,
+        rules: [],
+        version: '1.0',
+        clientInitializer: (args, properties) => new FakeClient(),
+        migrations: {},
+        properties,
+      });
+    })(new AppsScriptPropertyStore());
+>>>>>>> 496c709 (Minor cleanup (#13))
     console.log('new frontend');
   });
 
