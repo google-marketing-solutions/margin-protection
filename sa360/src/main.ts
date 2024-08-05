@@ -17,11 +17,6 @@
 
 /**
  * @fileoverview Implement and bootstrap Apps Script.
- *
- * BEGIN-INTERNAL
- * This can and should be excluded and re-written in customer-specific
- * implementations.
- * END-INTERNAL
  */
 
 import {
