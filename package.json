@@ -27,12 +27,10 @@
     "prettier": "^3.3.3",
     "rollup-plugin-typescript-paths": "^1.5.0",
     "typescript": "^5.5.3",
-    "web-test-runner-jasmine": "^0.0.6"
+    "web-test-runner-jasmine": "^0.0.6",
+    "@web/test-runner-playwright": "^0.11.0"
   },
   "prettier": {
     "singleQuote": true
-  },
-  "dependencies": {
-    "@web/test-runner-playwright": "^0.11.0"
   }
 }
