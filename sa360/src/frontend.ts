@@ -19,6 +19,9 @@
  * @fileoverview frontend/apps script hooks for SA360 launch monitor
  */
 
+<<<<<<< HEAD
+import { AppsScriptFrontend, getTemplateSetting } from 'common/sheet_helpers';
+=======
 import {
   AppsScriptFrontend,
   AppsScriptPropertyStore,
@@ -27,15 +30,10 @@ import {
   getOrCreateSheet,
   getTemplateSetting,
 } from 'common/sheet_helpers';
+>>>>>>> 06e966e (remove g3-format-prettier)
 import { FrontendArgs, ParamDefinition, RuleExecutor } from 'common/types';
 import { RuleRange } from 'sa360/src/client';
-import {
-  ClientArgs,
-  ClientArgsV2,
-  ClientInterface,
-  ClientInterfaceV2,
-  RuleGranularity,
-} from 'sa360/src/types';
+import { ClientArgs, ClientInterface, RuleGranularity } from 'sa360/src/types';
 
 /**
  * The name of the general settings sheet.
@@ -56,189 +54,17 @@ export const EMAIL_LIST_RANGE = 'EMAIL_LIST';
 const LOGIN_CUSTOMER_ID = 'LOGIN_CUSTOMER_ID';
 const CUSTOMER_IDS = 'CUSTOMER_IDS';
 
-// OLD SA360 API variables
-const AGENCY_ID = 'AGENCY_ID';
-const ADVERTISER_ID = 'ADVERTISER_ID';
-
 // Common variables
-const DRIVE_ID_RANGE = 'DRIVE_ID';
 const FULL_FETCH_RANGE = 'FULL_FETCH';
 
 /**
- * A list of migrations with version as key and a migration script as the
- * value.
+ * Migrations for the new SA360  Launch Monitor
  */
 export const migrations: Record<string, (frontend: SearchAdsFrontend) => void> =
-  {
-    '1.1': (frontend) => {
-      const active = SpreadsheetApp.getActive();
-      const ruleSettingsSheet = active.getSheetByName(RULE_SETTINGS_SHEET);
-      if (!ruleSettingsSheet) {
-        return;
-      }
-      let campaignValues: string[][] = [[]];
-      let ioValues: string[][] = [[]];
-
-      const ruleRange = new RuleRange(
-        ruleSettingsSheet.getDataRange().getValues(),
-        frontend.client,
-      );
-      campaignValues = ruleRange.getValues(RuleGranularity.CAMPAIGN);
-      ioValues = ruleRange.getValues(RuleGranularity.AD_GROUP);
-      active.deleteSheet(ruleSettingsSheet);
-      getOrCreateSheet('Rule Settings - Campaign')
-        .getRange(1, 1, campaignValues.length, campaignValues[0].length)
-        .setValues(campaignValues);
-      getOrCreateSheet('Rule Settings - Insertion Order')
-        .getRange(1, 1, ioValues.length, ioValues[0].length)
-        .setValues(ioValues);
-    },
-    '1.2': (frontend) => {
-      const active = SpreadsheetApp.getActive();
-      const generalSettingsSheet = active.getSheetByName(
-        GENERAL_SETTINGS_SHEET,
-      );
-      if (!generalSettingsSheet) {
-        return;
-      }
-      const emailList = active.getRangeByName(EMAIL_LIST_RANGE);
-      if (emailList) {
-        return;
-      }
-      const range = generalSettingsSheet
-        .getRange('A6:C7')
-        .insertCells(SpreadsheetApp.Dimension.ROWS);
-      range.setValues([
-        ['Report Label (e.g. Customer)', '', ''],
-        ['Comma Separated List of Emails', '', ''],
-      ]);
-      active.setNamedRange(
-        LABEL_RANGE,
-        generalSettingsSheet.getRange('B6:C6').merge(),
-      );
-      active.setNamedRange(
-        EMAIL_LIST_RANGE,
-        generalSettingsSheet.getRange('B7:C7').merge(),
-      );
-    },
-    '1.3': (frontend) => {
-      const active = SpreadsheetApp.getActive();
-      const generalSettingsSheet = active.getSheetByName(
-        GENERAL_SETTINGS_SHEET,
-      );
-      if (!generalSettingsSheet) {
-        return;
-      }
-      const driveIdRange = active.getRangeByName(DRIVE_ID_RANGE);
-      if (driveIdRange) {
-        return;
-      }
-      generalSettingsSheet
-        .getRange('A8:C8')
-        .insertCells(SpreadsheetApp.Dimension.ROWS);
-      addSettingWithDescription(generalSettingsSheet, 'A8', [
-        'Reporting - Google Drive Folder ID',
-        "The ID of the Drive folder destination\n(copy in folder URL after '/folders/' and before the '?')",
-      ]);
-      active.setNamedRange(
-        DRIVE_ID_RANGE,
-        generalSettingsSheet.getRange('B8:C8').merge(),
-      );
-    },
-    '1.4': (frontend) => {
-      const active = SpreadsheetApp.getActive();
-      const generalSettingsSheet = active.getSheetByName(
-        GENERAL_SETTINGS_SHEET,
-      );
-      if (!generalSettingsSheet) {
-        return;
-      }
-      const properties: Array<[key: string, value: string]> = Object.entries(
-        frontend.client.properties.getProperties(),
-      );
-      for (const [propName, property] of properties) {
-        if (
-          propName.startsWith('adGroupTargetChange') ||
-          propName.startsWith('locationChange')
-        ) {
-          const rule = JSON.parse(property) as Record<
-            string,
-            {
-              value: string;
-              internal: { original: Record<string, Record<string, string>> };
-            }
-          >;
-          for (const key of Object.keys(rule)) {
-            rule[key].value = rule[key].value
-              .split(', ')
-              .map((r) => {
-                const parts = r.split(':');
-                return `${parts[0]}:${parts[2]}`;
-              })
-              .join(', ');
-            for (const [origKey, origVal] of Object.entries(
-              rule[key].internal.original,
-            )) {
-              rule[key].internal.original[origKey] = Object.fromEntries(
-                Object.entries(origVal).map(([k, v]) => {
-                  return [
-                    k.split(':')[1],
-                    v.replace(/\+(-?\d+(\.\d+)?)%/, '$1'),
-                  ];
-                }),
-              );
-            }
-          }
-          frontend.client.properties.setProperty(
-            propName,
-            JSON.stringify(rule),
-          );
-        }
-      }
-    },
-    '2.0': () => {
-      if (!SpreadsheetApp.getActive().getRangeByName(FULL_FETCH_RANGE)) {
-        return;
-      }
-      const properties = new AppsScriptPropertyStore();
-      Object.entries(properties.getProperties()).forEach(([k, v]) => {
-        properties.setProperty(
-          k,
-          JSON.stringify({
-            values: JSON.parse(v),
-            updated: new Date(),
-          }),
-        );
-      });
-      const sheet = getOrCreateSheet('General/Settings');
-      sheet.getRange('A8:C8').insertCells(SpreadsheetApp.Dimension.ROWS);
-      addSettingWithDescription(sheet, 'A8', [
-        'Make next report a full run?',
-        'Full runs are slower then incremental reports, but should always be run ' +
-          'the first time to populate rules. This will get manually set back to ' +
-          'FALSE after a run.',
-      ]);
-      sheet
-        .getRange('B8:C8')
-        .setValues([['TRUE', '']])
-        .merge();
-      SpreadsheetApp.getActive().setNamedRange(
-        FULL_FETCH_RANGE,
-        sheet.getRange('B8'),
-      );
-    },
-  };
+  {};
 
 /**
- * Migrations for the new SA360 V2 Launch Monitor
- */
-export const migrationsV2: Record<
-  string,
-  (frontend: NewSearchAdsFrontend) => void
-> = {};
-
-/**
- * Front-end configuration for SA360 Apps Script.
+ * Front-end configuration for the new SA360 (our ) Apps Script.
  */
 export class SearchAdsFrontend extends AppsScriptFrontend<
   ClientInterface,
@@ -252,83 +78,6 @@ export class SearchAdsFrontend extends AppsScriptFrontend<
       RuleGranularity,
       ClientArgs,
       SearchAdsFrontend
-    >,
-  ) {
-    super('SA360', args);
-  }
-
-  override getIdentity() {
-    const sheet = SpreadsheetApp.getActive();
-    if (!sheet) {
-      throw new Error('There is no active spreadsheet.');
-    }
-    const agencyId = sheet.getRangeByName(AGENCY_ID);
-    const advertiserId = sheet.getRangeByName(ADVERTISER_ID);
-    const fullFetch = sheet.getRangeByName(FULL_FETCH_RANGE);
-    if (!agencyId) {
-      return null;
-    }
-    const label = sheet.getRangeByName(LABEL_RANGE);
-    return {
-      agencyId: agencyId.getValue(),
-      advertiserId: advertiserId?.getValue(),
-      fullFetch: fullFetch?.getValue(),
-      label: label?.getValue() || `${advertiserId!.getValue()}`,
-    };
-  }
-
-  override displaySetupModal() {
-    const template = HtmlService.createTemplateFromFile('html/setup');
-    template['agencyId'] = this.getRangeByName(AGENCY_ID).getValue() || '';
-    template['advertiserId'] =
-      this.getRangeByName(ADVERTISER_ID).getValue() || '';
-    const htmlOutput = template.evaluate().setWidth(350).setHeight(400);
-    SpreadsheetApp.getUi().showModalDialog(htmlOutput, 'Set up');
-
-    return template['advertiserID'];
-  }
-
-  override async preLaunchQa() {
-    this.client.args.fullFetch = true;
-    await super.preLaunchQa();
-  }
-
-  override async initializeSheets() {
-    this.client.args.fullFetch = true;
-    await super.initializeSheets();
-  }
-
-  override saveSettingsBackToSheets(
-    rules: Array<
-      RuleExecutor<
-        ClientInterface,
-        RuleGranularity,
-        ClientArgs,
-        Record<string, ParamDefinition>
-      >
-    >,
-  ) {
-    super.saveSettingsBackToSheets(rules);
-    getTemplateSetting(FULL_FETCH_RANGE).setValue('FALSE');
-    this.client.args.fullFetch = false;
-  }
-}
-
-/**
- * Front-end configuration for the new SA360 (our V2) Apps Script.
- */
-export class NewSearchAdsFrontend extends AppsScriptFrontend<
-  ClientInterfaceV2,
-  RuleGranularity,
-  ClientArgsV2,
-  NewSearchAdsFrontend
-> {
-  constructor(
-    args: FrontendArgs<
-      ClientInterfaceV2,
-      RuleGranularity,
-      ClientArgsV2,
-      NewSearchAdsFrontend
     >,
   ) {
     super('SA360', args);
@@ -364,9 +113,10 @@ export class NewSearchAdsFrontend extends AppsScriptFrontend<
 
   override displaySetupModal() {
     const template = HtmlService.createTemplateFromFile('html/setup');
-    template['agencyId'] = this.getRangeByName(AGENCY_ID).getValue() || '';
+    template['agencyId'] =
+      this.getRangeByName(LOGIN_CUSTOMER_ID).getValue() || '';
     template['advertiserId'] =
-      this.getRangeByName(ADVERTISER_ID).getValue() || '';
+      this.getRangeByName(CUSTOMER_IDS).getValue() || '';
     const htmlOutput = template.evaluate().setWidth(350).setHeight(400);
     SpreadsheetApp.getUi().showModalDialog(htmlOutput, 'Set up');
 
@@ -384,9 +134,9 @@ export class NewSearchAdsFrontend extends AppsScriptFrontend<
   override saveSettingsBackToSheets(
     rules: Array<
       RuleExecutor<
-        ClientInterfaceV2,
+        ClientInterface,
         RuleGranularity,
-        ClientArgsV2,
+        ClientArgs,
         Record<string, ParamDefinition>
       >
     >,
