@@ -27,7 +27,7 @@ import {
   ExecutorResult,
   ParamDefinition,
   PropertyStore,
-  RecordInfo,
+  CustomerRecordInfo,
   RuleExecutor,
   RuleExecutorClass,
   RuleParams,
@@ -229,7 +229,7 @@ export class ClientV2 implements ClientInterfaceV2 {
     readonly reportFactory: ReportFactory,
   ) {}
 
-  async getAllCampaigns(): Promise<RecordInfo[]> {
+  async getAllCampaigns(): Promise<CustomerRecordInfo[]> {
     const report = this.getReport(CAMPAIGN_REPORT).fetch();
     return Object.values(report).map((campaign) => ({
       advertiserId: campaign.customerId,
@@ -238,7 +238,7 @@ export class ClientV2 implements ClientInterfaceV2 {
     }));
   }
 
-  async getAllAdGroups(): Promise<RecordInfo[]> {
+  async getAllAdGroups(): Promise<CustomerRecordInfo[]> {
     const report = this.getReport(AD_GROUP_REPORT).fetch();
     return Object.values(report).map((adGroup) => ({
       advertiserId: adGroup.customerId,

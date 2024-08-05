@@ -15,6 +15,8 @@
  * limitations under the License.
  */
 
+// g3-format-prettier
+
 import { AppsScriptFrontend } from './sheet_helpers';
 
 /**
@@ -194,8 +196,8 @@ export interface RecordInfo {
  *
  * SA360 no longer uses advertiser IDs, instead using customer IDs.
  */
-export interface RecordInfoV2 {
-  customerId: string;
+export interface CustomerRecordInfo {
+  advertiserId: string;
   id: string;
   displayName: string;
 }
