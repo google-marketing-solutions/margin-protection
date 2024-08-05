@@ -19,8 +19,6 @@
  * @fileoverview Google Ads-specific interfaces.
  */
 
-// g3-format-prettier
-
 import { AdsClientArgs } from 'common/ads_api_types';
 import { BaseClientInterface } from 'common/types';
 

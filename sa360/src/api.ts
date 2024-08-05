@@ -19,8 +19,6 @@
  * @fileoverview DAO for the SA360 Reporting API
  */
 
-// g3-format-prettier
-
 import { HELPERS } from 'common/sheet_helpers';
 import { RecordInfo } from 'common/types';
 import { SearchAdsTimeRange } from 'sa360/src/types';

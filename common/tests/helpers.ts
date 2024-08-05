@@ -19,8 +19,6 @@
  * @fileoverview Test helpers for the common library.
  */
 
-// g3-format-prettier
-
 import { AdsClientArgs } from 'common/ads_api_types';
 import { FakePropertyStore } from 'common/test_helpers/mock_apps_script';
 
@@ -31,13 +29,13 @@ import {
   GoogleAdsApiFactory,
   ReportFactory,
 } from '../ads_api';
-import { AbstractRuleRange, AppsScriptFrontEnd } from '../sheet_helpers';
+import { AbstractRuleRange, AppsScriptFrontend } from '../sheet_helpers';
 import {
   AppsScriptFunctions,
   BaseClientArgs,
   BaseClientInterface,
   ExecutorResult,
-  FrontEndArgs,
+  FrontendArgs,
   ParamDefinition,
   RecordInfo,
   RuleExecutor,
@@ -150,11 +148,11 @@ export class FakeClient implements TestClientInterface {
 /**
  * A fake frontend for testing.
  */
-export class FakeFrontEnd extends AppsScriptFrontEnd<
+export class FakeFrontend extends AppsScriptFrontend<
   TestClientInterface,
   Granularity,
   BaseClientArgs,
-  FakeFrontEnd
+  FakeFrontend
 > {
   readonly calls: Record<AppsScriptFunctions, number> = {
     onOpen: 0,
@@ -169,11 +167,11 @@ export class FakeFrontEnd extends AppsScriptFrontEnd<
   private readonly old: GoogleAppsScript.Mail.MailAdvancedParameters[] = [];
 
   constructor(
-    args: FrontEndArgs<
+    args: FrontendArgs<
       TestClientInterface,
       Granularity,
       BaseClientArgs,
-      FakeFrontEnd
+      FakeFrontend
     >,
   ) {
     scaffoldSheetWithNamedRanges();

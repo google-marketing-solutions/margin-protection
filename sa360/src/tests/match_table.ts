@@ -20,8 +20,6 @@
  *
  */
 
-// g3-format-prettier
-
 import { SA360_API_VERSION, SA360_URL } from 'sa360/src/api';
 
 interface Params {

@@ -19,8 +19,6 @@
  * @fileoverview DAO for the Google Ads API and SA360 API
  */
 
-// g3-format-prettier
-
 import * as AdTypes from './ads_api_types';
 
 import URLFetchRequestOptions = GoogleAppsScript.URL_Fetch.URLFetchRequestOptions;

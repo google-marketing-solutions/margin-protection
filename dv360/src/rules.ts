@@ -19,8 +19,6 @@
  * @fileoverview Contains rules tailored for the current client.
  */
 
-// g3-format-prettier
-
 import {
   AssignedTargetingOption,
   InsertionOrder,

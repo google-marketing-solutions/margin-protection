@@ -21,8 +21,6 @@
  *   ops teams to update code in a central location.
  */
 
-// g3-format-prettier
-
 declare global {
   const LaunchMonitor: Exported;
 }

@@ -19,8 +19,6 @@
  * @fileoverview Tests for the common API library suites.
  */
 
-// g3-format-prettier
-
 import {
   CredentialManager,
   GET_LEAF_ACCOUNTS_REPORT,
