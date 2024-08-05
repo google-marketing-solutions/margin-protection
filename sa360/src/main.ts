@@ -27,10 +27,13 @@ import {
 } from 'common/ads_api';
 import { lazyLoadApp, toExport } from 'common/sheet_helpers';
 import { PropertyStore } from 'common/types';
-import { ClientV2, RuleRangeV2 } from 'sa360/src/client';
+import { Client, RuleRange } from 'sa360/src/client';
 
-import { migrationsV2, NewSearchAdsFrontend } from './frontend';
-import { ClientArgsV2, ClientInterfaceV2, RuleGranularity } from './types';
+import { migrations, SearchAdsFrontend } from './frontend';
+<<<<<<< HEAD
+=======
+import { ClientArgs, ClientInterface, RuleGranularity } from './types';
+>>>>>>> 32c62a6 (fix main entrypoint)
 
 /**
  * The sheet version the app currently has.
@@ -44,8 +47,8 @@ export const CURRENT_SHEET_VERSION = '2.0';
  * Generate a front-end object for lazy loading.
  */
 export function getFrontend(properties: PropertyStore) {
-  return new NewSearchAdsFrontend({
-    ruleRangeClass: RuleRangeV2,
+  return new SearchAdsFrontend({
+    ruleRangeClass: RuleRange,
     rules: [],
     version: CURRENT_SHEET_VERSION,
     clientInitializer(clientArgs, properties) {
@@ -54,20 +57,19 @@ export function getFrontend(properties: PropertyStore) {
         credentialManager: new CredentialManager(),
         apiEndpoint: SA360_API_ENDPOINT,
       });
+<<<<<<< HEAD
       const reportFactory = new ReportFactory(apiFactory, clientArgs);
-      return new ClientV2(clientArgs, properties, reportFactory);
+      return new Client(clientArgs, properties, reportFactory);
+=======
+      return new Client(clientArgs, properties);
+>>>>>>> 32c62a6 (fix main entrypoint)
     },
-    migrations: migrationsV2,
+    migrations: migrations,
     properties,
   });
 }
 
-lazyLoadApp<
-  ClientInterfaceV2,
-  RuleGranularity,
-  ClientArgsV2,
-  NewSearchAdsFrontend
->(getFrontend);
+lazyLoadApp(getFrontend);
 
 global.onOpen = toExport.onOpen;
 global.initializeSheets = toExport.initializeSheets;
