@@ -17,7 +17,7 @@
 
 // g3-format-prettier
 
-import { AppsScriptFrontEnd } from './sheet_helpers';
+import { AppsScriptFrontend } from './sheet_helpers';
 
 /**
  * An abstraction for retrieving properties.
@@ -302,11 +302,11 @@ export interface RuleRangeInterface<
  * This is used to inject arguments into implementations, which determines
  * how the client gets executed.
  */
-export interface FrontEndArgs<
+export interface FrontendArgs<
   C extends BaseClientInterface<C, G, A>,
   G extends RuleGranularity<G>,
   A extends BaseClientArgs,
-  F extends AppsScriptFrontEnd<C, G, A, F>,
+  F extends AppsScriptFrontend<C, G, A, F>,
 > {
   readonly ruleRangeClass: {
     new (sheet: string[][], client: C): RuleRangeInterface<C, G, A>;

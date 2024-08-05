@@ -45,14 +45,14 @@ import {
 
 import {
   FakeClient,
-  FakeFrontEnd,
+  FakeFrontend,
   Granularity,
   RuleRange,
   TestClientInterface,
 } from './helpers';
 
 describe('Check globals', () => {
-  let frontend: FakeFrontEnd;
+  let frontend: FakeFrontend;
 
   beforeEach(() => {
     setUp();
@@ -60,9 +60,9 @@ describe('Check globals', () => {
       TestClientInterface,
       Granularity,
       BaseClientArgs,
-      FakeFrontEnd
+      FakeFrontend
     >((properties) => {
-      return new FakeFrontEnd({
+      return new FakeFrontend({
         ruleRangeClass: RuleRange,
         rules: [],
         version: '1.0',
@@ -115,7 +115,7 @@ describe('Test migration order', () => {
     '2.2.0': () => list.push('2.2.0'),
   };
 
-  function setFrontEnd({
+  function setFrontend({
     expectedVersion,
     currentVersion,
   }: {
@@ -130,9 +130,9 @@ describe('Test migration order', () => {
       TestClientInterface,
       Granularity,
       BaseClientArgs,
-      FakeFrontEnd
+      FakeFrontend
     >((properties) => {
-      return new FakeFrontEnd({
+      return new FakeFrontend({
         ruleRangeClass: RuleRange,
         rules: [],
         version: expectedVersion,
@@ -152,7 +152,7 @@ describe('Test migration order', () => {
   });
 
   it('migrates all', () => {
-    const frontend = setFrontEnd({
+    const frontend = setFrontend({
       expectedVersion: '5.0',
       currentVersion: '1.0',
     });
@@ -161,7 +161,7 @@ describe('Test migration order', () => {
   });
 
   it('partially migrates', () => {
-    const frontend = setFrontEnd({
+    const frontend = setFrontend({
       expectedVersion: '5.0',
       currentVersion: '2.1.0',
     });
@@ -170,7 +170,7 @@ describe('Test migration order', () => {
   });
 
   it('runs when initializeSheets runs', async () => {
-    const frontend = setFrontEnd({
+    const frontend = setFrontend({
       expectedVersion: CURRENT_SHEET_VERSION,
       currentVersion: '1.0',
     });
@@ -184,7 +184,7 @@ describe('Test migration order', () => {
   });
 
   it('does not run migrations if version is up-to-date', () => {
-    const frontend = setFrontEnd({
+    const frontend = setFrontend({
       expectedVersion: CURRENT_SHEET_VERSION,
       currentVersion: '1.0',
     });
@@ -198,7 +198,7 @@ describe('Test migration order', () => {
   });
 
   it('migrates only to specified version cap', () => {
-    const frontend = setFrontEnd({
+    const frontend = setFrontend({
       expectedVersion: '2.1.0',
       currentVersion: '2.1.0',
     });
@@ -402,7 +402,7 @@ describe('test HELPERS', () => {
 });
 
 describe('Test emails', () => {
-  let frontend: FakeFrontEnd;
+  let frontend: FakeFrontend;
   let rules: Record<string, RuleGetter>;
 
   const email = (to: string) => ({
@@ -480,9 +480,9 @@ describe('Test emails', () => {
       TestClientInterface,
       Granularity,
       BaseClientArgs,
-      FakeFrontEnd
+      FakeFrontend
     >((properties) => {
-      return new FakeFrontEnd({
+      return new FakeFrontend({
         ruleRangeClass: RuleRange,
         rules: [],
         version: '1.0',

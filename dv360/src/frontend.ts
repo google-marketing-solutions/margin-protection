@@ -22,14 +22,14 @@
 // g3-format-prettier
 
 import {
-  AppsScriptFrontEnd,
+  AppsScriptFrontend,
   AppsScriptPropertyStore,
   HELPERS,
   LABEL_RANGE,
   addSettingWithDescription,
   getOrCreateSheet,
 } from 'common/sheet_helpers';
-import { FrontEndArgs } from 'common/types';
+import { FrontendArgs } from 'common/types';
 import { RuleRange } from 'dv360/src/client';
 import { ClientArgs, ClientInterface } from 'dv360/src/types';
 
@@ -49,7 +49,7 @@ export const GENERAL_SETTINGS_SHEET = 'General/Settings';
  */
 export const migrations: Record<
   string,
-  (frontend: DisplayVideoFrontEnd) => void
+  (frontend: DisplayVideoFrontend) => void
 > = {
   '1.1': (frontend) => {
     const active = SpreadsheetApp.getActive();
@@ -132,18 +132,18 @@ export const migrations: Record<
 /**
  * Front-end configuration for DV360 Apps Script.
  */
-export class DisplayVideoFrontEnd extends AppsScriptFrontEnd<
+export class DisplayVideoFrontend extends AppsScriptFrontend<
   ClientInterface,
   RuleGranularity,
   ClientArgs,
-  DisplayVideoFrontEnd
+  DisplayVideoFrontend
 > {
   constructor(
-    args: FrontEndArgs<
+    args: FrontendArgs<
       ClientInterface,
       RuleGranularity,
       ClientArgs,
-      DisplayVideoFrontEnd
+      DisplayVideoFrontend
     >,
   ) {
     super('DV360', args);

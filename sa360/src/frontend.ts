@@ -22,14 +22,14 @@
 // g3-format-prettier
 
 import {
-  AppsScriptFrontEnd,
+  AppsScriptFrontend,
   AppsScriptPropertyStore,
   RULE_SETTINGS_SHEET,
   addSettingWithDescription,
   getOrCreateSheet,
   getTemplateSetting,
 } from 'common/sheet_helpers';
-import { FrontEndArgs, ParamDefinition, RuleExecutor } from 'common/types';
+import { FrontendArgs, ParamDefinition, RuleExecutor } from 'common/types';
 import { RuleRange } from 'sa360/src/client';
 import {
   ClientArgs,
@@ -70,7 +70,7 @@ const FULL_FETCH_RANGE = 'FULL_FETCH';
  * A list of migrations with version as key and a migration script as the
  * value.
  */
-export const migrations: Record<string, (frontend: SearchAdsFrontEnd) => void> =
+export const migrations: Record<string, (frontend: SearchAdsFrontend) => void> =
   {
     '1.1': (frontend) => {
       const active = SpreadsheetApp.getActive();
@@ -236,24 +236,24 @@ export const migrations: Record<string, (frontend: SearchAdsFrontEnd) => void> =
  */
 export const migrationsV2: Record<
   string,
-  (frontend: NewSearchAdsFrontEnd) => void
+  (frontend: NewSearchAdsFrontend) => void
 > = {};
 
 /**
  * Front-end configuration for SA360 Apps Script.
  */
-export class SearchAdsFrontEnd extends AppsScriptFrontEnd<
+export class SearchAdsFrontend extends AppsScriptFrontend<
   ClientInterface,
   RuleGranularity,
   ClientArgs,
-  SearchAdsFrontEnd
+  SearchAdsFrontend
 > {
   constructor(
-    args: FrontEndArgs<
+    args: FrontendArgs<
       ClientInterface,
       RuleGranularity,
       ClientArgs,
-      SearchAdsFrontEnd
+      SearchAdsFrontend
     >,
   ) {
     super('SA360', args);
@@ -319,18 +319,18 @@ export class SearchAdsFrontEnd extends AppsScriptFrontEnd<
 /**
  * Front-end configuration for the new SA360 (our V2) Apps Script.
  */
-export class NewSearchAdsFrontEnd extends AppsScriptFrontEnd<
+export class NewSearchAdsFrontend extends AppsScriptFrontend<
   ClientInterfaceV2,
   RuleGranularity,
   ClientArgsV2,
-  NewSearchAdsFrontEnd
+  NewSearchAdsFrontend
 > {
   constructor(
-    args: FrontEndArgs<
+    args: FrontendArgs<
       ClientInterfaceV2,
       RuleGranularity,
       ClientArgsV2,
-      NewSearchAdsFrontEnd
+      NewSearchAdsFrontend
     >,
   ) {
     super('SA360', args);
