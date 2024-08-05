@@ -19,8 +19,6 @@
  * @fileoverview Types for DV360
  */
 
-// g3-format-prettier
-
 import {
   Advertisers,
   AssignedTargetingOptions,

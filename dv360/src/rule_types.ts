@@ -15,8 +15,6 @@
  * limitations under the License.
  */
 
-// g3-format-prettier
-
 interface BudgetPacing {
   startDate: Readonly<Date>;
   endDate: Readonly<Date>;

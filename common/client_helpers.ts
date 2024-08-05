@@ -19,8 +19,6 @@
  * @fileoverview Client helpers - frontend agnostic.
  */
 
-// g3-format-prettier
-
 import { transformToParamValues } from './sheet_helpers';
 import {
   BaseClientArgs,

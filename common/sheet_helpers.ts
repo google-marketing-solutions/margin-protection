@@ -19,8 +19,6 @@
  * @fileoverview Helpers for Apps Script based front-ends.
  */
 
-// g3-format-prettier
-
 import {
   PropertyStore,
   RuleParams,
@@ -34,7 +32,7 @@ import {
   BaseClientArgs,
   BaseClientInterface,
   ExecutorResult,
-  FrontEndArgs,
+  FrontendArgs,
   ParamDefinition,
   RecordInfo,
   RuleDefinition,
@@ -517,18 +515,18 @@ export function getTemplateSetting(
  * While the default application should cover base needs, customers may want to
  * program custom rules or use Firebase for increased storage space.
  */
-export abstract class AppsScriptFrontEnd<
+export abstract class AppsScriptFrontend<
   C extends BaseClientInterface<C, G, A>,
   G extends RuleGranularity<G>,
   A extends BaseClientArgs,
-  F extends AppsScriptFrontEnd<C, G, A, F>,
+  F extends AppsScriptFrontend<C, G, A, F>,
 > {
   readonly client: C;
   readonly rules: ReadonlyArray<RuleExecutorClass<C, G, A>>;
 
   protected constructor(
     private readonly category: string,
-    private readonly injectedArgs: FrontEndArgs<C, G, A, F>,
+    private readonly injectedArgs: FrontendArgs<C, G, A, F>,
   ) {
     const clientArgs = this.getIdentity();
     if (!clientArgs) {
@@ -749,7 +747,7 @@ export abstract class AppsScriptFrontEnd<
 
   displayGlossary() {
     const template = HtmlService.createTemplateFromFile('html/glossary');
-    template['rules'] = this.getFrontEndDefinitions();
+    template['rules'] = this.getFrontendDefinitions();
     SpreadsheetApp.getUi().showSidebar(template.evaluate());
   }
 
@@ -759,7 +757,7 @@ export abstract class AppsScriptFrontEnd<
     );
   }
 
-  getFrontEndDefinitions() {
+  getFrontendDefinitions() {
     return this.rules.map((rule) => rule.definition);
   }
 
@@ -1272,7 +1270,7 @@ function load<
   C extends BaseClientInterface<C, G, A>,
   G extends RuleGranularity<G>,
   A extends BaseClientArgs,
-  F extends AppsScriptFrontEnd<C, G, A, F>,
+  F extends AppsScriptFrontend<C, G, A, F>,
 >(frontEndCaller: ScriptFunction<F>, fnName: ScriptEntryPoints) {
   return (
     scriptProperties: PropertyStore | GoogleAppsScript.Events.AppsScriptEvent,
@@ -1307,7 +1305,7 @@ function applyBinding<
   C extends BaseClientInterface<C, G, A>,
   G extends RuleGranularity<G>,
   A extends BaseClientArgs,
-  F extends AppsScriptFrontEnd<C, G, A, F>,
+  F extends AppsScriptFrontend<C, G, A, F>,
 >(frontEndCaller: ScriptFunction<F>): ScriptFunction<F> {
   return (scriptProperties: PropertyStore) => {
     const frontend = frontEndCaller(scriptProperties);
@@ -1324,14 +1322,14 @@ function applyBinding<
  * Primary entry point for an Apps Script implementation.
  * @param frontEndCaller A callable that late binds {@link toExport} to the
  *   correct functions from a frontend. A correct implementation of this
- *   function will initialize a {@link AppsScriptFrontEnd} class and assign
+ *   function will initialize a {@link AppsScriptFrontend} class and assign
  *   all functions the first time it's called.
  */
 export function lazyLoadApp<
   C extends BaseClientInterface<C, G, A>,
   G extends RuleGranularity<G>,
   A extends BaseClientArgs,
-  F extends AppsScriptFrontEnd<C, G, A, F>,
+  F extends AppsScriptFrontend<C, G, A, F>,
 >(frontEndCaller: ScriptFunction<F>): ScriptFunction<F> {
   const binders = applyBinding<C, G, A, F>(frontEndCaller);
   toExport.onOpen = load<C, G, A, F>(binders, 'onOpen');

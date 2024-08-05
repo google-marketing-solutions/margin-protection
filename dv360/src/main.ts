@@ -19,13 +19,11 @@
  * @fileoverview Apps Script handlers.
  */
 
-// g3-format-prettier
-
 import { lazyLoadApp, toExport } from 'common/sheet_helpers';
 import { PropertyStore } from 'common/types';
 
 import { Client, RuleRange } from './client';
-import { DisplayVideoFrontEnd, migrations } from './frontend';
+import { DisplayVideoFrontend, migrations } from './frontend';
 import {
   budgetPacingDaysAheadRule,
   budgetPacingPercentageRule,
@@ -48,8 +46,8 @@ export const CURRENT_SHEET_VERSION = '1.5';
  *
  * Broken out for testability.
  */
-export function getFrontEnd(properties: PropertyStore) {
-  return new DisplayVideoFrontEnd({
+export function getFrontend(properties: PropertyStore) {
+  return new DisplayVideoFrontend({
     ruleRangeClass: RuleRange,
     rules: [
       budgetPacingDaysAheadRule,
@@ -72,8 +70,8 @@ export function getFrontEnd(properties: PropertyStore) {
  *
  * Exported for testing.
  */
-lazyLoadApp<ClientInterface, RuleGranularity, ClientArgs, DisplayVideoFrontEnd>(
-  getFrontEnd,
+lazyLoadApp<ClientInterface, RuleGranularity, ClientArgs, DisplayVideoFrontend>(
+  getFrontend,
 );
 
 global.onOpen = toExport.onOpen;

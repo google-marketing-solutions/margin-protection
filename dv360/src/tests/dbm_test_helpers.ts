@@ -20,8 +20,6 @@
  *
  */
 
-// g3-format-prettier
-
 import { DBM_API_VERSION, DBM_URL } from '../api';
 
 interface Params {

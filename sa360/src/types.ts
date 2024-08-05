@@ -19,8 +19,6 @@
  * @fileoverview types for Google Ads
  */
 
-// g3-format-prettier
-
 import * as AdTypes from 'common/ads_api_types';
 import { AdsClientArgs } from 'common/ads_api_types';
 
