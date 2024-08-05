@@ -15,6 +15,7 @@
  * limitations under the License.
  */
 
+<<<<<<< HEAD
 /**
  * @fileoverview Tests for the SA360 API V2.
  */
@@ -37,6 +38,11 @@ import {
   CAMPAIGN_USER_LIST_REPORT,
   GENDER_TARGET_REPORT,
 } from 'sa360/src/api';
+=======
+import { AppsScriptPropertyStore } from 'common/sheet_helpers';
+import { mockAppsScript } from 'common/test_helpers/mock_apps_script';
+import * as api from 'sa360/src/api';
+>>>>>>> 496c709 (Minor cleanup (#13))
 
 describe('ApiV2', () => {
   let mockQuery: jasmine.Spy;

@@ -19,6 +19,10 @@
  * @fileoverview Apps Script handlers.
  */
 
+<<<<<<< HEAD
+=======
+import { lazyLoadApp, toExport } from 'common/sheet_helpers';
+>>>>>>> 496c709 (Minor cleanup (#13))
 import { PropertyStore } from 'common/types';
 
 import { Client, RuleRange } from './client';
@@ -46,9 +50,13 @@ export const CURRENT_SHEET_VERSION = '1.5';
  * @param properties A {@link PropertyStore} is used to update client configuration
  *   for client libraries when using a server/client relationship.
  */
+<<<<<<< HEAD
 export function getFrontend(
   properties: PropertyStore = new AppsScriptPropertyStore(),
 ) {
+=======
+export function getFrontend(properties: PropertyStore) {
+>>>>>>> 496c709 (Minor cleanup (#13))
   return new DisplayVideoFrontend({
     ruleRangeClass: RuleRange,
     rules: [
@@ -67,9 +75,20 @@ export function getFrontend(
   });
 }
 
+<<<<<<< HEAD
 function onOpen(properties = new AppsScriptPropertyStore()) {
   getFrontend(properties).onOpen();
 }
+=======
+/**
+ * The application functions.
+ *
+ * Exported for testing.
+ */
+lazyLoadApp<ClientInterface, RuleGranularity, ClientArgs, DisplayVideoFrontend>(
+  getFrontend,
+);
+>>>>>>> 496c709 (Minor cleanup (#13))
 
 function initializeSheets(properties = new AppsScriptPropertyStore()) {
   getFrontend(properties).initializeSheets();

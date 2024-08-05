@@ -19,8 +19,8 @@
  * @fileoverview Test helpers for the common library.
  */
 
-import { ClientTypes } from 'common/types';
-import { FakePropertyStore } from 'common/test_helpers/mock_apps_script';
+import { ClientTypes } from '../types';
+import { FakePropertyStore } from '../test_helpers/mock_apps_script';
 
 import {
   CredentialManager,
@@ -128,7 +128,16 @@ export class FakeClient implements TestClientInterface {
 /**
  * A fake frontend for testing.
  */
+<<<<<<< HEAD
 export class FakeFrontend extends AppsScriptFrontend<TestClientTypes> {
+=======
+export class FakeFrontend extends AppsScriptFrontend<
+  TestClientInterface,
+  Granularity,
+  BaseClientArgs,
+  FakeFrontend
+> {
+>>>>>>> 496c709 (Minor cleanup (#13))
   readonly calls: Record<AppsScriptFunctions, number> = {
     onOpen: 0,
     initializeSheets: 0,
@@ -141,7 +150,18 @@ export class FakeFrontend extends AppsScriptFrontend<TestClientTypes> {
     [];
   private readonly old: GoogleAppsScript.Mail.MailAdvancedParameters[] = [];
 
+<<<<<<< HEAD
   constructor(args: FrontendArgs<TestClientTypes>) {
+=======
+  constructor(
+    args: FrontendArgs<
+      TestClientInterface,
+      Granularity,
+      BaseClientArgs,
+      FakeFrontend
+    >,
+  ) {
+>>>>>>> 496c709 (Minor cleanup (#13))
     scaffoldSheetWithNamedRanges();
     super('Fake', args);
   }

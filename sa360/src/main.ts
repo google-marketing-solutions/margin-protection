@@ -29,7 +29,12 @@ import { AppsScriptPropertyStore } from 'common/sheet_helpers';
 import { PropertyStore } from 'common/types';
 import { Client, RuleRange } from 'sa360/src/client';
 
+<<<<<<< HEAD
 import { migrations, SearchAdsFrontend } from './frontend';
+=======
+import { migrationsV2, NewSearchAdsFrontend } from './frontend';
+import { ClientArgsV2, ClientInterfaceV2, RuleGranularity } from './types';
+>>>>>>> 496c709 (Minor cleanup (#13))
 
 /**
  * The sheet version the app currently has.
@@ -43,8 +48,13 @@ export const CURRENT_SHEET_VERSION = '2.0';
  * Generate a front-end object for lazy loading.
  */
 export function getFrontend(properties: PropertyStore) {
+<<<<<<< HEAD
   return new SearchAdsFrontend({
     ruleRangeClass: RuleRange,
+=======
+  return new NewSearchAdsFrontend({
+    ruleRangeClass: RuleRangeV2,
+>>>>>>> 496c709 (Minor cleanup (#13))
     rules: [],
     version: CURRENT_SHEET_VERSION,
     clientInitializer(clientArgs, properties) {
@@ -61,9 +71,18 @@ export function getFrontend(properties: PropertyStore) {
   });
 }
 
+<<<<<<< HEAD
 function onOpen(properties = new AppsScriptPropertyStore()) {
   getFrontend(properties).onOpen();
 }
+=======
+lazyLoadApp<
+  ClientInterfaceV2,
+  RuleGranularity,
+  ClientArgsV2,
+  NewSearchAdsFrontend
+>(getFrontend);
+>>>>>>> 496c709 (Minor cleanup (#13))
 
 function initializeSheets(properties = new AppsScriptPropertyStore()) {
   getFrontend(properties).initializeSheets();
