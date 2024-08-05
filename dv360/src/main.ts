@@ -19,8 +19,6 @@
  * @fileoverview Apps Script handlers.
  */
 
-// g3-format-prettier
-
 import { lazyLoadApp, toExport } from 'common/sheet_helpers';
 import { PropertyStore } from 'common/types';
 

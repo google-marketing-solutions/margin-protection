@@ -15,8 +15,6 @@
  * limitations under the License.
  */
 
-// g3-format-prettier
-
 import { AppsScriptFrontend } from './sheet_helpers';
 
 /**

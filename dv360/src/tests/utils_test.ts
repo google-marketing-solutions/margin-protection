@@ -15,8 +15,6 @@
  * limitations under the License.
  */
 
-// g3-format-prettier
-
 import { SettingMap, transformToParamValues } from 'common/sheet_helpers';
 import { RuleRange, getDate } from '../client';
 

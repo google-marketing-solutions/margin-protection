@@ -19,8 +19,6 @@
  * @fileoverview Helpers for Apps Script based front-ends.
  */
 
-// g3-format-prettier
-
 import {
   PropertyStore,
   RuleParams,

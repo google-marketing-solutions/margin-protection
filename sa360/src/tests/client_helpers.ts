@@ -15,8 +15,6 @@
  * limitations under the License.
  */
 
-// g3-format-prettier
-
 import { PropertyStore } from 'common/types';
 import {
   adGroupColumns,

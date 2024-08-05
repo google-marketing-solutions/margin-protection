@@ -15,8 +15,6 @@
  * limitations under the License.
  */
 
-// g3-format-prettier
-
 import { AssignedTargetingOption } from 'dv360_api/dv360_resources';
 import { ApiDate, TARGETING_TYPE } from 'dv360_api/dv360_types';
 import { AppsScriptPropertyStore } from 'common/sheet_helpers';

@@ -19,8 +19,6 @@
  * @fileoverview frontend/apps script hooks for SA360 launch monitor
  */
 
-// g3-format-prettier
-
 import {
   AppsScriptFrontend,
   AppsScriptPropertyStore,

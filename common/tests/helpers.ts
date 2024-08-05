@@ -19,8 +19,6 @@
  * @fileoverview Test helpers for the common library.
  */
 
-// g3-format-prettier
-
 import { AdsClientArgs } from 'common/ads_api_types';
 import { FakePropertyStore } from 'common/test_helpers/mock_apps_script';
 

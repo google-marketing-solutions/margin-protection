@@ -19,8 +19,6 @@
  * @fileoverview Tests for sheet helpers.
  */
 
-// g3-format-prettier
-
 import {
   FakePropertyStore,
   mockAppsScript,

@@ -24,8 +24,6 @@
  * END-INTERNAL
  */
 
-// g3-format-prettier
-
 import {
   CredentialManager,
   GoogleAdsApiFactory,

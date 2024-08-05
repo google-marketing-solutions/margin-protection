@@ -19,8 +19,6 @@
  * @fileoverview Contains a DAO for DBM access.
  */
 
-// g3-format-prettier
-
 import { IDType, QueryReportParams } from './types';
 
 /** The API version to use. Exposed for testing. */

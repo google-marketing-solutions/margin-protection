@@ -19,8 +19,6 @@
  * @fileoverview Mocked classes for Apps Script to help with unit tests.
  */
 
-// g3-format-prettier
-
 import { PropertyStore } from 'common/types';
 
 import Properties = GoogleAppsScript.Properties;

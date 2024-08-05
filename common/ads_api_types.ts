@@ -19,8 +19,6 @@
  * @fileoverview Ads API-specific types for SA360 and Google Ads
  */
 
-// g3-format-prettier
-
 import { BaseClientArgs } from './types';
 
 /**
