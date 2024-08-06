@@ -23,7 +23,7 @@ import { equalTo, inRange } from 'common/checks';
 
 import { Value, Values } from 'common/types';
 
-import { newRuleV2 } from './client';
+import { newRule } from './client';
 import { RuleGranularity } from './types';
 import {
   AD_GROUP_REPORT,
@@ -58,7 +58,7 @@ const RULES = {
 /**
  * Pacing rule for SA360.
  */
-export const budgetPacingRule = newRuleV2({
+export const budgetPacingRule = newRule({
   name: 'Budget Pacing',
   description: 'Pacing',
   granularity: RuleGranularity.CAMPAIGN,
@@ -106,7 +106,7 @@ export const budgetPacingRule = newRuleV2({
  * This is a somewhat complex rule because it matters how many days a value
  * has been set, and this rule might be checked hourly or even ad-hoc.
  */
-export const campaignStatusRule = newRuleV2({
+export const campaignStatusRule = newRule({
   name: 'Campaign Status Active after Inactive',
   description: `Checks to see if a campaign has become active again after being
     inactive for more than "daysInactive" days. The result is a list of statuses
@@ -195,7 +195,7 @@ export const campaignStatusRule = newRuleV2({
 /**
  * Anomalous if an ad group has its status change.
  */
-export const adGroupStatusRule = newRuleV2({
+export const adGroupStatusRule = newRule({
   name: 'Ad Group Status Change',
   description: `Ensures that an ad group does not change status. Status changes
     should always be set at the campaign level.`,
@@ -248,7 +248,7 @@ export const adGroupStatusRule = newRuleV2({
  * Automatically adds audience target from the system to the settings sheet
  * if it's empty.
  */
-export const adGroupAudienceTargetRule = newRuleV2({
+export const adGroupAudienceTargetRule = newRule({
   name: 'Ad Group Audience Target Change',
   description: `Ensures that an audience target doesn't change once set.`,
   params: {
@@ -293,7 +293,7 @@ export const adGroupAudienceTargetRule = newRuleV2({
  * Automatically adds gender target from the system to the settings sheet
  * if it's empty.
  */
-export const ageTargetRule = newRuleV2({
+export const ageTargetRule = newRule({
   name: 'Age Target Change',
   description: `Ensures that an age target doesn't change once set.`,
   params: {
@@ -334,7 +334,7 @@ export const ageTargetRule = newRuleV2({
  * Automatically adds gender target from the system to the settings sheet
  * if it's empty.
  */
-export const genderTargetRule = newRuleV2({
+export const genderTargetRule = newRule({
   name: 'Gender Target Change',
   description: `Ensures that a gender target doesn't change once set.`,
   params: {
@@ -379,7 +379,7 @@ export const genderTargetRule = newRuleV2({
  * Automatically adds location from the system to the settings sheet
  * if it's empty.
  */
-export const geoTargetRule = newRuleV2({
+export const geoTargetRule = newRule({
   name: 'Geo Target Change',
   description: `Ensures that a geotarget doesn't change once set.`,
   params: {
@@ -425,7 +425,7 @@ export const geoTargetRule = newRuleV2({
  * Automatically adds audience target from the system to the settings sheet
  * if it's empty.
  */
-export const campaignAudienceTargetRule = newRuleV2({
+export const campaignAudienceTargetRule = newRule({
   name: 'Campaign Audience Target Change',
   description: `Ensures that an audience target doesn't change once set.`,
   params: {

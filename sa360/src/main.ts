@@ -17,11 +17,6 @@
 
 /**
  * @fileoverview Implement and bootstrap Apps Script.
- *
- * BEGIN-INTERNAL
- * This can and should be excluded and re-written in customer-specific
- * implementations.
- * END-INTERNAL
  */
 
 import {
@@ -32,10 +27,9 @@ import {
 } from 'common/ads_api';
 import { lazyLoadApp, toExport } from 'common/sheet_helpers';
 import { PropertyStore } from 'common/types';
-import { ClientV2, RuleRangeV2 } from 'sa360/src/client';
+import { Client, RuleRange } from 'sa360/src/client';
 
-import { migrationsV2, NewSearchAdsFrontend } from './frontend';
-import { ClientArgsV2, ClientInterfaceV2, RuleGranularity } from './types';
+import { migrations, SearchAdsFrontend } from './frontend';
 
 /**
  * The sheet version the app currently has.
@@ -49,8 +43,8 @@ export const CURRENT_SHEET_VERSION = '2.0';
  * Generate a front-end object for lazy loading.
  */
 export function getFrontend(properties: PropertyStore) {
-  return new NewSearchAdsFrontend({
-    ruleRangeClass: RuleRangeV2,
+  return new SearchAdsFrontend({
+    ruleRangeClass: RuleRange,
     rules: [],
     version: CURRENT_SHEET_VERSION,
     clientInitializer(clientArgs, properties) {
@@ -60,19 +54,14 @@ export function getFrontend(properties: PropertyStore) {
         apiEndpoint: SA360_API_ENDPOINT,
       });
       const reportFactory = new ReportFactory(apiFactory, clientArgs);
-      return new ClientV2(clientArgs, properties, reportFactory);
+      return new Client(clientArgs, properties, reportFactory);
     },
-    migrations: migrationsV2,
+    migrations: migrations,
     properties,
   });
 }
 
-lazyLoadApp<
-  ClientInterfaceV2,
-  RuleGranularity,
-  ClientArgsV2,
-  NewSearchAdsFrontend
->(getFrontend);
+lazyLoadApp(getFrontend);
 
 global.onOpen = toExport.onOpen;
 global.initializeSheets = toExport.initializeSheets;

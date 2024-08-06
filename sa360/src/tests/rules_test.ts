@@ -25,18 +25,14 @@ import {
 } from 'common/test_helpers/mock_apps_script';
 import { bootstrapGoogleAdsApi, iterator } from 'common/tests/helpers';
 import { ParamDefinition, RuleExecutor, Values } from 'common/types';
-import { ClientV2 } from 'sa360/src/client';
-import {
-  ClientArgsV2,
-  ClientInterfaceV2,
-  RuleGranularity,
-} from 'sa360/src/types';
+import { Client } from 'sa360/src/client';
+import { ClientArgs, ClientInterface, RuleGranularity } from 'sa360/src/types';
 import { ReportClass, ReportInterface } from 'common/ads_api_types';
 import {
   AD_GROUP_USER_LIST_REPORT,
   CAMPAIGN_TARGET_REPORT,
   CAMPAIGN_USER_LIST_REPORT,
-} from 'sa360/src/api_v2';
+} from 'sa360/src/api';
 
 import {
   budgetPacingRule,
@@ -114,7 +110,7 @@ export async function generateTestData(
   columns: string[][],
 ) {
   const { reportFactory, api } = bootstrapGoogleAdsApi();
-  const client = new ClientV2(
+  const client = new Client(
     {
       customerIds: '1',
       label: 'test',
@@ -156,9 +152,9 @@ function writeBackToColumns(
   rules: Record<
     string,
     RuleExecutor<
-      ClientInterfaceV2,
+      ClientInterface,
       RuleGranularity,
-      ClientArgsV2,
+      ClientArgs,
       Record<string, ParamDefinition>
     >
   >,
@@ -178,7 +174,7 @@ function writeBackToColumns(
   }
 }
 
-describe('Campaign Status rule (V2)', () => {
+describe('Campaign Status rule', () => {
   beforeEach(() => {
     mockAppsScript();
     jasmine.clock().install();
@@ -439,7 +435,7 @@ async function generateCampaignStatusTestData(
   columns: string[][],
 ) {
   const { reportFactory, api } = bootstrapGoogleAdsApi();
-  const client = new ClientV2(
+  const client = new Client(
     {
       customerIds: '1',
       label: 'test',
@@ -481,7 +477,7 @@ async function generateAdGroupStatusTestData(
   columns: string[][],
 ) {
   const { reportFactory, api } = bootstrapGoogleAdsApi();
-  const client = new ClientV2(
+  const client = new Client(
     {
       customerIds: '1',
       label: 'test',
@@ -527,7 +523,7 @@ export async function generateAdGroupAudienceTestData(
   columns: string[][],
 ): Promise<Values> {
   const { reportFactory } = bootstrapGoogleAdsApi();
-  const client = new ClientV2(
+  const client = new Client(
     {
       customerIds: 'C1',
       label: 'test',
@@ -580,7 +576,7 @@ export async function generateCampaignAudienceTestData(
   columns: string[][],
 ): Promise<Values> {
   const { reportFactory } = bootstrapGoogleAdsApi();
-  const client = new ClientV2(
+  const client = new Client(
     {
       customerIds: 'C1',
       label: 'test',
@@ -635,7 +631,7 @@ export async function generateGeoTargetTestData(
   columns: string[][],
 ): Promise<Values> {
   const { reportFactory } = bootstrapGoogleAdsApi();
-  const client = new ClientV2(
+  const client = new Client(
     {
       customerIds: 'C1',
       label: 'test',
