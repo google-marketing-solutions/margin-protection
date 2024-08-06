@@ -27,22 +27,14 @@ import {
   ExecutorResult,
   ParamDefinition,
   PropertyStore,
-  CustomerRecordInfo,
+  RecordInfo,
   RuleExecutor,
   RuleExecutorClass,
   RuleParams,
 } from 'common/types';
 import {
-  AdGroupReport,
-  AdGroupTargetReport,
-  CampaignReport,
-  CampaignTargetReport,
-} from 'sa360/src/api';
-import {
   ClientArgs,
-  ClientArgsV2,
   ClientInterface,
-  ClientInterfaceV2,
   ReportClass,
   ReportInterface,
   RuleGranularity,
@@ -51,7 +43,7 @@ import {
 import { AD_GROUP_REPORT, CAMPAIGN_REPORT } from './api_v2';
 
 /**
- * Creates a new rule for SA360.
+ * Creates a new rule for the new SA360.
  */
 export const newRule = newRuleBuilder<
   ClientInterface,
@@ -62,21 +54,7 @@ export const newRule = newRuleBuilder<
 ) => RuleExecutorClass<ClientInterface, RuleGranularity, ClientArgs, P>;
 
 /**
- * Creates a new rule for the new SA360.
- */
-export const newRuleV2 = newRuleBuilder<
-  ClientInterfaceV2,
-  RuleGranularity,
-  ClientArgsV2
->() as <P extends Record<keyof P, ParamDefinition>>(
-  p: RuleParams<ClientInterfaceV2, RuleGranularity, ClientArgsV2, P>,
-) => RuleExecutorClass<ClientInterfaceV2, RuleGranularity, ClientArgsV2, P>;
-
-/**
- * Wrapper client around the DV360 API for testability and efficiency.
- *
- * Any methods that are added as wrappers to the API should pool requests,
- * either through caching or some other method.
+ * Client for the new SA360
  */
 export class Client implements ClientInterface {
   readonly ruleStore: {
@@ -87,149 +65,14 @@ export class Client implements ClientInterface {
       Record<string, ParamDefinition>
     >;
   } = {};
-  private campaignReport: CampaignReport | undefined;
-  private campaignTargetReport: CampaignTargetReport | undefined;
-  private adGroupReport: AdGroupReport | undefined;
-  private adGroupTargetReport: AdGroupTargetReport | undefined;
-  private campaigns: RecordInfo[] | undefined;
-  private adGroups: RecordInfo[] | undefined;
 
   constructor(
     readonly args: ClientArgs,
     readonly properties: PropertyStore,
-  ) {}
-
-  async getCampaignReport(): Promise<CampaignReport> {
-    if (!this.campaignReport) {
-      this.campaignReport = await CampaignReport.buildReport(this.args);
-    }
-    return this.campaignReport;
-  }
-
-  async getCampaignTargetReport(): Promise<CampaignTargetReport> {
-    if (!this.campaignTargetReport) {
-      this.campaignTargetReport = await CampaignTargetReport.buildReport(
-        this.args,
-      );
-    }
-    return this.campaignTargetReport;
-  }
-
-  async getAdGroupReport(): Promise<AdGroupReport> {
-    if (!this.adGroupReport) {
-      this.adGroupReport = await AdGroupReport.buildReport(this.args);
-    }
-
-    return this.adGroupReport;
-  }
-
-  async getAdGroupTargetReport(): Promise<AdGroupTargetReport> {
-    if (!this.adGroupTargetReport) {
-      this.adGroupTargetReport = await AdGroupTargetReport.buildReport(
-        this.args,
-      );
-    }
-
-    return this.adGroupTargetReport;
-  }
-
-  /**
-   * Adds a rule to be checked by `this.validate()`.
-   *
-   * These rules are called whenever `this.validate()` is called, and added to
-   * state.
-   *
-   */
-  addRule<Params extends Record<keyof Params, ParamDefinition>>(
-    rule: RuleExecutorClass<
-      ClientInterface,
-      RuleGranularity,
-      ClientArgs,
-      Params
-    >,
-    settingsArray: ReadonlyArray<string[]>,
-  ) {
-    this.ruleStore[rule.definition.name] = new rule(this, settingsArray);
-    return this;
-  }
-
-  getRule(ruleName: string) {
-    return this.ruleStore[ruleName];
-  }
-
-  getUniqueKey(prefix: string) {
-    return `${prefix}-${this.args.agencyId}-${this.args.advertiserId ?? 'a'}`;
-  }
-
-  /**
-   * Executes each added callable rule once per call to this method.
-   *
-   * This function is meant to be scheduled or otherwise called
-   * by the client. It relies on a rule changing state using the anomaly
-   * library.
-   */
-  async validate() {
-    type Executor = RuleExecutor<
-      ClientInterface,
-      RuleGranularity,
-      ClientArgs,
-      Record<string, ParamDefinition>
-    >;
-    const thresholds: Array<[Executor, Function]> = Object.values(
-      this.ruleStore,
-    ).reduce(
-      (prev, rule) => {
-        return [...prev, [rule, rule.run.bind(rule)]];
-      },
-      [] as Array<[Executor, Function]>,
-    );
-    const rules: Record<string, Executor> = {};
-    const results: Record<string, ExecutorResult> = {};
-    for (const [rule, thresholdCallable] of thresholds) {
-      results[rule.name] = await thresholdCallable();
-      rules[rule.name] = rule;
-    }
-
-    return { rules, results };
-  }
-
-  async getAllCampaigns(): Promise<RecordInfo[]> {
-    if (!this.campaigns) {
-      const campaignReport = await this.getCampaignReport();
-      this.campaigns = campaignReport.getCampaigns();
-    }
-    return this.campaigns;
-  }
-
-  async getAllAdGroups(): Promise<RecordInfo[]> {
-    if (!this.adGroups) {
-      const adGroupReport = await this.getAdGroupReport();
-      this.adGroups = adGroupReport.getAdGroups();
-    }
-    return this.adGroups;
-  }
-}
-
-/**
- * Client for the new SA360
- */
-export class ClientV2 implements ClientInterfaceV2 {
-  readonly ruleStore: {
-    [ruleName: string]: RuleExecutor<
-      ClientInterfaceV2,
-      RuleGranularity,
-      ClientArgsV2,
-      Record<string, ParamDefinition>
-    >;
-  } = {};
-
-  constructor(
-    readonly args: ClientArgsV2,
-    readonly properties: PropertyStore,
     readonly reportFactory: ReportFactory,
   ) {}
 
-  async getAllCampaigns(): Promise<CustomerRecordInfo[]> {
+  async getAllCampaigns(): Promise<RecordInfo[]> {
     const report = this.getReport(CAMPAIGN_REPORT).fetch();
     return Object.values(report).map((campaign) => ({
       advertiserId: campaign.customerId,
@@ -238,7 +81,7 @@ export class ClientV2 implements ClientInterfaceV2 {
     }));
   }
 
-  async getAllAdGroups(): Promise<CustomerRecordInfo[]> {
+  async getAllAdGroups(): Promise<RecordInfo[]> {
     const report = this.getReport(AD_GROUP_REPORT).fetch();
     return Object.values(report).map((adGroup) => ({
       advertiserId: adGroup.customerId,
@@ -267,9 +110,9 @@ export class ClientV2 implements ClientInterfaceV2 {
    */
   async validate() {
     type Executor = RuleExecutor<
-      ClientInterfaceV2,
+      ClientInterface,
       RuleGranularity,
-      ClientArgsV2,
+      ClientArgs,
       Record<string, ParamDefinition>
     >;
     const thresholds: Array<[Executor, Function]> = Object.values(
@@ -299,9 +142,9 @@ export class ClientV2 implements ClientInterfaceV2 {
    */
   addRule<Params extends Record<keyof Params, ParamDefinition>>(
     rule: RuleExecutorClass<
-      ClientInterfaceV2,
+      ClientInterface,
       RuleGranularity,
-      ClientArgsV2,
+      ClientArgs,
       Params
     >,
     settingsArray: ReadonlyArray<string[]>,
@@ -318,23 +161,6 @@ export class RuleRange extends AbstractRuleRange<
   ClientInterface,
   RuleGranularity,
   ClientArgs
-> {
-  async getRows(ruleGranularity: RuleGranularity) {
-    if (ruleGranularity === RuleGranularity.CAMPAIGN) {
-      return this.client.getAllCampaigns();
-    } else {
-      return this.client.getAllAdGroups();
-    }
-  }
-}
-
-/**
- * SA360 rule args splits.
- */
-export class RuleRangeV2 extends AbstractRuleRange<
-  ClientInterfaceV2,
-  RuleGranularity,
-  ClientArgsV2
 > {
   async getRows(ruleGranularity: RuleGranularity) {
     if (ruleGranularity === RuleGranularity.CAMPAIGN) {

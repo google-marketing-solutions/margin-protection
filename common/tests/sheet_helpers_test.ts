@@ -489,7 +489,6 @@ describe('Test emails', () => {
         properties,
       });
     })(new AppsScriptPropertyStore());
-    console.log('new frontend');
   });
 
   it('sends anomalies to a user whenever they are new', () => {
