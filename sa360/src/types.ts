@@ -22,31 +22,12 @@
 import * as AdTypes from 'common/ads_api_types';
 import { AdsClientArgs } from 'common/ads_api_types';
 
-import { BaseClientArgs, BaseClientInterface, RecordInfo } from 'common/types';
-import {
-  AdGroupReport,
-  AdGroupTargetReport,
-  CampaignReport,
-  CampaignTargetReport,
-} from 'sa360/src/api';
-
-/**
- * Extends the base client interface with SA360-specific features.
- */
-export interface ClientInterface
-  extends BaseClientInterface<ClientInterface, RuleGranularity, ClientArgs> {
-  getCampaignReport(): Promise<CampaignReport>;
-  getCampaignTargetReport(): Promise<CampaignTargetReport>;
-  getAdGroupReport(): Promise<AdGroupReport>;
-  getAdGroupTargetReport(): Promise<AdGroupTargetReport>;
-  getAllAdGroups(): Promise<RecordInfo[]>;
-  args: ClientArgs;
-}
+import { BaseClientInterface, RecordInfo } from 'common/types';
 
 /**
  * Args for the new SA360 API.
  */
-export interface ClientArgsV2 extends AdsClientArgs {
+export interface ClientArgs extends AdsClientArgs {
   fullFetch?: boolean;
 }
 
@@ -73,12 +54,8 @@ export interface ReportClass<
 /**
  * Extends the base client interface with SA360-specific features.
  */
-export interface ClientInterfaceV2
-  extends BaseClientInterface<
-    ClientInterfaceV2,
-    RuleGranularity,
-    ClientArgsV2
-  > {
+export interface ClientInterface
+  extends BaseClientInterface<ClientInterface, RuleGranularity, ClientArgs> {
   getAllAdGroups(): Promise<RecordInfo[]>;
   getReport<
     Q extends AdTypes.QueryBuilder<Params, Joins>,
@@ -88,20 +65,6 @@ export interface ClientInterfaceV2
   >(
     Report: ReportClass<Q, Output, Params, Joins>,
   ): ReportInterface<Q, Output, Params, Joins>;
-}
-
-/**
- * An agency ID and, optionally, an advertiser ID to narrow down.
- */
-export interface ClientArgs extends BaseClientArgs {
-  agencyId: string;
-  advertiserId?: string;
-
-  /**
-   * False = incremental pull
-   * True = pull everything
-   */
-  fullFetch?: boolean;
 }
 
 /**
