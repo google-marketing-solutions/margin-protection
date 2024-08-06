@@ -21,7 +21,6 @@
 
 import {
   AppsScriptFrontend,
-  AppsScriptFrontend,
   AppsScriptPropertyStore,
   HELPERS,
   LABEL_RANGE,
