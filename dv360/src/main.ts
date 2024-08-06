@@ -19,7 +19,6 @@
  * @fileoverview Apps Script handlers.
  */
 
-import { lazyLoadApp, toExport } from 'common/sheet_helpers';
 import { PropertyStore } from 'common/types';
 
 import { Client, RuleRange } from './client';
