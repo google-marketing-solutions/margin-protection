@@ -552,13 +552,7 @@ export abstract class AppsScriptFrontend<
       .createMenu('Launch Monitor')
       .addItem('Sync Campaigns', 'initializeSheets')
       .addItem('Pre-Launch QA', 'preLaunchQa')
-      .addSeparator()
-      .addSubMenu(
-        SpreadsheetApp.getUi()
-          .createMenu('Guides')
-          .addItem('Show Setup Guide', 'displaySetupGuide')
-          .addItem('Show Glossary', 'displayGlossary'),
-      )
+      .addItem('Show Glossary', 'displayGlossary')
       .addToUi();
   }
 
