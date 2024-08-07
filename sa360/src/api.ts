@@ -21,106 +21,6 @@
 
 import { makeReport } from 'common/ads_api';
 import { buildQuery } from 'common/ads_api_types';
-import { HELPERS } from 'common/sheet_helpers';
-import { RecordInfo } from 'common/types';
-import { SearchAdsTimeRange } from 'sa360/src/types';
-import { ClientArgs } from './types';
-import Payload = GoogleAppsScript.URL_Fetch.Payload;
-
-/**
- * The API version, exposed for testing.
- */
-export const SA360_API_VERSION = 'v2';
-
-/**
- * The API URL, exposed for testing.
- */
-export const SA360_URL = 'www.googleapis.com/doubleclicksearch';
-
-const ONE_MINUTE = 60 * 1000;
-const ONE_HOUR = 60 * ONE_MINUTE;
-const ONE_DAY = ONE_HOUR * 24;
-
-/**
- * Campaign report columns.
- */
-export const campaignColumns = [
-  'agency',
-  'agencyId',
-  'advertiser',
-  'advertiserId',
-  'campaignId',
-  'campaign',
-  'campaignStatus',
-] as const;
-
-/**
- * Ad Group report columns.
- */
-export const adGroupColumns = [
-  'agency',
-  'agencyId',
-  'advertiser',
-  'advertiserId',
-  'campaignId',
-  'adGroupId',
-  'adGroup',
-  'adGroupStatus',
-] as const;
-
-/**
- * Ad Group Target report columns.
- */
-export const adGroupTargetColumns = [
-  'agency',
-  'agencyId',
-  'advertiser',
-  'advertiserId',
-  'adGroupId',
-  'campaignId',
-  'genderTargetGenderType',
-  'ageTargetAgeRange',
-  'engineRemarketingList',
-] as const;
-
-export const campaignTargetColumns = [
-  'agency',
-  'agencyId',
-  'advertiser',
-  'advertiserId',
-  'campaignId',
-  'locationTargetName',
-] as const;
-
-type AllowedColumns =
-  | typeof campaignColumns
-  | typeof adGroupColumns
-  | typeof adGroupTargetColumns
-  | typeof campaignTargetColumns;
-
-/**
- * Generic index type for object definitions of columns.
- */
-export type ColumnType<Index extends AllowedColumns> = Index[number];
-
-/**
- * A report record with defined members from {@link AllowedColumns}.
- */
-export type ReportRecord<Index extends AllowedColumns> = {
-  [Property in ColumnType<Index>]: string;
-};
-
-interface ApiParams {
-  agencyId: string;
-  advertiserId?: string;
-  fullFetch?: boolean;
-}
-
-class Report<T extends AllowedColumns> {
-  protected constructor(
-    readonly report: { [campaignId: string]: ReportRecord<T> },
-  ) {}
-}
 
 /**
  * SA360 campaign-based report.
@@ -138,7 +38,7 @@ export const CAMPAIGN_REPORT = makeReport({
   query: buildQuery({
     queryParams: [
       'customer.id',
-      'customer.descriptive_name',
+      'customer.resource_name',
       'campaign.id',
       'campaign.name',
       'campaign.status',
@@ -151,7 +51,7 @@ export const CAMPAIGN_REPORT = makeReport({
       result.campaign.id as string,
       {
         customerId: result.customer.id as string,
-        customerName: result.customer.descriptiveName as string,
+        customerName: result.customer.resourceName as string,
         campaignId: result.campaign.id as string,
         campaignName: result.campaign.name as string,
         campaignStatus: result.campaign.status as string,
@@ -177,7 +77,7 @@ export const AD_GROUP_REPORT = makeReport({
   query: buildQuery({
     queryParams: [
       'customer.id',
-      'customer.descriptive_name',
+      'customer.resource_name',
       'campaign.id',
       'ad_group.id',
       'ad_group.name',
@@ -190,7 +90,7 @@ export const AD_GROUP_REPORT = makeReport({
       result.adGroup.id as string,
       {
         customerId: result.customer.id as string,
-        customerName: result.customer.descriptiveName as string,
+        customerName: result.customer.resourceName as string,
         campaignId: result.campaign.id as string,
         adGroupId: result.adGroup.id as string,
         adGroupName: result.adGroup.name as string,
@@ -244,7 +144,7 @@ export const CAMPAIGN_TARGET_REPORT = makeReport({
     queryParams: [
       'criterion.id',
       'customer.id',
-      'customer.descriptive_name',
+      'customer.resource_name',
       'campaign.id',
       'campaign.name',
       'campaign_criterion.criterion_id',
@@ -260,7 +160,7 @@ export const CAMPAIGN_TARGET_REPORT = makeReport({
       {
         criterionId: result.campaignCriterion.criterionId as string,
         customerId: result.customer.id as string,
-        customerName: result.customer.descriptiveName as string,
+        customerName: result.customer.resourceName as string,
         campaignId: result.campaign.id as string,
         location: joins['campaignCriterion.criterionId'][
           result.campaignCriterion.criterionId as string
@@ -286,9 +186,8 @@ export const AGE_TARGET_REPORT = makeReport({
   ],
   query: buildQuery({
     queryParams: [
-      'criterion.id',
       'customer.id',
-      'customer.descriptive_name',
+      'customer.resource_name',
       'campaign.id',
       'ad_group.id',
       'ad_group_criterion.age_range.type',
@@ -303,7 +202,7 @@ export const AGE_TARGET_REPORT = makeReport({
       {
         criterionId: result.adGroupCriterion.criterionId as string,
         customerId: result.customer.id as string,
-        customerName: result.customer.descriptiveName as string,
+        customerName: result.customer.resourceName as string,
         campaignId: result.campaign.id as string,
         adGroupId: result.adGroup.id as string,
         ageRange: result.adGroupCriterion.ageRange.type as string,
@@ -329,7 +228,7 @@ export const GENDER_TARGET_REPORT = makeReport({
   query: buildQuery({
     queryParams: [
       'customer.id',
-      'customer.descriptive_name',
+      'customer.resource_name',
       'campaign.id',
       'ad_group.id',
       'ad_group_criterion.gender.type',
@@ -344,7 +243,7 @@ export const GENDER_TARGET_REPORT = makeReport({
       {
         criterionId: result.adGroupCriterion.criterionId as string,
         customerId: result.customer.id as string,
-        customerName: result.customer.descriptiveName as string,
+        customerName: result.customer.resourceName as string,
         campaignId: result.campaign.id as string,
         adGroupId: result.adGroup.id as string,
         gender: result.adGroupCriterion.gender.type as string,
@@ -396,7 +295,7 @@ export const CAMPAIGN_USER_LIST_REPORT = makeReport({
   query: buildQuery({
     queryParams: [
       'customer.id',
-      'customer.descriptive_name',
+      'customer.resource_name',
       'campaign.id',
       'campaign_criterion.resource_name',
       'campaign_criterion.user_list.user_list',
@@ -419,7 +318,7 @@ export const CAMPAIGN_USER_LIST_REPORT = makeReport({
       {
         criterionId: result.campaignCriterion.criterionId as string,
         customerId: result.customer.id as string,
-        customerName: result.customer.descriptiveName as string,
+        customerName: result.customer.resourceName as string,
         campaignId: result.campaign.id as string,
         userListName: userList.userListName,
       },
@@ -444,7 +343,7 @@ export const AD_GROUP_USER_LIST_REPORT = makeReport({
   query: buildQuery({
     queryParams: [
       'customer.id',
-      'customer.descriptive_name',
+      'customer.resource_name',
       'campaign.id',
       'ad_group.id',
       'ad_group_criterion.resource_name',
@@ -468,7 +367,7 @@ export const AD_GROUP_USER_LIST_REPORT = makeReport({
       {
         criterionId: result.adGroupCriterion.criterionId as string,
         customerId: result.customer.id as string,
-        customerName: result.customer.descriptiveName as string,
+        customerName: result.customer.resourceName as string,
         campaignId: result.campaign.id as string,
         adGroupId: result.adGroup.id as string,
         userListName: userList.userListName,
@@ -492,7 +391,7 @@ export const CAMPAIGN_PACING_REPORT = makeReport({
       'metrics.cost_micros',
     ],
     queryFrom: 'campaign',
-    queryWheres: ["campaign.status == 'ENABLED'"],
+    queryWheres: ["campaign.status = 'ENABLED'"],
   }),
   transform(result) {
     return [
