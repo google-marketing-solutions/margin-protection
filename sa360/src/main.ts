@@ -38,10 +38,6 @@ import {
   geoTargetRule,
   campaignAudienceTargetRule,
 } from 'sa360/src/rules';
-<<<<<<< HEAD
-=======
-
->>>>>>> 899bc9c (fix back to v2)
 import { migrations, SearchAdsFrontend } from './frontend';
 
 /**
@@ -104,7 +100,7 @@ function launchMonitor(properties = new AppsScriptPropertyStore()) {
 }
 
 function displayGlossary(properties = new AppsScriptPropertyStore()) {
-  getFrontend(properties).launchMonitor();
+  getFrontend(properties).displayGlossary();
 }
 
 global.onOpen = onOpen;
