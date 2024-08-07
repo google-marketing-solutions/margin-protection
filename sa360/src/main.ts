@@ -100,8 +100,13 @@ function launchMonitor(properties = new AppsScriptPropertyStore()) {
   getFrontend(properties).launchMonitor();
 }
 
+function displayGlossary(properties = new AppsScriptPropertyStore()) {
+  getFrontend(properties).displayGlossary();
+}
+
 global.onOpen = onOpen;
 global.initializeSheets = initializeSheets;
 global.initializeRules = initializeRules;
 global.preLaunchQa = preLaunchQa;
 global.launchMonitor = launchMonitor;
+global.displayGlossary = displayGlossary;
