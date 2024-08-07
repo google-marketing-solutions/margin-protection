@@ -30,6 +30,7 @@ import {
   AD_GROUP_USER_LIST_REPORT,
   AGE_TARGET_REPORT,
   CAMPAIGN_REPORT,
+  CAMPAIGN_TARGET_REPORT,
   CAMPAIGN_PACING_REPORT,
   CAMPAIGN_USER_LIST_REPORT,
   GENDER_TARGET_REPORT,
@@ -397,10 +398,10 @@ export const geoTargetRule = newRuleV2({
   async callback() {
     const values: Values = {};
 
-    const genderReport = this.client.getReport(GENDER_TARGET_REPORT);
+    const geoReport = this.client.getReport(CAMPAIGN_TARGET_REPORT);
 
     const aggregatedReport = aggregateReport(
-      genderReport.fetch(),
+      geoReport.fetch(),
       'criterionId',
     );
     for (const [campaignId, [targets, fields]] of Object.entries(
