@@ -400,10 +400,7 @@ export const geoTargetRule = newRule({
 
     const geoReport = this.client.getReport(CAMPAIGN_TARGET_REPORT);
 
-    const aggregatedReport = aggregateReport(
-      geoReport.fetch(),
-      'criterionId',
-    );
+    const aggregatedReport = aggregateReport(geoReport.fetch(), 'criterionId');
     for (const [campaignId, [targets, fields]] of Object.entries(
       aggregatedReport,
     )) {

@@ -114,7 +114,7 @@ export class SettingMap<P extends { [Property in keyof P]: P[keyof P] }>
     return this.keys.reduce(
       (prev, key) => {
         prev[key] =
-          (!(key in campaignValue) || campaignValue[key] === ''
+          (!(key in campaignValue) || !campaignValue[key]
             ? defaultValue[key]
             : campaignValue[key]) ?? '';
         return prev;
@@ -181,7 +181,9 @@ export function transformToParamValues<
       ) as { [Property in keyof MapType]: string },
     ];
   }
-  return new SettingMap(body.map(forEachRow));
+  const mapped = body.map(forEachRow);
+  const postMap = new SettingMap(mapped);
+  return postMap;
 }
 
 function makeCampaignIndexedSettings(
