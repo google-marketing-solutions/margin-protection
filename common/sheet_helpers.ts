@@ -531,8 +531,8 @@ export abstract class AppsScriptFrontend<
     private readonly injectedArgs: FrontendArgs<C, G, A, F>,
   ) {
     const clientArgs = this.getIdentity();
-    if (!clientArgs) {
-      throw new Error('Cannot initialize front-end without client ID(s)');
+    if (!this.identityComplete()) {
+      console.warn("Identity is not complete. Launch monitor can't run yet.");
     }
     this.client = injectedArgs.clientInitializer(
       clientArgs,
@@ -993,10 +993,22 @@ export abstract class AppsScriptFrontend<
   displaySetupModal() {}
 
   /**
+   * Indicates whether the identity is completely set up.
+   *
+   * For example, if a user copies this sheet and tries to run
+   * it for the first time, they first need to fill out some
+   * information to direct what accounts Launch Monitor is monitoring.
+   * This would return false.
+   */
+  protected identityComplete() {
+    return Boolean(this.getIdentity());
+  }
+
+  /**
    * Validates settings sheets exist and that they are up-to-date.
    */
   async initializeSheets() {
-    if (!this.getIdentity()) {
+    if (!this.identityComplete()) {
       this.displaySetupModal();
     }
 

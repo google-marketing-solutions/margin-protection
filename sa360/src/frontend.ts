@@ -76,27 +76,33 @@ export class SearchAdsFrontend extends AppsScriptFrontend<
   }
 
   override getIdentity() {
-    const loginCustomerId = this.getValueFromRangeByName({
+    const loginCustomerIdDirty = this.getValueFromRangeByName({
       name: LOGIN_CUSTOMER_ID,
       allowEmpty: true,
     });
     const customerIdsDirty = this.getValueFromRangeByName({
       name: CUSTOMER_IDS,
-      allowEmpty: false,
+      allowEmpty: true,
     });
-    const label = this.getValueFromRangeByName({
+    const labelDirty = this.getValueFromRangeByName({
       name: LABEL_RANGE,
       allowEmpty: true,
     });
     const customerIds = this.cleanCid(customerIdsDirty);
+    const loginCustomerId = loginCustomerIdDirty
+      ? this.cleanCid(loginCustomerIdDirty)
+      : customerIds;
+    const label = String(labelDirty || customerIds);
 
     return {
-      loginCustomerId: loginCustomerId
-        ? this.cleanCid(loginCustomerId)
-        : customerIds,
+      loginCustomerId,
       customerIds,
-      label: String(label || customerIds),
+      label,
     };
+  }
+
+  protected override identityComplete() {
+    return Boolean(this.client.args.customerIds);
   }
 
   override displaySetupModal() {
@@ -109,14 +115,6 @@ export class SearchAdsFrontend extends AppsScriptFrontend<
     SpreadsheetApp.getUi().showModalDialog(htmlOutput, 'Set up');
 
     return template['advertiserID'];
-  }
-
-  override async preLaunchQa() {
-    await super.preLaunchQa();
-  }
-
-  override async initializeSheets() {
-    await super.initializeSheets();
   }
 
   override saveSettingsBackToSheets(
