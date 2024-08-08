@@ -34,7 +34,7 @@ import {
   CAMPAIGN_PACING_REPORT,
   CAMPAIGN_USER_LIST_REPORT,
   GENDER_TARGET_REPORT,
-} from './api_v2';
+} from './api';
 
 const ONE_DAY = 60 * 60 * 1000 * 24;
 const NO_CHANGES = 'No Changes';

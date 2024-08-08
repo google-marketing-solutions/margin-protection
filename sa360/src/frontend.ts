@@ -72,7 +72,7 @@ export class SearchAdsFrontend extends AppsScriptFrontend<
   }
 
   private cleanCid(cid: string | number) {
-    return String(cid).replace(/[- ]/, '');
+    return String(cid).replace(/[- ]/g, '');
   }
 
   override getIdentity() {
