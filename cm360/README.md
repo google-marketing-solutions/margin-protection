@@ -4,7 +4,9 @@ The Campaign Manager 360 Margin Protection Monitor is a tool that identifies con
 
 ## One Time Setup
 
-1. (Optional) Setup Reports in Campaign Manager 360
+1. Make a copy of the [CM360 Launch Monitor template](https://docs.google.com/spreadsheets/d/1JlPJlEwU3spwQTG97bvgjNG6t4do2LzZ45uhmTJcnYY/).
+
+2. (Optional) Setup Reports in Campaign Manager 360
 
    **Note:** This is optional, and can be generated automatically. Skip to Step 2. for additional details.
 
@@ -21,7 +23,7 @@ The Campaign Manager 360 Margin Protection Monitor is a tool that identifies con
 
    **Note:** Create 1 report for each Use Case and CM360 Account.
 
-2. Add Reports manually to the CM360 Margin Protection Tool
+3. Add Reports manually to the CM360 Margin Protection Tool
 
    - The CM360 Margin Protection Monitor tool does a lookup on the user Profile ID that you specify in the Reports Config tab to build the reports for you. Please add your Profile ID and leave the CM360 Account ID and Report ID blank if you want the tool to generate the reports. If you already created a report in CM360, please add the Report ID and Profile ID.
 
@@ -31,10 +33,10 @@ The Campaign Manager 360 Margin Protection Monitor is a tool that identifies con
 
    **IMPORTANT:** Report creation using the tool - Reports might take some time to run after creation. Running tasks for some reports might take longer than the execution time in Apps Scripts (5 mins), once you execute the script and the reports are created, if you see a warning message, please wait until the report is ready and run the tool again. For long running reports, you will see a warning message per report. This happens only at creation time, that's why it is important that the reports run before this tool executes, to make sure that the report is ready to download.
 
-3. Configure Date Range for the reports
+4. Configure Date Range for the reports
    1. In the Reports Config tab, go to the Report Date Range column and select the relative date range for your report.
       **Note:** This column will be used the first time the report is created. If you want to change the date range for the reports later, you can do it directly in the CM360 UI. Changes in this column after the report has been created will not take effect. If no date is provided, it will default to LAST_7_DAYS.
-4. (Optional) Configure Filters for the reports in CM360
+5. (Optional) Configure Filters for the reports in CM360
 
    - The tool supports filter configuration for Advertiser IDs. This is an optional step and you can also do this directly in the CM360 UI. This feature will only apply the first time the report is created. Changes in this column after the report has been created will not take effect.
 
@@ -42,15 +44,15 @@ The Campaign Manager 360 Margin Protection Monitor is a tool that identifies con
 
    **Note:** Please note the semicolon at the end.
 
-5. (Optional) Configure a Threshold for each Use Case
+6. (Optional) Configure a Threshold for each Use Case
 
    - The tool uses default Threholds that are configured in the Use Cases Config tab. If you would like to set up a custom threshold for each entry in the Reports Config tab, you can add a value to the Threshold column in the Reports Config tab and the script will override the default value from the Use Cases Config tab. If left blank, the default value will be used.
 
-6. (Required) Configure Extra Parameters for some use cases
+7. (Required) Configure Extra Parameters for some use cases
 
    - Some use cases, like the Floodlight Trends, require extra parameters to be passed. The Extra Parameters column in the Reports Config tab can be used to pass such parameters for the execution. See more details in the Use Cases, Rules & Thresholds section.
 
-7. (Optional) Manually create a filter in each Report tab in the Google Spreadsheet
+8. (Optional) Manually create a filter in each Report tab in the Google Spreadsheet
 
    - This is an optional step in case the filters are not applied automatically. When you execute
      the script manually or via Triggers, the filter will be created automatically.
@@ -59,7 +61,7 @@ The Campaign Manager 360 Margin Protection Monitor is a tool that identifies con
    2. Go to the Data menu at the top and click on the Create a Filter option.
    3. You will see that the table headers now have filters that can be applied. Now you can filter the data to see only the ISSUES.
 
-8. Set Up Alerts using Triggers
+9. Set Up Alerts using Triggers
 
    1. In the Report Config, populate the Emails for Alerts column with the email addresses that alerts should be sent to. The list should be a comma separated list of emails. For example: user1@company.com,user2@company.com,user3@company.com. If the column is empty, this step will be skipped.
    2. If you want to receive a custom email message, please fill out the Email Message column in the Reports Config tab. If this column is empty, a default message will be used.
