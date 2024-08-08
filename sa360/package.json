@@ -19,7 +19,8 @@
     "typescript": "^5.5.3",
     "web-test-runner-jasmine": "^0.0.6",
     "webpack": "^5.75.0",
-    "webpack-cli": "^5.0.1"
+    "webpack-cli": "^5.0.1",
+    "@types/jasmine": "^5.1.4"
   },
   "scripts": {
     "build": "yarn && cp -rf ../common/html html && webpack",
