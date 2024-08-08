@@ -67,3 +67,4 @@ global.onOpen = toExport.onOpen;
 global.initializeSheets = toExport.initializeSheets;
 global.launchMonitor = toExport.launchMonitor;
 global.preLaunchQa = toExport.preLaunchQa;
+global.displayGlossary = toExport.displayGlossary;

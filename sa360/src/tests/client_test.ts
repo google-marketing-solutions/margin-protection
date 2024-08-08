@@ -17,6 +17,7 @@
 
 import { equalTo } from 'common/checks';
 import { AppsScriptPropertyStore } from 'common/sheet_helpers';
+import { bootstrapGoogleAdsApi } from 'common/tests/helpers';
 import { mockAppsScript } from 'common/test_helpers/mock_apps_script';
 import { Client, newRule } from 'sa360/src/client';
 import { RuleGranularity } from 'sa360/src/types';
@@ -32,7 +33,7 @@ describe('Client rules are validated', () => {
 
   beforeEach(() => {
     mockAppsScript();
-    client = generateTestClient({ agencyId: '123' });
+    client = generateTestClient({ loginCustomerId: '123' });
 
     const values = { '1': equalTo(test, 1, {}), '42': equalTo(test, 42, {}) };
 
@@ -90,14 +91,16 @@ describe('Client rules are validated', () => {
 });
 
 function generateTestClient({
-  agencyId = '1',
-  advertiserId = undefined,
+  loginCustomerId = '1',
+  customerIds = 'c1',
 }: {
-  agencyId?: string;
-  advertiserId?: string;
+  loginCustomerId?: string;
+  customerIds?: string;
 }): Client {
+  const { reportFactory } = bootstrapGoogleAdsApi();
   return new Client(
-    { agencyId, advertiserId, label: 'Fake' },
+    { loginCustomerId, customerIds, label: 'Fake' },
     new AppsScriptPropertyStore(),
+    reportFactory,
   );
 }
