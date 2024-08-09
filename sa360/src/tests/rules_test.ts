@@ -26,7 +26,7 @@ import {
 import { bootstrapGoogleAdsApi, iterator } from 'common/tests/helpers';
 import { ParamDefinition, RuleExecutor, Values } from 'common/types';
 import { Client } from 'sa360/src/client';
-import { ClientArgs, ClientInterface, RuleGranularity } from '../types';
+import { SearchAdsClientTypes } from 'sa360/src/types';
 import { ReportClass, ReportInterface } from 'common/ads_api_types';
 import {
   AD_GROUP_USER_LIST_REPORT,
@@ -243,12 +243,7 @@ export async function generateUserListTestData(
 function writeBackToColumns(
   rules: Record<
     string,
-    RuleExecutor<
-      ClientInterface,
-      RuleGranularity,
-      ClientArgs,
-      Record<string, ParamDefinition>
-    >
+    RuleExecutor<SearchAdsClientTypes, Record<string, ParamDefinition>>
   >,
   columns: string[][],
 ) {
