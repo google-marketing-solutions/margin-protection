@@ -163,7 +163,7 @@ export const CAMPAIGN_TARGET_REPORT = makeReport({
         campaignId: result.campaign.id as string,
         location: joins['campaignCriterion.criterionId'][
           result.campaignCriterion.criterionId as string
-        ].location as string,
+        ]?.location as string,
       },
     ] as const;
   },

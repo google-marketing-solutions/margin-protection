@@ -362,7 +362,10 @@ describe('Join Report', () => {
   it('returns expected results from query', () => {
     mockQuery.and.callFake(({ query }) => {
       if (query === JOIN_REPORT.query) {
-        return iterator({ d: { one: 'one', nother: 'another' } });
+        return iterator(
+          { d: { one: 'one', nother: 'another' } },
+          { d: { one: '1' } },
+        );
       } else if (query === GET_LEAF_ACCOUNTS_REPORT.query) {
         return iterator({
           customerClient: { id: '1' },
@@ -410,6 +413,8 @@ describe('Join query handling', () => {
               results: [
                 { d: { one: '1', nother: 'another' } },
                 { d: { one: '11', nother: 'yet another' } },
+                // this value doesn't exist - but should still be queried.
+                { d: { one: '111', nother: 'yet another' } },
               ],
             });
           },
@@ -437,11 +442,11 @@ describe('Join query handling', () => {
     });
   });
 
-  it('is a test', () => {
+  it('joins on IDs that exist', () => {
     const report = reportFactory.create(JOIN_REPORT);
     report.fetch();
     expect(qlifyStack.pop()).toEqual(
-      'SELECT a.one, b.two, c.three FROM something WHERE something.id IN (1,11)',
+      'SELECT a.one, b.two, c.three FROM something WHERE something.id IN (1,11,111)',
     );
   });
 });

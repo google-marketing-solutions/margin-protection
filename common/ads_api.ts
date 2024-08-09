@@ -299,12 +299,16 @@ export abstract class Report<
         if (joins === undefined) {
           return this.transform(result);
         }
-        return this.transform(
-          result,
-          joins as Joins extends undefined
-            ? never
-            : Exclude<typeof joins, undefined>,
-        );
+        try {
+          return this.transform(
+            result,
+            joins as Joins extends undefined
+              ? never
+              : Exclude<typeof joins, undefined>,
+          );
+        } catch (e) {
+          return null;
+        }
         // clean any empty values
       }).filter((e) => e),
     );
