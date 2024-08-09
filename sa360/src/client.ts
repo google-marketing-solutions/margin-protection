@@ -38,20 +38,19 @@ import {
   ReportClass,
   ReportInterface,
   RuleGranularity,
+  SearchAdsClientTypes,
 } from 'sa360/src/types';
 
-import { AD_GROUP_REPORT, CAMPAIGN_REPORT } from './api_v2';
+import { AD_GROUP_REPORT, CAMPAIGN_REPORT } from './api';
 
 /**
  * Creates a new rule for the new SA360.
  */
-export const newRule = newRuleBuilder<
-  ClientInterface,
-  RuleGranularity,
-  ClientArgs
->() as <P extends Record<keyof P, ParamDefinition>>(
-  p: RuleParams<ClientInterface, RuleGranularity, ClientArgs, P>,
-) => RuleExecutorClass<ClientInterface, RuleGranularity, ClientArgs, P>;
+export const newRule = newRuleBuilder<SearchAdsClientTypes>() as <
+  P extends Record<keyof P, ParamDefinition>,
+>(
+  p: RuleParams<SearchAdsClientTypes, P>,
+) => RuleExecutorClass<SearchAdsClientTypes, P>;
 
 /**
  * Client for the new SA360
@@ -59,9 +58,7 @@ export const newRule = newRuleBuilder<
 export class Client implements ClientInterface {
   readonly ruleStore: {
     [ruleName: string]: RuleExecutor<
-      ClientInterface,
-      RuleGranularity,
-      ClientArgs,
+      SearchAdsClientTypes,
       Record<string, ParamDefinition>
     >;
   } = {};
@@ -109,12 +106,7 @@ export class Client implements ClientInterface {
    * library.
    */
   async validate() {
-    type Executor = RuleExecutor<
-      ClientInterface,
-      RuleGranularity,
-      ClientArgs,
-      Record<string, ParamDefinition>
-    >;
+    type Executor = RuleExecutor<SearchAdsClientTypes>;
     const thresholds: Array<[Executor, Function]> = Object.values(
       this.ruleStore,
     ).reduce(
@@ -141,12 +133,7 @@ export class Client implements ClientInterface {
    *
    */
   addRule<Params extends Record<keyof Params, ParamDefinition>>(
-    rule: RuleExecutorClass<
-      ClientInterface,
-      RuleGranularity,
-      ClientArgs,
-      Params
-    >,
+    rule: RuleExecutorClass<SearchAdsClientTypes>,
     settingsArray: ReadonlyArray<string[]>,
   ) {
     this.ruleStore[rule.definition.name] = new rule(this, settingsArray);
@@ -157,11 +144,20 @@ export class Client implements ClientInterface {
 /**
  * SA360 rule args splits.
  */
-export class RuleRange extends AbstractRuleRange<
-  ClientInterface,
-  RuleGranularity,
-  ClientArgs
-> {
+export class RuleRange extends AbstractRuleRange<SearchAdsClientTypes> {
+  async getRows(ruleGranularity: RuleGranularity) {
+    if (ruleGranularity === RuleGranularity.CAMPAIGN) {
+      return this.client.getAllCampaigns();
+    } else {
+      return this.client.getAllAdGroups();
+    }
+  }
+}
+
+/**
+ * SA360 rule args splits.
+ */
+export class RuleRangeV2 extends AbstractRuleRange<SearchAdsClientTypes> {
   async getRows(ruleGranularity: RuleGranularity) {
     if (ruleGranularity === RuleGranularity.CAMPAIGN) {
       return this.client.getAllCampaigns();

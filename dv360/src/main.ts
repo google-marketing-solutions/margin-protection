@@ -19,7 +19,6 @@
  * @fileoverview Apps Script handlers.
  */
 
-import { lazyLoadApp, toExport } from 'common/sheet_helpers';
 import { PropertyStore } from 'common/types';
 
 import { Client, RuleRange } from './client';
@@ -31,7 +30,7 @@ import {
   geoTargetRule,
   impressionsByGeoTarget,
 } from './rules';
-import { ClientArgs, ClientInterface, RuleGranularity } from './types';
+import { AppsScriptPropertyStore } from 'common/sheet_helpers';
 
 /**
  * The sheet version the app currently has.
@@ -44,9 +43,12 @@ export const CURRENT_SHEET_VERSION = '1.5';
 /**
  * Retrieves the front-end as a function.
  *
- * Broken out for testability.
+ * @param properties A {@link PropertyStore} is used to update client configuration
+ *   for client libraries when using a server/client relationship.
  */
-export function getFrontend(properties: PropertyStore) {
+export function getFrontend(
+  properties: PropertyStore = new AppsScriptPropertyStore(),
+) {
   return new DisplayVideoFrontend({
     ruleRangeClass: RuleRange,
     rules: [
@@ -65,18 +67,28 @@ export function getFrontend(properties: PropertyStore) {
   });
 }
 
-/**
- * The application functions.
- *
- * Exported for testing.
- */
-lazyLoadApp<ClientInterface, RuleGranularity, ClientArgs, DisplayVideoFrontend>(
-  getFrontend,
-);
+function onOpen(properties = new AppsScriptPropertyStore()) {
+  getFrontend(properties).onOpen();
+}
 
-global.onOpen = toExport.onOpen;
-global.initializeSheets = toExport.initializeSheets;
-global.launchMonitor = toExport.launchMonitor;
-global.preLaunchQa = toExport.preLaunchQa;
-global.displayGlossary = toExport.displayGlossary;
-global.displaySetupGuide = toExport.displaySetupGuide;
+function initializeSheets(properties = new AppsScriptPropertyStore()) {
+  getFrontend(properties).initializeSheets();
+}
+
+function initializeRules(properties = new AppsScriptPropertyStore()) {
+  getFrontend(properties).initializeRules();
+}
+
+function preLaunchQa(properties = new AppsScriptPropertyStore()) {
+  getFrontend(properties).preLaunchQa();
+}
+
+function launchMonitor(properties = new AppsScriptPropertyStore()) {
+  getFrontend(properties).launchMonitor();
+}
+
+global.onOpen = onOpen;
+global.initializeSheets = initializeSheets;
+global.initializeRules = initializeRules;
+global.preLaunchQa = preLaunchQa;
+global.launchMonitor = launchMonitor;

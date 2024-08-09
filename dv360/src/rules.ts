@@ -86,19 +86,17 @@ export const geoTargetRule = newRule({
       validationFormulas: [
         '=REGEXMATCH(INDIRECT(ADDRESS(ROW(), COLUMN())), "^[a-zA-Z ]+(,\\s*[a-zA-Z ]+)?$")',
       ],
+      defaultValue: 'United States',
     },
     excludes: {
       label: 'Excluded Geo Targets',
       validationFormulas: [
         '=REGEXMATCH(INDIRECT(ADDRESS(ROW(), COLUMN())), "^[a-zA-Z ]+(,\\s*[a-zA-Z ]+)?$")',
       ],
+      defaultValue: '',
     },
   },
   granularity: RuleGranularity.CAMPAIGN,
-  defaults: {
-    geotargeting: 'United States',
-    excludes: '',
-  },
   async callback() {
     const values: Values = {};
 
@@ -182,13 +180,14 @@ export const budgetPacingPercentageRule = newRule({
     min: {
       label: 'Min. Percent Ahead/Behind',
       validationFormulas: RULES.LESS_THAN_MAX,
+      defaultValue: '0',
     },
     max: {
       label: 'Max. Percent Ahead/Behind',
       validationFormulas: RULES.GREATER_THAN_MIN,
+      defaultValue: '0.5',
     },
   },
-  defaults: { min: '0', max: '0.5' },
   async callback() {
     const rules: { [campaignId: string]: AbridgedCheck } = {};
     const values: Values = {};
@@ -341,15 +340,13 @@ export const budgetPacingDaysAheadRule = newRule({
     min: {
       label: 'Min. Days Ahead/Behind (+/-)',
       validationFormulas: RULES.LESS_THAN_MAX,
+      defaultValue: '-1',
     },
     max: {
       label: 'Max. Days Ahead/Behind (+/-)',
       validationFormulas: RULES.GREATER_THAN_MIN,
+      defaultValue: '1',
     },
-  },
-  defaults: {
-    min: '-1',
-    max: '1',
   },
   granularity: RuleGranularity.INSERTION_ORDER,
   async callback() {
@@ -466,15 +463,13 @@ export const dailyBudgetRule = newRule({
     min: {
       label: 'Min. Daily Budget',
       validationFormulas: RULES.LESS_THAN_MAX,
+      defaultValue: '0',
     },
     max: {
       label: 'Max. Daily Budget',
       validationFormulas: RULES.GREATER_THAN_MIN,
+      defaultValue: '1000000',
     },
-  },
-  defaults: {
-    min: '0',
-    max: '1000000',
   },
   granularity: RuleGranularity.INSERTION_ORDER,
   async callback() {
@@ -581,16 +576,19 @@ export const impressionsByGeoTarget = newRule({
     numberFormat: '0%',
   },
   params: {
-    countries: { label: 'Allowed Countries (Comma Separated)' },
+    countries: {
+      label: 'Allowed Countries (Comma Separated)',
+      defaultValue: 'US',
+    },
     maxOutside: {
       label: 'Max. Percent Outside Geos',
       validationFormulas: RULES.GREATER_THAN_MIN,
+      defaultValue: '0.01',
     },
   },
   granularity: RuleGranularity.INSERTION_ORDER,
   helper: `=HYPERLINK(
     "https://developers.google.com/google-ads/api/reference/data/geotargets", "Use the 2-digit country codes found in this report.")`,
-  defaults: { countries: 'US', maxOutside: '0.01' },
   async callback() {
     const values: Values = {};
 

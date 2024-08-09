@@ -34,11 +34,11 @@ import { newRuleBuilder } from 'common/client_helpers';
 
 import { AbstractRuleRange } from 'common/sheet_helpers';
 import {
+  DefinedParameters,
   ExecutorResult,
   ParamDefinition,
   PropertyStore,
   RecordInfo,
-  RuleDefinition,
   RuleExecutor,
   RuleExecutorClass,
   Settings,
@@ -49,37 +49,20 @@ import { BudgetReport, BudgetReportInterface, ImpressionReport } from './api';
 import {
   ClientArgs,
   ClientInterface,
+  DisplayVideoClientTypes,
   IDType,
-  QueryReportParams,
   RuleGranularity,
+  RuleParams,
 } from './types';
 
 /**
  * A new rule in SA360.
  */
-export const newRule = newRuleBuilder<
-  ClientInterface,
-  RuleGranularity,
-  ClientArgs
->() as <P extends Record<keyof P, ParamDefinition>>(
+export const newRule = newRuleBuilder<DisplayVideoClientTypes>() as <
+  P extends DefinedParameters<P>,
+>(
   p: RuleParams<P>,
-) => RuleExecutorClass<ClientInterface, RuleGranularity, ClientArgs, P>;
-
-/**
- * Parameters for a rule, with `this` methods from {@link RuleUtilities}.
- */
-type RuleParams<Params extends Record<keyof Params, ParamDefinition>> =
-  RuleDefinition<Params, RuleGranularity> &
-    ThisType<
-      RuleExecutor<ClientInterface, RuleGranularity, ClientArgs, Params>
-    >;
-
-/**
- * A report class that can return a Report object.
- */
-export interface ReportConstructor<T> {
-  new (params: QueryReportParams): T;
-}
+) => RuleExecutorClass<DisplayVideoClientTypes>;
 
 /**
  * Contains a `RuleContainer` along with information to instantiate it.
@@ -102,7 +85,7 @@ export interface RuleStoreEntry<
   /**
    * Contains a rule's metadata.
    */
-  rule: RuleExecutorClass<ClientInterface, RuleGranularity, ClientArgs, Params>;
+  rule: RuleExecutorClass<DisplayVideoClientTypes, Params>;
 
   /**
    * Content in the form of {advertiserId: {paramKey: paramValue}}.
@@ -125,23 +108,17 @@ export class Client implements ClientInterface {
 
   readonly args: Required<ClientArgs>;
   readonly ruleStore: {
-    [ruleName: string]: RuleExecutor<
-      ClientInterface,
-      RuleGranularity,
-      ClientArgs,
-      Record<string, ParamDefinition>
-    >;
+    [ruleName: string]: RuleExecutor<DisplayVideoClientTypes>;
   };
 
   addRule<Params extends Record<keyof Params, ParamDefinition>>(
-    rule: RuleExecutorClass<
-      ClientInterface,
-      RuleGranularity,
-      ClientArgs,
-      Params
-    >,
+    rule: RuleExecutorClass<DisplayVideoClientTypes>,
     settingsArray: ReadonlyArray<string[]>,
   ): ClientInterface {
+    const ruule = this.ruleStore[rule.definition.name] as RuleExecutor<
+      DisplayVideoClientTypes,
+      DefinedParameters<Params>
+    >;
     this.ruleStore[rule.definition.name] = new rule(this, settingsArray);
     return this;
   }
@@ -194,9 +171,7 @@ export class Client implements ClientInterface {
    */
   async validate() {
     type Executor = RuleExecutor<
-      ClientInterface,
-      RuleGranularity,
-      ClientArgs,
+      DisplayVideoClientTypes,
       Record<string, ParamDefinition>
     >;
     const thresholds: Array<[Executor, Function]> = Object.values(
@@ -360,11 +335,7 @@ export function getDate(rawApiDate: RawApiDate): Date {
 /**
  * DV360 rule args splits.
  */
-export class RuleRange extends AbstractRuleRange<
-  ClientInterface,
-  RuleGranularity,
-  ClientArgs
-> {
+export class RuleRange extends AbstractRuleRange<DisplayVideoClientTypes> {
   async getRows(ruleGranularity: RuleGranularity) {
     if (ruleGranularity === RuleGranularity.CAMPAIGN) {
       return this.client.getAllCampaigns();

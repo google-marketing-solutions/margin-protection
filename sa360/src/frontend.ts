@@ -19,9 +19,22 @@
  * @fileoverview frontend/apps script hooks for SA360 launch monitor
  */
 
-import { AppsScriptFrontend, getTemplateSetting } from 'common/sheet_helpers';
+import {
+  AppsScriptFrontend,
+  AppsScriptPropertyStore,
+  RULE_SETTINGS_SHEET,
+  addSettingWithDescription,
+  getOrCreateSheet,
+  getTemplateSetting,
+} from 'common/sheet_helpers';
 import { FrontendArgs, ParamDefinition, RuleExecutor } from 'common/types';
-import { ClientArgs, ClientInterface, RuleGranularity } from 'sa360/src/types';
+import { RuleRange } from 'sa360/src/client';
+import {
+  ClientArgs,
+  ClientInterface,
+  RuleGranularity,
+  SearchAdsClientTypes,
+} from 'sa360/src/types';
 
 /**
  * The name of the general settings sheet.
@@ -46,28 +59,16 @@ const CUSTOMER_IDS = 'CUSTOMER_IDS';
 const FULL_FETCH_RANGE = 'FULL_FETCH';
 
 /**
- * Migrations for the new SA360  Launch Monitor
+ * Migrations for the new SA360 V2 Launch Monitor
  */
 export const migrations: Record<string, (frontend: SearchAdsFrontend) => void> =
   {};
 
 /**
- * Front-end configuration for the new SA360 (our ) Apps Script.
+ * Front-end configuration for the new SA360 (our V2) Apps Script.
  */
-export class SearchAdsFrontend extends AppsScriptFrontend<
-  ClientInterface,
-  RuleGranularity,
-  ClientArgs,
-  SearchAdsFrontend
-> {
-  constructor(
-    args: FrontendArgs<
-      ClientInterface,
-      RuleGranularity,
-      ClientArgs,
-      SearchAdsFrontend
-    >,
-  ) {
+export class SearchAdsFrontend extends AppsScriptFrontend<SearchAdsClientTypes> {
+  constructor(args: FrontendArgs<SearchAdsClientTypes>) {
     super('SA360', args);
   }
 
@@ -121,12 +122,7 @@ export class SearchAdsFrontend extends AppsScriptFrontend<
 
   override saveSettingsBackToSheets(
     rules: Array<
-      RuleExecutor<
-        ClientInterface,
-        RuleGranularity,
-        ClientArgs,
-        Record<string, ParamDefinition>
-      >
+      RuleExecutor<SearchAdsClientTypes, Record<string, ParamDefinition>>
     >,
   ) {
     super.saveSettingsBackToSheets(rules);

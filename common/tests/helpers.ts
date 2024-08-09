@@ -19,8 +19,8 @@
  * @fileoverview Test helpers for the common library.
  */
 
-import { AdsClientArgs } from 'common/ads_api_types';
-import { FakePropertyStore } from 'common/test_helpers/mock_apps_script';
+import { ClientTypes } from '../types';
+import { FakePropertyStore } from '../test_helpers/mock_apps_script';
 
 import {
   CredentialManager,
@@ -50,15 +50,19 @@ export enum Granularity {
   DEFAULT = 'default',
 }
 
+export interface TestClientTypes extends ClientTypes<TestClientTypes> {
+  client: TestClientInterface;
+  ruleGranularity: Granularity;
+  clientArgs: ClientArgs;
+}
+
+interface ClientArgs extends BaseClientArgs<ClientArgs> {}
+
 /**
  * Test client interface for use in tests.
  */
 export interface TestClientInterface
-  extends BaseClientInterface<
-    TestClientInterface,
-    Granularity,
-    BaseClientArgs
-  > {
+  extends BaseClientInterface<TestClientTypes> {
   id: string;
   getAllCampaigns(): Promise<RecordInfo[]>;
 }
@@ -67,7 +71,7 @@ export interface TestClientInterface
  * Test ad client interface for use in tests.
  */
 export interface AdsClientInterface
-  extends BaseClientInterface<AdsClientInterface, Granularity, AdsClientArgs> {
+  extends BaseClientInterface<TestClientTypes> {
   id: string;
   getAllCampaigns(): Promise<RecordInfo[]>;
 }
@@ -75,11 +79,7 @@ export interface AdsClientInterface
 /**
  * Stub for rule range
  */
-export class RuleRange extends AbstractRuleRange<
-  TestClientInterface,
-  Granularity,
-  BaseClientArgs
-> {
+export class RuleRange extends AbstractRuleRange<TestClientTypes> {
   async getRows() {
     return [{ id: '1', displayName: 'Campaign 1', advertiserId: '1' }];
   }
@@ -89,25 +89,15 @@ export class RuleRange extends AbstractRuleRange<
  * Test client for use in tests.
  */
 export class FakeClient implements TestClientInterface {
-  readonly args: BaseClientArgs = { label: 'test' };
+  readonly args: ClientArgs = { label: 'test' };
   readonly ruleStore: {
-    [ruleName: string]: RuleExecutor<
-      TestClientInterface,
-      Granularity,
-      BaseClientArgs,
-      Record<string, ParamDefinition>
-    >;
+    [ruleName: string]: RuleExecutor<TestClientTypes>;
   } = {};
   readonly properties = new FakePropertyStore();
 
   getRule(
     ruleName: string,
-  ): RuleExecutor<
-    TestClientInterface,
-    Granularity,
-    BaseClientArgs,
-    Record<string, ParamDefinition>
-  > {
+  ): RuleExecutor<TestClientTypes, Record<string, ParamDefinition>> {
     throw new Error('Method not implemented.');
   }
   getUniqueKey(prefix: string): string {
@@ -116,24 +106,14 @@ export class FakeClient implements TestClientInterface {
   validate(): Promise<{
     rules: Record<
       string,
-      RuleExecutor<
-        TestClientInterface,
-        Granularity,
-        BaseClientArgs,
-        Record<string, ParamDefinition>
-      >
+      RuleExecutor<TestClientTypes, Record<string, ParamDefinition>>
     >;
     results: Record<string, ExecutorResult>;
   }> {
     throw new Error('Method not implemented.');
   }
   addRule<Params extends Record<keyof Params, ParamDefinition>>(
-    rule: RuleExecutorClass<
-      TestClientInterface,
-      Granularity,
-      BaseClientArgs,
-      Params
-    >,
+    rule: RuleExecutorClass<TestClientTypes, Params>,
     settingsArray: ReadonlyArray<string[]>,
   ): TestClientInterface {
     throw new Error('Method not implemented.');
@@ -148,12 +128,7 @@ export class FakeClient implements TestClientInterface {
 /**
  * A fake frontend for testing.
  */
-export class FakeFrontend extends AppsScriptFrontend<
-  TestClientInterface,
-  Granularity,
-  BaseClientArgs,
-  FakeFrontend
-> {
+export class FakeFrontend extends AppsScriptFrontend<TestClientTypes> {
   readonly calls: Record<AppsScriptFunctions, number> = {
     onOpen: 0,
     initializeSheets: 0,
@@ -166,19 +141,12 @@ export class FakeFrontend extends AppsScriptFrontend<
     [];
   private readonly old: GoogleAppsScript.Mail.MailAdvancedParameters[] = [];
 
-  constructor(
-    args: FrontendArgs<
-      TestClientInterface,
-      Granularity,
-      BaseClientArgs,
-      FakeFrontend
-    >,
-  ) {
+  constructor(args: FrontendArgs<TestClientTypes>) {
     scaffoldSheetWithNamedRanges();
     super('Fake', args);
   }
 
-  getIdentity(): BaseClientArgs {
+  getIdentity(): ClientArgs {
     return { label: 'test' };
   }
 
@@ -285,7 +253,7 @@ export function bootstrapGoogleAdsApi(
  * Like TestClientInterface only for Ads.
  */
 export interface AdsClientInterface
-  extends BaseClientInterface<AdsClientInterface, Granularity, AdsClientArgs> {}
+  extends BaseClientInterface<TestClientTypes> {}
 
 /**
  * Create an iterator from a list of options.
