@@ -414,7 +414,7 @@ export const geoTargetRule = newRule({
         targets,
         fields,
       });
-      this.settings.set(campaignId, { criteriaIds: "'" + setting.join(';') });
+      this.settings.set(campaignId, { criteriaIds: setting.join(';') });
     }
     return { values };
   },
