@@ -90,7 +90,7 @@ describe('Google Ads API', () => {
 
   beforeEach(() => {
     mockAppsScript();
-    spyOn(UrlFetchApp, 'fetch').and.callFake((requestUrl) => {
+    spyOn(UrlFetchApp, 'fetch').and.callFake((requestUrl: string) => {
       url = requestUrl;
 
       return generateFakeHttpResponse({ contentText: '{}' });
@@ -379,6 +379,70 @@ describe('Join Report', () => {
     expect(report.fetch()).toEqual({
       one: { one: 'one', two: 'two', another: 'another' },
     });
+  });
+});
+
+describe('Join query handling', () => {
+  let reportFactory: ReportFactory;
+  let mockQuery: jasmine.Spy;
+  let api: GoogleAdsApi;
+  const qlifyStack: string[] = [];
+
+  beforeEach(() => {
+    ({ reportFactory, mockQuery, api } = bootstrapGoogleAdsApi());
+    const qlifyQuery = api.qlifyQuery;
+    mockQuery.and.callThrough();
+    spyOn(api, 'qlifyQuery').and.callFake((query, queryWheres) => {
+      const aql = qlifyQuery(query, queryWheres);
+      qlifyStack.push(aql);
+      return aql;
+    });
+    mockAppsScript();
+    spyOn(UrlFetchApp, 'fetch').and.callFake((...args: any[]) => {
+      const request = args[1];
+      const payload = JSON.parse(request.payload as string) as {
+        query: string;
+      };
+      if (payload.query === 'SELECT d.one, d.nother FROM the_main_table') {
+        return {
+          getContentText() {
+            return JSON.stringify({
+              results: [
+                { d: { one: '1', nother: 'another' } },
+                { d: { one: '11', nother: 'yet another' } },
+              ],
+            });
+          },
+        } as HTTPResponse;
+      }
+      const joinedPayload = {
+        results: [
+          {
+            a: { one: '1' },
+            b: { two: '2' },
+            c: { three: '3' },
+          },
+          {
+            a: { one: '11' },
+            b: { two: '22' },
+            c: { three: '3' },
+          },
+        ],
+      };
+      return {
+        getContentText() {
+          return JSON.stringify(joinedPayload);
+        },
+      } as HTTPResponse;
+    });
+  });
+
+  it('is a test', () => {
+    const report = reportFactory.create(JOIN_REPORT);
+    report.fetch();
+    expect(qlifyStack.pop()).toEqual(
+      'SELECT a.one, b.two, c.three FROM something WHERE something.id IN (1,11)',
+    );
   });
 });
 
