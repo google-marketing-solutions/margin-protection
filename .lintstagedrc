@@ -1,3 +1,6 @@
 {
-  "*.{ts, js}": "npx prettier --write ."
+  "**/*.{ts, js}": [
+    "npx prettier --write .",
+    "yarn test"
+  ]
 }

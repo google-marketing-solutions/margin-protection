@@ -3,6 +3,5 @@
 
 yarn
 yarn playwright install
-yarn test
 yarn lint-staged
 npx tsc -p .
