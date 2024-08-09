@@ -386,12 +386,13 @@ export const geoTargetRule = newRule({
   params: {
     criteriaIds: {
       label: 'Criteria IDs',
+      numberFormat: '0',
     },
   },
   defaults: {
     criteriaIds: '',
   },
-  granularity: RuleGranularity.AD_GROUP,
+  granularity: RuleGranularity.CAMPAIGN,
   helper: `=HYPERLINK(
     "https://developers.google.com/google-ads/api/reference/data/geotargets", "Refer to the Criteria ID found in this report.")`,
   valueFormat: { label: 'Change' },
@@ -404,14 +405,16 @@ export const geoTargetRule = newRule({
     for (const [campaignId, [targets, fields]] of Object.entries(
       aggregatedReport,
     )) {
-      const setting = this.settings.get(campaignId).criteriaIds.split(',');
+      const setting = String(this.settings.get(campaignId).criteriaIds).split(
+        /[;,]/g,
+      );
 
       values[campaignId] = trackSettingsChanges({
         stored: setting,
         targets,
         fields,
       });
-      this.settings.set(campaignId, { criteriaIds: setting.join(',') });
+      this.settings.set(campaignId, { criteriaIds: "'" + setting.join(';') });
     }
     return { values };
   },
