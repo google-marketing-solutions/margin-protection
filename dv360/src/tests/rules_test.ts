@@ -28,7 +28,7 @@ import {
   geoTargetRule,
   impressionsByGeoTarget,
 } from '../rules';
-import { ClientArgs, ClientInterface, RuleGranularity } from '../types';
+import { DisplayVideoClientTypes } from '../types';
 
 import {
   CampaignTemplate,
@@ -613,7 +613,7 @@ export async function generateGeoTestData({
 async function generateInsertionOrderTestData<
   Params extends Record<keyof Params, string>,
 >(
-  rule: RuleExecutorClass<ClientInterface, RuleGranularity, ClientArgs, Params>,
+  rule: RuleExecutorClass<DisplayVideoClientTypes, Params>,
   {
     advertiserId,
     insertionOrderBudgetSegments = [],
