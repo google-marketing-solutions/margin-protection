@@ -40,7 +40,7 @@ import {
   RuleGranularity,
 } from 'sa360/src/types';
 
-import { AD_GROUP_REPORT, CAMPAIGN_REPORT } from './api_v2';
+import { AD_GROUP_REPORT, CAMPAIGN_REPORT } from './api';
 
 /**
  * Creates a new rule for the new SA360.

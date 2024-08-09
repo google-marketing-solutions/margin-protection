@@ -154,7 +154,7 @@ export class GoogleAdsApi implements AdTypes.GoogleAdsApiInterface {
     const url = `https://${this.apiInstructions.apiEndpoint.url}/${this.apiInstructions.apiEndpoint.version}/customers/${customerId}/${this.apiInstructions.apiEndpoint.call}`;
     const params: AdTypes.AdsSearchRequest = {
       pageSize: MAX_PAGE_SIZE,
-      query: qlifyQuery(query, queryWheres),
+      query: this.qlifyQuery(query, queryWheres),
       customerId,
     };
     let pageToken;
@@ -165,14 +165,28 @@ export class GoogleAdsApi implements AdTypes.GoogleAdsApiInterface {
         contentType: 'application/json',
         payload: JSON.stringify({ ...params, pageToken }),
       };
-      const res = JSON.parse(
-        UrlFetchApp.fetch(url, req).getContentText(),
-      ) as AdTypes.AdsSearchResponse<AdTypes.ReportResponse<Q>>;
-      pageToken = res.nextPageToken;
-      for (const row of res.results || []) {
-        yield row;
+      try {
+        const res = JSON.parse(
+          UrlFetchApp.fetch(url, req).getContentText(),
+        ) as AdTypes.AdsSearchResponse<AdTypes.ReportResponse<Q>>;
+        pageToken = res.nextPageToken;
+        for (const row of res.results || []) {
+          yield row;
+        }
+      } catch (e) {
+        throw new Error('bad');
       }
     } while (pageToken);
+  }
+
+  /**
+   * A thin wrapper around {@link qlifyQuery} for testing.
+   */
+  qlifyQuery<
+    Q extends AdTypes.QueryBuilder<Params, any>,
+    Params extends string,
+  >(query: Q, queryWheres: string[] = []): string {
+    return qlifyQuery(query, queryWheres);
   }
 }
 
@@ -263,14 +277,15 @@ export abstract class Report<
               prefetchedJoins,
               ([joinKey, [joinClass, joinMatchKeys]]) => {
                 const joinObject = this.factory.create(joinClass);
+                const dedupedJoinMatchKeys = [...new Set(joinMatchKeys)].join(
+                  ',',
+                );
+                const dedupedJoinMatchQuery = `${joinClass.query.queryFrom}.id IN (${dedupedJoinMatchKeys})`;
                 // Ensure we get the right type back with "satisfies".
                 // Array.from has specific ideas of the data types it wants to return.
                 return [
                   joinKey,
-                  joinObject.fetch(
-                    // get filtered join objects.
-                    joinMatchKeys,
-                  ),
+                  joinObject.fetch([dedupedJoinMatchQuery]),
                 ] satisfies [
                   JoinKey,
                   Record<string, Record<JoinOutputKey, string>>,
@@ -284,13 +299,18 @@ export abstract class Report<
         if (joins === undefined) {
           return this.transform(result);
         }
-        return this.transform(
-          result,
-          joins as Joins extends undefined
-            ? never
-            : Exclude<typeof joins, undefined>,
-        );
-      }),
+        try {
+          return this.transform(
+            result,
+            joins as Joins extends undefined
+              ? never
+              : Exclude<typeof joins, undefined>,
+          );
+        } catch (e) {
+          return null;
+        }
+        // clean any empty values
+      }).filter((e) => e),
     );
   }
 

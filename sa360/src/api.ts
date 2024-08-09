@@ -142,7 +142,6 @@ export const CAMPAIGN_TARGET_REPORT = makeReport({
   ],
   query: buildQuery({
     queryParams: [
-      'criterion.id',
       'customer.id',
       'customer.resource_name',
       'campaign.id',
@@ -164,7 +163,7 @@ export const CAMPAIGN_TARGET_REPORT = makeReport({
         campaignId: result.campaign.id as string,
         location: joins['campaignCriterion.criterionId'][
           result.campaignCriterion.criterionId as string
-        ].location as string,
+        ]?.location as string,
       },
     ] as const;
   },
