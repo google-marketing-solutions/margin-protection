@@ -515,13 +515,13 @@ export abstract class AppsScriptFrontend<T extends ClientTypes<T>> {
     private readonly injectedArgs: FrontendArgs<T>,
   ) {
     const clientArgs = this.getIdentity();
-    if (!this.identityComplete()) {
-      console.warn("Identity is not complete. Launch monitor can't run yet.");
-    }
     this.client = injectedArgs.clientInitializer(
       clientArgs,
       injectedArgs.properties,
     );
+    if (!this.identityComplete()) {
+      console.warn("Identity is not complete. Launch monitor can't run yet.");
+    }
     this.rules = injectedArgs.rules;
   }
 
@@ -547,6 +547,10 @@ export abstract class AppsScriptFrontend<T extends ClientTypes<T>> {
    * that aren't already there.
    */
   async initializeRules() {
+    if (!this.identityComplete()) {
+      this.displaySetupModal();
+    }
+
     const numberOfHeaders = 3;
     const sheets = this.injectedArgs.rules.reduce(
       (prev, rule) => {
@@ -951,14 +955,14 @@ export abstract class AppsScriptFrontend<T extends ClientTypes<T>> {
   getValueFromRangeByName<AllowEmpty extends boolean>(args: {
     name: string;
     allowEmpty: AllowEmpty;
-  }): AllowEmpty extends true ? string | number | undefined : string | number {
+  }): string {
     const range = this.getRangeByName(args.name);
     const value = range.getValue();
     if (!value && !args.allowEmpty) {
       throw new Error(`Require a value in named range '${args.name}'.`);
     }
 
-    return value || undefined;
+    return String(value || '');
   }
 
   getRangeByName(name: string) {
@@ -990,10 +994,6 @@ export abstract class AppsScriptFrontend<T extends ClientTypes<T>> {
    * Validates settings sheets exist and that they are up-to-date.
    */
   async initializeSheets() {
-    if (!this.identityComplete()) {
-      this.displaySetupModal();
-    }
-
     this.migrate();
 
     await this.initializeRules();
