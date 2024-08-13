@@ -14,14 +14,33 @@ import { HELPERS } from 'common/sheet_helpers';
 
 describe('Frontend methods', () => {
   let frontend: SearchAdsFrontend;
+  let called = '';
+
   beforeEach(() => {
     mockAppsScript();
     fillInSettings();
-    frontend = createFrontend();
+    mockHtmlService();
+    frontend = createFrontend({
+      showModalDialog() {
+        called = 'modal';
+        return this;
+      },
+      showSidebar() {
+        called = 'sidebar';
+        return this;
+      },
+    });
   });
-  it('runs onOpen without any setup required', async () => {
-    expect(frontend.onOpen).not.toThrowError();
+
+  afterEach(() => {
+    called = '';
   });
+
+  for (const method of ['onOpen', 'displayGlossary', 'displaySetupModal']) {
+    it(`runs ${method} without any setup required`, async () => {
+      expect(async () => await frontend[method]()).not.toThrowError();
+    });
+  }
 
   for (const method of [
     'initializeRules',
@@ -30,22 +49,9 @@ describe('Frontend methods', () => {
     'launchMonitor',
   ]) {
     it(`does not run ${method} without setup`, async () => {
-      mockHtmlService();
-      let called = false;
-      const uiMock = spyOn(globalThis.SpreadsheetApp, 'getUi').and.callFake(
-        () =>
-          ({
-            showModalDialog() {
-              called = true;
-            },
-          }) as unknown as Ui,
-      );
-      const spy = spyOn(frontend, 'displaySetupModal').and.callFake(() => {
-        called = true;
-      });
       HELPERS.applyAnomalyHelper = () => {};
       await frontend[method]();
-      expect(called).toBeTrue();
+      expect(called).toEqual('modal');
     });
   }
 });
@@ -55,7 +61,6 @@ function mockHtmlService() {
     .createSpy()
     .and.callFake((filename: string) => {
       const evaluate = () => {
-        console.log(filename);
         return {
           setWidth() {
             return this;
@@ -84,12 +89,8 @@ function fillInSettings() {
   active.setNamedRange('EMAIL_LIST', sheet.getRange('A5'));
 }
 
-function createFrontend() {
-  globalThis.SpreadsheetApp.getUi = jasmine.createSpy();
+function createFrontend(extras: Record<string, Function>) {
   const selfReference = {
-    createMenu() {
-      return this;
-    },
     addItem() {
       return this;
     },
@@ -101,12 +102,15 @@ function createFrontend() {
     },
     addToUi() {},
   };
-  globalThis.SpreadsheetApp.getUi = () =>
-    ({
-      createMenu() {
-        return selfReference;
-      },
-    }) as unknown as Ui;
+  SpreadsheetApp.getUi = jasmine.createSpy().and.callFake(
+    () =>
+      ({
+        createMenu() {
+          return selfReference;
+        },
+        ...extras,
+      }) as unknown as Ui,
+  );
   return new SearchAdsFrontend({
     ruleRangeClass: RuleRange,
     rules: [],

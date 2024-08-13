@@ -52,7 +52,6 @@ describe('Client rules are validated', () => {
           output.push('ruleA');
           return { values };
         },
-        defaults: {},
       }),
       defaultGrid,
     );
@@ -67,7 +66,6 @@ describe('Client rules are validated', () => {
           output.push('ruleB');
           return { values };
         },
-        defaults: {},
       }),
       defaultGrid,
     );

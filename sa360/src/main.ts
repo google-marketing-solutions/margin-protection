@@ -39,16 +39,6 @@ import {
   campaignAudienceTargetRule,
 } from 'sa360/src/rules';
 
-import {
-  budgetPacingRule,
-  campaignStatusRule,
-  adGroupStatusRule,
-  adGroupAudienceTargetRule,
-  ageTargetRule,
-  genderTargetRule,
-  geoTargetRule,
-  campaignAudienceTargetRule,
-} from 'sa360/src/rules';
 import { migrations, SearchAdsFrontend } from './frontend';
 
 /**
