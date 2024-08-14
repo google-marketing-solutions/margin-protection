@@ -25,7 +25,7 @@ import {
   ReportFactory,
   SA360_API_ENDPOINT,
 } from 'common/ads_api';
-import { lazyLoadApp, toExport } from 'common/sheet_helpers';
+import { AppsScriptPropertyStore } from 'common/sheet_helpers';
 import { PropertyStore } from 'common/types';
 import { Client, RuleRange } from 'sa360/src/client';
 import {
@@ -38,6 +38,7 @@ import {
   geoTargetRule,
   campaignAudienceTargetRule,
 } from 'sa360/src/rules';
+
 import { migrations, SearchAdsFrontend } from './frontend';
 
 /**
@@ -74,15 +75,38 @@ export function getFrontend(properties: PropertyStore) {
       const reportFactory = new ReportFactory(apiFactory, clientArgs);
       return new Client(clientArgs, properties, reportFactory);
     },
-    migrations: migrations,
+    migrations,
     properties,
   });
 }
 
-lazyLoadApp(getFrontend);
+function onOpen(properties = new AppsScriptPropertyStore()) {
+  getFrontend(properties).onOpen();
+}
 
-global.onOpen = toExport.onOpen;
-global.initializeSheets = toExport.initializeSheets;
-global.launchMonitor = toExport.launchMonitor;
-global.preLaunchQa = toExport.preLaunchQa;
-global.displayGlossary = toExport.displayGlossary;
+function initializeSheets(properties = new AppsScriptPropertyStore()) {
+  getFrontend(properties).initializeSheets();
+}
+
+function initializeRules(properties = new AppsScriptPropertyStore()) {
+  getFrontend(properties).initializeRules();
+}
+
+function preLaunchQa(properties = new AppsScriptPropertyStore()) {
+  getFrontend(properties).preLaunchQa();
+}
+
+function launchMonitor(properties = new AppsScriptPropertyStore()) {
+  getFrontend(properties).launchMonitor();
+}
+
+function displayGlossary(properties = new AppsScriptPropertyStore()) {
+  getFrontend(properties).displayGlossary();
+}
+
+global.onOpen = onOpen;
+global.initializeSheets = initializeSheets;
+global.initializeRules = initializeRules;
+global.preLaunchQa = preLaunchQa;
+global.launchMonitor = launchMonitor;
+global.displayGlossary = displayGlossary;

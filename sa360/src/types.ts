@@ -20,14 +20,31 @@
  */
 
 import * as AdTypes from 'common/ads_api_types';
-import { AdsClientArgs } from 'common/ads_api_types';
 
-import { BaseClientInterface, RecordInfo } from 'common/types';
+import {
+  BaseClientInterface,
+  ClientTypes,
+  RecordInfo,
+  FrontendInterface,
+} from 'common/types';
+
+/**
+ * Represents the related interfaces for SA360.
+ */
+export interface SearchAdsClientTypes
+  extends ClientTypes<SearchAdsClientTypes> {
+  client: ClientInterface;
+  ruleGranularity: RuleGranularity;
+  clientArgs: ClientArgs;
+  frontend: FrontendInterface<SearchAdsClientTypes>;
+}
+
+export interface SearchAdsFrontendInterface {}
 
 /**
  * Args for the new SA360 API.
  */
-export interface ClientArgs extends AdsClientArgs {
+export interface ClientArgs extends AdTypes.AdsClientArgs {
   fullFetch?: boolean;
 }
 
@@ -55,7 +72,7 @@ export interface ReportClass<
  * Extends the base client interface with SA360-specific features.
  */
 export interface ClientInterface
-  extends BaseClientInterface<ClientInterface, RuleGranularity, ClientArgs> {
+  extends BaseClientInterface<SearchAdsClientTypes> {
   getAllAdGroups(): Promise<RecordInfo[]>;
   getReport<
     Q extends AdTypes.QueryBuilder<Params, Joins>,

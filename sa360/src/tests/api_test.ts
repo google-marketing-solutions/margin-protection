@@ -16,7 +16,7 @@
  */
 
 /**
- * @fileoverview Tests for the SA360 API V2.
+ * @fileoverview Tests for the SA360 API .
  */
 
 import {
@@ -38,7 +38,7 @@ import {
   GENDER_TARGET_REPORT,
 } from 'sa360/src/api';
 
-describe('ApiV2', () => {
+describe('Api', () => {
   let mockQuery: jasmine.Spy;
   let apiFactory: GoogleAdsApiFactory;
   let api: GoogleAdsApi;
@@ -83,7 +83,7 @@ describe('ApiV2', () => {
             customer: {
               resourceName: 'customers/1',
               id: '1',
-              name: 'Customer 1',
+              descriptiveName: 'Customer 1',
             },
             campaign: {
               resourceName: `customers/1/campaigns/c${x}`,
@@ -145,7 +145,7 @@ describe('ApiV2', () => {
             customer: {
               resourceName: 'customers/1',
               id: '1',
-              name: 'Customer 1',
+              descriptiveName: 'Customer 1',
             },
             campaign: {
               resourceName: `customers/1/campaigns/c${Math.floor(x / 2)}`,
@@ -227,7 +227,7 @@ describe('ApiV2', () => {
               },
               customer: {
                 resourceName: 'customers/1',
-                name: 'Customer 1',
+                descriptiveName: 'Customer 1',
                 id: '1',
               },
             })),
@@ -296,7 +296,7 @@ describe('ApiV2', () => {
             customer: {
               resourceName: 'customers/1',
               id: '1',
-              name: 'Customer 1',
+              descriptiveName: 'Customer 1',
             },
             campaign: { resourceName: 'customers/1/campaigns/c1', id: 'c1' },
             adGroup: { resourceName: 'customers/1/adGroups/ag1', id: 'ag1' },
@@ -363,7 +363,7 @@ describe('ApiV2', () => {
             customer: {
               resourceName: 'customers/1',
               id: '1',
-              name: 'Customer 1',
+              descriptiveName: 'Customer 1',
             },
             campaign: { resourceName: 'customers/1/campaigns/c1', id: 'c1' },
             adGroup: { resourceName: 'customers/c1/adGroups/ag1', id: 'ag1' },
@@ -430,7 +430,7 @@ describe('ApiV2', () => {
             customer: {
               resourceName: 'customers/1',
               id: '1',
-              name: 'Customer 1',
+              descriptiveName: 'Customer 1',
             },
             campaign: { resourceName: 'customers/1/campaigns/c1', id: 'c1' },
             adGroup: { resourceName: 'customers/c1/adGroups/ag1', id: 'ag1' },
@@ -499,7 +499,7 @@ describe('ApiV2', () => {
               customer: {
                 resourceName: 'customers/1',
                 id: '1',
-                name: 'Customer 1',
+                descriptiveName: 'Customer 1',
               },
               campaign: { resourceName: 'customers/1/campaigns/c1', id: 'c1' },
               campaignCriterion: {
@@ -578,7 +578,7 @@ describe('ApiV2', () => {
               customer: {
                 resourceName: 'customers/1',
                 id: '1',
-                name: 'Customer 1',
+                descriptiveName: 'Customer 1',
               },
               campaign: { resourceName: 'customers/1/campaigns/c1', id: 'c1' },
               adGroup: { id: 'ag1' },

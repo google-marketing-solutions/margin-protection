@@ -27,11 +27,9 @@ import {
   addSettingWithDescription,
   getOrCreateSheet,
 } from 'common/sheet_helpers';
-import { FrontendArgs } from 'common/types';
+import { FrontendArgs, FrontendInterface } from 'common/types';
 import { RuleRange } from 'dv360/src/client';
-import { ClientArgs, ClientInterface } from 'dv360/src/types';
-
-import { IDType, RuleGranularity } from './types';
+import { IDType, RuleGranularity, DisplayVideoClientTypes } from './types';
 
 const ENTITY_ID = 'ENTITY_ID';
 const ID_TYPE = 'ID_TYPE';
@@ -130,20 +128,11 @@ export const migrations: Record<
 /**
  * Front-end configuration for DV360 Apps Script.
  */
-export class DisplayVideoFrontend extends AppsScriptFrontend<
-  ClientInterface,
-  RuleGranularity,
-  ClientArgs,
-  DisplayVideoFrontend
-> {
-  constructor(
-    args: FrontendArgs<
-      ClientInterface,
-      RuleGranularity,
-      ClientArgs,
-      DisplayVideoFrontend
-    >,
-  ) {
+export class DisplayVideoFrontend
+  extends AppsScriptFrontend<DisplayVideoClientTypes>
+  implements FrontendInterface<DisplayVideoClientTypes>
+{
+  constructor(args: FrontendArgs<DisplayVideoClientTypes>) {
     super('DV360', args);
   }
 
