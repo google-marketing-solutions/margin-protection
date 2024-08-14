@@ -728,7 +728,6 @@ export abstract class AppsScriptFrontend<T extends ClientTypes<T>> {
   displayGlossary() {
     const template = HtmlService.createTemplateFromFile('html/glossary');
     template['rules'] = this.getFrontendDefinitions();
-    template['rules'] = this.getFrontendDefinitions();
     SpreadsheetApp.getUi().showSidebar(template.evaluate());
   }
 
