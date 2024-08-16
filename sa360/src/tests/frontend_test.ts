@@ -109,7 +109,7 @@ function createFrontend(extras: Record<string, Function>) {
           return selfReference;
         },
         ...extras,
-      }) as unknown as GoogleAppsScript.Ui,
+      }) as unknown as GoogleAppsScript.Base.Ui,
   );
   return new SearchAdsFrontend({
     ruleRangeClass: RuleRange,
