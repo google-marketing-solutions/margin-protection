@@ -6,4 +6,4 @@ dv360/dv360_api
 yarn-error.log
 dist
 .vscode
-.clasp.json*
+.clasp*
