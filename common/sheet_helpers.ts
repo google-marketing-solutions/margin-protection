@@ -703,9 +703,13 @@ export abstract class AppsScriptFrontend<T extends ClientTypes<T>> {
     sheet.getRange('A:Z').clearDataValidations();
     sheet.clear();
 
-    const range = sheet.getRange(1, 1, valueArray.length, valueArray[0].length);
-    range.setValues(valueArray);
-    HELPERS.applyAnomalyHelper(range, 4);
+    sheet
+      .getRange(1, 1, valueArray.length, valueArray[0].length)
+      .setValues(valueArray);
+    HELPERS.applyAnomalyHelper(
+      sheet.getRange(2, 1, valueArray.length - 1, valueArray[0].length),
+      4,
+    );
   }
 
   /**
