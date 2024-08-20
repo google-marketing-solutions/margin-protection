@@ -93,7 +93,6 @@ export const geoTargetRule = newRule({
       validationFormulas: [
         '=REGEXMATCH(INDIRECT(ADDRESS(ROW(), COLUMN())), "^[a-zA-Z ]+(,\\s*[a-zA-Z ]+)?$")',
       ],
-      defaultValue: '',
     },
   },
   granularity: RuleGranularity.CAMPAIGN,

@@ -123,11 +123,9 @@ export const campaignStatusRule = newRule({
     },
     status: {
       label: 'Status',
-      defaultValue: '',
     },
     lastUpdated: {
       label: 'Last Updated',
-      defaultValue: '',
     },
   },
   helper:
@@ -252,7 +250,6 @@ export const adGroupAudienceTargetRule = newRule({
   params: {
     userLists: {
       label: 'User Lists',
-      defaultValue: '',
     },
   },
   granularity: RuleGranularity.AD_GROUP,
@@ -295,7 +292,6 @@ export const ageTargetRule = newRule({
   params: {
     ageTargetAgeRange: {
       label: 'Age Range',
-      defaultValue: '',
     },
   },
   granularity: RuleGranularity.AD_GROUP,
@@ -334,7 +330,6 @@ export const genderTargetRule = newRule({
   params: {
     genderTargetGenderType: {
       label: 'Gender Type',
-      defaultValue: '',
     },
   },
   granularity: RuleGranularity.AD_GROUP,
