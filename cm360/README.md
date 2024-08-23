@@ -108,3 +108,8 @@ This is a configurable column with a default threshold value for each use case. 
 - Do not rename the spreadsheet tabs.
 - Make sure you have access to all accounts listed in the Reports Config tab, users executing the solution should have access to the CM360 Accounts and the reports. Please make sure that you have access to get the data for each Use Case.
 - Make sure your reports are scheduled to Run Weekly on Monday before this tool runs.
+
+
+# CM360 Launch Monitor Demo
+
+[![Demo](https://github.com/google-marketing-solutions/margin-protection/blob/main/cm360/demo/thumbnail.png)](https://github.com/google-marketing-solutions/margin-protection/blob/main/cm360/demo/CM360LaunchMonitorDemo.webm)
