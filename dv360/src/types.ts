@@ -19,12 +19,7 @@
  * @fileoverview Types for DV360
  */
 
-import {
-  Advertisers,
-  AssignedTargetingOptions,
-  Campaigns,
-  InsertionOrders,
-} from 'dv360_api/dv360';
+import { google, displayvideo_v3 } from 'googleapis';
 import { InsertionOrder } from 'dv360_api/dv360_resources';
 import {
   BaseClientArgs,
@@ -86,6 +81,7 @@ export interface QueryReportParams {
  */
 export interface ClientInterface
   extends BaseClientInterface<DisplayVideoClientTypes> {
+  readonly dv360Api: displayvideo_v3.Displayvideo;
   getAllInsertionOrders(): InsertionOrder[];
   getBudgetReport(args: {
     startDate: Date;
@@ -99,12 +95,6 @@ export interface ClientInterface
 export interface ClientArgs extends BaseClientArgs<ClientArgs> {
   idType: IDType;
   id: Readonly<string>;
-  advertisers?: typeof Advertisers;
-  assignedTargetingOptions?: typeof AssignedTargetingOptions;
-  campaigns?: typeof Campaigns;
-  insertionOrders?: typeof InsertionOrders;
-  budgetReport?: ReportConstructor<BudgetReportInterface>;
-  impressionReport?: ReportConstructor<ImpressionReportInterface>;
 }
 
 /**

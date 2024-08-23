@@ -17,7 +17,7 @@
 
 import { mockAppsScript } from 'common/test_helpers/mock_apps_script';
 
-import { BudgetReport, ImpressionReport } from '../api';
+import { BudgetReport, ImpressionReport } from '../dbm_dao';
 import { IDType } from '../types';
 
 import { BudgetMatchTable, ImpressionMatchTable } from './dbm_test_helpers';

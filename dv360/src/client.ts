@@ -19,6 +19,8 @@
  * @fileoverview Client class for DV360.
  */
 
+import { google, displayvideo_v3} from 'googleapis';
+
 import {
   Advertisers,
   AssignedTargetingOptions,
@@ -45,7 +47,7 @@ import {
 } from 'common/types';
 
 import { RawApiDate } from 'dv360_api/dv360_types';
-import { BudgetReport, BudgetReportInterface, ImpressionReport } from './api';
+import { BudgetReport, BudgetReportInterface, ImpressionReport } from './dbm_dao';
 import {
   ClientArgs,
   ClientInterface,
@@ -135,21 +137,15 @@ export class Client implements ClientInterface {
         partnerId?: string;
       },
     readonly properties: PropertyStore,
+    readonly dv360Api: displayvideo_v3.Displayvideo = getClient(),
   ) {
     this.args = {
-      advertisers: args.advertisers || Advertisers,
-      assignedTargetingOptions:
-        args.assignedTargetingOptions || AssignedTargetingOptions,
       idType:
         args.idType ?? (args.advertiserId ? IDType.ADVERTISER : IDType.PARTNER),
       id:
         args.id ??
         (args.advertiserId ? args.advertiserId : (args.partnerId ?? '')),
       label: args.label ?? `${args.idType} ${args.id}`,
-      campaigns: args.campaigns || Campaigns,
-      insertionOrders: args.insertionOrders || InsertionOrders,
-      budgetReport: args.budgetReport || BudgetReport,
-      impressionReport: args.impressionReport || ImpressionReport,
     };
 
     this.ruleStore = {};
@@ -343,4 +339,13 @@ export class RuleRange extends AbstractRuleRange<DisplayVideoClientTypes> {
       }));
     }
   }
+}
+
+function getClient(): displayvideo_v3.Displayvideo {
+    return google.displayvideo({
+        version: 'v3',
+        headers: {
+            Authorization: `Bearer ${ScriptApp.getOAuthToken()}`
+        },
+    });
 }

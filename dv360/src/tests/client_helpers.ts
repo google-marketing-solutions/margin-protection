@@ -36,7 +36,7 @@ import {
 import { FilterExpression } from 'dv360_api/utils';
 import { FakePropertyStore } from 'common/test_helpers/mock_apps_script';
 
-import { BudgetReport, ImpressionReport } from '../api';
+import { BudgetReport, ImpressionReport } from '../dbm_dao';
 import { Client } from '../client';
 import { ClientArgs, IDType } from '../types';
 

@@ -33,6 +33,7 @@ import { Settings, Value, Values } from 'common/types';
 import { getDate, newRule } from './client';
 import { DailyBudget } from './rule_types';
 import { ClientInterface, RuleGranularity } from './types';
+import { Start,paginationHandler } from './dv360_dao';
 
 const DAY_DENOMINATOR = 1000 * 24 * 60 * 60;
 
@@ -105,17 +106,13 @@ export const geoTargetRule = newRule({
       id,
       displayName,
     } of await this.client.getAllCampaigns()) {
-      const targetingOptionApi = new this.client.args.assignedTargetingOptions!(
-        TARGETING_TYPE.GEO_REGION,
-        advertiserId,
-        { campaignId: id },
-      );
       let hasOnlyValidGeo = true;
       const campaignSettings = this.settings.getOrDefault(id);
 
+      const ato = this.client.dv360Api.advertisers.campaigns.targetingTypes.assignedTargetingOptions;
       let targetingOptionsLength = 0;
 
-      targetingOptionApi.list((targetingOptions: AssignedTargetingOption[]) => {
+      paginationHandler(ato.list, [{targetingType: 'TARGETING_TYPE_GEO_REGION'}], (targetingOptions) => {
         function hasAllowedGeo(targetingOption: AssignedTargetingOption) {
           const displayName = targetingOption.getDisplayName();
           if (!displayName) {
