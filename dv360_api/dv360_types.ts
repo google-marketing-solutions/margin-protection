@@ -159,10 +159,62 @@ export const TargetingTypeMapper: MapperWithJsonOut<
 };
 
 /**
+ * Defines possible line item types.
+ */
+export const LINE_ITEM_TYPE = {
+  UNSPECIFIED: 'LINE_ITEM_TYPE_UNSPECIFIED',
+  DISPLAY_DEFAULT: 'LINE_ITEM_TYPE_DISPLAY_DEFAULT',
+  DISPLAY_MOBILE_APP_INSTALL: 'LINE_ITEM_TYPE_DISPLAY_MOBILE_APP_INSTALL',
+  VIDEO_DEFAULT: 'LINE_ITEM_TYPE_VIDEO_DEFAULT',
+  VIDEO_MOBILE_APP_INSTALL: 'LINE_ITEM_TYPE_VIDEO_MOBILE_APP_INSTALL',
+  DISPLAY_MOBILE_APP_INVENTORY: 'LINE_ITEM_TYPE_DISPLAY_MOBILE_APP_INVENTORY',
+  VIDEO_MOBILE_APP_INVENTORY: 'LINE_ITEM_TYPE_VIDEO_MOBILE_APP_INVENTORY',
+  AUDIO_DEFAULT: 'LINE_ITEM_TYPE_AUDIO_DEFAULT',
+  VIDEO_OVER_THE_TOP: 'LINE_ITEM_TYPE_VIDEO_OVER_THE_TOP',
+  YOUTUBE_AND_PARTNERS_ACTION: 'LINE_ITEM_TYPE_YOUTUBE_AND_PARTNERS_ACTION',
+  YOUTUBE_AND_PARTNERS_NON_SKIPPABLE:
+    'LINE_ITEM_TYPE_YOUTUBE_AND_PARTNERS_NON_SKIPPABLE',
+  YOUTUBE_AND_PARTNERS_VIDEO_SEQUENCE:
+    'LINE_ITEM_TYPE_YOUTUBE_AND_PARTNERS_VIDEO_SEQUENCE',
+  YOUTUBE_AND_PARTNERS_AUDIO: 'LINE_ITEM_TYPE_YOUTUBE_AND_PARTNERS_AUDIO',
+  YOUTUBE_AND_PARTNERS_REACH: 'LINE_ITEM_TYPE_YOUTUBE_AND_PARTNERS_REACH',
+  YOUTUBE_AND_PARTNERS_SIMPLE: 'LINE_ITEM_TYPE_YOUTUBE_AND_PARTNERS_SIMPLE',
+  YOUTUBE_AND_PARTNERS_NON_SKIPPABLE_OVER_THE_TOP:
+    'LINE_ITEM_TYPE_YOUTUBE_AND_PARTNERS_NON_SKIPPABLE_OVER_THE_TOP',
+  YOUTUBE_AND_PARTNERS_REACH_OVER_THE_TOP:
+    'LINE_ITEM_TYPE_YOUTUBE_AND_PARTNERS_REACH_OVER_THE_TOP',
+  YOUTUBE_AND_PARTNERS_SIMPLE_OVER_THE_TOP:
+    'LINE_ITEM_TYPE_YOUTUBE_AND_PARTNERS_SIMPLE_OVER_THE_TOP',
+  YOUTUBE_AND_PARTNERS_TARGET_FREQUENCY:
+    'LINE_ITEM_TYPE_YOUTUBE_AND_PARTNERS_TARGET_FREQUENCY',
+  YOUTUBE_AND_PARTNERS_VIEW: 'LINE_ITEM_TYPE_YOUTUBE_AND_PARTNERS_VIEW',
+  DISPLAY_OUT_OF_HOME: 'LINE_ITEM_TYPE_DISPLAY_OUT_OF_HOME',
+  VIDEO_OUT_OF_HOME: 'LINE_ITEM_TYPE_VIDEO_OUT_OF_HOME',
+};
+
+/**
+ * Type wrapper for LINE_ITEM_TYPE.
+ */
+export type LineItemType = (typeof LINE_ITEM_TYPE)[keyof typeof LINE_ITEM_TYPE];
+
+/**
+ * Defines possible line item flight date types.
+ */
+export const LINE_ITEM_FLIGHT_DATE_TYPE = {
+  UNSPECIFIED: 'LINE_ITEM_FLIGHT_DATE_TYPE_UNSPECIFIED',
+  INHERITED: 'LINE_ITEM_FLIGHT_DATE_TYPE_INHERITED',
+  CUSTOM: 'LINE_ITEM_FLIGHT_DATE_TYPE_CUSTOM',
+};
+
+/**
+ * Type wrapper for LINE_ITEM_FLIGHT_DATE_TYPE.
+ */
+export type LineItemFlightDateType =
+  (typeof LINE_ITEM_FLIGHT_DATE_TYPE)[keyof typeof LINE_ITEM_FLIGHT_DATE_TYPE];
+
+/**
  * Defines possible pacing periods for spending ad budgets.
  */
-// Note: using `as const` in favor of `enum` here because it's a bit cleaner
-// to type enforce, and even modern typescript recommended.
 export const PACING_PERIOD = {
   DAILY: 'PACING_PERIOD_DAILY',
   FLIGHT: 'PACING_PERIOD_FLIGHT',
@@ -170,7 +222,7 @@ export const PACING_PERIOD = {
 } as const;
 
 /**
- * The canonical PacingPeriod sent to the API
+ * The canonical PacingPeriod.
  */
 export type PacingPeriod = (typeof PACING_PERIOD)[keyof typeof PACING_PERIOD];
 
@@ -178,6 +230,24 @@ export type PacingPeriod = (typeof PACING_PERIOD)[keyof typeof PACING_PERIOD];
  * A union of the keys and values available to {@link PACING_PERIOD}.
  */
 export type RawPacingPeriod = keyof typeof PACING_PERIOD | PacingPeriod;
+
+/**
+ * Defines possible pacing types for flights.
+ *
+ * As of November 5, 2024, ASAP will be unavailable for IOs.
+ * It will still be available for Line Items.
+ */
+export const PACING_TYPE = {
+  ASAP: 'PACING_TYPE_ASAP',
+  AHEAD: 'PACING_TYPE_AHEAD',
+  EVEN: 'PACING_TYPE_EVEN',
+  UNSPECIFIED: 'PACING_TYPE_UNSPECIFIED',
+} as const;
+
+/**
+ * The canonical PacingType.
+ */
+export type PacingType = (typeof PACING_TYPE)[keyof typeof PACING_TYPE];
 
 /**
  * Exports a mapper from an API resource to `PacingPeriod`.
@@ -260,7 +330,7 @@ export const FrequencyCapMapper: Mapper<FrequencyCap> = {
  */
 export interface Pacing {
   pacingPeriod: PacingPeriod;
-  pacingType: string;
+  pacingType: PacingType;
   dailyMaxMicros?: string;
   dailyMaxImpressions?: string;
 }
@@ -897,8 +967,7 @@ export const InsertionOrderBudgetMapper: MapperWithJsonOut<InsertionOrderBudget>
  *
  */
 export interface LineItemFlight {
-  flightDateType: string;
-  triggerId?: string;
+  flightDateType: LineItemFlightDateType;
   dateRange?: { startDate: RawApiDate; endDate: RawApiDate };
 }
 
@@ -955,7 +1024,6 @@ export const LineItemFlightMapper: MapperWithJsonOut<LineItemFlight> = {
           endDate: flight.dateRange.endDate,
         },
       },
-      ...(flight.triggerId ? { triggerId: flight.triggerId } : {}),
     };
   },
 };
@@ -966,7 +1034,9 @@ export const LineItemFlightMapper: MapperWithJsonOut<LineItemFlight> = {
  *
  */
 export interface LineItemBudget {
-  budgetAllocationType: string;
+  budgetAllocationType: BudgetAllocationType;
+  budgetUnit: BudgetUnit;
+  maxAmount: number;
 }
 
 /**
@@ -1247,3 +1317,20 @@ export class ApiDate implements RawApiDate {
     );
   }
 }
+
+/**
+ * Possible budget allocation type options.
+ */
+export type BudgetAllocationType =
+  | 'LINE_ITEM_BUDGET_ALLOCATION_TYPE_UNSPECIFIED'
+  | 'LINE_ITEM_BUDGET_ALLOCATION_TYPE_AUTOMATIC'
+  | 'LINE_ITEM_BUDGET_ALLOCATION_TYPE_FIXED'
+  | 'LINE_ITEM_BUDGET_ALLOCATION_TYPE_UNLMITED';
+
+/**
+ * Possible budget unit options.
+ */
+export type BudgetUnit =
+  | 'BUDGET_UNIT_UNSPECIFIED'
+  | 'BUDGET_UNIT_CURRENCY'
+  | 'BUDGET_UNIT_IMPRESSIONS';

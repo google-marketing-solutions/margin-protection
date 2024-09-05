@@ -24,11 +24,13 @@ import {
   AssignedTargetingOptions,
   Campaigns,
   InsertionOrders,
+  LineItems,
 } from 'dv360_api/dv360';
 import {
   Advertiser,
   Campaign,
   InsertionOrder,
+  LineItem,
 } from 'dv360_api/dv360_resources';
 import { newRuleBuilder } from 'common/client_helpers';
 
@@ -45,12 +47,15 @@ import {
 } from 'common/types';
 
 import { RawApiDate } from 'dv360_api/dv360_types';
-import { BudgetReport, BudgetReportInterface, ImpressionReport } from './api';
+import { BudgetReport, ImpressionReport, LineItemBudgetReport } from './api';
 import {
+  Accessors,
+  BudgetReportInterface,
   ClientArgs,
   ClientInterface,
   DisplayVideoClientTypes,
   IDType,
+  LineItemBudgetReportInterface,
   RuleGranularity,
   RuleParams,
 } from './types';
@@ -103,8 +108,11 @@ export interface RuleStoreEntry<
  */
 export class Client implements ClientInterface {
   private storedInsertionOrders: InsertionOrder[] = [];
+  private storedLineItems: LineItem[] = [];
   private storedCampaigns: RecordInfo[] = [];
+  private storedAdvertiserIds: string[] = [];
   private savedBudgetReport?: BudgetReportInterface;
+  private savedLineItemBudgetReport?: LineItemBudgetReportInterface;
 
   readonly args: Required<ClientArgs>;
   readonly ruleStore: {
@@ -126,8 +134,13 @@ export class Client implements ClientInterface {
   constructor(
     args: Omit<ClientArgs, 'idType' | 'id'> & { partnerId: string },
     properties: PropertyStore,
+    dao?: DataAccessObject,
   );
-  constructor(args: ClientArgs, properties: PropertyStore);
+  constructor(
+    args: ClientArgs,
+    properties: PropertyStore,
+    dao?: DataAccessObject,
+  );
   constructor(
     args: Omit<ClientArgs, 'idType' | 'id'> &
       Partial<Pick<ClientArgs, 'idType' | 'id'>> & {
@@ -135,21 +148,15 @@ export class Client implements ClientInterface {
         partnerId?: string;
       },
     readonly properties: PropertyStore,
+    readonly dao = new DataAccessObject(),
   ) {
     this.args = {
-      advertisers: args.advertisers || Advertisers,
-      assignedTargetingOptions:
-        args.assignedTargetingOptions || AssignedTargetingOptions,
       idType:
         args.idType ?? (args.advertiserId ? IDType.ADVERTISER : IDType.PARTNER),
       id:
         args.id ??
         (args.advertiserId ? args.advertiserId : (args.partnerId ?? '')),
       label: args.label ?? `${args.idType} ${args.id}`,
-      campaigns: args.campaigns || Campaigns,
-      insertionOrders: args.insertionOrders || InsertionOrders,
-      budgetReport: args.budgetReport || BudgetReport,
-      impressionReport: args.impressionReport || ImpressionReport,
     };
 
     this.ruleStore = {};
@@ -188,6 +195,19 @@ export class Client implements ClientInterface {
     return { rules, results };
   }
 
+  getAllLineItems(): LineItem[] {
+    if (!this.storedLineItems.length) {
+      this.storedLineItems =
+        this.args.idType === IDType.ADVERTISER
+          ? this.getAllLineItemsForAdvertiser(this.args.id)
+          : this.getAllAdvertisersForPartner().reduce(
+              (arr, advertiserId) =>
+                arr.concat(this.getAllLineItemsForAdvertiser(advertiserId)),
+              [] as LineItem[],
+            );
+    }
+    return this.storedLineItems;
+  }
   getAllInsertionOrders(): InsertionOrder[] {
     if (!this.storedInsertionOrders.length) {
       this.storedInsertionOrders =
@@ -206,13 +226,12 @@ export class Client implements ClientInterface {
 
   async getAllCampaigns() {
     if (!this.storedCampaigns.length) {
-      const campaignsWithSegments = this.getAllInsertionOrders().reduce(
-        (prev, io) => {
-          prev.add(io.getCampaignId());
-          return prev;
-        },
-        new Set<string>(),
-      );
+      const campaignsWithSegments = Object.values(
+        this.getAllInsertionOrders(),
+      ).reduce((prev, io) => {
+        prev.add(io.getCampaignId());
+        return prev;
+      }, new Set<string>());
 
       const result =
         this.args.idType === IDType.ADVERTISER
@@ -235,13 +254,12 @@ export class Client implements ClientInterface {
   }
 
   getAllAdvertisersForPartner(): string[] {
-    const cache = CacheService.getScriptCache();
     const result: string[] = [];
-    const advertisers = cache.get('advertisers');
-    if (advertisers) {
-      return JSON.parse(advertisers) as string[];
+    const advertisers = this.storedAdvertiserIds;
+    if (advertisers.length) {
+      return advertisers;
     }
-    const advertiserApi = new this.args.advertisers(this.args.id);
+    const advertiserApi = new this.dao.accessors.advertisers(this.args.id);
     advertiserApi.list((advertisers: Advertiser[]) => {
       for (const advertiser of advertisers) {
         const id = advertiser.getId();
@@ -251,7 +269,17 @@ export class Client implements ClientInterface {
         result.push(id);
       }
     });
-    cache.put('advertisers', JSON.stringify(result), 120);
+    this.storedAdvertiserIds = result;
+
+    return result;
+  }
+
+  getAllLineItemsForAdvertiser(advertiserId: string): LineItem[] {
+    let result: LineItem[] = [];
+    const lineItemApi = new this.dao.accessors.lineItems(advertiserId);
+    lineItemApi.list((lineItems: LineItem[]) => {
+      result = result.concat(lineItems);
+    });
 
     return result;
   }
@@ -259,7 +287,9 @@ export class Client implements ClientInterface {
   getAllInsertionOrdersForAdvertiser(advertiserId: string): InsertionOrder[] {
     let result: InsertionOrder[] = [];
     const todayDate = new Date();
-    const insertionOrderApi = new this.args.insertionOrders(advertiserId);
+    const insertionOrderApi = new this.dao.accessors.insertionOrders(
+      advertiserId,
+    );
     insertionOrderApi.list((ios: InsertionOrder[]) => {
       result = result.concat(
         ios.filter((io) => {
@@ -278,7 +308,7 @@ export class Client implements ClientInterface {
 
   getAllCampaignsForAdvertiser(advertiserId: string): RecordInfo[] {
     const result: RecordInfo[] = [];
-    const campaignApi = new this.args.campaigns(advertiserId);
+    const campaignApi = new this.dao.accessors.campaigns(advertiserId);
     campaignApi.list((campaigns: Campaign[]) => {
       for (const campaign of campaigns) {
         const id = campaign.getId();
@@ -304,7 +334,7 @@ export class Client implements ClientInterface {
     endDate: Date;
   }): BudgetReportInterface {
     if (!this.savedBudgetReport) {
-      this.savedBudgetReport = new this.args.budgetReport({
+      this.savedBudgetReport = new this.dao.accessors.budgetReport({
         idType: this.args.idType,
         id: this.args.id,
         startDate,
@@ -312,6 +342,25 @@ export class Client implements ClientInterface {
       });
     }
     return this.savedBudgetReport;
+  }
+
+  getLineItemBudgetReport({
+    startDate,
+    endDate,
+  }: {
+    startDate: Date;
+    endDate: Date;
+  }): LineItemBudgetReportInterface {
+    if (!this.savedLineItemBudgetReport) {
+      this.savedLineItemBudgetReport =
+        new this.dao.accessors.lineItemBudgetReport({
+          idType: this.args.idType,
+          id: this.args.id,
+          startDate,
+          endDate,
+        });
+    }
+    return this.savedLineItemBudgetReport;
   }
 
   getUniqueKey(prefix: string) {
@@ -336,11 +385,31 @@ export class RuleRange extends AbstractRuleRange<DisplayVideoClientTypes> {
     if (ruleGranularity === RuleGranularity.CAMPAIGN) {
       return this.client.getAllCampaigns();
     } else {
-      return this.client.getAllInsertionOrders().map((io) => ({
+      return Object.values(this.client.getAllInsertionOrders()).map((io) => ({
         advertiserId: io.getAdvertiserId(),
         id: io.getId()!,
         displayName: io.getDisplayName()!,
       }));
     }
   }
+}
+
+/**
+ * Manages interactions between API components and the client.
+ *
+ * Exposed to help stub tests.
+ */
+export class DataAccessObject {
+  constructor(
+    readonly accessors: Accessors = {
+      budgetReport: BudgetReport,
+      lineItemBudgetReport: LineItemBudgetReport,
+      impressionReport: ImpressionReport,
+      advertisers: Advertisers,
+      assignedTargetingOptions: AssignedTargetingOptions,
+      campaigns: Campaigns,
+      insertionOrders: InsertionOrders,
+      lineItems: LineItems,
+    },
+  ) {}
 }

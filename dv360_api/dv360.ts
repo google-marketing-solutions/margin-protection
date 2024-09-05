@@ -614,7 +614,7 @@ export class LineItems extends DisplayVideoApiClient {
    *     indicating 'fetch all'
    */
   list(
-    callback: (p1: InsertionOrder[]) => void,
+    callback: (p1: LineItem[]) => void,
     params?: ListParams,
     maxPages: number = -1,
   ) {

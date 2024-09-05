@@ -16,29 +16,40 @@
  */
 
 import {
+  Advertisers,
   AssignedTargetingOptions,
   Campaigns,
   InsertionOrders,
+  LineItems,
 } from 'dv360_api/dv360';
 import {
   AssignedTargetingOption,
   Campaign,
   InsertionOrder,
+  LineItem,
 } from 'dv360_api/dv360_resources';
 import {
+  ApiDate,
   FrequencyCap,
   InsertionOrderBudget,
   InsertionOrderBudgetSegment,
+  LINE_ITEM_FLIGHT_DATE_TYPE,
+  LINE_ITEM_TYPE,
+  LineItemBudget,
+  LineItemFlight,
+  LineItemPartnerRevenueModel,
+  LineItemType,
   PACING_PERIOD,
   Pacing,
+  PacingType,
   PerformanceGoal,
 } from 'dv360_api/dv360_types';
 import { FilterExpression } from 'dv360_api/utils';
 import { FakePropertyStore } from 'common/test_helpers/mock_apps_script';
 
-import { BudgetReport, ImpressionReport } from '../api';
-import { Client } from '../client';
-import { ClientArgs, IDType } from '../types';
+import { BudgetReport, ImpressionReport, LineItemBudgetReport } from '../api';
+import { Client, DataAccessObject } from '../client';
+import { Accessors, ClientArgs, IDType } from '../types';
 
 type Callable<T> = (
   advertisers: T[],
@@ -55,6 +66,14 @@ export type InsertionOrderTemplateConverter = (
 
 /**
  * Allows easy creation of new templates without lots of new parameters.
+ *
+ */
+export type LineItemTemplateConverter = (
+  lineItem: LineItemTemplate,
+) => LineItemTemplate;
+
+/**
+ * Allows easy creation of new templates without lots of new parameters.
  */
 export type CampaignTemplateConverter = (
   campaign: CampaignTemplate,
@@ -68,6 +87,7 @@ interface TestClientParams {
     Record<string, AssignedTargetingOption[]>
   >;
   allInsertionOrders?: Record<string, InsertionOrderTemplateConverter[]>;
+  allLineItems?: Record<string, LineItemTemplateConverter[]>;
   fakeSpendAmount?: number;
   fakeImpressionAmount?: number;
 }
@@ -95,6 +115,23 @@ export interface CampaignTemplate {
 }
 
 /**
+ * Line item parameters.
+ */
+export interface LineItemTemplate {
+  id: string;
+  advertiserId: string;
+  displayName: string;
+  insertionOrderId: string;
+  campaignId: string;
+  pacing: Pacing;
+  budget: LineItemBudget;
+  lineItemType: LineItemType;
+  flight: LineItemFlight;
+  frequencyCap: FrequencyCap;
+  partnerRevenueModel: { markupType: string; markupAmount: string };
+  bidStrategy: { fixedBid: { bidAmountMicros: string } };
+}
+/**
  * Insertion order parameters.
  */
 export interface InsertionOrderTemplate {
@@ -121,7 +158,7 @@ export function generateTestClient(param: TestClientParams) {
     insertionOrderType: 'RTB',
     pacing: {
       pacingPeriod: PACING_PERIOD.FLIGHT,
-      pacingType: 'PACING_TYPE_EVEN',
+      pacingType: 'PACING_TYPE_AHEAD',
     },
     frequencyCap: {
       unlimited: true,
@@ -154,6 +191,43 @@ export function generateTestClient(param: TestClientParams) {
     },
   };
 
+  const lineItemTemplate: LineItemTemplate = {
+    id: 'li1',
+    advertiserId: '1',
+    insertionOrderId: 'io1',
+    campaignId: 'c1',
+    displayName: 'Line Item 1',
+    pacing: {
+      pacingType: 'PACING_TYPE_AHEAD',
+      pacingPeriod: 'PACING_PERIOD_DAILY',
+    },
+    budget: {
+      budgetAllocationType: 'LINE_ITEM_BUDGET_ALLOCATION_TYPE_AUTOMATIC',
+      budgetUnit: 'BUDGET_UNIT_CURRENCY',
+      maxAmount: 100_000_000,
+    },
+    lineItemType: LINE_ITEM_TYPE.DISPLAY_DEFAULT,
+    flight: {
+      flightDateType: LINE_ITEM_FLIGHT_DATE_TYPE.INHERITED,
+      dateRange: {
+        startDate: new ApiDate(1970, 1, 1),
+        endDate: new ApiDate(1970, 1, 3),
+      },
+    },
+    frequencyCap: {
+      unlimited: false,
+      timeUnit: 'TIME_UNIT_LIFETIME',
+      timeUnitCount: 1,
+      maxImpressions: 10,
+    },
+    partnerRevenueModel: {
+      markupType: 'PARTNER_REVENUE_MODEL_MARKUP_TYPE_CPM',
+      markupAmount: '1',
+    },
+    bidStrategy: {
+      fixedBid: { bidAmountMicros: String(1_000_000) },
+    },
+  };
   const campaignTemplate: CampaignTemplate = {
     id: 'c1',
     advertiserId: '1',
@@ -178,6 +252,16 @@ export function generateTestClient(param: TestClientParams) {
     idType: IDType.ADVERTISER,
     label: 'test',
   };
+  const accessors: Accessors = {
+    budgetReport: BudgetReport,
+    lineItemBudgetReport: LineItemBudgetReport,
+    impressionReport: ImpressionReport,
+    advertisers: Advertisers,
+    assignedTargetingOptions: AssignedTargetingOptions,
+    campaigns: Campaigns,
+    insertionOrders: InsertionOrders,
+    lineItems: LineItems,
+  };
   if (param.allCampaigns) {
     class FakeCampaigns extends Campaigns {
       readonly id: string = 'c1';
@@ -190,7 +274,7 @@ export function generateTestClient(param: TestClientParams) {
       }
     }
 
-    clientArgs.campaigns = FakeCampaigns;
+    accessors.campaigns = FakeCampaigns;
   }
 
   if (param.allAssignedTargetingOptions) {
@@ -204,7 +288,7 @@ export function generateTestClient(param: TestClientParams) {
       }
     }
 
-    clientArgs.assignedTargetingOptions = FakeTargetingOptions;
+    accessors.assignedTargetingOptions = FakeTargetingOptions;
   }
 
   if (param.allInsertionOrders) {
@@ -218,21 +302,55 @@ export function generateTestClient(param: TestClientParams) {
       }
     }
 
-    clientArgs.insertionOrders = FakeInsertionOrders;
+    accessors.insertionOrders = FakeInsertionOrders;
+    if (param.fakeSpendAmount) {
+      class FakeBudgetReport extends BudgetReport {
+        protected override getReport() {
+          return {};
+        }
+
+        override getSpendForInsertionOrder() {
+          return param.fakeSpendAmount!;
+        }
+      }
+
+      accessors.budgetReport = FakeBudgetReport;
+    }
   }
 
-  if (param.fakeSpendAmount) {
-    class FakeBudgetReport extends BudgetReport {
+  if (param.allLineItems) {
+    class FakeLineItems extends LineItems {
+      override list(callback: Callable<LineItem>) {
+        callback(
+          param.allLineItems![param.id].map(
+            (c) => new LineItem(c({ ...lineItemTemplate })),
+          ),
+        );
+      }
+    }
+    class FakeLineItemBudgetReport extends LineItemBudgetReport {
       protected override getReport() {
         return {};
       }
 
-      override getSpendForInsertionOrder() {
-        return param.fakeSpendAmount!;
+      override getSpendForLineItem(lineItemId: string): number {
+        return param.fakeSpendAmount;
       }
     }
+    accessors.lineItems = FakeLineItems;
+    if (param.fakeSpendAmount) {
+      class FakeBudgetReport extends BudgetReport {
+        protected override getReport() {
+          return {};
+        }
 
-    clientArgs.budgetReport = FakeBudgetReport;
+        override getSpendForInsertionOrder() {
+          return param.fakeSpendAmount!;
+        }
+      }
+
+      accessors.lineItemBudgetReport = FakeLineItemBudgetReport;
+    }
   }
 
   if (param.fakeImpressionAmount) {
@@ -249,9 +367,13 @@ export function generateTestClient(param: TestClientParams) {
       }
     }
 
-    clientArgs.impressionReport = FakeImpressionReport;
+    accessors.impressionReport = FakeImpressionReport;
   }
-  return new Client(clientArgs, new FakePropertyStore());
+  return new Client(
+    clientArgs,
+    new FakePropertyStore(),
+    new DataAccessObject(accessors),
+  );
 }
 
 interface TestDataParams {
@@ -275,4 +397,12 @@ export interface GeoTargetTestDataParams extends TestDataParams {
  */
 export interface InsertionOrderTestDataParams extends TestDataParams {
   fakeSpendAmount?: number;
+}
+
+/**
+ * Contains properties we care about from an line item.
+ */
+export interface LineItemTestDataParams extends TestDataParams {
+  fakeSpendAmount?: number;
+  pacingType?: PacingType;
 }
