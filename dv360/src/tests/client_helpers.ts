@@ -33,6 +33,7 @@ import {
   FrequencyCap,
   InsertionOrderBudget,
   InsertionOrderBudgetSegment,
+  Kpi,
   LINE_ITEM_FLIGHT_DATE_TYPE,
   LINE_ITEM_TYPE,
   LineItemBudget,
@@ -142,7 +143,7 @@ export interface InsertionOrderTemplate {
   insertionOrderType: string;
   pacing: Pacing;
   frequencyCap: FrequencyCap;
-  performanceGoal: PerformanceGoal;
+  kpi: Kpi;
   budget: InsertionOrderBudget;
 }
 
@@ -164,10 +165,9 @@ export function generateTestClient(param: TestClientParams) {
       unlimited: true,
       maxImpressions: 1,
     },
-    performanceGoal: {
-      performanceGoalType: 'PERFORMANCE_GOAL_TYPE_CPC',
-      performanceGoalAmountMicros: '100000',
-      performanceGoalString: '',
+    kpi: {
+      kpiType: 'KPI_TYPE_CPC',
+      kpiAmountMicros: '100000',
     },
     budget: {
       budgetUnit: 'BUDGET_UNIT_CURRENCY',

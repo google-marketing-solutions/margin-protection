@@ -43,6 +43,8 @@ import {
   InsertionOrderBudgetSegment,
   InventorySourceRateDetails,
   InventorySourceRateDetailsMapper,
+  Kpi,
+  KpiMapper,
   LineItemBudget,
   LineItemBudgetMapper,
   LineItemFlight,
@@ -586,7 +588,7 @@ interface InsertionOrderParams {
   insertionOrderType: string;
   pacing: Pacing;
   frequencyCap: FrequencyCap;
-  performanceGoal: PerformanceGoal;
+  kpi: Kpi;
   budget: InsertionOrderBudget;
 }
 
@@ -606,7 +608,7 @@ export class InsertionOrder extends DisplayVideoResource {
 
   private readonly insertionOrderFrequencyCap: FrequencyCap;
 
-  private readonly insertionOrderPerformanceGoal: PerformanceGoal;
+  private readonly insertionOrderKpi: Kpi;
 
   private readonly insertionOrderBudget: InsertionOrderBudget;
 
@@ -619,7 +621,7 @@ export class InsertionOrder extends DisplayVideoResource {
       insertionOrderType,
       pacing,
       frequencyCap,
-      performanceGoal,
+      kpi,
       budget,
     }: InsertionOrderParams,
     status: Status = STATUS.DRAFT,
@@ -636,7 +638,7 @@ export class InsertionOrder extends DisplayVideoResource {
 
     this.insertionOrderFrequencyCap = frequencyCap;
 
-    this.insertionOrderPerformanceGoal = performanceGoal;
+    this.insertionOrderKpi = kpi;
 
     this.insertionOrderBudget = budget;
   }
@@ -666,19 +668,14 @@ export class InsertionOrder extends DisplayVideoResource {
     if (ObjectUtil.hasOwnProperties(resource, properties)) {
       const pacing = resource['pacing'] as Pacing;
       const frequencyCap = resource['frequencyCap'] as FrequencyCap;
-      const performanceGoal = resource['performanceGoal'] as PerformanceGoal;
+      const kpi = resource['kpi'] as Kpi;
       const budget = resource['budget'] as InsertionOrderBudget;
       const mappedPacing = PacingMapper.map(pacing);
       const mappedFrequencyCap = FrequencyCapMapper.map(frequencyCap);
-      const mappedPerformanceGoal = PerformanceGoalMapper.map(performanceGoal);
+      const mappedKpi = KpiMapper.map(kpi);
       const mappedBudget = InsertionOrderBudgetMapper.map(budget);
 
-      if (
-        mappedPacing &&
-        mappedFrequencyCap &&
-        mappedPerformanceGoal &&
-        mappedBudget
-      ) {
+      if (mappedPacing && mappedFrequencyCap && mappedKpi && mappedBudget) {
         return new InsertionOrder(
           {
             id: String(resource['insertionOrderId']),
@@ -688,7 +685,7 @@ export class InsertionOrder extends DisplayVideoResource {
             insertionOrderType: String(resource['insertionOrderType']),
             pacing: mappedPacing,
             frequencyCap: mappedFrequencyCap,
-            performanceGoal: mappedPerformanceGoal,
+            kpi: mappedKpi,
             budget: mappedBudget,
           },
           StatusMapper.map(resource['entityStatus'] as RawStatus),
@@ -719,7 +716,7 @@ export class InsertionOrder extends DisplayVideoResource {
       entityStatus: String(this.getStatus()),
       pacing: this.getInsertionOrderPacing(),
       frequencyCap: this.getInsertionOrderFrequencyCap(),
-      performanceGoal: this.getInsertionOrderPerformanceGoal(),
+      kpi: this.getInsertionOrderKpi(),
       budget: InsertionOrderBudgetMapper.toJson(this.getInsertionOrderBudget()),
     };
   }
@@ -817,8 +814,8 @@ export class InsertionOrder extends DisplayVideoResource {
    * Returns the insertion order performance goal configuration.
    *
    */
-  getInsertionOrderPerformanceGoal(): PerformanceGoal {
-    return this.insertionOrderPerformanceGoal;
+  getInsertionOrderKpi(): Kpi {
+    return this.insertionOrderKpi;
   }
 
   /**

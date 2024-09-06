@@ -389,7 +389,7 @@ export interface PerformanceGoal {
  * @see https://developers.google.com/display-video/api/reference/rest/v1/PerformanceGoal
  *
  */
-export interface LineItemPerformanceGoal {
+export interface Kpi {
   /** Should always be set, but for legacy reasons is optional. */
   kpiType?: string;
   kpiAmountMicros?: string;
@@ -438,7 +438,7 @@ export const PerformanceGoalMapper: Mapper<PerformanceGoal> = {
  * Exports a mapper from an API resource to `PerformanceGoal`
  */
 // tslint:disable-next-line:enforce-name-casing legacy from JS migration
-export const LineItemPerformanceGoalMapper: Mapper<LineItemPerformanceGoal> = {
+export const KpiMapper: Mapper<Kpi> = {
   /**
    * Converts a resource object returned by the API into a concrete
    * `PerformanceGoal` instance.
