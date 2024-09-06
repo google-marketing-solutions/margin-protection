@@ -39,8 +39,6 @@ export interface SearchAdsClientTypes
   frontend: FrontendInterface<SearchAdsClientTypes>;
 }
 
-export interface SearchAdsFrontendInterface {}
-
 /**
  * Args for the new SA360 API.
  */
@@ -51,22 +49,22 @@ export interface ClientArgs extends AdTypes.AdsClientArgs {
 /**
  * Convenience wrapper for a {@link AdTypes.ReportInterface}.
  */
-export interface ReportInterface<
+export type ReportInterface<
   Q extends AdTypes.QueryBuilder<Params, Joins>,
   Output extends string,
   Params extends string,
   Joins extends AdTypes.JoinType<Params> | undefined = AdTypes.JoinType<Params>,
-> extends AdTypes.ReportInterface<Q, Output, Params, Joins> {}
+> = AdTypes.ReportInterface<Q, Output, Params, Joins>;
 
 /**
  * Convenience wrapper for a {@link AdTypes.ReportClass}.
  */
-export interface ReportClass<
+export type ReportClass<
   Q extends AdTypes.QueryBuilder<Params, Joins>,
   Output extends string,
   Params extends string,
   Joins extends AdTypes.JoinType<Params> | undefined = AdTypes.JoinType<Params>,
-> extends AdTypes.ReportClass<Q, Output, Params, Joins> {}
+> = AdTypes.ReportClass<Q, Output, Params, Joins>;
 
 /**
  * Extends the base client interface with SA360-specific features.

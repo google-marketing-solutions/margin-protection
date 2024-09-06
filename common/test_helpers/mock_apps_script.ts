@@ -171,7 +171,7 @@ class FakeSheet {
   }
 
   clear(): FakeSheet {
-    const emptyCells = this.cells.map((row) => row.map((col) => ''));
+    const emptyCells = this.cells.map((row) => row.map(() => ''));
     this.cells.splice(0, this.cells.length, ...emptyCells);
     return this;
   }
@@ -245,7 +245,7 @@ export function mockAppsScript() {
 }
 
 class FakeUrlFetchApp {
-  fetch(url: string) {
+  fetch() {
     throw new Error('Not implemented. Mock me.');
   }
 }
@@ -339,7 +339,7 @@ class CacheStub implements Cache.Cache {
   private cache: Record<string, string> = {};
   expirationInSeconds: number | undefined;
 
-  getAll(keys: string[]): Record<string, string> {
+  getAll(): Record<string, string> {
     throw new Error('Method not implemented.');
   }
   putAll(values: Record<string, string>): void;

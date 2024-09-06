@@ -36,7 +36,7 @@ interface Query {
   };
 }
 
-interface Report {
+interface ReportInterface {
   key: {
     queryId: Readonly<string>;
     reportId: Readonly<string>;
@@ -67,7 +67,10 @@ interface QueryBody {
   };
 }
 
-abstract class Report {
+abstract class Report implements ReportInterface {
+  key: { queryId: Readonly<string>; reportId: Readonly<string> };
+  metadata: { googleCloudStoragePath: Readonly<string> };
+
   protected readonly properties: GoogleAppsScript.Properties.Properties;
   protected readonly report: Record<string, number>;
   abstract getReportName(): string;

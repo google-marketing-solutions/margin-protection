@@ -173,7 +173,7 @@ export class GoogleAdsApi implements AdTypes.GoogleAdsApiInterface {
         for (const row of res.results || []) {
           yield row;
         }
-      } catch (e) {
+      } catch {
         throw new Error('bad');
       }
     } while (pageToken);
@@ -183,6 +183,7 @@ export class GoogleAdsApi implements AdTypes.GoogleAdsApiInterface {
    * A thin wrapper around {@link qlifyQuery} for testing.
    */
   qlifyQuery<
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     Q extends AdTypes.QueryBuilder<Params, any>,
     Params extends string,
   >(query: Q, queryWheres: string[] = []): string {
@@ -306,7 +307,7 @@ export abstract class Report<
               ? never
               : Exclude<typeof joins, undefined>,
           );
-        } catch (e) {
+        } catch {
           return null;
         }
         // clean any empty values
@@ -400,7 +401,7 @@ export abstract class Report<
             .reduce<AdTypes.RecursiveRecord<string, string | number>>(
               // Reduce functions don't have a way to let your end result be
               // typed as anything other than the input type.
-              // tslint:disable-next-line:no-any
+              // eslint-disable-next-line @typescript-eslint/no-explicit-any
               (res, j) => res[j] as any,
               result as AdTypes.RecursiveRecord<string, string | number>,
             ) as unknown as string | number,
@@ -479,7 +480,7 @@ export class ReportFactory implements AdTypes.ReportFactoryInterface {
           this.clientArgs.loginCustomerId || this.clientArgs.customerIds,
         );
         const expand = (account: string): string[] => {
-          const rows = api.query(customerId, GET_LEAF_ACCOUNTS_REPORT.query);
+          const rows = api.query(account, GET_LEAF_ACCOUNTS_REPORT.query);
           const customerIds: string[] = [];
           for (const row of rows) {
             customerIds.push(String(row.customerClient!.id!));
@@ -539,9 +540,6 @@ export function makeReport<
       >,
     ) {
       if (joins === undefined) {
-        // overloading of parameters to allow only `result` is the preferred
-        // method. Blocked by https://github.com/microsoft/TypeScript/issues/54539
-        // tslint:disable-next-line:ban-as-never
         return args.transform(result, undefined as never);
       } else {
         return args.transform(
@@ -560,7 +558,7 @@ export function makeReport<
  */
 export function qlifyQuery<
   // joins are tricky, and we don't really care what they do here.
-  // tslint:disable-next-line:no-any
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   Q extends AdTypes.QueryBuilder<Params, any>,
   Params extends string,
 >(query: Q, queryWheres: string[] = []): string {

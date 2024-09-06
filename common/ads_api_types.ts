@@ -116,10 +116,10 @@ export type DotsToObject<S extends string> = S extends ''
   ? never
   : S extends `${infer First}.${infer Rest}`
     ? '' extends First
-      ? {}
+      ? object
       : { [key in CamelCase<First>]: DotsToObject<Rest> }
     : '' extends S
-      ? {}
+      ? object
       : { [key in CamelCase<S>]: unknown };
 
 /**
@@ -137,10 +137,10 @@ export type ReportResponse<
  * Turns a|b|c into a & b & c.
  */
 export type UnionToIntersection<U> = (
-  U extends {} ? (k: U) => void : never
+  U extends object ? (k: U) => void : never
 ) extends (k: infer I) => void
   ? I
-  : {};
+  : object;
 
 /**
  * Google Ads API interface
@@ -206,7 +206,7 @@ export interface RecursiveRecord<K, V> {
  * Represents an "any-" type {@link ReportClass} for containers.
  */
 // We don't know what will be in a report class.
-// tslint:disable-next-line:no-any
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export type UnknownReportClass = ReportClass<any, any, any>;
 
 /**

@@ -72,7 +72,7 @@ export const migrations: Record<
       .getRange(1, 1, ioValues.length, ioValues[0].length)
       .setValues(ioValues);
   },
-  '1.2': (frontend) => {
+  '1.2': () => {
     // encrypt rules
     const properties = PropertiesService.getScriptProperties().getProperties();
     const newProperties = { ...properties };

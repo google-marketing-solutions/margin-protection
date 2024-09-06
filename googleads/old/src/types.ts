@@ -31,7 +31,7 @@ export interface AdsClientTypes extends ClientTypes<AdsClientTypes> {
 /**
  * Extends the base client interface with Google Ads-specific features.
  */
-export interface ClientInterface extends BaseClientInterface<AdsClientTypes> {}
+export type ClientInterface = BaseClientInterface<AdsClientTypes>;
 
 /**
  * Necessary Ads API request metadata

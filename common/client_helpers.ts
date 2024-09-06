@@ -50,7 +50,6 @@ import {
  */
 
 // This returns a function that is self-typed.
-// tslint:disable-next-line:no-return-only-generics
 export function newRuleBuilder<T extends ClientTypes<T>>(): <
   P extends Record<keyof P, ParamDefinition>,
 >(
