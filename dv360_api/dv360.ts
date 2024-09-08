@@ -34,12 +34,12 @@ import {
   TargetingOption,
 } from './dv360_resources';
 import { TargetingType, TARGETING_TYPE } from './dv360_types';
-import { UriUtil } from './utils';
+import { ObjectUtil, UriUtil } from './utils';
 import { FilterExpression, ListParams, Rule, RuleOperator } from './utils';
 import { STATUS } from './dv360_types';
 const API_SCOPE: string = 'displayvideo';
 
-const API_VERSION: string = 'v2';
+const API_VERSION: string = 'v3';
 
 /**
  * An abstract API client for the DV360 API that extends `BaseApiClient`.
@@ -218,7 +218,7 @@ export abstract class DisplayVideoApiClient extends BaseApiClient {
   }
 
   getId(): string {
-    throw new Error('Not Allowed.');
+    throw ObjectUtil.error('Not Allowed.');
   }
 }
 
@@ -793,14 +793,14 @@ export class InventorySources extends DisplayVideoApiClient {
     requestUri: string,
     payload: DisplayVideoResource,
   ): DisplayVideoResource {
-    throw new Error('405 Method Not Allowed');
+    throw ObjectUtil.error('405 Method Not Allowed');
   }
 
   /**
    * @throws {!Error} As this method is not allowed for this type
    */
   override patchResource(requestUri: string): DisplayVideoResource {
-    throw new Error('405 Method Not Allowed');
+    throw ObjectUtil.error('405 Method Not Allowed');
   }
 
   /**
@@ -811,14 +811,14 @@ export class InventorySources extends DisplayVideoApiClient {
     original: DisplayVideoResource,
     modified: DisplayVideoResource | null,
   ): DisplayVideoResource {
-    throw new Error('405 Method Not Allowed');
+    throw ObjectUtil.error('405 Method Not Allowed');
   }
 
   /**
    * @throws {!Error} As this method is not allowed for this type
    */
   override deleteResource(requestUri: string) {
-    throw new Error('405 Method Not Allowed');
+    throw ObjectUtil.error('405 Method Not Allowed');
   }
 
   /**
@@ -904,7 +904,7 @@ export class TargetingOptions extends DisplayVideoApiClient {
     maxPages: number = -1,
   ) {
     if (this.getTargetingType() !== TARGETING_TYPE.GEO_REGION) {
-      throw new Error(
+      throw ObjectUtil.error(
         `Error! "search" is only supported for ${TARGETING_TYPE.GEO_REGION}`,
       );
     }
@@ -956,14 +956,14 @@ export class TargetingOptions extends DisplayVideoApiClient {
     requestUri: string,
     payload: DisplayVideoResource,
   ): DisplayVideoResource {
-    throw new Error('405 Method Not Allowed');
+    throw ObjectUtil.error('405 Method Not Allowed');
   }
 
   /**
    * @throws {!Error} As this method is not allowed for this type
    */
   override patchResource(requestUri: string): DisplayVideoResource {
-    throw new Error('405 Method Not Allowed');
+    throw ObjectUtil.error('405 Method Not Allowed');
   }
 
   /**
@@ -974,14 +974,14 @@ export class TargetingOptions extends DisplayVideoApiClient {
     original: DisplayVideoResource,
     modified: DisplayVideoResource | null,
   ): DisplayVideoResource {
-    throw new Error('405 Method Not Allowed');
+    throw ObjectUtil.error('405 Method Not Allowed');
   }
 
   /**
    * @throws {!Error} As this method is not allowed for this type
    */
   override deleteResource(requestUri: string) {
-    throw new Error('405 Method Not Allowed');
+    throw ObjectUtil.error('405 Method Not Allowed');
   }
 
   /**
@@ -1163,7 +1163,7 @@ export class AssignedTargetingOptions extends DisplayVideoApiClient {
     payload: DisplayVideoResource,
   ): DisplayVideoResource {
     if (this.isReadOnly()) {
-      throw new Error('405 Method Not Allowed');
+      throw ObjectUtil.error('405 Method Not Allowed');
     }
     return super.createResource(requestUri, payload);
   }
@@ -1172,7 +1172,7 @@ export class AssignedTargetingOptions extends DisplayVideoApiClient {
    * @throws {!Error} As this method is not allowed for this type
    */
   override patchResource(requestUri: string): DisplayVideoResource {
-    throw new Error('405 Method Not Allowed');
+    throw ObjectUtil.error('405 Method Not Allowed');
   }
 
   /**
@@ -1183,7 +1183,7 @@ export class AssignedTargetingOptions extends DisplayVideoApiClient {
     original: DisplayVideoResource,
     modified: DisplayVideoResource | null,
   ): DisplayVideoResource {
-    throw new Error('405 Method Not Allowed');
+    throw ObjectUtil.error('405 Method Not Allowed');
   }
 
   /**
@@ -1199,7 +1199,7 @@ export class AssignedTargetingOptions extends DisplayVideoApiClient {
    */
   override deleteResource(requestUri: string) {
     if (this.isReadOnly()) {
-      throw new Error('405 Method Not Allowed');
+      throw ObjectUtil.error('405 Method Not Allowed');
     }
     super.deleteResource(requestUri);
   }

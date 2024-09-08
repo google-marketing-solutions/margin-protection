@@ -237,6 +237,15 @@ export const ObjectUtil = {
   },
 
   /**
+   * Throws an error and sends a message to logs.
+   */
+  error(msg: string) {
+    // Apps Script is hiding thrown error messages, so we double up here.
+    console.error(msg);
+    return new Error(msg);
+  },
+
+  /**
    * Checks if the given object contains all of the given properties.
    *
    * @param obj The obj to check. Can be null or undefined
@@ -246,23 +255,23 @@ export const ObjectUtil = {
    * @param optionalProperties Optional properties to check.
    *     Object must contain at least one of these properties. Defaults to an
    *     empty array
+   * @param errorOnFail If true, this will error instead of sending undefined when missing.
    * @return True if the object contains all properties, false
    *     otherwise
    */
   hasOwnProperties(
     obj: unknown,
     requiredProperties: string[],
-    optionalProperties: string[] = [],
+    oneOf: string[] = [],
   ): boolean {
     const keys = ObjectUtil.isObject(obj)
       ? Object.keys(obj as { [key: string]: unknown })
       : [];
     return (
       keys.length > 0 &&
-      (requiredProperties.length > 0 || optionalProperties.length > 0) &&
+      (requiredProperties.length > 0 || oneOf.length > 0) &&
       requiredProperties.every((key) => keys.includes(key)) &&
-      (optionalProperties.length === 0 ||
-        optionalProperties.some((key) => keys.includes(key)))
+      (oneOf.length === 0 || oneOf.some((key) => keys.includes(key)))
     );
   },
 

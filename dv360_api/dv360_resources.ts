@@ -261,7 +261,7 @@ export class Advertiser extends DisplayVideoResource {
         );
       }
     }
-    throw new Error(
+    throw ObjectUtil.error(
       'Error! Encountered an invalid API resource object ' +
         'while mapping to an instance of Advertiser.',
     );
@@ -458,7 +458,7 @@ export class Campaign extends DisplayVideoResource {
         );
       }
     }
-    throw new Error(
+    throw ObjectUtil.error(
       'Error! Encountered an invalid API resource object ' +
         'while mapping to an instance of Campaign.',
     );
@@ -662,7 +662,7 @@ export class InsertionOrder extends DisplayVideoResource {
       'entityStatus',
       'pacing',
       'frequencyCap',
-      'performanceGoal',
+      'kpi',
       'budget',
     ];
     if (ObjectUtil.hasOwnProperties(resource, properties)) {
@@ -692,7 +692,7 @@ export class InsertionOrder extends DisplayVideoResource {
         );
       }
     }
-    throw new Error(
+    throw ObjectUtil.error(
       'Error! Encountered an invalid API resource object ' +
         'while mapping to an instance of InsertionOrder.',
     );
@@ -996,7 +996,7 @@ export class LineItem extends DisplayVideoResource {
         );
       }
     }
-    throw new Error(
+    throw ObjectUtil.error(
       'Error! Encountered an invalid API resource object ' +
         'while mapping to an instance of LineItem.',
     );
@@ -1293,7 +1293,7 @@ export class InventorySource extends DisplayVideoResource {
         return new InventorySource(requiredParams, optionalParams);
       }
     }
-    throw new Error(
+    throw ObjectUtil.error(
       'Error! Encountered an invalid API resource object ' +
         'while mapping to an instance of InventorySource.',
     );
@@ -1478,7 +1478,7 @@ export class TargetingOption extends DisplayVideoResource {
         }
       }
     }
-    throw new Error(
+    throw ObjectUtil.error(
       'Error! Encountered an invalid API resource object ' +
         `while mapping to an instance of ${type}.`,
     );

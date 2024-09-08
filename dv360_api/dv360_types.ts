@@ -72,7 +72,7 @@ export const STATUS = {
 /**
  * The canonical TargetingType sent to the API
  */
-export type Status = (typeof STATUS)[keyof typeof STATUS];
+export type Status = EnumLikeTypeCheck<typeof STATUS>;
 
 /**
  * A union of the keys and values available to {@link STATUS}.
@@ -121,8 +121,7 @@ export const TARGETING_TYPE = {
 /**
  * The canonical TargetingType sent to the API.
  */
-export type TargetingType =
-  (typeof TARGETING_TYPE)[keyof typeof TARGETING_TYPE];
+export type TargetingType = EnumLikeTypeCheck<typeof TARGETING_TYPE>;
 
 /**
  * A union of the keys and values available to {@link TARGETING_TYPE}.
@@ -195,7 +194,7 @@ export const LINE_ITEM_TYPE = {
 /**
  * Type wrapper for LINE_ITEM_TYPE.
  */
-export type LineItemType = (typeof LINE_ITEM_TYPE)[keyof typeof LINE_ITEM_TYPE];
+export type LineItemType = EnumLikeTypeCheck<typeof LINE_ITEM_TYPE>;
 
 /**
  * Defines possible line item flight date types.
@@ -209,8 +208,9 @@ export const LINE_ITEM_FLIGHT_DATE_TYPE = {
 /**
  * Type wrapper for LINE_ITEM_FLIGHT_DATE_TYPE.
  */
-export type LineItemFlightDateType =
-  (typeof LINE_ITEM_FLIGHT_DATE_TYPE)[keyof typeof LINE_ITEM_FLIGHT_DATE_TYPE];
+export type LineItemFlightDateType = EnumLikeTypeCheck<
+  typeof LINE_ITEM_FLIGHT_DATE_TYPE
+>;
 
 /**
  * Defines possible pacing periods for spending ad budgets.
@@ -224,7 +224,7 @@ export const PACING_PERIOD = {
 /**
  * The canonical PacingPeriod.
  */
-export type PacingPeriod = (typeof PACING_PERIOD)[keyof typeof PACING_PERIOD];
+export type PacingPeriod = EnumLikeTypeCheck<typeof PACING_PERIOD>;
 
 /**
  * A union of the keys and values available to {@link PACING_PERIOD}.
@@ -247,7 +247,7 @@ export const PACING_TYPE = {
 /**
  * The canonical PacingType.
  */
-export type PacingType = (typeof PACING_TYPE)[keyof typeof PACING_TYPE];
+export type PacingType = EnumLikeTypeCheck<typeof PACING_TYPE>;
 
 /**
  * Exports a mapper from an API resource to `PacingPeriod`.
@@ -281,7 +281,7 @@ export const PacingPeriodMapper: MapperWithJsonOut<
 
 /**
  * Defines frequency cap configuration for limiting display of ads.
- * @see https://developers.google.com/display-video/api/reference/rest/v1/FrequencyCap
+ * @see https://developers.google.com/display-video/api/reference/rest/v3/FrequencyCap
  *
  */
 export interface FrequencyCap {
@@ -306,9 +306,7 @@ export const FrequencyCapMapper: Mapper<FrequencyCap> = {
    */
   map(resource) {
     if (
-      (ObjectUtil.hasOwnProperties(resource, ['unlimited']) &&
-        typeof resource.unlimited === 'boolean' &&
-        resource.unlimited) ||
+      (typeof resource.unlimited === 'boolean' && resource.unlimited) ||
       (ObjectUtil.hasOwnProperties(resource, [
         'timeUnit',
         'timeUnitCount',
@@ -325,7 +323,7 @@ export const FrequencyCapMapper: Mapper<FrequencyCap> = {
 
 /**
  * Defines the pacing configuration for spending ad budgets.
- * @see https://developers.google.com/display-video/api/reference/rest/v1/Pacing
+ * @see https://developers.google.com/display-video/api/reference/rest/v3/Pacing
  *
  */
 export interface Pacing {
@@ -373,7 +371,7 @@ export const PacingMapper: Mapper<Pacing> = {
 
 /**
  * Defines a performance goal configuration.
- * @see https://developers.google.com/display-video/api/reference/rest/v1/PerformanceGoal
+ * @see https://developers.google.com/display-video/api/reference/rest/v3/PerformanceGoal
  *
  */
 export interface PerformanceGoal {
@@ -386,7 +384,7 @@ export interface PerformanceGoal {
 
 /**
  * Defines a performance goal configuration.
- * @see https://developers.google.com/display-video/api/reference/rest/v1/PerformanceGoal
+ * @see https://developers.google.com/display-video/api/reference/rest/v3/PerformanceGoal
  *
  */
 export interface Kpi {
@@ -435,6 +433,40 @@ export const PerformanceGoalMapper: Mapper<PerformanceGoal> = {
 };
 
 /**
+ * Possible key performance indicator (KPI) types.
+ * @see https://developers.google.com/display-video/api/reference/rest/v3/advertisers.insertionOrders#kpitype
+ */
+export const KPI_TYPE = {
+  UNSPECIFIED: 'KPI_TYPE_UNSPECIFIED',
+  CPM: 'KPI_TYPE_CPM',
+  CPC: 'KPI_TYPE_CPC',
+  CPA: 'KPI_TYPE_CPA',
+  CTR: 'KPI_TYPE_CTR',
+  VIEWABILITY: 'KPI_TYPE_VIEWABILITY',
+  CPIAVC: 'KPI_TYPE_CPIAVC',
+  CPE: 'KPI_TYPE_CPE',
+  CPV: 'KPI_TYPE_CPV',
+  CLICK_CVR: 'KPI_TYPE_CLICK_CVR',
+  IMPRESSION_CVR: 'KPI_TYPE_IMPRESSION_CVR',
+  VCPM: 'KPI_TYPE_VCPM',
+  VTR: 'KPI_TYPE_VTR',
+  AUDIO_COMPLETION_RATE: 'KPI_TYPE_AUDIO_COMPLETION_RATE',
+  VIDEO_COMPLETION_RATE: 'KPI_TYPE_VIDEO_COMPLETION_RATE',
+  CPCL: 'KPI_TYPE_CPCL',
+  CPCV: 'KPI_TYPE_CPCV',
+  TOS10: 'KPI_TYPE_TOS10',
+  MAXIMIZE_PACING: 'KPI_TYPE_MAXIMIZE_PACING',
+  CUSTOM_IMPRESSION_VALUE_OVER_COST:
+    'KPI_TYPE_CUSTOM_IMPRESSION_VALUE_OVER_COST',
+  OTHER: 'KPI_TYPE_OTHER',
+};
+
+/**
+ * Possible key performance indicator (KPI) types.
+ */
+export type KpiType = EnumLikeTypeCheck<typeof KPI_TYPE>;
+
+/**
  * Exports a mapper from an API resource to `PerformanceGoal`
  */
 // tslint:disable-next-line:enforce-name-casing legacy from JS migration
@@ -444,10 +476,14 @@ export const KpiMapper: Mapper<Kpi> = {
    * `PerformanceGoal` instance.
    *
    * @param resource The API resource object
+   *
    * @return The concrete instance, or null if the resource
    *     did not contain the expected properties
    */
   map(resource) {
+    if (resource.kpiType === KPI_TYPE.CPV) {
+      return resource;
+    }
     if (
       ObjectUtil.hasOwnProperties(
         resource,
@@ -468,7 +504,7 @@ export const KpiMapper: Mapper<Kpi> = {
 };
 /**
  * Defines a maximum spend oriented bidding strategy.
- * @see https://developers.google.com/display-video/api/reference/rest/v1/BiddingStrategy#maximizespendbidstrategy
+ * @see https://developers.google.com/display-video/api/reference/rest/v3/BiddingStrategy#maximizespendbidstrategy
  *
  */
 interface MaxSpendBiddingStrategy {
@@ -479,7 +515,7 @@ interface MaxSpendBiddingStrategy {
 
 /**
  * Defines a performance goal oriented bidding strategy.
- * @see https://developers.google.com/display-video/api/reference/rest/v1/BiddingStrategy#performancegoalbidstrategy
+ * @see https://developers.google.com/display-video/api/reference/rest/v3/BiddingStrategy#performancegoalbidstrategy
  *
  */
 interface PerformanceGoalBiddingStrategy {
@@ -489,16 +525,49 @@ interface PerformanceGoalBiddingStrategy {
   customBiddingAlgorithmId?: string;
 }
 
+interface YoutubeAndPartnersBiddingStrategy {
+  type: YoutubeAndPartnersBiddingStrategyType;
+  value: string;
+  adGroupEffectiveTargetCpaValue: string;
+  adGroupEffectiveTargetCpaSource: BiddingSource;
+}
+
 /**
  * Defines configuration that determines the bid price.
- * @see https://developers.google.com/display-video/api/reference/rest/v1/BiddingStrategy
- *
+ * @see https://developers.google.com/display-video/api/reference/rest/v3/BiddingStrategy
  */
 export interface BiddingStrategy {
   fixedBid?: { bidAmountMicros: string };
   maximizeSpendAutoBid?: MaxSpendBiddingStrategy;
   performanceGoalAutoBid?: PerformanceGoalBiddingStrategy;
+  youtubeAndPartnersBid?: YoutubeAndPartnersBiddingStrategy;
 }
+
+/**
+ * Possible types of bidding strategy for YouTube and Partners resources.
+ * @see https://developers.google.com/display-video/api/reference/rest/v3/BiddingStrategy#youtubeandpartnersbiddingstrategytype
+ */
+export type YoutubeAndPartnersBiddingStrategyType =
+  | 'YOUTUBE_AND_PARTNERS_BIDDING_STRATEGY_TYPE_UNSPECIFIED'
+  | 'YOUTUBE_AND_PARTNERS_BIDDING_STRATEGY_TYPE_MANUAL_CPV'
+  | 'YOUTUBE_AND_PARTNERS_BIDDING_STRATEGY_TYPE_MANUAL_CPM'
+  | 'YOUTUBE_AND_PARTNERS_BIDDING_STRATEGY_TYPE_TARGET_CPA'
+  | 'YOUTUBE_AND_PARTNERS_BIDDING_STRATEGY_TYPE_TARGET_CPM'
+  | 'YOUTUBE_AND_PARTNERS_BIDDING_STRATEGY_TYPE_RESERVE_CPM'
+  | 'YOUTUBE_AND_PARTNERS_BIDDING_STRATEGY_TYPE_MAXIMIZE_LIFT'
+  | 'YOUTUBE_AND_PARTNERS_BIDDING_STRATEGY_TYPE_MAXIMIZE_CONVERSIONS'
+  | 'YOUTUBE_AND_PARTNERS_BIDDING_STRATEGY_TYPE_TARGET_CPV'
+  | 'YOUTUBE_AND_PARTNERS_BIDDING_STRATEGY_TYPE_TARGET_ROAS'
+  | 'YOUTUBE_AND_PARTNERS_BIDDING_STRATEGY_TYPE_MAXIMIZE_CONVERSION_VALUE';
+
+/**
+ * Source of the bidding value.
+ * @see https://developers.google.com/display-video/api/reference/rest/v3/BiddingStrategy#biddingsource
+ */
+export type BiddingSource =
+  | 'BIDDING_SOURCE_UNSPECIFIED'
+  | 'BIDDING_SOURCE_LINE_ITEM'
+  | 'BIDDING_SOURCE_AD_GROUP';
 
 /**
  * Exports a mapper from an API resource to `BiddingStrategy`
@@ -518,12 +587,18 @@ export const BiddingStrategyMapper: Mapper<BiddingStrategy> = {
       ObjectUtil.hasOwnProperties(
         resource,
         [],
-        ['fixedBid', 'maximizeSpendAutoBid', 'performanceGoalAutoBid'],
+        [
+          'youtubeAndPartnersBid',
+          'fixedBid',
+          'maximizeSpendAutoBid',
+          'performanceGoalAutoBid',
+        ],
       )
     ) {
       const fixedBidStrategy = resource.fixedBid;
       const maxSpendStrategy = resource.maximizeSpendAutoBid;
       const performanceGoalStrategy = resource.performanceGoalAutoBid;
+      const youtubeAndPartnersBid = resource.youtubeAndPartnersBid;
 
       const validFixedBidStrategy =
         fixedBidStrategy &&
@@ -531,6 +606,9 @@ export const BiddingStrategyMapper: Mapper<BiddingStrategy> = {
       const validMaxSpendStrategy =
         maxSpendStrategy &&
         ObjectUtil.hasOwnProperties(maxSpendStrategy, ['performanceGoalType']);
+      const validYoutubeAndPartnersBid =
+        youtubeAndPartnersBid &&
+        ObjectUtil.hasOwnProperties(youtubeAndPartnersBid, ['type']);
       const validPerformanceGoalStrategy =
         performanceGoalStrategy &&
         ObjectUtil.hasOwnProperties(performanceGoalStrategy, [
@@ -541,7 +619,8 @@ export const BiddingStrategyMapper: Mapper<BiddingStrategy> = {
       if (
         validFixedBidStrategy ||
         validMaxSpendStrategy ||
-        validPerformanceGoalStrategy
+        validPerformanceGoalStrategy ||
+        validYoutubeAndPartnersBid
       ) {
         return resource;
       }
@@ -552,7 +631,7 @@ export const BiddingStrategyMapper: Mapper<BiddingStrategy> = {
 
 /**
  * Defines general configuration for advertisers.
- * @see https://developers.google.com/display-video/api/reference/rest/v1/advertisers#advertisergeneralconfig
+ * @see https://developers.google.com/display-video/api/reference/rest/v3/advertisers#advertisergeneralconfig
  *
  */
 export interface AdvertiserGeneralConfig {
@@ -593,7 +672,7 @@ interface CMHybridConfig {
 
 /**
  * Defines ad server configuration for advertisers.
- * @see https://developers.google.com/display-video/api/reference/rest/v1/advertisers#advertiseradserverconfig
+ * @see https://developers.google.com/display-video/api/reference/rest/v3/advertisers#advertiseradserverconfig
  *
  */
 export interface AdvertiserAdServerConfig {
@@ -664,7 +743,7 @@ export const AdvertiserAdServerConfigMapper: Mapper<AdvertiserAdServerConfig> =
 
 /**
  * Defines a campaign's budget configuration.
- * @see https://developers.google.com/display-video/api/reference/rest/v1/advertisers.campaigns#CampaignBudget
+ * @see https://developers.google.com/display-video/api/reference/rest/v3/advertisers.campaigns#CampaignBudget
  *
  */
 export interface CampaignBudget {
@@ -746,7 +825,7 @@ export const CampaignBudgetMapper: MapperWithJsonOut<CampaignBudget[]> = {
 
 /**
  * Defines a campaign's flight configuration.
- * @see https://developers.google.com/display-video/api/reference/rest/v1/advertisers.campaigns#campaignflight
+ * @see https://developers.google.com/display-video/api/reference/rest/v3/advertisers.campaigns#campaignflight
  *
  */
 export interface CampaignFlight {
@@ -799,7 +878,7 @@ export const CampaignFlightMapper: MapperWithJsonOut<CampaignFlight> = {
 
 /**
  * Defines a campaign's goal configuration.
- * @see https://developers.google.com/display-video/api/reference/rest/v1/advertisers.campaigns#campaigngoal
+ * @see https://developers.google.com/display-video/api/reference/rest/v3/advertisers.campaigns#campaigngoal
  *
  */
 export interface CampaignGoal {
@@ -836,7 +915,7 @@ export const CampaignGoalMapper: Mapper<CampaignGoal> = {
 
 /**
  * Defines an insertion order's budget segment configuration.
- * @see https://developers.google.com/display-video/api/reference/rest/v1/advertisers.insertionOrders#InsertionOrderBudgetSegment
+ * @see https://developers.google.com/display-video/api/reference/rest/v3/advertisers.insertionOrders#InsertionOrderBudgetSegment
  *
  */
 export interface InsertionOrderBudgetSegment {
@@ -900,7 +979,7 @@ export const InsertionOrderBudgetSegmentMapper: MapperWithJsonOut<InsertionOrder
 
 /**
  * Defines an insertion order's budget configuration.
- * @see https://developers.google.com/display-video/api/reference/rest/v1/advertisers.insertionOrders#InsertionOrderBudget
+ * @see https://developers.google.com/display-video/api/reference/rest/v3/advertisers.insertionOrders#InsertionOrderBudget
  *
  */
 export interface InsertionOrderBudget {
@@ -963,7 +1042,7 @@ export const InsertionOrderBudgetMapper: MapperWithJsonOut<InsertionOrderBudget>
 
 /**
  * Defines line item flight configuration.
- * @see https://developers.google.com/display-video/api/reference/rest/v1/advertisers.lineItems#LineItemFlight
+ * @see https://developers.google.com/display-video/api/reference/rest/v3/advertisers.lineItems#LineItemFlight
  *
  */
 export interface LineItemFlight {
@@ -1030,7 +1109,7 @@ export const LineItemFlightMapper: MapperWithJsonOut<LineItemFlight> = {
 
 /**
  * Defines line item budget configuration.
- * @see https://developers.google.com/display-video/api/reference/rest/v1/advertisers.lineItems#LineItemBudget
+ * @see https://developers.google.com/display-video/api/reference/rest/v3/advertisers.lineItems#LineItemBudget
  *
  */
 export interface LineItemBudget {
@@ -1062,7 +1141,7 @@ export const LineItemBudgetMapper: Mapper<LineItemBudget> = {
 
 /**
  * Defines line item partner revenue model configuration.
- * @see https://developers.google.com/display-video/api/reference/rest/v1/advertisers.lineItems#PartnerRevenueModel
+ * @see https://developers.google.com/display-video/api/reference/rest/v3/advertisers.lineItems#PartnerRevenueModel
  *
  */
 export interface LineItemPartnerRevenueModel {
@@ -1094,7 +1173,7 @@ export const LineItemPartnerRevenueModelMapper: Mapper<LineItemPartnerRevenueMod
 
 /**
  * Defines configuration for an amount of money with its currency type.
- * @see https://developers.google.com/display-video/api/reference/rest/v1/inventorySources#Money
+ * @see https://developers.google.com/display-video/api/reference/rest/v3/inventorySources#Money
  *
  */
 export interface InventorySourceMoney {
@@ -1132,7 +1211,7 @@ export const InventorySourceMoneyMapper: Mapper<InventorySourceMoney> = {
 
 /**
  * Defines inventory source rate details configuration.
- * @see https://developers.google.com/display-video/api/reference/rest/v1/inventorySources#RateDetails
+ * @see https://developers.google.com/display-video/api/reference/rest/v3/inventorySources#RateDetails
  *
  */
 export interface InventorySourceRateDetails {
@@ -1334,3 +1413,5 @@ export type BudgetUnit =
   | 'BUDGET_UNIT_UNSPECIFIED'
   | 'BUDGET_UNIT_CURRENCY'
   | 'BUDGET_UNIT_IMPRESSIONS';
+
+type EnumLikeTypeCheck<T> = T[keyof T];
