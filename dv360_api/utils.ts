@@ -259,20 +259,46 @@ export const ObjectUtil = {
    * @return True if the object contains all properties, false
    *     otherwise
    */
-  hasOwnProperties(
+  hasOwnProperties<T>(
     obj: unknown,
-    requiredProperties: string[],
-    oneOf: string[] = [],
+    {
+      requiredProperties = [],
+      oneOf = [],
+      errorOnFail = false,
+    }: {
+      requiredProperties?: string[];
+      oneOf?: string[];
+      errorOnFail?: boolean;
+    },
   ): boolean {
     const keys = ObjectUtil.isObject(obj)
       ? Object.keys(obj as { [key: string]: unknown })
       : [];
-    return (
+    const result =
       keys.length > 0 &&
       (requiredProperties.length > 0 || oneOf.length > 0) &&
       requiredProperties.every((key) => keys.includes(key)) &&
-      (oneOf.length === 0 || oneOf.some((key) => keys.includes(key)))
-    );
+      (oneOf.length === 0 || oneOf.some((key) => keys.includes(key)));
+    if (errorOnFail) {
+      const missingRequiredProperties = requiredProperties.filter(
+        (key) => !keys.includes(key),
+      );
+      if (requiredProperties.length + oneOf.length === 0) {
+        throw ObjectUtil.error(`No properties checked.`);
+      }
+      if (requiredProperties.length && missingRequiredProperties.length) {
+        throw ObjectUtil.error(
+          `Missing required properties: ${missingRequiredProperties.join(', ')}`,
+        );
+      }
+      const missingOneOf = oneOf.filter((key) => !keys.includes(key));
+      if (oneOf.length > 0 && missingOneOf.length > 1) {
+        throw ObjectUtil.error(
+          `Expected one "oneOf" property. Got ${missingOneOf.join(', ')}`,
+        );
+      }
+    }
+    return result;
   },
 
   /**

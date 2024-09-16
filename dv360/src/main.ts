@@ -26,7 +26,6 @@ import { DisplayVideoFrontend, migrations } from './frontend';
 import {
   budgetPacingRuleLineItem,
   budgetPacingPercentageRule,
-  dailyBudgetRule,
   geoTargetRule,
   impressionsByGeoTarget,
 } from './rules';
@@ -54,7 +53,6 @@ export function getFrontend(
     rules: [
       budgetPacingRuleLineItem,
       budgetPacingPercentageRule,
-      dailyBudgetRule,
       geoTargetRule,
       impressionsByGeoTarget,
     ],

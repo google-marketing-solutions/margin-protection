@@ -306,14 +306,13 @@ export const FrequencyCapMapper: Mapper<FrequencyCap> = {
    */
   map(resource) {
     if (
-      (typeof resource.unlimited === 'boolean' && resource.unlimited) ||
-      (ObjectUtil.hasOwnProperties(resource, [
-        'timeUnit',
-        'timeUnitCount',
-        'maxImpressions',
-      ]) &&
-        Number.isInteger(resource.timeUnitCount) &&
-        Number.isInteger(resource.maxImpressions))
+      resource &&
+      ((typeof resource.unlimited === 'boolean' && resource.unlimited) ||
+        (ObjectUtil.hasOwnProperties(resource, {
+          requiredProperties: ['timeUnit', 'timeUnitCount', 'maxImpressions'],
+        }) &&
+          Number.isInteger(resource.timeUnitCount) &&
+          Number.isInteger(resource.maxImpressions)))
     ) {
       return resource;
     }
@@ -347,7 +346,11 @@ export const PacingMapper: Mapper<Pacing> = {
    *     contain the expected properties
    */
   map(resource) {
-    if (ObjectUtil.hasOwnProperties(resource, ['pacingPeriod', 'pacingType'])) {
+    if (
+      ObjectUtil.hasOwnProperties(resource, {
+        requiredProperties: ['pacingPeriod', 'pacingType'],
+      })
+    ) {
       const pacingPeriod = resource.pacingPeriod;
       const mappedPacingPeriod = PacingPeriodMapper.map(
         pacingPeriod as RawPacingPeriod,
@@ -356,11 +359,9 @@ export const PacingMapper: Mapper<Pacing> = {
       if (
         mappedPacingPeriod &&
         (mappedPacingPeriod !== PACING_PERIOD.DAILY ||
-          ObjectUtil.hasOwnProperties(
-            resource,
-            [],
-            ['dailyMaxMicros', 'dailyMaxImpressions'],
-          ))
+          ObjectUtil.hasOwnProperties(resource, {
+            oneOf: ['dailyMaxMicros', 'dailyMaxImpressions'],
+          }))
       ) {
         return resource;
       }
@@ -410,15 +411,13 @@ export const PerformanceGoalMapper: Mapper<PerformanceGoal> = {
    */
   map(resource) {
     if (
-      ObjectUtil.hasOwnProperties(
-        resource,
-        [],
-        [
+      ObjectUtil.hasOwnProperties(resource, {
+        oneOf: [
           'performanceGoalAmountMicros',
           'performanceGoalPercentageMicros',
           'performanceGoalString',
         ],
-      ) &&
+      }) &&
       Object.keys(resource).length >= 1
     ) {
       if (!resource.performanceGoalType) {
@@ -485,11 +484,9 @@ export const KpiMapper: Mapper<Kpi> = {
       return resource;
     }
     if (
-      ObjectUtil.hasOwnProperties(
-        resource,
-        [],
-        ['kpiAmountMicros', 'kpiPercentageMicros', 'kpiString'],
-      ) &&
+      ObjectUtil.hasOwnProperties(resource, {
+        oneOf: ['kpiAmountMicros', 'kpiPercentageMicros', 'kpiString'],
+      }) &&
       Object.keys(resource).length >= 1
     ) {
       if (!resource.kpiType) {
@@ -584,16 +581,14 @@ export const BiddingStrategyMapper: Mapper<BiddingStrategy> = {
    */
   map(resource) {
     if (
-      ObjectUtil.hasOwnProperties(
-        resource,
-        [],
-        [
+      ObjectUtil.hasOwnProperties(resource, {
+        oneOf: [
           'youtubeAndPartnersBid',
           'fixedBid',
           'maximizeSpendAutoBid',
           'performanceGoalAutoBid',
         ],
-      )
+      })
     ) {
       const fixedBidStrategy = resource.fixedBid;
       const maxSpendStrategy = resource.maximizeSpendAutoBid;
@@ -602,19 +597,27 @@ export const BiddingStrategyMapper: Mapper<BiddingStrategy> = {
 
       const validFixedBidStrategy =
         fixedBidStrategy &&
-        ObjectUtil.hasOwnProperties(fixedBidStrategy, ['bidAmountMicros']);
+        ObjectUtil.hasOwnProperties(fixedBidStrategy, {
+          requiredProperties: ['bidAmountMicros'],
+        });
       const validMaxSpendStrategy =
         maxSpendStrategy &&
-        ObjectUtil.hasOwnProperties(maxSpendStrategy, ['performanceGoalType']);
+        ObjectUtil.hasOwnProperties(maxSpendStrategy, {
+          requiredProperties: ['performanceGoalType'],
+        });
       const validYoutubeAndPartnersBid =
         youtubeAndPartnersBid &&
-        ObjectUtil.hasOwnProperties(youtubeAndPartnersBid, ['type']);
+        ObjectUtil.hasOwnProperties(youtubeAndPartnersBid, {
+          requiredProperties: ['type'],
+        });
       const validPerformanceGoalStrategy =
         performanceGoalStrategy &&
-        ObjectUtil.hasOwnProperties(performanceGoalStrategy, [
-          'performanceGoalType',
-          'performanceGoalAmountMicros',
-        ]);
+        ObjectUtil.hasOwnProperties(performanceGoalStrategy, {
+          requiredProperties: [
+            'performanceGoalType',
+            'performanceGoalAmountMicros',
+          ],
+        });
 
       if (
         validFixedBidStrategy ||
@@ -653,7 +656,11 @@ export const AdvertiserGeneralConfigMapper: Mapper<AdvertiserGeneralConfig> = {
    *     resource did not contain the expected properties
    */
   map(resource) {
-    if (ObjectUtil.hasOwnProperties(resource, ['domainUrl', 'currencyCode'])) {
+    if (
+      ObjectUtil.hasOwnProperties(resource, {
+        requiredProperties: ['domainUrl', 'currencyCode'],
+      })
+    ) {
       return resource;
     }
     return undefined;
@@ -696,11 +703,9 @@ export const AdvertiserAdServerConfigMapper: Mapper<AdvertiserAdServerConfig> =
      */
     map(resource) {
       if (
-        ObjectUtil.hasOwnProperties(
-          resource,
-          [],
-          ['thirdPartyOnlyConfig', 'cmHybridConfig'],
-        )
+        ObjectUtil.hasOwnProperties(resource, {
+          oneOf: ['thirdPartyOnlyConfig', 'cmHybridConfig'],
+        })
       ) {
         const thirdPartyOnlyConfig = resource.thirdPartyOnlyConfig;
         const cmHybridConfig = resource.cmHybridConfig;
@@ -716,20 +721,22 @@ export const AdvertiserAdServerConfigMapper: Mapper<AdvertiserAdServerConfig> =
           validThirdPartyOnlyConfig =
             thirdPartyOnlyConfigKeys.length === 0 ||
             (thirdPartyOnlyConfigKeys.length === 1 &&
-              ObjectUtil.hasOwnProperties(thirdPartyOnlyConfig, [
-                'pixelOrderIdReportingEnabled',
-              ]) &&
+              ObjectUtil.hasOwnProperties(thirdPartyOnlyConfig, {
+                requiredProperties: ['pixelOrderIdReportingEnabled'],
+              }) &&
               thirdPartyOnlyConfig !== undefined &&
               thirdPartyOnlyConfig.pixelOrderIdReportingEnabled !== undefined &&
               typeof thirdPartyOnlyConfig.pixelOrderIdReportingEnabled ===
                 'boolean');
         }
         const validCmHybridConfig =
-          ObjectUtil.hasOwnProperties(cmHybridConfig, [
-            'cmAccountId',
-            'cmFloodlightConfigId',
-            'cmFloodlightLinkingAuthorized',
-          ]) &&
+          ObjectUtil.hasOwnProperties(cmHybridConfig, {
+            requiredProperties: [
+              'cmAccountId',
+              'cmFloodlightConfigId',
+              'cmFloodlightLinkingAuthorized',
+            ],
+          }) &&
           cmHybridConfig !== undefined &&
           typeof cmHybridConfig.cmFloodlightLinkingAuthorized === 'boolean';
 
@@ -775,7 +782,7 @@ export const CampaignBudgetMapper: MapperWithJsonOut<CampaignBudget[]> = {
       return [];
     }
     const budgets = [];
-    const expectedKeys = [
+    const requiredProperties = [
       'budgetId',
       'displayName',
       'budgetUnit',
@@ -784,7 +791,7 @@ export const CampaignBudgetMapper: MapperWithJsonOut<CampaignBudget[]> = {
     ];
 
     for (const budget of resource) {
-      if (ObjectUtil.hasOwnProperties(budget, expectedKeys)) {
+      if (ObjectUtil.hasOwnProperties(budget, { requiredProperties })) {
         const startDateExists = ApiDate.validate(budget.dateRange.startDate);
         const endDateExists = ApiDate.validate(budget.dateRange.endDate);
 
@@ -795,7 +802,7 @@ export const CampaignBudgetMapper: MapperWithJsonOut<CampaignBudget[]> = {
         console.warn(
           Object.keys(budget),
           'does not match expected',
-          expectedKeys,
+          requiredProperties,
         );
       }
     }
@@ -850,8 +857,12 @@ export const CampaignFlightMapper: MapperWithJsonOut<CampaignFlight> = {
    */
   map(resource) {
     if (
-      ObjectUtil.hasOwnProperties(resource, ['plannedDates']) &&
-      ObjectUtil.hasOwnProperties(resource.plannedDates, ['startDate'])
+      ObjectUtil.hasOwnProperties(resource, {
+        requiredProperties: ['plannedDates'],
+      }) &&
+      ObjectUtil.hasOwnProperties(resource.plannedDates, {
+        requiredProperties: ['startDate'],
+      })
     ) {
       const startDateValid = ApiDate.validate(
         resource.plannedDates['startDate'],
@@ -901,10 +912,9 @@ export const CampaignGoalMapper: Mapper<CampaignGoal> = {
    */
   map(resource) {
     if (
-      ObjectUtil.hasOwnProperties(resource, [
-        'campaignGoalType',
-        'performanceGoal',
-      ]) &&
+      ObjectUtil.hasOwnProperties(resource, {
+        requiredProperties: ['campaignGoalType', 'performanceGoal'],
+      }) &&
       PerformanceGoalMapper.map(resource.performanceGoal)
     ) {
       return resource;
@@ -942,10 +952,9 @@ export const InsertionOrderBudgetSegmentMapper: MapperWithJsonOut<InsertionOrder
         resource.budgetAmountMicros = '0';
       }
       if (
-        ObjectUtil.hasOwnProperties(resource, [
-          'budgetAmountMicros',
-          'dateRange',
-        ])
+        ObjectUtil.hasOwnProperties(resource, {
+          requiredProperties: ['budgetAmountMicros', 'dateRange'],
+        })
       ) {
         const dateRange = resource.dateRange;
         const startDateValid = ApiDate.validate(dateRange['startDate']);
@@ -983,8 +992,8 @@ export const InsertionOrderBudgetSegmentMapper: MapperWithJsonOut<InsertionOrder
  *
  */
 export interface InsertionOrderBudget {
-  budgetUnit: string;
-  budgetSegments: InsertionOrderBudgetSegment[];
+  budgetUnit?: string;
+  budgetSegments?: InsertionOrderBudgetSegment[];
 }
 
 /**
@@ -1003,7 +1012,9 @@ export const InsertionOrderBudgetMapper: MapperWithJsonOut<InsertionOrderBudget>
      */
     map(resource) {
       if (
-        ObjectUtil.hasOwnProperties(resource, ['budgetUnit', 'budgetSegments'])
+        ObjectUtil.hasOwnProperties(resource, {
+          requiredProperties: ['budgetUnit', 'budgetSegments'],
+        })
       ) {
         const budgetSegments = resource.budgetSegments;
 
@@ -1021,7 +1032,7 @@ export const InsertionOrderBudgetMapper: MapperWithJsonOut<InsertionOrderBudget>
           }
         }
       }
-      return undefined;
+      return {};
     },
 
     /**
@@ -1064,7 +1075,11 @@ export const LineItemFlightMapper: MapperWithJsonOut<LineItemFlight> = {
    *     did not contain the expected properties
    */
   map(resource) {
-    if (ObjectUtil.hasOwnProperties(resource, ['flightDateType'])) {
+    if (
+      ObjectUtil.hasOwnProperties(resource, {
+        requiredProperties: ['flightDateType'],
+      })
+    ) {
       const dateRange = resource.dateRange;
       let validDateRange = false;
 
@@ -1113,9 +1128,9 @@ export const LineItemFlightMapper: MapperWithJsonOut<LineItemFlight> = {
  *
  */
 export interface LineItemBudget {
-  budgetAllocationType: BudgetAllocationType;
-  budgetUnit: BudgetUnit;
-  maxAmount: number;
+  budgetAllocationType?: BudgetAllocationType;
+  budgetUnit?: BudgetUnit;
+  maxAmount?: number;
 }
 
 /**
@@ -1132,10 +1147,14 @@ export const LineItemBudgetMapper: Mapper<LineItemBudget> = {
    *     did not contain the expected properties
    */
   map(resource) {
-    if (ObjectUtil.hasOwnProperties(resource, ['budgetAllocationType'])) {
+    if (
+      ObjectUtil.hasOwnProperties(resource, {
+        requiredProperties: ['budgetAllocationType'],
+      })
+    ) {
       return resource as unknown as LineItemBudget;
     }
-    return undefined;
+    return {};
   },
 };
 
@@ -1164,7 +1183,11 @@ export const LineItemPartnerRevenueModelMapper: Mapper<LineItemPartnerRevenueMod
      *     the resource did not contain the expected properties
      */
     map(resource) {
-      if (ObjectUtil.hasOwnProperties(resource, ['markupType'])) {
+      if (
+        ObjectUtil.hasOwnProperties(resource, {
+          requiredProperties: ['markupType'],
+        })
+      ) {
         return resource;
       }
       return undefined;
@@ -1197,11 +1220,10 @@ export const InventorySourceMoneyMapper: Mapper<InventorySourceMoney> = {
    */
   map(resource) {
     if (
-      ObjectUtil.hasOwnProperties(
-        resource,
-        ['currencyCode'],
-        ['units', 'nanos'],
-      )
+      ObjectUtil.hasOwnProperties(resource, {
+        requiredProperties: ['currencyCode'],
+        oneOf: ['units', 'nanos'],
+      })
     ) {
       return resource;
     }
@@ -1236,7 +1258,9 @@ export const InventorySourceRateDetailsMapper: Mapper<InventorySourceRateDetails
      *     the resource did not contain the expected properties
      */
     map(resource) {
-      if (ObjectUtil.hasOwnProperties(resource, ['rate'])) {
+      if (
+        ObjectUtil.hasOwnProperties(resource, { requiredProperties: ['rate'] })
+      ) {
         const minimumSpend = resource.minimumSpend;
         const valid =
           InventorySourceMoneyMapper.map(resource.rate) &&
@@ -1389,7 +1413,9 @@ export class ApiDate implements RawApiDate {
 
   static validate(rawDate: RawApiDate) {
     return (
-      ObjectUtil.hasOwnProperties(rawDate, ['year', 'month', 'day']) &&
+      ObjectUtil.hasOwnProperties(rawDate, {
+        requiredProperties: ['year', 'month', 'day'],
+      }) &&
       Number.isInteger(rawDate.year) &&
       Number.isInteger(rawDate.month) &&
       Number.isInteger(rawDate.day)

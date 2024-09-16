@@ -226,7 +226,7 @@ export class Advertiser extends DisplayVideoResource {
    *     properties
    */
   static fromApiResource(resource: { [key: string]: unknown }): Advertiser {
-    const properties = [
+    const requiredProperties = [
       'advertiserId',
       'displayName',
       'partnerId',
@@ -234,7 +234,12 @@ export class Advertiser extends DisplayVideoResource {
       'generalConfig',
       'adServerConfig',
     ];
-    if (ObjectUtil.hasOwnProperties(resource, properties)) {
+    if (
+      ObjectUtil.hasOwnProperties(resource, {
+        requiredProperties,
+        errorOnFail: true,
+      })
+    ) {
       const generalConfig = resource[
         'generalConfig'
       ] as AdvertiserGeneralConfig;
@@ -420,7 +425,7 @@ export class Campaign extends DisplayVideoResource {
    *     properties
    */
   static fromApiResource(resource: { [key: string]: unknown }): Campaign {
-    const properties = [
+    const requiredProperties = [
       'campaignId',
       'displayName',
       'advertiserId',
@@ -429,7 +434,12 @@ export class Campaign extends DisplayVideoResource {
       'campaignFlight',
       'frequencyCap',
     ];
-    if (ObjectUtil.hasOwnProperties(resource, properties)) {
+    if (
+      ObjectUtil.hasOwnProperties(resource, {
+        requiredProperties,
+        errorOnFail: true,
+      })
+    ) {
       const campaignBudgets = resource['campaignBudgets'] as CampaignBudget[];
       const campaignGoal = resource['campaignGoal'] as CampaignGoal;
       const campaignFlight = resource['campaignFlight'] as CampaignFlight;
@@ -653,7 +663,7 @@ export class InsertionOrder extends DisplayVideoResource {
    *     properties
    */
   static fromApiResource(resource: { [key: string]: unknown }): InsertionOrder {
-    const properties = [
+    const requiredProperties = [
       'insertionOrderId',
       'displayName',
       'advertiserId',
@@ -665,7 +675,12 @@ export class InsertionOrder extends DisplayVideoResource {
       'kpi',
       'budget',
     ];
-    if (ObjectUtil.hasOwnProperties(resource, properties)) {
+    if (
+      ObjectUtil.hasOwnProperties(resource, {
+        requiredProperties,
+        errorOnFail: true,
+      })
+    ) {
       const pacing = resource['pacing'] as Pacing;
       const frequencyCap = resource['frequencyCap'] as FrequencyCap;
       const kpi = resource['kpi'] as Kpi;
@@ -859,6 +874,89 @@ interface LineItemParams {
   frequencyCap: FrequencyCap;
   partnerRevenueModel: LineItemPartnerRevenueModel;
   bidStrategy: BiddingStrategy;
+  youtubeAndPartnersSettings?: YoutubeAndPartnersSettings;
+}
+
+interface YoutubeAndPartnersSettings {
+  /** The view frequency cap settings of the line item. The max_views field in this settings object must be used if assigning a limited cap. */
+  viewFrequencyCap?: FrequencyCap;
+  /** Optional. The third-party measurement configs of the line item. */
+  thirdPartyMeasurementConfigs?: ThirdPartyMeasurementConfigs;
+  /** Settings that control what YouTube and Partners inventories the line item will target. */
+  inventorySourceSettings?: YoutubeAndPartnersInventorySourceConfig;
+  /** The kind of content on which the YouTube and Partners ads will be shown. */
+  contentCategory?:
+    | 'YOUTUBE_AND_PARTNERS_CONTENT_CATEGORY_UNSPECIFIED'
+    | 'YOUTUBE_AND_PARTNERS_CONTENT_CATEGORY_STANDARD'
+    | 'YOUTUBE_AND_PARTNERS_CONTENT_CATEGORY_EXPANDED'
+    | 'YOUTUBE_AND_PARTNERS_CONTENT_CATEGORY_LIMITED';
+  /** Output only. The content category which takes effect when serving the line item. When content category is set in both line item and advertiser, the stricter one will take effect when serving the line item. */
+  effectiveContentCategory?:
+    | 'YOUTUBE_AND_PARTNERS_CONTENT_CATEGORY_UNSPECIFIED'
+    | 'YOUTUBE_AND_PARTNERS_CONTENT_CATEGORY_STANDARD'
+    | 'YOUTUBE_AND_PARTNERS_CONTENT_CATEGORY_EXPANDED'
+    | 'YOUTUBE_AND_PARTNERS_CONTENT_CATEGORY_LIMITED';
+  /** Optional. The average number of times you want ads from this line item to show to the same person over a certain period of time. */
+  targetFrequency?: TargetFrequency;
+  leadFormId?: string;
+  /** Optional. The settings related to VideoAdSequence. */
+  videoAdSequenceSettings?:
+    | 'VIDEO_AD_SEQUENCE_MINIMUM_DURATION_UNSPECIFIED'
+    | 'VIDEO_AD_SEQUENCE_MINIMUM_DURATION_WEEK'
+    | 'VIDEO_AD_SEQUENCE_MINIMUM_DURATION_MONTH';
+}
+
+export declare interface TargetFrequency {
+  /** The target number of times, on average, the ads will be shown to the same person in the timespan dictated by time_unit and time_unit_count. */
+  targetCount?: string;
+  /** The unit of time in which the target frequency will be applied. The following time unit is applicable: * `TIME_UNIT_WEEKS` */
+  timeUnit?:
+    | 'TIME_UNIT_UNSPECIFIED'
+    | 'TIME_UNIT_LIFETIME'
+    | 'TIME_UNIT_MONTHS'
+    | 'TIME_UNIT_WEEKS'
+    | 'TIME_UNIT_DAYS'
+    | 'TIME_UNIT_HOURS'
+    | 'TIME_UNIT_MINUTES';
+
+  /** The number of time_unit the target frequency will last. The following restrictions apply based on the value of time_unit: * `TIME_UNIT_WEEKS` - must be 1 */
+  timeUnitCount?: number;
+}
+
+interface ThirdPartyMeasurementConfigs {
+  /** Optional. The third-party vendors measuring viewability. The following third-party vendors are applicable: * `THIRD_PARTY_VENDOR_MOAT` * `THIRD_PARTY_VENDOR_DOUBLE_VERIFY` * `THIRD_PARTY_VENDOR_INTEGRAL_AD_SCIENCE` * `THIRD_PARTY_VENDOR_COMSCORE` * `THIRD_PARTY_VENDOR_TELEMETRY` * `THIRD_PARTY_VENDOR_MEETRICS` */
+  viewabilityVendorConfigs?: ThirdPartyVendorConfig[];
+  /** Optional. The third-party vendors measuring brand safety. The following third-party vendors are applicable: * `THIRD_PARTY_VENDOR_ZERF` * `THIRD_PARTY_VENDOR_DOUBLE_VERIFY` * `THIRD_PARTY_VENDOR_INTEGRAL_AD_SCIENCE` */
+  brandSafetyVendorConfigs?: ThirdPartyVendorConfig[];
+  /** Optional. The third-party vendors measuring reach. The following third-party vendors are applicable: * `THIRD_PARTY_VENDOR_NIELSEN` * `THIRD_PARTY_VENDOR_COMSCORE` * `THIRD_PARTY_VENDOR_KANTAR` */
+  reachVendorConfigs?: ThirdPartyVendorConfig[];
+  /** Optional. The third-party vendors measuring brand lift. The following third-party vendors are applicable: * `THIRD_PARTY_VENDOR_DYNATA` * `THIRD_PARTY_VENDOR_KANTAR` */
+  brandLiftVendorConfigs?: ThirdPartyVendorConfig[];
+}
+
+interface ThirdPartyVendorConfig {
+  vendor:
+    | 'THIRD_PARTY_VENDOR_UNSPECIFIED'
+    | 'THIRD_PARTY_VENDOR_MOAT'
+    | 'THIRD_PARTY_VENDOR_DOUBLE_VERIFY'
+    | 'THIRD_PARTY_VENDOR_INTEGRAL_AD_SCIENCE'
+    | 'THIRD_PARTY_VENDOR_COMSCORE'
+    | 'THIRD_PARTY_VENDOR_TELEMETRY'
+    | 'THIRD_PARTY_VENDOR_MEETRICS'
+    | 'THIRD_PARTY_VENDOR_ZEFR'
+    | 'THIRD_PARTY_VENDOR_NIELSEN'
+    | 'THIRD_PARTY_VENDOR_KANTAR'
+    | 'THIRD_PARTY_VENDOR_DYNATA';
+  placementId: string;
+}
+
+export interface YoutubeAndPartnersInventorySourceConfig {
+  /** Optional. Whether to target inventory on YouTube. This includes both search, channels and videos. */
+  includeYoutube?: boolean;
+  /** Optional. Whether to target inventory in video apps available with Google TV. */
+  includeGoogleTv?: boolean;
+  /** Whether to target inventory on a collection of partner sites and apps that follow the same brand safety standards as YouTube. */
+  includeYoutubeVideoPartners?: boolean;
 }
 
 /**
@@ -898,9 +996,9 @@ export class LineItem extends DisplayVideoResource {
       flight,
       budget,
       pacing,
-      frequencyCap,
       partnerRevenueModel,
       bidStrategy,
+      frequencyCap,
     }: LineItemParams,
     status: Status = STATUS.DRAFT,
   ) {
@@ -937,7 +1035,7 @@ export class LineItem extends DisplayVideoResource {
    *     properties
    */
   static fromApiResource(resource: { [key: string]: unknown }): LineItem {
-    const properties = [
+    const requiredProperties = [
       'lineItemId',
       'displayName',
       'advertiserId',
@@ -948,15 +1046,23 @@ export class LineItem extends DisplayVideoResource {
       'flight',
       'budget',
       'pacing',
-      'frequencyCap',
       'partnerRevenueModel',
       'bidStrategy',
     ];
-    if (ObjectUtil.hasOwnProperties(resource, properties)) {
+    if (
+      ObjectUtil.hasOwnProperties(resource, {
+        requiredProperties,
+        errorOnFail: true,
+      })
+    ) {
       const flight = resource['flight'] as LineItemFlight;
       const budget = resource['budget'] as LineItemBudget;
       const pacing = resource['pacing'] as Pacing;
-      const frequencyCap = resource['frequencyCap'] as FrequencyCap;
+      const frequencyCap =
+        resource['frequencyCap'] ||
+        (resource['youtubeAndPartnersSettings'][
+          'viewFrequencyCap'
+        ] as FrequencyCap);
       const partnerRevenueModel = resource[
         'partnerRevenueModel'
       ] as LineItemPartnerRevenueModel;
@@ -973,7 +1079,6 @@ export class LineItem extends DisplayVideoResource {
         mappedFlight &&
         mappedBudget &&
         mappedPacing &&
-        mappedFrequencyCap &&
         mappedPartnerRevenueModel &&
         mappedBidStrategy
       ) {
@@ -1249,14 +1354,19 @@ export class InventorySource extends DisplayVideoResource {
   static fromApiResource(resource: {
     [key: string]: unknown;
   }): InventorySource {
-    const properties = [
+    const requiredProperties = [
       'inventorySourceId',
       'displayName',
       'inventorySourceType',
       'rateDetails',
       'status',
     ];
-    if (ObjectUtil.hasOwnProperties(resource, properties)) {
+    if (
+      ObjectUtil.hasOwnProperties(resource, {
+        requiredProperties,
+        errorOnFail: true,
+      })
+    ) {
       const status = resource['status'] as { entityStatus?: RawStatus };
       const rateDetails = resource['rateDetails'] as InventorySourceRateDetails;
       const mappedRateDetails =
@@ -1264,7 +1374,10 @@ export class InventorySource extends DisplayVideoResource {
 
       if (
         mappedRateDetails &&
-        ObjectUtil.hasOwnProperties(status, ['entityStatus'])
+        ObjectUtil.hasOwnProperties(status, {
+          requiredProperties: ['entityStatus'],
+          errorOnFail: true,
+        })
       ) {
         const requiredParams = {
           id: String(resource['inventorySourceId']),
@@ -1455,11 +1568,20 @@ export class TargetingOption extends DisplayVideoResource {
     idProperty: string = 'targetingOptionId',
     type: string = 'TargetingOption',
   ): TargetingOption {
-    const properties = ['targetingType', idProperty, ...additionalProperties];
+    const requiredProperties = [
+      'targetingType',
+      idProperty,
+      ...additionalProperties,
+    ];
 
-    if (ObjectUtil.hasOwnProperties(resource, properties)) {
+    if (
+      ObjectUtil.hasOwnProperties(resource, {
+        requiredProperties,
+        errorOnFail: true,
+      })
+    ) {
       const keys = Object.keys(resource).filter(
-        (key) => ![...properties, 'name'].includes(key),
+        (key) => ![...requiredProperties, 'name'].includes(key),
       );
 
       if (keys.length === 1) {

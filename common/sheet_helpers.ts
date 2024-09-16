@@ -253,6 +253,7 @@ export abstract class AbstractRuleRange<T extends ClientTypes<T>>
         const range = rangeRaw.filter((row) => row && row.length);
         if (
           ruleGranularity &&
+          this.client.ruleStore[category] &&
           category !== 'none' &&
           this.client.ruleStore[category].granularity !== ruleGranularity
         ) {

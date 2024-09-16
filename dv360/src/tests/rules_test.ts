@@ -24,7 +24,6 @@ import { Client } from '../client';
 import {
   budgetPacingPercentageRule,
   budgetPacingRuleLineItem,
-  dailyBudgetRule,
   geoTargetRule,
   impressionsByGeoTarget,
 } from '../rules';
@@ -93,7 +92,7 @@ describe('Geo targeting Rule', () => {
 });
 
 async function generateReportWithDateValues(
-  rule: typeof dailyBudgetRule,
+  rule: typeof budgetPacingPercentageRule,
   startDate: number,
   endDate: number,
   includeInsertionOrderBudgetSegments = true,
@@ -440,106 +439,6 @@ describe('Percentage Budget Pacing Rule (Line Item)', () => {
       }),
     );
   });
-});
-
-describe('Daily Budgets Rule', () => {
-  beforeEach(() => {
-    jasmine.clock().install();
-    jasmine.clock().mockDate(new Date(1970, 0, 2));
-    mockAppsScript();
-  });
-
-  afterEach(() => {
-    PropertiesService.getScriptProperties().deleteAllProperties();
-    jasmine.clock().uninstall();
-  });
-
-  const tests: Array<
-    [
-      operator: string,
-      fakeTotalBudget: number,
-      value: string,
-      anomalous: boolean,
-    ]
-  > = [
-    ['is below', 20, '2', true],
-    ['is equal to', 50, '5', false],
-    ['is above', 120, '12', true],
-  ];
-  async function testData(fakeTotalBudget: number) {
-    return await generateInsertionOrderTestData(
-      dailyBudgetRule,
-      {
-        advertiserId: '123',
-        insertionOrderBudgetSegments: [
-          {
-            budgetAmountMicros: (fakeTotalBudget * 1_000_000).toString(),
-            dateRange: {
-              startDate: new ApiDate(1970, 1, 1),
-              endDate: new ApiDate(1970, 1, 11),
-            },
-          },
-          {
-            budgetAmountMicros: (fakeTotalBudget * 2_000_000).toString(),
-            dateRange: {
-              startDate: new ApiDate(1, 1, 1),
-              endDate: new ApiDate(1, 1, 11),
-            },
-          },
-        ],
-        fakeSpendAmount: fakeTotalBudget,
-      },
-      [
-        ['', 'Min. Daily Budget', 'Max. Daily Budget'],
-        ['default', '5', '10'],
-      ],
-    );
-  }
-  for (const [operator, fakeTotalBudget, value, anomalous] of tests) {
-    if (anomalous) {
-      it(`fails when daily budgets ${operator} range`, async () => {
-        const values = await testData(fakeTotalBudget);
-        expect(values['io1']).toEqual(
-          jasmine.objectContaining({
-            value,
-            anomalous,
-          }),
-        );
-      });
-    } else {
-      it(`doesn't fail when daily budgets ${operator} range`, async () => {
-        const values = await testData(fakeTotalBudget);
-        expect(values['io1']).toEqual(
-          jasmine.objectContaining({ anomalous: false }),
-        );
-      });
-    }
-
-    const values: Array<[startDate: number, endDate: number]> = [
-      [1, 30],
-      [1, 6],
-    ];
-    for (const [startDate, endDate] of values) {
-      it(`checks rules when in date range (${startDate}-${endDate})`, async () => {
-        const values = await generateReportWithDateValues(
-          dailyBudgetRule,
-          startDate,
-          endDate,
-        );
-        expect(values).toEqual({
-          io1: jasmine.objectContaining({
-            anomalous: true,
-          }),
-        });
-      });
-    }
-
-    it('skips rules when out of date range', async () => {
-      jasmine.clock().mockDate(new Date('3000-01-01'));
-      const values = await generateReportWithDateValues(dailyBudgetRule, 1, 1);
-      expect(values).toEqual({});
-    });
-  }
 });
 
 describe('impressionsByGeoTarget', () => {
