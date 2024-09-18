@@ -184,7 +184,7 @@ export class BudgetMatchTable extends MatchTable {
   protected override getReport() {
     ++this.reportGetHits;
     return (
-      'Campaign ID,Insertion Order ID,Budget Segment Start Date,Budget Segment End Date,Billable Cost (USD)\n' +
+      'Campaign ID,Insertion Order ID,Budget Segment Start Date,Budget Segment End Date,Billable Cost (Adv Currency)\n' +
       '1,IO2,2022/12/17,2022/12/27,0.020020\n' +
       '1,IO3,2022/12/17,2022/12/27,0.030030\n' +
       '1,IO4,2022/12/17,2022/12/27,0.040040\n' +

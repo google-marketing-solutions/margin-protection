@@ -278,8 +278,12 @@ export class LineItemBudgetReport
       },
       params: {
         type: 'STANDARD',
-        groupBys: ['FILTER_ADVERTISER', 'FILTER_LINE_ITEM'],
-        metrics: ['METRIC_BILLABLE_COST_USD'],
+        groupBys: [
+          'FILTER_ADVERTISER',
+          'FILTER_LINE_ITEM',
+          'FILTER_ADVERTISER_CURRENCY',
+        ],
+        metrics: ['METRIC_BILLABLE_COST_ADVERTISER'],
         filters: [
           {
             type:
@@ -302,7 +306,7 @@ export class LineItemBudgetReport
     );
 
     const lineItemId = headers['Line Item ID'];
-    const billableCost = headers['Billable Cost (USD)'];
+    const billableCost = headers['Billable Cost (Adv Currency)'];
     return report.slice(1, report.length).reduce(
       (prev, curr) => {
         const key = curr[lineItemId];
@@ -362,7 +366,7 @@ export class BudgetReport extends Report implements BudgetReportInterface {
           'FILTER_BUDGET_SEGMENT_DESCRIPTION',
           'FILTER_ADVERTISER_CURRENCY',
         ],
-        metrics: ['METRIC_BILLABLE_COST_USD'],
+        metrics: ['METRIC_BILLABLE_COST_ADVERTISER'],
         filters: [
           {
             type:
@@ -385,7 +389,7 @@ export class BudgetReport extends Report implements BudgetReportInterface {
     );
 
     const insertionOrderId = headers['Insertion Order ID'];
-    const billableCost = headers['Billable Cost (USD)'];
+    const billableCost = headers['Billable Cost (Adv Currency)'];
     const startDate = headers['Budget Segment Start Date'];
     const endDate = headers['Budget Segment End Date'];
 
