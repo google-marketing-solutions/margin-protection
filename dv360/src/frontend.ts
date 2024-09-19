@@ -33,6 +33,8 @@ import { IDType, RuleGranularity, DisplayVideoClientTypes } from './types';
 
 const ENTITY_ID = 'ENTITY_ID';
 const ID_TYPE = 'ID_TYPE';
+const REPORT_LABEL = 'REPORT_LABEL';
+const DRIVE_ID = 'DRIVE_ID';
 
 /**
  * The name of the general settings sheet.
@@ -70,7 +72,7 @@ export const migrations: Record<
       .getRange(1, 1, ioValues.length, ioValues[0].length)
       .setValues(ioValues);
   },
-  '1.2': (frontend) => {
+  '1.2': () => {
     // encrypt rules
     const properties = PropertiesService.getScriptProperties().getProperties();
     const newProperties = { ...properties };
@@ -97,13 +99,16 @@ export const migrations: Record<
   },
   '1.3': () => {
     const active = SpreadsheetApp.getActive();
+    if (active.getRangeByName(REPORT_LABEL)) {
+      return;
+    }
     const sheet = getOrCreateSheet('General/Settings');
     const range = sheet.getRange('A6:C7');
     HELPERS.insertRows(range);
     const reportLabel = sheet.getRange('B6:C6').merge();
     const driveId = sheet.getRange('B7:C7').merge();
-    active.setNamedRange('REPORT_LABEL', reportLabel);
-    active.setNamedRange('DRIVE_ID', driveId);
+    active.setNamedRange(REPORT_LABEL, reportLabel);
+    active.setNamedRange(DRIVE_ID, driveId);
 
     addSettingWithDescription(sheet, 'A6', [
       'Report Label',
@@ -117,9 +122,13 @@ export const migrations: Record<
   '2.0': () => {
     const properties = new AppsScriptPropertyStore();
     Object.entries(properties.getProperties()).forEach(([k, v]) => {
+      const values = JSON.parse(v);
+      if (values.updated) {
+        return;
+      }
       properties.setProperty(
         k,
-        JSON.stringify({ values: JSON.parse(v), updated: new Date() }),
+        JSON.stringify({ values, updated: new Date() }),
       );
     });
   },

@@ -1083,7 +1083,9 @@ async function generateGenderTargetTestData(
 }
 
 function queryEquals(
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   query1: ReportClass<any, any>,
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   query2: ReportClass<any, any>,
 ) {
   expect(query1.query.queryParams).toEqual(query2.query.queryParams);

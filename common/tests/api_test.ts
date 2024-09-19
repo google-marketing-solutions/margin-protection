@@ -220,7 +220,7 @@ describe('Google Ads API Client', () => {
   it('Has query in payload', () => {
     const client = createClient();
     spyOn(
-      client as unknown as { requestHeaders(): {} },
+      client as unknown as { requestHeaders(): object },
       'requestHeaders',
     ).and.returnValue({});
     client.query('1', FAKE_REPORT.query).next();
@@ -352,11 +352,10 @@ describe('Report Factory', () => {
 
 describe('Join Report', () => {
   let reportFactory: ReportFactory;
-  let api: GoogleAdsApi;
   let mockQuery: jasmine.Spy;
 
   beforeEach(() => {
-    ({ reportFactory, api, mockQuery } = bootstrapGoogleAdsApi());
+    ({ reportFactory, mockQuery } = bootstrapGoogleAdsApi());
   });
 
   it('returns expected results from query', () => {
@@ -401,8 +400,8 @@ describe('Join query handling', () => {
       return aql;
     });
     mockAppsScript();
-    spyOn(UrlFetchApp, 'fetch').and.callFake((...args: any[]) => {
-      const request = args[1];
+    spyOn(UrlFetchApp, 'fetch').and.callFake((...args: unknown[]) => {
+      const request = args[1] as GoogleAppsScript.URL_Fetch.URLFetchRequest;
       const payload = JSON.parse(request.payload as string) as {
         query: string;
       };
@@ -453,12 +452,11 @@ describe('Join query handling', () => {
 
 describe('Leaf expansion', () => {
   let reportFactory: ReportFactory;
-  let api: GoogleAdsApi;
   let mockQuery: jasmine.Spy;
   const mockLeafAccounts: Record<string, string[]> = { '123': ['1', '2', '3'] };
 
   beforeEach(() => {
-    ({ reportFactory, api, mockQuery } = bootstrapGoogleAdsApi({
+    ({ reportFactory, mockQuery } = bootstrapGoogleAdsApi({
       mockLeafAccounts,
       spyOnLeaf: false,
     }));

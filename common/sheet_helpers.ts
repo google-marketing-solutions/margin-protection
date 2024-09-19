@@ -55,15 +55,6 @@ export const EMAIL_LIST_RANGE = 'EMAIL_LIST';
  */
 export const LABEL_RANGE = 'LABEL';
 
-type ScriptFunction<F> = (properties: PropertyStore) => F;
-type ScriptEntryPoints =
-  | 'onOpen'
-  | 'initializeSheets'
-  | 'preLaunchQa'
-  | 'launchMonitor'
-  | 'displaySetupGuide'
-  | 'displayGlossary';
-
 /**
  * The name of the rule settings sheet (before granularity).
  */
@@ -459,14 +450,14 @@ export const HELPERS = {
   },
   applyAnomalyHelper(
     range: GoogleAppsScript.Spreadsheet.Range,
-    column: number,
+    column: number = 4,
   ) {
     const filter = range.getFilter();
     // A filter can only be added once to a sheet
     if (!filter) {
       const criteria =
         SpreadsheetApp.newFilterCriteria().whenTextEqualTo('TRUE');
-      range.createFilter().setColumnFilterCriteria(4, criteria.build());
+      range.createFilter().setColumnFilterCriteria(column, criteria.build());
     }
   },
   saveLastReportPull(time: number) {
@@ -699,9 +690,13 @@ export abstract class AppsScriptFrontend<T extends ClientTypes<T>> {
     sheet.getRange('A:Z').clearDataValidations();
     sheet.clear();
 
-    const range = sheet.getRange(1, 1, valueArray.length, valueArray[0].length);
-    range.setValues(valueArray);
-    HELPERS.applyAnomalyHelper(range, 4);
+    sheet
+      .getRange(1, 1, valueArray.length, valueArray[0].length)
+      .setValues(valueArray);
+    HELPERS.applyAnomalyHelper(
+      sheet.getRange(2, 1, valueArray.length - 1, valueArray[0].length),
+      4,
+    );
   }
 
   /**
@@ -1057,7 +1052,7 @@ export abstract class AppsScriptFrontend<T extends ClientTypes<T>> {
             name: rule.name,
             values: Object.fromEntries(
               Object.entries(rule.values).filter(
-                ([key, value]) => value.anomalous,
+                ([_, value]) => value.anomalous,
               ),
             ),
           }) as const,
@@ -1202,7 +1197,6 @@ export abstract class AppsScriptFrontend<T extends ClientTypes<T>> {
 
 // This returns a function, a use case that this lint rule doesn't
 // apply to.
-// tslint:disable-next-line:no-return-only-generics
 export function newRuleBuilder<T extends ClientTypes<T>>(): <
   P extends Record<keyof P, ParamDefinition>,
 >(
@@ -1228,7 +1222,7 @@ export function newRuleBuilder<T extends ClientTypes<T>>(): <
         this.settings = transformToParamValues(settingsArray, this.params);
       }
 
-      async run() {
+      async run(): Promise<ExecutorResult> {
         return await ruleDefinition.callback.bind(this)();
       }
     };
@@ -1337,7 +1331,7 @@ function extract(content: string): string {
     const decode = Utilities.base64Decode(content);
     const blob = Utilities.newBlob(decode, 'application/x-gzip');
     return Utilities.ungzip(blob).getDataAsString();
-  } catch (e) {
+  } catch {
     return content; // already extracted
   }
 }

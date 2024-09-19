@@ -107,13 +107,13 @@ export class Client implements ClientInterface {
    */
   async validate() {
     type Executor = RuleExecutor<SearchAdsClientTypes>;
-    const thresholds: Array<[Executor, Function]> = Object.values(
+    const thresholds: Array<[Executor, () => ExecutorResult]> = Object.values(
       this.ruleStore,
     ).reduce(
       (prev, rule) => {
         return [...prev, [rule, rule.run.bind(rule)]];
       },
-      [] as Array<[Executor, Function]>,
+      [] as Array<[Executor, () => ExecutorResult]>,
     );
     const rules: Record<string, Executor> = {};
     const results: Record<string, ExecutorResult> = {};
