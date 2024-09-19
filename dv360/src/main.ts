@@ -28,6 +28,7 @@ import {
   budgetPacingPercentageRule,
   geoTargetRule,
   impressionsByGeoTarget,
+  dailyBudgetRule,
 } from './rules';
 import { AppsScriptPropertyStore } from 'common/sheet_helpers';
 
@@ -53,6 +54,7 @@ export function getFrontend(
     rules: [
       budgetPacingRuleLineItem,
       budgetPacingPercentageRule,
+      dailyBudgetRule,
       geoTargetRule,
       impressionsByGeoTarget,
     ],
