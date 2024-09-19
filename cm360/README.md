@@ -4,7 +4,7 @@ The Campaign Manager 360 Margin Protection Monitor is a tool that identifies con
 
 ## One Time Setup
 
-1. Make a copy of the [CM360 Launch Monitor template](https://docs.google.com/spreadsheets/d/1JlPJlEwU3spwQTG97bvgjNG6t4do2LzZ45uhmTJcnYY/).
+1. Make a copy of the [CM360 Launch Monitor template](https://docs.google.com/spreadsheets/d/1JlPJlEwU3spwQTG97bvgjNG6t4do2LzZ45uhmTJcnYY/copy).
 
 2. (Optional) Setup Reports in Campaign Manager 360
 
