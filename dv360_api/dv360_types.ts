@@ -72,7 +72,7 @@ export const STATUS = {
 /**
  * The canonical TargetingType sent to the API
  */
-export type Status = (typeof STATUS)[keyof typeof STATUS];
+export type Status = EnumLikeTypeCheck<typeof STATUS>;
 
 /**
  * A union of the keys and values available to {@link STATUS}.
@@ -121,8 +121,7 @@ export const TARGETING_TYPE = {
 /**
  * The canonical TargetingType sent to the API.
  */
-export type TargetingType =
-  (typeof TARGETING_TYPE)[keyof typeof TARGETING_TYPE];
+export type TargetingType = EnumLikeTypeCheck<typeof TARGETING_TYPE>;
 
 /**
  * A union of the keys and values available to {@link TARGETING_TYPE}.
@@ -159,10 +158,63 @@ export const TargetingTypeMapper: MapperWithJsonOut<
 };
 
 /**
+ * Defines possible line item types.
+ */
+export const LINE_ITEM_TYPE = {
+  UNSPECIFIED: 'LINE_ITEM_TYPE_UNSPECIFIED',
+  DISPLAY_DEFAULT: 'LINE_ITEM_TYPE_DISPLAY_DEFAULT',
+  DISPLAY_MOBILE_APP_INSTALL: 'LINE_ITEM_TYPE_DISPLAY_MOBILE_APP_INSTALL',
+  VIDEO_DEFAULT: 'LINE_ITEM_TYPE_VIDEO_DEFAULT',
+  VIDEO_MOBILE_APP_INSTALL: 'LINE_ITEM_TYPE_VIDEO_MOBILE_APP_INSTALL',
+  DISPLAY_MOBILE_APP_INVENTORY: 'LINE_ITEM_TYPE_DISPLAY_MOBILE_APP_INVENTORY',
+  VIDEO_MOBILE_APP_INVENTORY: 'LINE_ITEM_TYPE_VIDEO_MOBILE_APP_INVENTORY',
+  AUDIO_DEFAULT: 'LINE_ITEM_TYPE_AUDIO_DEFAULT',
+  VIDEO_OVER_THE_TOP: 'LINE_ITEM_TYPE_VIDEO_OVER_THE_TOP',
+  YOUTUBE_AND_PARTNERS_ACTION: 'LINE_ITEM_TYPE_YOUTUBE_AND_PARTNERS_ACTION',
+  YOUTUBE_AND_PARTNERS_NON_SKIPPABLE:
+    'LINE_ITEM_TYPE_YOUTUBE_AND_PARTNERS_NON_SKIPPABLE',
+  YOUTUBE_AND_PARTNERS_VIDEO_SEQUENCE:
+    'LINE_ITEM_TYPE_YOUTUBE_AND_PARTNERS_VIDEO_SEQUENCE',
+  YOUTUBE_AND_PARTNERS_AUDIO: 'LINE_ITEM_TYPE_YOUTUBE_AND_PARTNERS_AUDIO',
+  YOUTUBE_AND_PARTNERS_REACH: 'LINE_ITEM_TYPE_YOUTUBE_AND_PARTNERS_REACH',
+  YOUTUBE_AND_PARTNERS_SIMPLE: 'LINE_ITEM_TYPE_YOUTUBE_AND_PARTNERS_SIMPLE',
+  YOUTUBE_AND_PARTNERS_NON_SKIPPABLE_OVER_THE_TOP:
+    'LINE_ITEM_TYPE_YOUTUBE_AND_PARTNERS_NON_SKIPPABLE_OVER_THE_TOP',
+  YOUTUBE_AND_PARTNERS_REACH_OVER_THE_TOP:
+    'LINE_ITEM_TYPE_YOUTUBE_AND_PARTNERS_REACH_OVER_THE_TOP',
+  YOUTUBE_AND_PARTNERS_SIMPLE_OVER_THE_TOP:
+    'LINE_ITEM_TYPE_YOUTUBE_AND_PARTNERS_SIMPLE_OVER_THE_TOP',
+  YOUTUBE_AND_PARTNERS_TARGET_FREQUENCY:
+    'LINE_ITEM_TYPE_YOUTUBE_AND_PARTNERS_TARGET_FREQUENCY',
+  YOUTUBE_AND_PARTNERS_VIEW: 'LINE_ITEM_TYPE_YOUTUBE_AND_PARTNERS_VIEW',
+  DISPLAY_OUT_OF_HOME: 'LINE_ITEM_TYPE_DISPLAY_OUT_OF_HOME',
+  VIDEO_OUT_OF_HOME: 'LINE_ITEM_TYPE_VIDEO_OUT_OF_HOME',
+};
+
+/**
+ * Type wrapper for LINE_ITEM_TYPE.
+ */
+export type LineItemType = EnumLikeTypeCheck<typeof LINE_ITEM_TYPE>;
+
+/**
+ * Defines possible line item flight date types.
+ */
+export const LINE_ITEM_FLIGHT_DATE_TYPE = {
+  UNSPECIFIED: 'LINE_ITEM_FLIGHT_DATE_TYPE_UNSPECIFIED',
+  INHERITED: 'LINE_ITEM_FLIGHT_DATE_TYPE_INHERITED',
+  CUSTOM: 'LINE_ITEM_FLIGHT_DATE_TYPE_CUSTOM',
+};
+
+/**
+ * Type wrapper for LINE_ITEM_FLIGHT_DATE_TYPE.
+ */
+export type LineItemFlightDateType = EnumLikeTypeCheck<
+  typeof LINE_ITEM_FLIGHT_DATE_TYPE
+>;
+
+/**
  * Defines possible pacing periods for spending ad budgets.
  */
-// Note: using `as const` in favor of `enum` here because it's a bit cleaner
-// to type enforce, and even modern typescript recommended.
 export const PACING_PERIOD = {
   DAILY: 'PACING_PERIOD_DAILY',
   FLIGHT: 'PACING_PERIOD_FLIGHT',
@@ -170,14 +222,32 @@ export const PACING_PERIOD = {
 } as const;
 
 /**
- * The canonical PacingPeriod sent to the API
+ * The canonical PacingPeriod.
  */
-export type PacingPeriod = (typeof PACING_PERIOD)[keyof typeof PACING_PERIOD];
+export type PacingPeriod = EnumLikeTypeCheck<typeof PACING_PERIOD>;
 
 /**
  * A union of the keys and values available to {@link PACING_PERIOD}.
  */
 export type RawPacingPeriod = keyof typeof PACING_PERIOD | PacingPeriod;
+
+/**
+ * Defines possible pacing types for flights.
+ *
+ * As of November 5, 2024, ASAP will be unavailable for IOs.
+ * It will still be available for Line Items.
+ */
+export const PACING_TYPE = {
+  ASAP: 'PACING_TYPE_ASAP',
+  AHEAD: 'PACING_TYPE_AHEAD',
+  EVEN: 'PACING_TYPE_EVEN',
+  UNSPECIFIED: 'PACING_TYPE_UNSPECIFIED',
+} as const;
+
+/**
+ * The canonical PacingType.
+ */
+export type PacingType = EnumLikeTypeCheck<typeof PACING_TYPE>;
 
 /**
  * Exports a mapper from an API resource to `PacingPeriod`.
@@ -211,7 +281,7 @@ export const PacingPeriodMapper: MapperWithJsonOut<
 
 /**
  * Defines frequency cap configuration for limiting display of ads.
- * @see https://developers.google.com/display-video/api/reference/rest/v1/FrequencyCap
+ * @see https://developers.google.com/display-video/api/reference/rest/v3/FrequencyCap
  *
  */
 export interface FrequencyCap {
@@ -236,16 +306,13 @@ export const FrequencyCapMapper: Mapper<FrequencyCap> = {
    */
   map(resource) {
     if (
-      (ObjectUtil.hasOwnProperties(resource, ['unlimited']) &&
-        typeof resource.unlimited === 'boolean' &&
-        resource.unlimited) ||
-      (ObjectUtil.hasOwnProperties(resource, [
-        'timeUnit',
-        'timeUnitCount',
-        'maxImpressions',
-      ]) &&
-        Number.isInteger(resource.timeUnitCount) &&
-        Number.isInteger(resource.maxImpressions))
+      resource &&
+      ((typeof resource.unlimited === 'boolean' && resource.unlimited) ||
+        (ObjectUtil.hasOwnProperties(resource, {
+          requiredProperties: ['timeUnit', 'timeUnitCount', 'maxImpressions'],
+        }) &&
+          Number.isInteger(resource.timeUnitCount) &&
+          Number.isInteger(resource.maxImpressions)))
     ) {
       return resource;
     }
@@ -255,12 +322,12 @@ export const FrequencyCapMapper: Mapper<FrequencyCap> = {
 
 /**
  * Defines the pacing configuration for spending ad budgets.
- * @see https://developers.google.com/display-video/api/reference/rest/v1/Pacing
+ * @see https://developers.google.com/display-video/api/reference/rest/v3/Pacing
  *
  */
 export interface Pacing {
   pacingPeriod: PacingPeriod;
-  pacingType: string;
+  pacingType: PacingType;
   dailyMaxMicros?: string;
   dailyMaxImpressions?: string;
 }
@@ -279,7 +346,11 @@ export const PacingMapper: Mapper<Pacing> = {
    *     contain the expected properties
    */
   map(resource) {
-    if (ObjectUtil.hasOwnProperties(resource, ['pacingPeriod', 'pacingType'])) {
+    if (
+      ObjectUtil.hasOwnProperties(resource, {
+        requiredProperties: ['pacingPeriod', 'pacingType'],
+      })
+    ) {
       const pacingPeriod = resource.pacingPeriod;
       const mappedPacingPeriod = PacingPeriodMapper.map(
         pacingPeriod as RawPacingPeriod,
@@ -288,11 +359,9 @@ export const PacingMapper: Mapper<Pacing> = {
       if (
         mappedPacingPeriod &&
         (mappedPacingPeriod !== PACING_PERIOD.DAILY ||
-          ObjectUtil.hasOwnProperties(
-            resource,
-            [],
-            ['dailyMaxMicros', 'dailyMaxImpressions'],
-          ))
+          ObjectUtil.hasOwnProperties(resource, {
+            oneOf: ['dailyMaxMicros', 'dailyMaxImpressions'],
+          }))
       ) {
         return resource;
       }
@@ -303,7 +372,7 @@ export const PacingMapper: Mapper<Pacing> = {
 
 /**
  * Defines a performance goal configuration.
- * @see https://developers.google.com/display-video/api/reference/rest/v1/PerformanceGoal
+ * @see https://developers.google.com/display-video/api/reference/rest/v3/PerformanceGoal
  *
  */
 export interface PerformanceGoal {
@@ -316,10 +385,10 @@ export interface PerformanceGoal {
 
 /**
  * Defines a performance goal configuration.
- * @see https://developers.google.com/display-video/api/reference/rest/v1/PerformanceGoal
+ * @see https://developers.google.com/display-video/api/reference/rest/v3/PerformanceGoal
  *
  */
-export interface LineItemPerformanceGoal {
+export interface Kpi {
   /** Should always be set, but for legacy reasons is optional. */
   kpiType?: string;
   kpiAmountMicros?: string;
@@ -342,15 +411,13 @@ export const PerformanceGoalMapper: Mapper<PerformanceGoal> = {
    */
   map(resource) {
     if (
-      ObjectUtil.hasOwnProperties(
-        resource,
-        [],
-        [
+      ObjectUtil.hasOwnProperties(resource, {
+        oneOf: [
           'performanceGoalAmountMicros',
           'performanceGoalPercentageMicros',
           'performanceGoalString',
         ],
-      ) &&
+      }) &&
       Object.keys(resource).length >= 1
     ) {
       if (!resource.performanceGoalType) {
@@ -365,25 +432,61 @@ export const PerformanceGoalMapper: Mapper<PerformanceGoal> = {
 };
 
 /**
+ * Possible key performance indicator (KPI) types.
+ * @see https://developers.google.com/display-video/api/reference/rest/v3/advertisers.insertionOrders#kpitype
+ */
+export const KPI_TYPE = {
+  UNSPECIFIED: 'KPI_TYPE_UNSPECIFIED',
+  CPM: 'KPI_TYPE_CPM',
+  CPC: 'KPI_TYPE_CPC',
+  CPA: 'KPI_TYPE_CPA',
+  CTR: 'KPI_TYPE_CTR',
+  VIEWABILITY: 'KPI_TYPE_VIEWABILITY',
+  CPIAVC: 'KPI_TYPE_CPIAVC',
+  CPE: 'KPI_TYPE_CPE',
+  CPV: 'KPI_TYPE_CPV',
+  CLICK_CVR: 'KPI_TYPE_CLICK_CVR',
+  IMPRESSION_CVR: 'KPI_TYPE_IMPRESSION_CVR',
+  VCPM: 'KPI_TYPE_VCPM',
+  VTR: 'KPI_TYPE_VTR',
+  AUDIO_COMPLETION_RATE: 'KPI_TYPE_AUDIO_COMPLETION_RATE',
+  VIDEO_COMPLETION_RATE: 'KPI_TYPE_VIDEO_COMPLETION_RATE',
+  CPCL: 'KPI_TYPE_CPCL',
+  CPCV: 'KPI_TYPE_CPCV',
+  TOS10: 'KPI_TYPE_TOS10',
+  MAXIMIZE_PACING: 'KPI_TYPE_MAXIMIZE_PACING',
+  CUSTOM_IMPRESSION_VALUE_OVER_COST:
+    'KPI_TYPE_CUSTOM_IMPRESSION_VALUE_OVER_COST',
+  OTHER: 'KPI_TYPE_OTHER',
+};
+
+/**
+ * Possible key performance indicator (KPI) types.
+ */
+export type KpiType = EnumLikeTypeCheck<typeof KPI_TYPE>;
+
+/**
  * Exports a mapper from an API resource to `PerformanceGoal`
  */
 // tslint:disable-next-line:enforce-name-casing legacy from JS migration
-export const LineItemPerformanceGoalMapper: Mapper<LineItemPerformanceGoal> = {
+export const KpiMapper: Mapper<Kpi> = {
   /**
    * Converts a resource object returned by the API into a concrete
    * `PerformanceGoal` instance.
    *
    * @param resource The API resource object
+   *
    * @return The concrete instance, or null if the resource
    *     did not contain the expected properties
    */
   map(resource) {
+    if (resource.kpiType === KPI_TYPE.CPV) {
+      return resource;
+    }
     if (
-      ObjectUtil.hasOwnProperties(
-        resource,
-        [],
-        ['kpiAmountMicros', 'kpiPercentageMicros', 'kpiString'],
-      ) &&
+      ObjectUtil.hasOwnProperties(resource, {
+        oneOf: ['kpiAmountMicros', 'kpiPercentageMicros', 'kpiString'],
+      }) &&
       Object.keys(resource).length >= 1
     ) {
       if (!resource.kpiType) {
@@ -398,7 +501,7 @@ export const LineItemPerformanceGoalMapper: Mapper<LineItemPerformanceGoal> = {
 };
 /**
  * Defines a maximum spend oriented bidding strategy.
- * @see https://developers.google.com/display-video/api/reference/rest/v1/BiddingStrategy#maximizespendbidstrategy
+ * @see https://developers.google.com/display-video/api/reference/rest/v3/BiddingStrategy#maximizespendbidstrategy
  *
  */
 interface MaxSpendBiddingStrategy {
@@ -409,7 +512,7 @@ interface MaxSpendBiddingStrategy {
 
 /**
  * Defines a performance goal oriented bidding strategy.
- * @see https://developers.google.com/display-video/api/reference/rest/v1/BiddingStrategy#performancegoalbidstrategy
+ * @see https://developers.google.com/display-video/api/reference/rest/v3/BiddingStrategy#performancegoalbidstrategy
  *
  */
 interface PerformanceGoalBiddingStrategy {
@@ -419,16 +522,49 @@ interface PerformanceGoalBiddingStrategy {
   customBiddingAlgorithmId?: string;
 }
 
+interface YoutubeAndPartnersBiddingStrategy {
+  type: YoutubeAndPartnersBiddingStrategyType;
+  value: string;
+  adGroupEffectiveTargetCpaValue: string;
+  adGroupEffectiveTargetCpaSource: BiddingSource;
+}
+
 /**
  * Defines configuration that determines the bid price.
- * @see https://developers.google.com/display-video/api/reference/rest/v1/BiddingStrategy
- *
+ * @see https://developers.google.com/display-video/api/reference/rest/v3/BiddingStrategy
  */
 export interface BiddingStrategy {
   fixedBid?: { bidAmountMicros: string };
   maximizeSpendAutoBid?: MaxSpendBiddingStrategy;
   performanceGoalAutoBid?: PerformanceGoalBiddingStrategy;
+  youtubeAndPartnersBid?: YoutubeAndPartnersBiddingStrategy;
 }
+
+/**
+ * Possible types of bidding strategy for YouTube and Partners resources.
+ * @see https://developers.google.com/display-video/api/reference/rest/v3/BiddingStrategy#youtubeandpartnersbiddingstrategytype
+ */
+export type YoutubeAndPartnersBiddingStrategyType =
+  | 'YOUTUBE_AND_PARTNERS_BIDDING_STRATEGY_TYPE_UNSPECIFIED'
+  | 'YOUTUBE_AND_PARTNERS_BIDDING_STRATEGY_TYPE_MANUAL_CPV'
+  | 'YOUTUBE_AND_PARTNERS_BIDDING_STRATEGY_TYPE_MANUAL_CPM'
+  | 'YOUTUBE_AND_PARTNERS_BIDDING_STRATEGY_TYPE_TARGET_CPA'
+  | 'YOUTUBE_AND_PARTNERS_BIDDING_STRATEGY_TYPE_TARGET_CPM'
+  | 'YOUTUBE_AND_PARTNERS_BIDDING_STRATEGY_TYPE_RESERVE_CPM'
+  | 'YOUTUBE_AND_PARTNERS_BIDDING_STRATEGY_TYPE_MAXIMIZE_LIFT'
+  | 'YOUTUBE_AND_PARTNERS_BIDDING_STRATEGY_TYPE_MAXIMIZE_CONVERSIONS'
+  | 'YOUTUBE_AND_PARTNERS_BIDDING_STRATEGY_TYPE_TARGET_CPV'
+  | 'YOUTUBE_AND_PARTNERS_BIDDING_STRATEGY_TYPE_TARGET_ROAS'
+  | 'YOUTUBE_AND_PARTNERS_BIDDING_STRATEGY_TYPE_MAXIMIZE_CONVERSION_VALUE';
+
+/**
+ * Source of the bidding value.
+ * @see https://developers.google.com/display-video/api/reference/rest/v3/BiddingStrategy#biddingsource
+ */
+export type BiddingSource =
+  | 'BIDDING_SOURCE_UNSPECIFIED'
+  | 'BIDDING_SOURCE_LINE_ITEM'
+  | 'BIDDING_SOURCE_AD_GROUP';
 
 /**
  * Exports a mapper from an API resource to `BiddingStrategy`
@@ -445,33 +581,49 @@ export const BiddingStrategyMapper: Mapper<BiddingStrategy> = {
    */
   map(resource) {
     if (
-      ObjectUtil.hasOwnProperties(
-        resource,
-        [],
-        ['fixedBid', 'maximizeSpendAutoBid', 'performanceGoalAutoBid'],
-      )
+      ObjectUtil.hasOwnProperties(resource, {
+        oneOf: [
+          'youtubeAndPartnersBid',
+          'fixedBid',
+          'maximizeSpendAutoBid',
+          'performanceGoalAutoBid',
+        ],
+      })
     ) {
       const fixedBidStrategy = resource.fixedBid;
       const maxSpendStrategy = resource.maximizeSpendAutoBid;
       const performanceGoalStrategy = resource.performanceGoalAutoBid;
+      const youtubeAndPartnersBid = resource.youtubeAndPartnersBid;
 
       const validFixedBidStrategy =
         fixedBidStrategy &&
-        ObjectUtil.hasOwnProperties(fixedBidStrategy, ['bidAmountMicros']);
+        ObjectUtil.hasOwnProperties(fixedBidStrategy, {
+          requiredProperties: ['bidAmountMicros'],
+        });
       const validMaxSpendStrategy =
         maxSpendStrategy &&
-        ObjectUtil.hasOwnProperties(maxSpendStrategy, ['performanceGoalType']);
+        ObjectUtil.hasOwnProperties(maxSpendStrategy, {
+          requiredProperties: ['performanceGoalType'],
+        });
+      const validYoutubeAndPartnersBid =
+        youtubeAndPartnersBid &&
+        ObjectUtil.hasOwnProperties(youtubeAndPartnersBid, {
+          requiredProperties: ['type'],
+        });
       const validPerformanceGoalStrategy =
         performanceGoalStrategy &&
-        ObjectUtil.hasOwnProperties(performanceGoalStrategy, [
-          'performanceGoalType',
-          'performanceGoalAmountMicros',
-        ]);
+        ObjectUtil.hasOwnProperties(performanceGoalStrategy, {
+          requiredProperties: [
+            'performanceGoalType',
+            'performanceGoalAmountMicros',
+          ],
+        });
 
       if (
         validFixedBidStrategy ||
         validMaxSpendStrategy ||
-        validPerformanceGoalStrategy
+        validPerformanceGoalStrategy ||
+        validYoutubeAndPartnersBid
       ) {
         return resource;
       }
@@ -482,7 +634,7 @@ export const BiddingStrategyMapper: Mapper<BiddingStrategy> = {
 
 /**
  * Defines general configuration for advertisers.
- * @see https://developers.google.com/display-video/api/reference/rest/v1/advertisers#advertisergeneralconfig
+ * @see https://developers.google.com/display-video/api/reference/rest/v3/advertisers#advertisergeneralconfig
  *
  */
 export interface AdvertiserGeneralConfig {
@@ -504,7 +656,11 @@ export const AdvertiserGeneralConfigMapper: Mapper<AdvertiserGeneralConfig> = {
    *     resource did not contain the expected properties
    */
   map(resource) {
-    if (ObjectUtil.hasOwnProperties(resource, ['domainUrl', 'currencyCode'])) {
+    if (
+      ObjectUtil.hasOwnProperties(resource, {
+        requiredProperties: ['domainUrl', 'currencyCode'],
+      })
+    ) {
       return resource;
     }
     return undefined;
@@ -523,7 +679,7 @@ interface CMHybridConfig {
 
 /**
  * Defines ad server configuration for advertisers.
- * @see https://developers.google.com/display-video/api/reference/rest/v1/advertisers#advertiseradserverconfig
+ * @see https://developers.google.com/display-video/api/reference/rest/v3/advertisers#advertiseradserverconfig
  *
  */
 export interface AdvertiserAdServerConfig {
@@ -547,11 +703,9 @@ export const AdvertiserAdServerConfigMapper: Mapper<AdvertiserAdServerConfig> =
      */
     map(resource) {
       if (
-        ObjectUtil.hasOwnProperties(
-          resource,
-          [],
-          ['thirdPartyOnlyConfig', 'cmHybridConfig'],
-        )
+        ObjectUtil.hasOwnProperties(resource, {
+          oneOf: ['thirdPartyOnlyConfig', 'cmHybridConfig'],
+        })
       ) {
         const thirdPartyOnlyConfig = resource.thirdPartyOnlyConfig;
         const cmHybridConfig = resource.cmHybridConfig;
@@ -567,20 +721,22 @@ export const AdvertiserAdServerConfigMapper: Mapper<AdvertiserAdServerConfig> =
           validThirdPartyOnlyConfig =
             thirdPartyOnlyConfigKeys.length === 0 ||
             (thirdPartyOnlyConfigKeys.length === 1 &&
-              ObjectUtil.hasOwnProperties(thirdPartyOnlyConfig, [
-                'pixelOrderIdReportingEnabled',
-              ]) &&
+              ObjectUtil.hasOwnProperties(thirdPartyOnlyConfig, {
+                requiredProperties: ['pixelOrderIdReportingEnabled'],
+              }) &&
               thirdPartyOnlyConfig !== undefined &&
               thirdPartyOnlyConfig.pixelOrderIdReportingEnabled !== undefined &&
               typeof thirdPartyOnlyConfig.pixelOrderIdReportingEnabled ===
                 'boolean');
         }
         const validCmHybridConfig =
-          ObjectUtil.hasOwnProperties(cmHybridConfig, [
-            'cmAccountId',
-            'cmFloodlightConfigId',
-            'cmFloodlightLinkingAuthorized',
-          ]) &&
+          ObjectUtil.hasOwnProperties(cmHybridConfig, {
+            requiredProperties: [
+              'cmAccountId',
+              'cmFloodlightConfigId',
+              'cmFloodlightLinkingAuthorized',
+            ],
+          }) &&
           cmHybridConfig !== undefined &&
           typeof cmHybridConfig.cmFloodlightLinkingAuthorized === 'boolean';
 
@@ -594,7 +750,7 @@ export const AdvertiserAdServerConfigMapper: Mapper<AdvertiserAdServerConfig> =
 
 /**
  * Defines a campaign's budget configuration.
- * @see https://developers.google.com/display-video/api/reference/rest/v1/advertisers.campaigns#CampaignBudget
+ * @see https://developers.google.com/display-video/api/reference/rest/v3/advertisers.campaigns#CampaignBudget
  *
  */
 export interface CampaignBudget {
@@ -626,7 +782,7 @@ export const CampaignBudgetMapper: MapperWithJsonOut<CampaignBudget[]> = {
       return [];
     }
     const budgets = [];
-    const expectedKeys = [
+    const requiredProperties = [
       'budgetId',
       'displayName',
       'budgetUnit',
@@ -635,7 +791,7 @@ export const CampaignBudgetMapper: MapperWithJsonOut<CampaignBudget[]> = {
     ];
 
     for (const budget of resource) {
-      if (ObjectUtil.hasOwnProperties(budget, expectedKeys)) {
+      if (ObjectUtil.hasOwnProperties(budget, { requiredProperties })) {
         const startDateExists = ApiDate.validate(budget.dateRange.startDate);
         const endDateExists = ApiDate.validate(budget.dateRange.endDate);
 
@@ -646,7 +802,7 @@ export const CampaignBudgetMapper: MapperWithJsonOut<CampaignBudget[]> = {
         console.warn(
           Object.keys(budget),
           'does not match expected',
-          expectedKeys,
+          requiredProperties,
         );
       }
     }
@@ -676,7 +832,7 @@ export const CampaignBudgetMapper: MapperWithJsonOut<CampaignBudget[]> = {
 
 /**
  * Defines a campaign's flight configuration.
- * @see https://developers.google.com/display-video/api/reference/rest/v1/advertisers.campaigns#campaignflight
+ * @see https://developers.google.com/display-video/api/reference/rest/v3/advertisers.campaigns#campaignflight
  *
  */
 export interface CampaignFlight {
@@ -701,8 +857,12 @@ export const CampaignFlightMapper: MapperWithJsonOut<CampaignFlight> = {
    */
   map(resource) {
     if (
-      ObjectUtil.hasOwnProperties(resource, ['plannedDates']) &&
-      ObjectUtil.hasOwnProperties(resource.plannedDates, ['startDate'])
+      ObjectUtil.hasOwnProperties(resource, {
+        requiredProperties: ['plannedDates'],
+      }) &&
+      ObjectUtil.hasOwnProperties(resource.plannedDates, {
+        requiredProperties: ['startDate'],
+      })
     ) {
       const startDateValid = ApiDate.validate(
         resource.plannedDates['startDate'],
@@ -729,7 +889,7 @@ export const CampaignFlightMapper: MapperWithJsonOut<CampaignFlight> = {
 
 /**
  * Defines a campaign's goal configuration.
- * @see https://developers.google.com/display-video/api/reference/rest/v1/advertisers.campaigns#campaigngoal
+ * @see https://developers.google.com/display-video/api/reference/rest/v3/advertisers.campaigns#campaigngoal
  *
  */
 export interface CampaignGoal {
@@ -752,10 +912,9 @@ export const CampaignGoalMapper: Mapper<CampaignGoal> = {
    */
   map(resource) {
     if (
-      ObjectUtil.hasOwnProperties(resource, [
-        'campaignGoalType',
-        'performanceGoal',
-      ]) &&
+      ObjectUtil.hasOwnProperties(resource, {
+        requiredProperties: ['campaignGoalType', 'performanceGoal'],
+      }) &&
       PerformanceGoalMapper.map(resource.performanceGoal)
     ) {
       return resource;
@@ -766,7 +925,7 @@ export const CampaignGoalMapper: Mapper<CampaignGoal> = {
 
 /**
  * Defines an insertion order's budget segment configuration.
- * @see https://developers.google.com/display-video/api/reference/rest/v1/advertisers.insertionOrders#InsertionOrderBudgetSegment
+ * @see https://developers.google.com/display-video/api/reference/rest/v3/advertisers.insertionOrders#InsertionOrderBudgetSegment
  *
  */
 export interface InsertionOrderBudgetSegment {
@@ -793,10 +952,9 @@ export const InsertionOrderBudgetSegmentMapper: MapperWithJsonOut<InsertionOrder
         resource.budgetAmountMicros = '0';
       }
       if (
-        ObjectUtil.hasOwnProperties(resource, [
-          'budgetAmountMicros',
-          'dateRange',
-        ])
+        ObjectUtil.hasOwnProperties(resource, {
+          requiredProperties: ['budgetAmountMicros', 'dateRange'],
+        })
       ) {
         const dateRange = resource.dateRange;
         const startDateValid = ApiDate.validate(dateRange['startDate']);
@@ -830,12 +988,12 @@ export const InsertionOrderBudgetSegmentMapper: MapperWithJsonOut<InsertionOrder
 
 /**
  * Defines an insertion order's budget configuration.
- * @see https://developers.google.com/display-video/api/reference/rest/v1/advertisers.insertionOrders#InsertionOrderBudget
+ * @see https://developers.google.com/display-video/api/reference/rest/v3/advertisers.insertionOrders#InsertionOrderBudget
  *
  */
 export interface InsertionOrderBudget {
-  budgetUnit: string;
-  budgetSegments: InsertionOrderBudgetSegment[];
+  budgetUnit?: string;
+  budgetSegments?: InsertionOrderBudgetSegment[];
 }
 
 /**
@@ -854,7 +1012,9 @@ export const InsertionOrderBudgetMapper: MapperWithJsonOut<InsertionOrderBudget>
      */
     map(resource) {
       if (
-        ObjectUtil.hasOwnProperties(resource, ['budgetUnit', 'budgetSegments'])
+        ObjectUtil.hasOwnProperties(resource, {
+          requiredProperties: ['budgetUnit', 'budgetSegments'],
+        })
       ) {
         const budgetSegments = resource.budgetSegments;
 
@@ -872,7 +1032,7 @@ export const InsertionOrderBudgetMapper: MapperWithJsonOut<InsertionOrderBudget>
           }
         }
       }
-      return undefined;
+      return {};
     },
 
     /**
@@ -893,12 +1053,11 @@ export const InsertionOrderBudgetMapper: MapperWithJsonOut<InsertionOrderBudget>
 
 /**
  * Defines line item flight configuration.
- * @see https://developers.google.com/display-video/api/reference/rest/v1/advertisers.lineItems#LineItemFlight
+ * @see https://developers.google.com/display-video/api/reference/rest/v3/advertisers.lineItems#LineItemFlight
  *
  */
 export interface LineItemFlight {
-  flightDateType: string;
-  triggerId?: string;
+  flightDateType: LineItemFlightDateType;
   dateRange?: { startDate: RawApiDate; endDate: RawApiDate };
 }
 
@@ -916,7 +1075,11 @@ export const LineItemFlightMapper: MapperWithJsonOut<LineItemFlight> = {
    *     did not contain the expected properties
    */
   map(resource) {
-    if (ObjectUtil.hasOwnProperties(resource, ['flightDateType'])) {
+    if (
+      ObjectUtil.hasOwnProperties(resource, {
+        requiredProperties: ['flightDateType'],
+      })
+    ) {
       const dateRange = resource.dateRange;
       let validDateRange = false;
 
@@ -955,18 +1118,19 @@ export const LineItemFlightMapper: MapperWithJsonOut<LineItemFlight> = {
           endDate: flight.dateRange.endDate,
         },
       },
-      ...(flight.triggerId ? { triggerId: flight.triggerId } : {}),
     };
   },
 };
 
 /**
  * Defines line item budget configuration.
- * @see https://developers.google.com/display-video/api/reference/rest/v1/advertisers.lineItems#LineItemBudget
+ * @see https://developers.google.com/display-video/api/reference/rest/v3/advertisers.lineItems#LineItemBudget
  *
  */
 export interface LineItemBudget {
-  budgetAllocationType: string;
+  budgetAllocationType?: BudgetAllocationType;
+  budgetUnit?: BudgetUnit;
+  maxAmount?: number;
 }
 
 /**
@@ -983,16 +1147,20 @@ export const LineItemBudgetMapper: Mapper<LineItemBudget> = {
    *     did not contain the expected properties
    */
   map(resource) {
-    if (ObjectUtil.hasOwnProperties(resource, ['budgetAllocationType'])) {
+    if (
+      ObjectUtil.hasOwnProperties(resource, {
+        requiredProperties: ['budgetAllocationType'],
+      })
+    ) {
       return resource as unknown as LineItemBudget;
     }
-    return undefined;
+    return {};
   },
 };
 
 /**
  * Defines line item partner revenue model configuration.
- * @see https://developers.google.com/display-video/api/reference/rest/v1/advertisers.lineItems#PartnerRevenueModel
+ * @see https://developers.google.com/display-video/api/reference/rest/v3/advertisers.lineItems#PartnerRevenueModel
  *
  */
 export interface LineItemPartnerRevenueModel {
@@ -1015,7 +1183,11 @@ export const LineItemPartnerRevenueModelMapper: Mapper<LineItemPartnerRevenueMod
      *     the resource did not contain the expected properties
      */
     map(resource) {
-      if (ObjectUtil.hasOwnProperties(resource, ['markupType'])) {
+      if (
+        ObjectUtil.hasOwnProperties(resource, {
+          requiredProperties: ['markupType'],
+        })
+      ) {
         return resource;
       }
       return undefined;
@@ -1024,7 +1196,7 @@ export const LineItemPartnerRevenueModelMapper: Mapper<LineItemPartnerRevenueMod
 
 /**
  * Defines configuration for an amount of money with its currency type.
- * @see https://developers.google.com/display-video/api/reference/rest/v1/inventorySources#Money
+ * @see https://developers.google.com/display-video/api/reference/rest/v3/inventorySources#Money
  *
  */
 export interface InventorySourceMoney {
@@ -1048,11 +1220,10 @@ export const InventorySourceMoneyMapper: Mapper<InventorySourceMoney> = {
    */
   map(resource) {
     if (
-      ObjectUtil.hasOwnProperties(
-        resource,
-        ['currencyCode'],
-        ['units', 'nanos'],
-      )
+      ObjectUtil.hasOwnProperties(resource, {
+        requiredProperties: ['currencyCode'],
+        oneOf: ['units', 'nanos'],
+      })
     ) {
       return resource;
     }
@@ -1062,7 +1233,7 @@ export const InventorySourceMoneyMapper: Mapper<InventorySourceMoney> = {
 
 /**
  * Defines inventory source rate details configuration.
- * @see https://developers.google.com/display-video/api/reference/rest/v1/inventorySources#RateDetails
+ * @see https://developers.google.com/display-video/api/reference/rest/v3/inventorySources#RateDetails
  *
  */
 export interface InventorySourceRateDetails {
@@ -1087,7 +1258,9 @@ export const InventorySourceRateDetailsMapper: Mapper<InventorySourceRateDetails
      *     the resource did not contain the expected properties
      */
     map(resource) {
-      if (ObjectUtil.hasOwnProperties(resource, ['rate'])) {
+      if (
+        ObjectUtil.hasOwnProperties(resource, { requiredProperties: ['rate'] })
+      ) {
         const minimumSpend = resource.minimumSpend;
         const valid =
           InventorySourceMoneyMapper.map(resource.rate) &&
@@ -1240,10 +1413,31 @@ export class ApiDate implements RawApiDate {
 
   static validate(rawDate: RawApiDate) {
     return (
-      ObjectUtil.hasOwnProperties(rawDate, ['year', 'month', 'day']) &&
+      ObjectUtil.hasOwnProperties(rawDate, {
+        requiredProperties: ['year', 'month', 'day'],
+      }) &&
       Number.isInteger(rawDate.year) &&
       Number.isInteger(rawDate.month) &&
       Number.isInteger(rawDate.day)
     );
   }
 }
+
+/**
+ * Possible budget allocation type options.
+ */
+export type BudgetAllocationType =
+  | 'LINE_ITEM_BUDGET_ALLOCATION_TYPE_UNSPECIFIED'
+  | 'LINE_ITEM_BUDGET_ALLOCATION_TYPE_AUTOMATIC'
+  | 'LINE_ITEM_BUDGET_ALLOCATION_TYPE_FIXED'
+  | 'LINE_ITEM_BUDGET_ALLOCATION_TYPE_UNLMITED';
+
+/**
+ * Possible budget unit options.
+ */
+export type BudgetUnit =
+  | 'BUDGET_UNIT_UNSPECIFIED'
+  | 'BUDGET_UNIT_CURRENCY'
+  | 'BUDGET_UNIT_IMPRESSIONS';
+
+type EnumLikeTypeCheck<T> = T[keyof T];

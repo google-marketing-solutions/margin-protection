@@ -24,9 +24,8 @@ import { PropertyStore } from 'common/types';
 import { Client, RuleRange } from './client';
 import { DisplayVideoFrontend, migrations } from './frontend';
 import {
-  budgetPacingDaysAheadRule,
+  budgetPacingRuleLineItem,
   budgetPacingPercentageRule,
-  dailyBudgetRule,
   geoTargetRule,
   impressionsByGeoTarget,
 } from './rules';
@@ -52,9 +51,8 @@ export function getFrontend(
   return new DisplayVideoFrontend({
     ruleRangeClass: RuleRange,
     rules: [
-      budgetPacingDaysAheadRule,
+      budgetPacingRuleLineItem,
       budgetPacingPercentageRule,
-      dailyBudgetRule,
       geoTargetRule,
       impressionsByGeoTarget,
     ],

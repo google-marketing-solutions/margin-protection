@@ -24,8 +24,9 @@ import {
   AssignedTargetingOptions,
   Campaigns,
   InsertionOrders,
+  LineItems,
 } from 'dv360_api/dv360';
-import { InsertionOrder } from 'dv360_api/dv360_resources';
+import { LineItem, InsertionOrder } from 'dv360_api/dv360_resources';
 import {
   BaseClientArgs,
   BaseClientInterface,
@@ -65,6 +66,17 @@ export interface BudgetReportInterface {
 }
 
 /**
+ * A budget DAO report for Line Items.
+ */
+export interface LineItemBudgetReportInterface {
+  /**
+   * Gets the spend for the specific line item. Lazy loaded.
+   * @param lineItemId
+   */
+  getSpendForLineItem(lineItemId: string): number;
+}
+
+/**
  * An impression report DAO.
  */
 export interface ImpressionReportInterface {
@@ -74,9 +86,15 @@ export interface ImpressionReportInterface {
 /**
  * Defines parameters used in a report.
  */
-export interface QueryReportParams {
+export interface QueryReportParams extends DateRange {
   idType: IDType;
   id: Readonly<string>;
+}
+
+/**
+ * Defines a start and end date range for reports.
+ */
+export interface DateRange {
   startDate: Readonly<Date>;
   endDate: Readonly<Date>;
 }
@@ -86,11 +104,11 @@ export interface QueryReportParams {
  */
 export interface ClientInterface
   extends BaseClientInterface<DisplayVideoClientTypes> {
+  dao: { accessors: Accessors };
   getAllInsertionOrders(): InsertionOrder[];
-  getBudgetReport(args: {
-    startDate: Date;
-    endDate: Date;
-  }): BudgetReportInterface;
+  getAllLineItems(): LineItem[];
+  getBudgetReport(args: DateRange): BudgetReportInterface;
+  getLineItemBudgetReport(args: DateRange): LineItemBudgetReportInterface;
 }
 
 /**
@@ -99,12 +117,6 @@ export interface ClientInterface
 export interface ClientArgs extends BaseClientArgs<ClientArgs> {
   idType: IDType;
   id: Readonly<string>;
-  advertisers?: typeof Advertisers;
-  assignedTargetingOptions?: typeof AssignedTargetingOptions;
-  campaigns?: typeof Campaigns;
-  insertionOrders?: typeof InsertionOrders;
-  budgetReport?: ReportConstructor<BudgetReportInterface>;
-  impressionReport?: ReportConstructor<ImpressionReportInterface>;
 }
 
 /**
@@ -113,6 +125,7 @@ export interface ClientArgs extends BaseClientArgs<ClientArgs> {
 export enum RuleGranularity {
   CAMPAIGN = 'Campaign',
   INSERTION_ORDER = 'Insertion Order',
+  LINE_ITEM = 'Line Item',
 }
 
 /**
@@ -138,4 +151,25 @@ export type RuleParams<Params extends Record<keyof Params, ParamDefinition>> =
  */
 export interface ReportConstructor<T> {
   new (params: QueryReportParams): T;
+}
+
+/**
+ * Convenience interface for defining report classes.
+ */
+interface DbmReportClass<CallableClass> {
+  new (params: QueryReportParams): CallableClass;
+}
+
+/**
+ * Used in a DAO to wrap access objects.
+ */
+export interface Accessors {
+  budgetReport: DbmReportClass<BudgetReportInterface>;
+  lineItemBudgetReport: DbmReportClass<LineItemBudgetReportInterface>;
+  impressionReport: DbmReportClass<ImpressionReportInterface>;
+  advertisers: typeof Advertisers;
+  assignedTargetingOptions: typeof AssignedTargetingOptions;
+  campaigns: typeof Campaigns;
+  insertionOrders: typeof InsertionOrders;
+  lineItems: typeof LineItems;
 }
