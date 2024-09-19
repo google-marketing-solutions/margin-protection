@@ -47,7 +47,7 @@ describe('Ads API Types', () => {
       return {};
     }
 
-    transform(reportRow: { b: string }) {
+    transform() {
       return ['a', { a: 'a' }] as [string, { a: string }];
     }
   }
@@ -59,7 +59,7 @@ describe('Ads API Types', () => {
       return {};
     }
 
-    transform(reportRow: { c: string }) {
+    transform() {
       return ['a', { b: 'b' }] as [string, { b: string }];
     }
   }
@@ -69,7 +69,6 @@ describe('Ads API Types', () => {
   });
 
   it('does not camel case where not necessary', () => {
-    // tslint:disable-next-line:ban-ts-suppressions
     // @ts-expect-error This type should not Assert<> to true.
     const test1: AssertEqual<CamelCase<'myunderscore'>, 'myUnderscore'> = true;
     expect(test1).toBeDefined();
@@ -86,17 +85,16 @@ describe('Ads API Types', () => {
   });
 
   it('handles blanks', () => {
-    // tslint:disable:no-any
-    const test1: AssertEqual<DotsToObject<any>, {}> = true;
-    // tslint:disable-next-line:ban-ts-suppressions
+    /* eslint-disable @typescript-eslint/no-explicit-any */
+    const test1: AssertEqual<DotsToObject<any>, object> = true;
     // @ts-expect-error This type should not Assert<> to true.
     const test2: AssertEqual<DotsToObject<any>, { '': '' }> = true;
     [test1, test2].forEach((test) => expect(test).toBeDefined());
-    // tslint:enable:no-any
+    /* eslint-enable @typescript-eslint/no-explicit-any */
   });
 
   it('infers types from Report', () => {
-    const request = buildQuery({
+    const _request = buildQuery({
       queryParams: ['a_b_c.def', 'b'],
       queryFrom: 'test',
       joins: {
@@ -106,32 +104,30 @@ describe('Ads API Types', () => {
     });
 
     const test1: AssertSubtype<
-      typeof request.joins,
+      typeof _request.joins,
       {
         'aBC.def': typeof ChildReport1;
         b: typeof ChildReport2;
       }
     > = true;
     const test2: AssertSubtype<
-      typeof request.joins,
+      typeof _request.joins,
       {
         c: typeof ChildReport2;
         b: typeof ChildReport2;
       }
     > = false;
-    // tslint:disable-next-line:ban-ts-suppressions
     // @ts-expect-error This type should not Assert<> to true.
     const test3: AssertSubtype<
-      typeof request.joins,
+      typeof _request.joins,
       {
         bad1: typeof ChildReport2;
         bad2: typeof ChildReport2;
       }
     > = true;
-    // tslint:disable-next-line:ban-ts-suppressions
     // @ts-expect-error This type should not Assert<> to false.
     const test4: AssertSubtype<
-      typeof request.joins,
+      typeof _request.joins,
       {
         'aBC.def': typeof ChildReport1;
         b: typeof ChildReport2;

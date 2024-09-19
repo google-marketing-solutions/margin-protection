@@ -1,11 +1,9 @@
-import { esbuildPlugin } from '@web/dev-server-esbuild';
-import { fromRollup } from '@web/dev-server-rollup';
-import { typescriptPaths } from 'rollup-plugin-typescript-paths';
-import { fileURLToPath } from 'url';
-import { jasmineTestRunnerConfig } from 'web-test-runner-jasmine';
-import { playwrightLauncher } from '@web/test-runner-playwright';
-
-import * as os from 'os';
+const { esbuildPlugin } = await import('@web/dev-server-esbuild');
+const { fromRollup } = await import('@web/dev-server-rollup');
+const { typescriptPaths } = await import('rollup-plugin-typescript-paths');
+const { fileURLToPath } = await import('url');
+const { jasmineTestRunnerConfig } = await import('web-test-runner-jasmine');
+const { playwrightLauncher } = await import('@web/test-runner-playwright');
 
 const tsPaths = fromRollup(typescriptPaths);
 

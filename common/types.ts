@@ -15,8 +15,6 @@
  * limitations under the License.
  */
 
-import { AppsScriptFrontend } from './sheet_helpers';
-
 /**
  * An abstraction for retrieving properties.
  */
@@ -122,7 +120,7 @@ export interface RuleExecutor<
 > extends Omit<RuleDefinition<T, P>, 'callback' | 'defaults' | 'granularity'> {
   client: T['client'];
   settings: Settings<Record<keyof P, string>>;
-  run: Function;
+  run: () => Promise<ExecutorResult>;
   helper: string;
   granularity: T['ruleGranularity'];
 }
@@ -350,10 +348,10 @@ export interface Value {
  */
 export type Check = (
   // Keeping this value flexible. Child functions will implement type.
-  // tslint:disable-next-line:no-any
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   test: any,
   // Keeping this value flexible. Child functions will implement type.
-  // tslint:disable-next-line:no-any
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   value: any,
   fields: { [key: string]: string },
 ) => Value;

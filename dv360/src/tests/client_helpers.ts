@@ -355,10 +355,7 @@ export function generateTestClient(param: TestClientParams) {
 
   if (param.fakeImpressionAmount) {
     class FakeImpressionReport extends ImpressionReport {
-      override getImpressionPercentOutsideOfGeos(
-        campaignId: string,
-        countries: string[],
-      ) {
+      override getImpressionPercentOutsideOfGeos() {
         return param.fakeImpressionAmount!;
       }
 

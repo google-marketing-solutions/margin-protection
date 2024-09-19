@@ -23,15 +23,9 @@ import {
   FakePropertyStore,
   mockAppsScript,
 } from '../test_helpers/mock_apps_script';
-import {
-  BaseClientArgs,
-  ParamDefinition,
-  RuleExecutorClass,
-  RuleGetter,
-} from '../types';
+import { ParamDefinition, RuleGetter } from '../types';
 
 import {
-  AppsScriptPropertyStore,
   HELPERS,
   SettingMap,
   getOrCreateSheet,
@@ -45,7 +39,6 @@ import {
   Granularity,
   RuleRange,
   TestClientInterface,
-  TestClientTypes,
 } from './helpers';
 
 function setUp() {
@@ -422,7 +415,7 @@ describe('Test emails', () => {
       ruleRangeClass: RuleRange,
       rules: [],
       version: '1.0',
-      clientInitializer: (args, properties) => new FakeClient(),
+      clientInitializer: () => new FakeClient(),
       migrations: {},
       properties: new FakePropertyStore(),
     });
@@ -481,9 +474,9 @@ function generateTestClient(params: { id?: string }): TestClientInterface {
     validate() {
       throw new Error('Not implemented.');
     },
-    addRule: <P extends Record<keyof P, ParamDefinition>>(
-      rule: RuleExecutorClass<TestClientTypes, {}>,
-    ): TestClientInterface => {
+    addRule: <
+      P extends Record<keyof P, ParamDefinition>,
+    >(): TestClientInterface => {
       throw new Error('Not implemented.');
     },
     args: { label: 'test' },

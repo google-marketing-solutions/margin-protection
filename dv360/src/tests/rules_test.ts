@@ -595,7 +595,8 @@ async function generateInsertionOrderTestData<
     fakeSpendAmount,
   });
   const addRule = client.addRule.bind(client) as (
-    // tslint:disable-next-line:no-any simplification for testing
+    // simplified for testing
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     rule: any,
     paramMap: string[][],
   ) => Client;

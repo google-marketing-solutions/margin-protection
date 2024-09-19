@@ -516,7 +516,6 @@ function aggregateReport<
     customerName: string;
     campaignId: string;
   },
-  CampaignLevel extends boolean = false,
 >(report: { [criterionId: string]: ReportRow }, key: keyof ReportRow) {
   const aggregatedReport: {
     [adGroupId: string]: [

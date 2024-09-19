@@ -24,7 +24,6 @@ import { FakePropertyStore } from '../test_helpers/mock_apps_script';
 
 import {
   CredentialManager,
-  GET_LEAF_ACCOUNTS_REPORT,
   GoogleAdsApi,
   GoogleAdsApiFactory,
   ReportFactory,
@@ -39,7 +38,6 @@ import {
   ParamDefinition,
   RecordInfo,
   RuleExecutor,
-  RuleExecutorClass,
   RuleGetter,
 } from '../types';
 
@@ -56,7 +54,7 @@ export interface TestClientTypes extends ClientTypes<TestClientTypes> {
   clientArgs: ClientArgs;
 }
 
-interface ClientArgs extends BaseClientArgs<ClientArgs> {}
+type ClientArgs = BaseClientArgs<ClientArgs>;
 
 /**
  * Test client interface for use in tests.
@@ -95,12 +93,10 @@ export class FakeClient implements TestClientInterface {
   } = {};
   readonly properties = new FakePropertyStore();
 
-  getRule(
-    ruleName: string,
-  ): RuleExecutor<TestClientTypes, Record<string, ParamDefinition>> {
+  getRule(): RuleExecutor<TestClientTypes, Record<string, ParamDefinition>> {
     throw new Error('Method not implemented.');
   }
-  getUniqueKey(prefix: string): string {
+  getUniqueKey(): string {
     throw new Error('Method not implemented.');
   }
   validate(): Promise<{
@@ -112,10 +108,9 @@ export class FakeClient implements TestClientInterface {
   }> {
     throw new Error('Method not implemented.');
   }
-  addRule<Params extends Record<keyof Params, ParamDefinition>>(
-    rule: RuleExecutorClass<TestClientTypes, Params>,
-    settingsArray: ReadonlyArray<string[]>,
-  ): TestClientInterface {
+  addRule<
+    Params extends Record<keyof Params, ParamDefinition>,
+  >(): TestClientInterface {
     throw new Error('Method not implemented.');
   }
   id = 'something';
@@ -171,9 +166,8 @@ export class FakeFrontend extends AppsScriptFrontend<TestClientTypes> {
     rules: RuleGetter[],
     message: GoogleAppsScript.Mail.MailAdvancedParameters,
   ) {
-    const noop: GoogleAppsScript.Mail.MailApp['sendEmail'] = ((
-      message: GoogleAppsScript.Mail.MailAdvancedParameters,
-    ) => {}) as GoogleAppsScript.Mail.MailApp['sendEmail'];
+    const noop: GoogleAppsScript.Mail.MailApp['sendEmail'] =
+      (() => {}) as GoogleAppsScript.Mail.MailApp['sendEmail'];
     super.sendEmailAlert(rules, message, noop);
 
     this.messages.push(message);
@@ -248,12 +242,6 @@ export function bootstrapGoogleAdsApi(
   spyOn(apiFactory, 'create').and.callFake(() => api);
   return { api, reportFactory, mockQuery };
 }
-
-/**
- * Like TestClientInterface only for Ads.
- */
-export interface AdsClientInterface
-  extends BaseClientInterface<TestClientTypes> {}
 
 /**
  * Create an iterator from a list of options.

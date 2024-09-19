@@ -19,22 +19,9 @@
  * @fileoverview frontend/apps script hooks for SA360 launch monitor
  */
 
-import {
-  AppsScriptFrontend,
-  AppsScriptPropertyStore,
-  RULE_SETTINGS_SHEET,
-  addSettingWithDescription,
-  getOrCreateSheet,
-  getTemplateSetting,
-} from 'common/sheet_helpers';
+import { AppsScriptFrontend, getTemplateSetting } from 'common/sheet_helpers';
 import { FrontendArgs, ParamDefinition, RuleExecutor } from 'common/types';
-import { RuleRange } from 'sa360/src/client';
-import {
-  ClientArgs,
-  ClientInterface,
-  RuleGranularity,
-  SearchAdsClientTypes,
-} from 'sa360/src/types';
+import { SearchAdsClientTypes } from 'sa360/src/types';
 
 /**
  * The name of the general settings sheet.

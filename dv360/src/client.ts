@@ -177,14 +177,13 @@ export class Client implements ClientInterface {
       DisplayVideoClientTypes,
       Record<string, ParamDefinition>
     >;
-    const thresholds: Array<[Executor, Function]> = Object.values(
-      this.ruleStore,
-    ).reduce(
-      (prev, rule) => {
-        return [...prev, [rule, rule.run.bind(rule)]];
-      },
-      [] as Array<[Executor, Function]>,
-    );
+    const thresholds: Array<[Executor, () => Promise<ExecutorResult>]> =
+      Object.values(this.ruleStore).reduce(
+        (prev, rule) => {
+          return [...prev, [rule, rule.run.bind(rule)]];
+        },
+        [] as Array<[Executor, () => Promise<ExecutorResult>]>,
+      );
     const rules: Record<string, Executor> = {};
     const results: Record<string, ExecutorResult> = {};
     for (const [rule, thresholdCallable] of thresholds) {

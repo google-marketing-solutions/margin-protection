@@ -10,7 +10,8 @@
   "scripts": {
     "test": "wtr --config web-test-runner.mjs",
     "test:watch": "yarn test --watch",
-    "prepare": "husky install"
+    "prepare": "husky install",
+    "lint": "npx eslint"
   },
   "author": "Sean Capaloff-Jones <seancjones@google.com>",
   "license": "MIT",
@@ -23,12 +24,15 @@
     "@web/test-runner": "^0.18.2",
     "@web/test-runner-playwright": "^0.11.0",
     "common": "^0.2.5",
+    "eslint": "^9.9.0",
+    "eslint-config-prettier": "^9.1.0",
     "husky": "^8.0.0",
     "jasmine": "^5.1.0",
     "lint-staged": "^15.2.7",
     "prettier": "^3.3.3",
     "rollup-plugin-typescript-paths": "^1.5.0",
     "typescript": "^5.5.3",
+    "typescript-eslint": "^8.1.0",
     "web-test-runner-jasmine": "^0.0.6"
   },
   "prettier": {
