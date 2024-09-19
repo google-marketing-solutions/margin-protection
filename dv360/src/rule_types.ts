@@ -35,3 +35,12 @@ export interface InsertionOrderDaysAhead extends BudgetPacing {
 export interface InsertionOrderPercentAhead extends BudgetPacing {
   percent: Readonly<number>;
 }
+
+/**
+ * Type for a daily budget rule.
+ */
+export interface DailyBudget {
+  dailyBudget: Readonly<number>;
+  flightDurationDays: Readonly<number>;
+  budget: Readonly<number>;
+}

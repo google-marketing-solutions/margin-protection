@@ -740,11 +740,7 @@ export abstract class AppsScriptFrontend<T extends ClientTypes<T>> {
   /**
    * Given an array of rules, returns a 2-d array representation.
    */
-  getMatrixOfResults(
-    valueLabel: string,
-    values: Value[],
-    filter?: (value: Value) => boolean,
-  ): string[][] {
+  getMatrixOfResults(valueLabel: string, values: Value[]): string[][] {
     const headers = Object.keys(values[0]);
     const matrix = [
       [
@@ -754,9 +750,6 @@ export abstract class AppsScriptFrontend<T extends ClientTypes<T>> {
       ],
     ];
     for (const value of values) {
-      if (filter && !filter(value)) {
-        continue;
-      }
       const row = Object.values(value);
       matrix.push([
         ...row.slice(0, 2).map(String),
@@ -895,14 +888,15 @@ export abstract class AppsScriptFrontend<T extends ClientTypes<T>> {
       ruleSheets.push(rule.name);
       const sheet = getOrCreateSheet(ruleSheet);
       sheet.clear();
-      const values = Object.values(result.values);
+      const values = Object.values(result.values).filter(
+        (value) => value.anomalous,
+      );
       if (!values.length) {
         continue;
       }
       const unfilteredMatrix = this.getMatrixOfResults(
         rule.valueFormat.label,
         values,
-        (value) => value.anomalous,
       );
       const matrix = unfilteredMatrix.filter(
         (row) => row.length === unfilteredMatrix[0].length,
