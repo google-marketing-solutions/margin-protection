@@ -38,12 +38,10 @@ import {
   LINE_ITEM_TYPE,
   LineItemBudget,
   LineItemFlight,
-  LineItemPartnerRevenueModel,
   LineItemType,
   PACING_PERIOD,
   Pacing,
   PacingType,
-  PerformanceGoal,
 } from 'dv360_api/dv360_types';
 import { FilterExpression } from 'dv360_api/utils';
 import { FakePropertyStore } from 'common/test_helpers/mock_apps_script';
@@ -328,27 +326,17 @@ export function generateTestClient(param: TestClientParams) {
         );
       }
     }
-    class FakeLineItemBudgetReport extends LineItemBudgetReport {
-      protected override getReport() {
-        return {};
-      }
-
-      override getSpendForLineItem(lineItemId: string): number {
-        return param.fakeSpendAmount;
-      }
-    }
     accessors.lineItems = FakeLineItems;
     if (param.fakeSpendAmount) {
-      class FakeBudgetReport extends BudgetReport {
+      class FakeLineItemBudgetReport extends LineItemBudgetReport {
         protected override getReport() {
           return {};
         }
 
-        override getSpendForInsertionOrder() {
-          return param.fakeSpendAmount!;
+        override getSpendForLineItem(): number {
+          return param.fakeSpendAmount;
         }
       }
-
       accessors.lineItemBudgetReport = FakeLineItemBudgetReport;
     }
   }

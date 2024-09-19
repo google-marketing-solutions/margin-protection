@@ -237,11 +237,13 @@ export abstract class AbstractRuleRange<T extends ClientTypes<T>>
 
   getValues(ruleGranularity?: T['ruleGranularity']): string[][] {
     const newRowIndex = { ...this.rowIndex };
-    const defaultFirstColumns = ['', ''];
 
     const values = Object.entries(this.rules).reduce(
       (combinedRuleRange, [category, rangeRaw]) => {
         const range = rangeRaw.filter((row) => row && row.length);
+        const defaultFirstColumns = Array.from<string>({
+          length: range[0].length,
+        }).fill('');
         if (
           ruleGranularity &&
           this.client.ruleStore[category] &&
@@ -269,7 +271,7 @@ export abstract class AbstractRuleRange<T extends ClientTypes<T>>
             : combinedRuleRange[1].concat(
                 Array.from<string>({ length: ruleSettingColumnCount })
                   .fill('')
-                  .map((cell, idx) => {
+                  .map((_cell, idx) => {
                     if (
                       idx === 0 &&
                       this.client.ruleStore[
@@ -996,7 +998,7 @@ export abstract class AppsScriptFrontend<T extends ClientTypes<T>> {
     );
 
     for (const [version, migration] of migrations) {
-      if (sortMigrations(version, this.injectedArgs.version) >= 0) {
+      if (sortMigrations(sheetVersion, this.injectedArgs.version) >= 0) {
         break;
       }
       if (sortMigrations(version, sheetVersion) > 0) {

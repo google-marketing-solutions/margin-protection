@@ -132,6 +132,21 @@ export const migrations: Record<
       );
     });
   },
+  '3.0': (frontend) => {
+    const sheet = getOrCreateSheet('Rule Settings - Campaign');
+    const ruleRange = new RuleRange(
+      sheet.getDataRange().getValues(),
+      frontend.client,
+    );
+    const values = ruleRange.getValues();
+    const headers = values[2];
+    const geoTargetIndex = headers.findIndex((c) => c === 'Geo Targets');
+    if (geoTargetIndex === -1) {
+      return;
+    }
+    headers[geoTargetIndex] = 'Allowed Geo Targets';
+    sheet.getRange(1, 1, values.length, values[0].length).setValues(values);
+  },
 };
 
 /**

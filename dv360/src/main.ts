@@ -38,7 +38,7 @@ import { AppsScriptPropertyStore } from 'common/sheet_helpers';
  * This is used to manage migrations from one version of Launch Monitor to
  * another.
  */
-export const CURRENT_SHEET_VERSION = '1.5';
+export const CURRENT_SHEET_VERSION = '3';
 
 /**
  * Retrieves the front-end as a function.

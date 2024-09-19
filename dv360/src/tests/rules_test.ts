@@ -66,7 +66,10 @@ describe('Geo targeting Rule', () => {
       geoTargets: ['United States (Country)', 'Portugal (Country)'],
     });
     expect(values['c1']).toEqual(
-      jasmine.objectContaining({ value: '0', anomalous: true }),
+      jasmine.objectContaining({
+        value: '"Portugal (Country)" not an allowed target',
+        anomalous: true,
+      }),
     );
   });
 
@@ -75,19 +78,78 @@ describe('Geo targeting Rule', () => {
       advertiserId: '456',
       excludes: ['United States (Country)'],
       columns: [
-        ['', 'Geo Targets', 'Excluded Geo Targets'],
-        ['c1', '', 'United States'],
+        [
+          '',
+          'Excluded Geo Targets',
+          'Allowed Geo Targets',
+          'Required Geo Targets',
+        ],
+        ['c1', 'United States', '', ''],
       ],
     });
     expect(values['c1']).toEqual(
-      jasmine.objectContaining({ value: '0', anomalous: true }),
+      jasmine.objectContaining({
+        value: '"United States (Country)" found and is an excluded target',
+        anomalous: true,
+      }),
     );
   });
 
-  it('triggers an error when no geo is found', async () => {
-    const values = await generateGeoTestData({ advertiserId: '789' });
+  it('triggers an error when a required geo is not found', async () => {
+    const values = await generateGeoTestData({
+      advertiserId: '456',
+      excludes: ['United States (Country)'],
+      columns: [
+        [
+          '',
+          'Required Geo Targets',
+          'Allowed Geo Targets',
+          'Excluded Geo Targets',
+        ],
+        ['c1', 'United Kingdom', '', ''],
+      ],
+    });
     expect(values['c1']).toEqual(
-      jasmine.objectContaining({ value: '0', anomalous: true }),
+      jasmine.objectContaining({
+        value: '"United Kingdom" was required but not targeted',
+        anomalous: true,
+      }),
+    );
+  });
+
+  it('triggers an error when an excluded geo is set but there is no targeting', async () => {
+    const values = await generateGeoTestData({
+      advertiserId: '456',
+      columns: [
+        [
+          '',
+          'Required Geo Targets',
+          'Allowed Geo Targets',
+          'Excluded Geo Targets',
+        ],
+        ['c1', '', '', 'United States'],
+      ],
+    });
+    expect(values['c1']).toEqual(
+      jasmine.objectContaining({ value: 'No targeting set', anomalous: true }),
+    );
+  });
+
+  it('triggers an error when an allowed geo is set but there is no targeting', async () => {
+    const values = await generateGeoTestData({
+      advertiserId: '456',
+      columns: [
+        [
+          '',
+          'Required Geo Targets',
+          'Allowed Geo Targets',
+          'Excluded Geo Targets',
+        ],
+        ['c1', '', 'United States', ''],
+      ],
+    });
+    expect(values['c1']).toEqual(
+      jasmine.objectContaining({ value: 'No targeting set', anomalous: true }),
     );
   });
 });
@@ -572,8 +634,8 @@ export async function generateGeoTestData({
   geoTargets = [],
   excludes = [],
   columns = [
-    ['', 'Geo Targets', 'Excluded Geo Targets'],
-    ['default', 'United Kingdom, United States', ''],
+    ['', 'Required Geo Targets', 'Allowed Geo Targets', 'Excluded Geo Targets'],
+    ['default', '', 'United Kingdom, United States', ''],
   ],
   campaignId = 'c1',
 }: GeoTargetTestDataParams) {
