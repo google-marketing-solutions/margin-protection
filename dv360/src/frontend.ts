@@ -119,20 +119,7 @@ export const migrations: Record<
       "The ID of the Drive folder destination\n(copy in folder URL after '/folders/' and before the '?')",
     ]);
   },
-  '2.0': () => {
-    const properties = new AppsScriptPropertyStore();
-    Object.entries(properties.getProperties()).forEach(([k, v]) => {
-      const values = JSON.parse(v);
-      if (values.updated) {
-        return;
-      }
-      properties.setProperty(
-        k,
-        JSON.stringify({ values, updated: new Date() }),
-      );
-    });
-  },
-  '3.0': (frontend) => {
+  '2.1': (frontend) => {
     const sheet = getOrCreateSheet('Rule Settings - Campaign');
     const ruleRange = new RuleRange(
       sheet.getDataRange().getValues(),
