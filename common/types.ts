@@ -162,6 +162,7 @@ export interface RuleDefinition<
  */
 export interface RecordInfo {
   advertiserId: string;
+  advertiserName?: string;
   id: string;
   displayName: string;
 }

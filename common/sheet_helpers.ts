@@ -242,7 +242,7 @@ export abstract class AbstractRuleRange<T extends ClientTypes<T>>
       (combinedRuleRange, [category, rangeRaw]) => {
         const range = rangeRaw.filter((row) => row && row.length);
         const defaultFirstColumns = Array.from<string>({
-          length: range[0].length,
+          length: range[0] ? range[0].length : 0,
         }).fill('');
         if (
           ruleGranularity &&
@@ -352,6 +352,9 @@ export abstract class AbstractRuleRange<T extends ClientTypes<T>>
     let start = 0;
     let col = 0;
     const thresholds: Array<[number, number]> = [];
+    if (!range[0]) {
+      return;
+    }
     for (col = 0; col < range[0].length; col++) {
       if (range[0][col]) {
         thresholds.push([start, col]);
@@ -397,15 +400,24 @@ export abstract class AbstractRuleRange<T extends ClientTypes<T>>
     );
     const length = Object.keys(rule.params).length;
 
-    this.setRow('none', 'ID', ['ID', `${rule.granularity} Name`]);
+    const headers = await this.getRuleHeaders();
+    this.setRow('none', 'ID', ['ID', `${rule.granularity} Name`, ...headers]);
     this.setRow(rule.name, 'ID', [...Object.values(headersByIndex)]);
-    this.setRow('none', 'default', ['default', '']);
+    this.setRow('none', 'default', [
+      'default',
+      '',
+      ...Array.from<string>({ length: headers.length }).fill(''),
+    ]);
     this.setRow(
       rule.name,
       'default',
       Array.from({ length }).map(
-        (unused, index) =>
-          rule.params[paramsByHeader[headersByIndex[index]]].defaultValue ?? '',
+        (_, index) =>
+          (currentSettings.default
+            ? currentSettings.default[headersByIndex[index]]
+            : null) ??
+          rule.params[paramsByHeader[headersByIndex[index]]].defaultValue ??
+          '',
       ),
     );
     for (const record of await this.getRows(rule.granularity)) {
@@ -418,8 +430,20 @@ export abstract class AbstractRuleRange<T extends ClientTypes<T>>
             : '',
         ),
       );
-      this.setRow('none', record.id, [record.id, record.displayName]);
+      this.setRow('none', record.id, [
+        record.id,
+        record.displayName,
+        ...(await this.getRuleMetadata(rule.granularity, record.id)),
+      ]);
     }
+  }
+
+  async getRuleMetadata(granularity: T['ruleGranularity'], id: string) {
+    return [];
+  }
+
+  async getRuleHeaders(): Promise<string[]> {
+    return [];
   }
 
   writeBack(ruleGranularity: T['ruleGranularity']) {
@@ -655,7 +679,7 @@ export abstract class AppsScriptFrontend<T extends ClientTypes<T>> {
     }
 
     const report: { [rule: string]: { [campaignId: string]: Value } } = {};
-    await this.initializeRules();
+    await this.initializeSheets();
     const thresholds: Array<[Rule, Promise<{ values: Values }>]> =
       Object.values(this.client.ruleStore).map((rule) => {
         return [rule, rule.run()];
@@ -677,6 +701,7 @@ export abstract class AppsScriptFrontend<T extends ClientTypes<T>> {
     const lastUpdated = [
       `Last Updated ${new Date(Date.now()).toISOString()}`,
       '',
+
       '',
       '',
     ];

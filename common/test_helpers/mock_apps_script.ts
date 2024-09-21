@@ -48,6 +48,7 @@ function a1NotationToRowColumn(a1Notation: string, start = true) {
 
 class FakeRange {
   private readonly arrayRange: string[][];
+  validation: FakeNewDataValidation;
 
   constructor(
     private readonly sheet: FakeSheet,
@@ -98,11 +99,13 @@ class FakeRange {
   }
 
   setValues(range: string[][]) {
-    if (this.arrayRange.length !== range.length) {
-      throw new Error('Invalid row length');
+    if (this.numRows !== range.length) {
+      throw new Error(
+        `Invalid row length: ${this.arrayRange.length} vs ${range.length}`,
+      );
     }
     for (const [i, row] of range.entries()) {
-      if (row.length === this.arrayRange[0].length) {
+      if (row.length === this.numColumns) {
         this.arrayRange[i] = row;
       } else {
         throw new Error('Invalid column length');
@@ -121,6 +124,9 @@ class FakeRange {
         return newArr;
       }),
     );
+
+    this.sheet.lastRow = this.sheet.cells.length + 1;
+    this.sheet.lastColumn = this.sheet.cells[0].length + 1;
     return this;
   }
 
@@ -132,6 +138,35 @@ class FakeRange {
   clearDataValidations(): FakeRange {
     return this;
   }
+
+  setDataValidation(validation: FakeNewDataValidation) {
+    this.validation = validation;
+    return this;
+  }
+
+  breakApart() {
+    return this;
+  }
+
+  merge() {
+    return this;
+  }
+
+  applyRowBanding() {
+    return this;
+  }
+
+  insertCells() {
+    return this;
+  }
+
+  setRichTextValue() {
+    return this;
+  }
+
+  getFilter() {
+    return new FakeFilter();
+  }
 }
 
 class FakeSheet {
@@ -140,6 +175,7 @@ class FakeSheet {
   );
   lastRow = 1;
   lastColumn = 1;
+  private readonly bandings: FakeBandings[] = [];
 
   getRange(a1Notation: string): FakeRange;
   getRange(row: number, column: number): FakeRange;
@@ -174,6 +210,32 @@ class FakeSheet {
     const emptyCells = this.cells.map((row) => row.map(() => ''));
     this.cells.splice(0, this.cells.length, ...emptyCells);
     return this;
+  }
+
+  getMaxRows() {
+    return 10000;
+  }
+
+  getMaxColumns() {
+    return 10000;
+  }
+
+  getLastRow() {
+    return this.cells.length;
+  }
+
+  deleteRows(start: number, end: number) {
+    this.cells.splice(start, end);
+  }
+
+  deleteColumns(start: number, end: number) {
+    for (const row of this.cells) {
+      row.splice(start, end);
+    }
+  }
+
+  getBandings(): FakeBandings[] {
+    return this.bandings;
   }
 }
 
@@ -216,9 +278,32 @@ class FakeSpreadsheet {
 
 class FakeSpreadsheetApp {
   private readonly fakeSpreadsheet = new FakeSpreadsheet();
+  readonly BandingTheme = {
+    BLUE: 1,
+  };
+  readonly Dimension = {
+    ROWS: 1,
+    COLUMNS: 2,
+  };
 
   getActive() {
     return this.fakeSpreadsheet;
+  }
+
+  flush() {
+    // do nothing
+  }
+
+  newDataValidation() {
+    return new FakeNewDataValidation();
+  }
+
+  newTextStyle() {
+    return new FakeTextStyle();
+  }
+
+  newRichTextValue() {
+    return new FakeRichTextValue();
   }
 }
 
@@ -237,11 +322,11 @@ export function mockAppsScript() {
   (globalThis.SpreadsheetApp as unknown as FakeSpreadsheetApp) =
     new FakeSpreadsheetApp();
   (globalThis.ScriptApp as unknown as FakeScriptApp) = new FakeScriptApp();
-  (globalThis.Utilities as unknown as FakeUtilities) = new FakeUtilities();
   (globalThis.HtmlService as unknown as FakeHtmlService) =
     new FakeHtmlService();
   (globalThis.UrlFetchApp as unknown as FakeUrlFetchApp) =
     new FakeUrlFetchApp();
+  (globalThis.Drive as unknown as FakeDrive) = new FakeDrive();
 }
 
 class FakeUrlFetchApp {
@@ -264,19 +349,6 @@ export function generateFakeHttpResponse(args: { contentText: string }) {
 class FakeScriptApp {
   getOAuthToken() {
     return 'token';
-  }
-}
-
-class FakeUtilities {
-  parseCsv(text: string) {
-    // We don't need a special package because this test CSV is very
-    // basic. No escaping, etc.
-    const lines = text.split('\n').map((line: string) => line.split(','));
-    return lines;
-  }
-
-  sleep(msecs: number) {
-    console.info(`skip sleep for ${msecs}`);
   }
 }
 
@@ -466,3 +538,57 @@ export class FakePropertyStore implements PropertyStore {
     FakePropertyStore.cache = {};
   }
 }
+
+/**
+ * Stub for HTML output
+ */
+export class FakeHtmlOutput {}
+
+/**
+ * Stub for Drive testing
+ */
+export class FakeDrive {}
+
+export class FakeNewDataValidation {
+  requireFormulaSatisfied() {
+    return this;
+  }
+
+  build() {}
+}
+
+class FakeBandings {}
+
+class FakeTextStyle {
+  setBold() {
+    return this;
+  }
+
+  setItalic() {
+    return this;
+  }
+
+  setFontSize() {
+    return this;
+  }
+
+  build() {
+    return this;
+  }
+}
+
+class FakeRichTextValue {
+  setText() {
+    return this;
+  }
+
+  setTextStyle() {
+    return this;
+  }
+
+  build() {
+    return this;
+  }
+}
+
+class FakeFilter {}

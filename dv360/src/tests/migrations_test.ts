@@ -8,16 +8,6 @@ import { Client, RuleRange } from '../client';
 import { scaffoldSheetWithNamedRanges } from 'common/tests/helpers';
 import { geoTargetRule } from '../rules';
 import { ClientInterface } from '../types';
-import {
-  AssignedTargetingOption,
-  Campaign,
-  InsertionOrder,
-} from 'dv360_api/dv360_resources';
-import {
-  PACING_PERIOD,
-  PACING_TYPE,
-  TARGETING_TYPE,
-} from 'dv360_api/dv360_types';
 
 describe('Migrations: upgrades', () => {
   beforeEach(() => {

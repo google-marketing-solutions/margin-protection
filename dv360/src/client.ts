@@ -200,7 +200,7 @@ export class Client implements ClientInterface {
         this.args.idType === IDType.ADVERTISER
           ? this.getAllLineItemsForAdvertiser(this.args.id)
           : this.getAllAdvertisersForPartner().reduce(
-              (arr, advertiserId) =>
+              (arr, { advertiserId }) =>
                 arr.concat(this.getAllLineItemsForAdvertiser(advertiserId)),
               [] as LineItem[],
             );
@@ -213,7 +213,7 @@ export class Client implements ClientInterface {
         this.args.idType === IDType.ADVERTISER
           ? this.getAllInsertionOrdersForAdvertiser(this.args.id)
           : this.getAllAdvertisersForPartner().reduce(
-              (arr, advertiserId) =>
+              (arr, { advertiserId }) =>
                 arr.concat(
                   this.getAllInsertionOrdersForAdvertiser(advertiserId),
                 ),
@@ -223,14 +223,15 @@ export class Client implements ClientInterface {
     return this.storedInsertionOrders;
   }
 
-  async getAllCampaigns() {
+  async getAllCampaigns(): Promise<RecordInfo[]> {
     if (!this.storedCampaigns.length) {
-      const campaignsWithSegments = Object.values(
-        this.getAllInsertionOrders(),
-      ).reduce((prev, io) => {
-        prev.add(io.getCampaignId());
-        return prev;
-      }, new Set<string>());
+      const campaignsWithSegments = this.getAllInsertionOrders().reduce(
+        (prev, io) => {
+          prev.add(io.getCampaignId());
+          return prev;
+        },
+        new Set<string>(),
+      );
 
       const result =
         this.args.idType === IDType.ADVERTISER
@@ -238,10 +239,13 @@ export class Client implements ClientInterface {
               campaignsWithSegments.has(campaign.id),
             )
           : this.getAllAdvertisersForPartner().reduce(
-              (arr, advertiserId) =>
+              (arr, { advertiserId, advertiserName }) =>
                 arr.concat(
-                  this.getAllCampaignsForAdvertiser(advertiserId).filter(
-                    (campaign) => campaignsWithSegments.has(campaign.id),
+                  this.getAllCampaignsForAdvertiser(
+                    advertiserId,
+                    advertiserName,
+                  ).filter((campaign) =>
+                    campaignsWithSegments.has(campaign.id),
                   ),
                 ),
               [] as RecordInfo[],
@@ -252,23 +256,34 @@ export class Client implements ClientInterface {
     return this.storedCampaigns;
   }
 
-  getAllAdvertisersForPartner(): string[] {
-    const result: string[] = [];
-    const advertisers = this.storedAdvertiserIds;
-    if (advertisers.length) {
-      return advertisers;
+  getAllAdvertisersForPartner(): Array<{
+    advertiserId: string;
+    advertiserName: string;
+  }> {
+    const cache = CacheService.getScriptCache();
+    const result: Array<{ advertiserId: string; advertiserName: string }> = [];
+    const advertisers = cache.get('advertisers:2');
+    if (advertisers) {
+      return JSON.parse(advertisers) as Array<{
+        advertiserId: string;
+        advertiserName: string;
+      }>;
     }
     const advertiserApi = new this.dao.accessors.advertisers(this.args.id);
     advertiserApi.list((advertisers: Advertiser[]) => {
       for (const advertiser of advertisers) {
-        const id = advertiser.getId();
-        if (!id) {
+        const advertiserId = advertiser.getId();
+        const advertiserName = advertiser.getDisplayName();
+        if (!advertiserId) {
           throw new Error('Advertiser ID is missing.');
         }
-        result.push(id);
+        if (!advertiserName) {
+          throw new Error('Advertiser name is missing.');
+        }
+        result.push({ advertiserId, advertiserName });
       }
     });
-    this.storedAdvertiserIds = result;
+    cache.put('advertisers:2', JSON.stringify(result), 120);
 
     return result;
   }
@@ -305,7 +320,10 @@ export class Client implements ClientInterface {
     return result;
   }
 
-  getAllCampaignsForAdvertiser(advertiserId: string): RecordInfo[] {
+  getAllCampaignsForAdvertiser(
+    advertiserId: string,
+    advertiserName?: string,
+  ): RecordInfo[] {
     const result: RecordInfo[] = [];
     const campaignApi = new this.dao.accessors.campaigns(advertiserId);
     campaignApi.list((campaigns: Campaign[]) => {
@@ -316,6 +334,7 @@ export class Client implements ClientInterface {
         }
         result.push({
           advertiserId,
+          ...(advertiserName ? { advertiserName } : {}),
           id,
           displayName: campaign.getDisplayName()!,
         });
@@ -380,6 +399,9 @@ export function getDate(rawApiDate: RawApiDate): Date {
  * DV360 rule args splits.
  */
 export class RuleRange extends AbstractRuleRange<DisplayVideoClientTypes> {
+  private hasAdvertiserName: boolean | undefined = undefined;
+  private readonly campaignMap: Record<string, RecordInfo> = {};
+
   async getRows(ruleGranularity: RuleGranularity) {
     if (ruleGranularity === RuleGranularity.CAMPAIGN) {
       return this.client.getAllCampaigns();
@@ -390,6 +412,52 @@ export class RuleRange extends AbstractRuleRange<DisplayVideoClientTypes> {
         displayName: io.getDisplayName()!,
       }));
     }
+  }
+
+  async getRuleHeaders(): Promise<string[]> {
+    const { hasAdvertiserName } = await this.getCampaignMap();
+    if (!hasAdvertiserName) {
+      return [];
+    }
+    return ['Advertiser ID', 'Advertiser Name'];
+  }
+
+  private async getCampaignMap(): Promise<{
+    campaignMap: Record<string, RecordInfo>;
+    hasAdvertiserName: boolean;
+  }> {
+    if (this.hasAdvertiserName === undefined) {
+      const allCampaigns =
+        (await this.client.getAllCampaigns()) as RecordInfo[];
+      for (const campaign of allCampaigns) {
+        this.campaignMap[campaign.id] = campaign;
+      }
+      this.hasAdvertiserName =
+        allCampaigns[0] && allCampaigns[0].advertiserName !== undefined;
+    }
+    return {
+      campaignMap: this.campaignMap,
+      hasAdvertiserName: this.hasAdvertiserName,
+    };
+  }
+
+  override async getRuleMetadata(granularity: RuleGranularity, id: string) {
+    const { campaignMap, hasAdvertiserName } = await this.getCampaignMap();
+    if (!hasAdvertiserName) {
+      return [];
+    }
+    let campaignId: string;
+    if (granularity === RuleGranularity.CAMPAIGN) {
+      campaignId = id;
+    } else {
+      const insertionOrders = this.client.getAllInsertionOrders();
+      campaignId = insertionOrders[0] && insertionOrders[0].getCampaignId();
+    }
+    return [
+      campaignMap[campaignId].advertiserId,
+      //checked in `hasAdvertiserName`
+      campaignMap[campaignId].advertiserName!,
+    ];
   }
 }
 

@@ -118,7 +118,6 @@ export const geoTargetRule = newRule({
           advertiserId,
           { campaignId: id },
         );
-      let hasOnlyValidGeo = true;
       const campaignSettings = this.settings.getOrDefault(id);
 
       let targetingOptionsLength = 0;
