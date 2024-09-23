@@ -192,7 +192,7 @@ function testData(params: {
 
   (params.allCampaigns ??= {})['1'] = [(campaign) => campaign];
   (params.allInsertionOrders ??= {})['1'] = [(io) => io];
-  (params.allAdvertisers ??= [])['1'] = [(advertiser) => advertiser];
+  (params.allAdvertisers ??= {})['1'] = [(advertiser) => advertiser];
 
   params.fakeSpendAmount ??= 1000000;
 
@@ -413,14 +413,16 @@ describe('Partner view', () => {
 
   beforeEach(async () => {
     setUp({ level: 'Partner' });
-    const allAdvertisers: AdvertiserTemplateConverter[] = [
-      (advertiser) => {
-        advertiser.id = 'a1';
-        advertiser.displayName = 'Advertiser 1';
+    const allAdvertisers: Record<string, AdvertiserTemplateConverter[]> = {
+      '1': [
+        (advertiser) => {
+          advertiser.id = 'a1';
+          advertiser.displayName = 'Advertiser 1';
 
-        return advertiser;
-      },
-    ];
+          return advertiser;
+        },
+      ],
+    };
     const allCampaigns: Record<string, CampaignTemplateConverter[]> = {
       '1': [
         (campaignTemplate) => {
