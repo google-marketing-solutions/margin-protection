@@ -167,7 +167,7 @@ function getFrontend(
 }
 
 function testData(params: {
-  allAdvertisers?: AdvertiserTemplateConverter[];
+  allAdvertisers?: Record<string, AdvertiserTemplateConverter[]>;
   allInsertionOrders?: Record<string, InsertionOrderTemplateConverter[]>;
   allCampaigns?: Record<string, CampaignTemplateConverter[]>;
   fakeImpressionAmount?: number;
@@ -192,7 +192,7 @@ function testData(params: {
 
   (params.allCampaigns ??= {})['1'] = [(campaign) => campaign];
   (params.allInsertionOrders ??= {})['1'] = [(io) => io];
-  (params.allAdvertisers ??= []).push((advertiser) => advertiser);
+  (params.allAdvertisers ??= [])['1'] = [(advertiser) => advertiser];
 
   params.fakeSpendAmount ??= 1000000;
 
