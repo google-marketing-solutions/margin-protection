@@ -83,19 +83,24 @@ export const geoTargetRule = newRule({
   helper: `=HYPERLINK(
     "https://developers.google.com/google-ads/api/reference/data/geotargets", "Separate values with commas. Partial match any canonical name linked.")`,
   params: {
-    geotargeting: {
-      label: 'Geo Targets',
+    allowedTargets: {
+      label: 'Allowed Geo Targets',
       validationFormulas: [
         '=REGEXMATCH(INDIRECT(ADDRESS(ROW(), COLUMN())), "^[a-zA-Z ]+(,\\s*[a-zA-Z ]+)?$")',
       ],
       defaultValue: 'United States',
     },
-    excludes: {
+    requiredTargets: {
+      label: 'Required Geo Targets',
+      validationFormulas: [
+        '=REGEXMATCH(INDIRECT(ADDRESS(ROW(), COLUMN())), "^[a-zA-Z ]+(,\\s*[a-zA-Z ]+)?$")',
+      ],
+    },
+    excludedTargets: {
       label: 'Excluded Geo Targets',
       validationFormulas: [
         '=REGEXMATCH(INDIRECT(ADDRESS(ROW(), COLUMN())), "^[a-zA-Z ]+(,\\s*[a-zA-Z ]+)?$")',
       ],
-      defaultValue: '',
     },
   },
   granularity: RuleGranularity.CAMPAIGN,
@@ -113,44 +118,84 @@ export const geoTargetRule = newRule({
           advertiserId,
           { campaignId: id },
         );
-      let hasOnlyValidGeo = true;
       const campaignSettings = this.settings.getOrDefault(id);
 
       let targetingOptionsLength = 0;
 
+      function splitTarget(campaignSetting: string) {
+        return campaignSetting
+          ? campaignSetting.split(',').map((country: string) => country.trim())
+          : [];
+      }
+      const allowedTargets = splitTarget(campaignSettings.allowedTargets);
+      const requiredTargets = splitTarget(campaignSettings.requiredTargets);
+      const excludedTargets = splitTarget(campaignSettings.excludedTargets);
+      const errors: string[] = [];
+      const foundRequiredIndexes = new Set<number>();
+
       targetingOptionApi.list((targetingOptions: AssignedTargetingOption[]) => {
-        function hasAllowedGeo(targetingOption: AssignedTargetingOption) {
-          const displayName = targetingOption.getDisplayName();
-          if (!displayName) {
-            throw new Error('Missing display name');
+        for (const targetingOption of targetingOptions) {
+          if (!targetingOption) {
+            continue;
           }
-          const geoTargets = campaignSettings.geotargeting
-            .split(',')
-            .map((country: string) => country.trim());
-          const excludes = campaignSettings.excludes
-            .split(',')
-            .map((country: string) => country.trim());
-
+          const targetName = targetingOption.getDisplayName();
           if (targetingOption.getTargetingDetails()['negative']) {
-            return !excludes.some(
-              (geoTarget: string) => displayName.indexOf(geoTarget) >= 0,
+            const exclude = excludedTargets.filter(
+              (exc) => targetName.indexOf(exc) >= 0,
             );
+            if (exclude.length) {
+              errors.push(`"${targetName}" found and is an excluded target`);
+            }
+            continue;
           }
-          return geoTargets.some(
-            (geoTarget: string) => displayName.indexOf(geoTarget) >= 0,
-          );
-        }
 
-        // Don't accidentally overwrite hasOnlyValidGeo if it's been set to
-        // false.
-        if (hasOnlyValidGeo) {
-          hasOnlyValidGeo = Boolean(
-            targetingOptions.length && targetingOptions.every(hasAllowedGeo),
+          // find any values not listed in allowedTargets
+          const allowed = allowedTargets.filter(
+            (allowed) => targetName.indexOf(allowed) >= 0,
           );
+          if (allowed.length === 0) {
+            errors.push(`"${targetName}" not an allowed target`);
+          }
+
+          if (requiredTargets.length) {
+            const foundRequiredIndex = requiredTargets.findIndex(
+              (req) => targetName.indexOf(req) >= 0,
+            );
+            if (foundRequiredIndex >= 0) {
+              foundRequiredIndexes.add(foundRequiredIndex);
+            }
+          }
         }
         targetingOptionsLength += targetingOptions.length;
       });
-      values[id] = equalTo(1, hasOnlyValidGeo ? 1 : 0, {
+
+      if (requiredTargets.length) {
+        const missingRequiredTargets = requiredTargets.filter(
+          (_, ix) => !foundRequiredIndexes.has(ix),
+        );
+        errors.push(
+          ...missingRequiredTargets.map(
+            (req) => `"${req}" was required but not targeted`,
+          ),
+        );
+      }
+
+      const errorMessage = (() => {
+        if (errors.length) {
+          return errors.join(',');
+        }
+        if (
+          !targetingOptionsLength &&
+          (requiredTargets.length ||
+            allowedTargets.length ||
+            excludedTargets.length)
+        ) {
+          return 'No targeting set';
+        }
+
+        return 'OK';
+      })();
+      values[id] = equalTo('OK', errorMessage, {
         'Advertiser ID': advertiserId,
         'Campaign Name': displayName,
         'Campaign ID': id,

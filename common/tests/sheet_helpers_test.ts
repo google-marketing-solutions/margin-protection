@@ -179,24 +179,7 @@ describe('Rule Settings helper functions', () => {
 
   const client = generateTestClient({ id: '1' });
   beforeEach(() => {
-    rules = new RuleRange(
-      [
-        ['', '', 'Category A', '', 'Category B', '', '', 'Category C'],
-        [
-          'id',
-          'name',
-          'Header 1',
-          'Header 2',
-          'Header 3',
-          'Header 4',
-          'Header 5',
-          'Header 6',
-        ],
-        ['1', 'one', 'Col 1', 'Col 2', 'Col 3', 'Col 4', 'Col 5', 'Col 6'],
-      ],
-      client,
-      ['id'],
-    );
+    rules = initializeRuleRange(client);
     for (const rule of ['', 'Category A', 'Category B', 'Category C']) {
       // getValues() expects a rule to be in the ruleStore for the helper value.
       client.ruleStore[rule] = {
@@ -232,11 +215,11 @@ describe('Rule Settings helper functions', () => {
     ]);
   });
 
-  it('writes back to the spreadsheet', () => {
+  it('writes back to the spreadsheet - base case', () => {
     mockAppsScript();
+    const sheet = getOrCreateSheet('Rule Settings - default');
     rules.writeBack(Granularity.DEFAULT);
-    const range = getOrCreateSheet(`Rule Settings - default`).getDataRange();
-    expect(range.getValues()).toEqual([
+    const expected = [
       ['', '', 'Category A', '', 'Category B', '', '', 'Category C'],
       ['', '', '', '', '', '', '', ''],
       [
@@ -250,6 +233,54 @@ describe('Rule Settings helper functions', () => {
         'Header 6',
       ],
       ['1', 'one', 'Col 1', 'Col 2', 'Col 3', 'Col 4', 'Col 5', 'Col 6'],
+    ];
+    const range = getOrCreateSheet(`Rule Settings - default`).getRange(
+      1,
+      1,
+      expected.length,
+      expected[0].length,
+    );
+    expect(range.getValues()).toEqual(expected);
+  });
+
+  it('writes back to the spreadsheet - cares about changes', () => {
+    mockAppsScript();
+    const sheet = getOrCreateSheet('Rule Settings - default');
+    rules.writeBack(Granularity.DEFAULT);
+    const expected = [
+      ['', '', 'Category A', '', 'Category B', '', '', 'Category C'],
+      ['', '', '', '', '', '', '', ''],
+      [
+        'id',
+        'name',
+        'Header 1',
+        'Header 2',
+        'Header 3',
+        'Header 4',
+        'Header 5',
+        'Header 6',
+      ],
+      ['1', 'one', 'Col 1', 'Col 2', 'Col 3', 'Col 4', 'Col 5', 'Col 6'],
+    ];
+    const range = sheet.getRange(1, 1, expected.length, expected[0].length);
+    expected[3][2] = 'New Col 1';
+    range.setValues(expected);
+    rules.writeBack(Granularity.DEFAULT);
+
+    expect(range.getValues()).toEqual([
+      ['', '', 'Category A', '', 'Category B', '', '', 'Category C'],
+      ['', '', '', '', '', '', '', ''],
+      [
+        'id',
+        'name',
+        'Header 1',
+        'Header 2',
+        'Header 3',
+        'Header 4',
+        'Header 5',
+        'Header 6',
+      ],
+      ['1', 'one', 'New Col 1', 'Col 2', 'Col 3', 'Col 4', 'Col 5', 'Col 6'],
     ]);
   });
 });
@@ -482,4 +513,25 @@ function generateTestClient(params: { id?: string }): TestClientInterface {
     args: { label: 'test' },
     properties: new FakePropertyStore(),
   };
+}
+
+function initializeRuleRange(client: TestClientInterface) {
+  return new RuleRange(
+    [
+      ['', '', 'Category A', '', 'Category B', '', '', 'Category C'],
+      [
+        'id',
+        'name',
+        'Header 1',
+        'Header 2',
+        'Header 3',
+        'Header 4',
+        'Header 5',
+        'Header 6',
+      ],
+      ['1', 'one', 'Col 1', 'Col 2', 'Col 3', 'Col 4', 'Col 5', 'Col 6'],
+    ],
+    client,
+    ['id'],
+  );
 }

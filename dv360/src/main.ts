@@ -38,7 +38,7 @@ import { AppsScriptPropertyStore } from 'common/sheet_helpers';
  * This is used to manage migrations from one version of Launch Monitor to
  * another.
  */
-export const CURRENT_SHEET_VERSION = '1.5';
+export const CURRENT_SHEET_VERSION = '2.1';
 
 /**
  * Retrieves the front-end as a function.
@@ -67,24 +67,24 @@ export function getFrontend(
   });
 }
 
-function onOpen(properties = new AppsScriptPropertyStore()) {
-  getFrontend(properties).onOpen();
+async function onOpen(properties = new AppsScriptPropertyStore()) {
+  await getFrontend(properties).onOpen();
 }
 
-function initializeSheets(properties = new AppsScriptPropertyStore()) {
-  getFrontend(properties).initializeSheets();
+async function initializeSheets(properties = new AppsScriptPropertyStore()) {
+  await getFrontend(properties).initializeSheets();
 }
 
-function initializeRules(properties = new AppsScriptPropertyStore()) {
-  getFrontend(properties).initializeRules();
+async function initializeRules(properties = new AppsScriptPropertyStore()) {
+  await getFrontend(properties).initializeRules();
 }
 
-function preLaunchQa(properties = new AppsScriptPropertyStore()) {
-  getFrontend(properties).preLaunchQa();
+async function preLaunchQa(properties = new AppsScriptPropertyStore()) {
+  await getFrontend(properties).preLaunchQa();
 }
 
-function launchMonitor(properties = new AppsScriptPropertyStore()) {
-  getFrontend(properties).launchMonitor();
+async function launchMonitor(properties = new AppsScriptPropertyStore()) {
+  await getFrontend(properties).launchMonitor();
 }
 
 global.onOpen = onOpen;

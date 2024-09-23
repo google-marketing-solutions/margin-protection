@@ -23,6 +23,7 @@ import {
   LineItems,
 } from 'dv360_api/dv360';
 import {
+  Advertiser,
   AssignedTargetingOption,
   Campaign,
   InsertionOrder,
@@ -38,12 +39,10 @@ import {
   LINE_ITEM_TYPE,
   LineItemBudget,
   LineItemFlight,
-  LineItemPartnerRevenueModel,
   LineItemType,
   PACING_PERIOD,
   Pacing,
   PacingType,
-  PerformanceGoal,
 } from 'dv360_api/dv360_types';
 import { FilterExpression } from 'dv360_api/utils';
 import { FakePropertyStore } from 'common/test_helpers/mock_apps_script';
@@ -57,6 +56,13 @@ type Callable<T> = (
   filter?: FilterExpression,
   maxPages?: number | undefined,
 ) => void;
+
+/**
+ * Allows easy creation of new templates without lots of new parameters.
+ */
+export type AdvertiserTemplateConverter = (
+  advertiser: AdvertiserTemplate,
+) => AdvertiserTemplate;
 
 /**
  * Allows easy creation of new templates without lots of new parameters.
@@ -87,10 +93,12 @@ interface TestClientParams {
     string,
     Record<string, AssignedTargetingOption[]>
   >;
+  allAdvertisers?: Record<string, AdvertiserTemplateConverter[]>;
   allInsertionOrders?: Record<string, InsertionOrderTemplateConverter[]>;
   allLineItems?: Record<string, LineItemTemplateConverter[]>;
   fakeSpendAmount?: number;
   fakeImpressionAmount?: number;
+  clientArgs?: ClientArgs;
 }
 
 /**
@@ -132,6 +140,20 @@ export interface LineItemTemplate {
   partnerRevenueModel: { markupType: string; markupAmount: string };
   bidStrategy: { fixedBid: { bidAmountMicros: string } };
 }
+
+/**
+ * Advertiser parameters.
+ */
+export interface AdvertiserTemplate {
+  id: string;
+  displayName: string;
+  partnerId: string;
+  generalConfig: {
+    domainUrl: string;
+    currencyCode: string;
+  };
+}
+
 /**
  * Insertion order parameters.
  */
@@ -247,11 +269,24 @@ export function generateTestClient(param: TestClientParams) {
     },
   };
 
-  const clientArgs: ClientArgs = {
-    id: param.id,
-    idType: IDType.ADVERTISER,
-    label: 'test',
+  const advertiserTemplate: AdvertiserTemplate = {
+    partnerId: '1',
+    id: 'a1',
+    displayName: 'Advertiser 1',
+    generalConfig: {
+      domainUrl: 'https://example.co',
+      currencyCode: 'USD',
+    },
   };
+
+  const clientArgs: ClientArgs = param.clientArgs
+    ? param.clientArgs
+    : {
+        id: param.id,
+        idType: IDType.ADVERTISER,
+        label: 'test',
+      };
+
   const accessors: Accessors = {
     budgetReport: BudgetReport,
     lineItemBudgetReport: LineItemBudgetReport,
@@ -275,6 +310,20 @@ export function generateTestClient(param: TestClientParams) {
     }
 
     accessors.campaigns = FakeCampaigns;
+  }
+
+  if (param.allAdvertisers) {
+    class FakeAdvertisers extends Advertisers {
+      override list(callback: Callable<Advertiser>) {
+        callback(
+          (Object.values(param.allAdvertisers).flat(1) || []).map(
+            (a) => new Advertiser(a({ ...advertiserTemplate })),
+          ),
+        );
+      }
+    }
+
+    accessors.advertisers = FakeAdvertisers;
   }
 
   if (param.allAssignedTargetingOptions) {
@@ -328,27 +377,17 @@ export function generateTestClient(param: TestClientParams) {
         );
       }
     }
-    class FakeLineItemBudgetReport extends LineItemBudgetReport {
-      protected override getReport() {
-        return {};
-      }
-
-      override getSpendForLineItem(lineItemId: string): number {
-        return param.fakeSpendAmount;
-      }
-    }
     accessors.lineItems = FakeLineItems;
     if (param.fakeSpendAmount) {
-      class FakeBudgetReport extends BudgetReport {
+      class FakeLineItemBudgetReport extends LineItemBudgetReport {
         protected override getReport() {
           return {};
         }
 
-        override getSpendForInsertionOrder() {
-          return param.fakeSpendAmount!;
+        override getSpendForLineItem(): number {
+          return param.fakeSpendAmount;
         }
       }
-
       accessors.lineItemBudgetReport = FakeLineItemBudgetReport;
     }
   }
