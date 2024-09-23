@@ -28,7 +28,7 @@ import Mail = GoogleAppsScript.Mail;
 function a1NotationToRowColumn(a1Notation: string, start = true) {
   const a = 'A'.charCodeAt(0);
   let column = 0;
-  let i;
+  let i: number;
   const parts = a1Notation.toUpperCase().match(/([A-Z]+)([1-9]\d*)?/);
   if (!parts) {
     throw new Error('Invalid A1 notation');

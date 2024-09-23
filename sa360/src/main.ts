@@ -80,24 +80,28 @@ export function getFrontend(properties: PropertyStore) {
   });
 }
 
-function onOpen(properties = new AppsScriptPropertyStore()) {
-  getFrontend(properties).onOpen();
+async function onOpen(properties = new AppsScriptPropertyStore()) {
+  await getFrontend(properties).onOpen();
 }
 
-function initializeSheets(properties = new AppsScriptPropertyStore()) {
-  getFrontend(properties).initializeSheets();
+async function initializeSheets(properties = new AppsScriptPropertyStore()) {
+  await getFrontend(properties).initializeSheets();
 }
 
-function initializeRules(properties = new AppsScriptPropertyStore()) {
-  getFrontend(properties).initializeRules();
+async function initializeRules(properties = new AppsScriptPropertyStore()) {
+  await getFrontend(properties).initializeRules();
 }
 
-function preLaunchQa(properties = new AppsScriptPropertyStore()) {
-  getFrontend(properties).preLaunchQa();
+async function preLaunchQa(properties = new AppsScriptPropertyStore()) {
+  await getFrontend(properties).preLaunchQa();
 }
 
-function launchMonitor(properties = new AppsScriptPropertyStore()) {
-  getFrontend(properties).launchMonitor();
+async function launchMonitor(properties = new AppsScriptPropertyStore()) {
+  await getFrontend(properties).launchMonitor();
+}
+
+async function displaySetupModal(properties = new AppsScriptPropertyStore()) {
+  await getFrontend(properties).displaySetupModal();
 }
 
 function displayGlossary(properties = new AppsScriptPropertyStore()) {
@@ -109,4 +113,5 @@ global.initializeSheets = initializeSheets;
 global.initializeRules = initializeRules;
 global.preLaunchQa = preLaunchQa;
 global.launchMonitor = launchMonitor;
+global.displaySetupModal = displaySetupModal;
 global.displayGlossary = displayGlossary;
