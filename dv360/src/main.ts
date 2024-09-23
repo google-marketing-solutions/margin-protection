@@ -91,8 +91,8 @@ async function displaySetupModal(properties = new AppsScriptPropertyStore()) {
   await getFrontend(properties).displaySetupModal();
 }
 
-async function displayGlossary(properties = new AppsScriptPropertyStore()) {
-  await getFrontend(properties).displayGlossary();
+function displayGlossary(properties = new AppsScriptPropertyStore()) {
+  getFrontend(properties).displayGlossary();
 }
 
 global.onOpen = onOpen;

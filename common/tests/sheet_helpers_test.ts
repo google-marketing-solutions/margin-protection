@@ -217,7 +217,6 @@ describe('Rule Settings helper functions', () => {
 
   it('writes back to the spreadsheet - base case', () => {
     mockAppsScript();
-    const sheet = getOrCreateSheet('Rule Settings - default');
     rules.writeBack(Granularity.DEFAULT);
     const expected = [
       ['', '', 'Category A', '', 'Category B', '', '', 'Category C'],
