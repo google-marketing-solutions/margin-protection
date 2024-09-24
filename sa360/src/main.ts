@@ -100,8 +100,12 @@ async function launchMonitor(properties = new AppsScriptPropertyStore()) {
   await getFrontend(properties).launchMonitor();
 }
 
-async function displayGlossary(properties = new AppsScriptPropertyStore()) {
-  await getFrontend(properties).displayGlossary();
+async function displaySetupModal(properties = new AppsScriptPropertyStore()) {
+  await getFrontend(properties).displaySetupModal();
+}
+
+function displayGlossary(properties = new AppsScriptPropertyStore()) {
+  getFrontend(properties).displayGlossary();
 }
 
 global.onOpen = onOpen;
@@ -109,4 +113,5 @@ global.initializeSheets = initializeSheets;
 global.initializeRules = initializeRules;
 global.preLaunchQa = preLaunchQa;
 global.launchMonitor = launchMonitor;
+global.displaySetupModal = displaySetupModal;
 global.displayGlossary = displayGlossary;

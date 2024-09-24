@@ -21,7 +21,6 @@
 
 import {
   AppsScriptFrontend,
-  AppsScriptPropertyStore,
   HELPERS,
   LABEL_RANGE,
   addSettingWithDescription,
