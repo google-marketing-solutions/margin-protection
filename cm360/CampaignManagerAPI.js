@@ -21,7 +21,7 @@
 
 const DEFAULT_SLEEP = 8 * 1000;
 const DEFAULT_RETRIES = 4;
-const REPORT_AVAILABLE_STATUS = 'REPORT_AVAILABLE';
+const REPORT_AVAILABLE_STATUS = "REPORT_AVAILABLE";
 
 class CampaignManagerAPI {
   constructor(profileId) {
@@ -47,7 +47,7 @@ class CampaignManagerAPI {
       entity,
       secondEntity,
       options,
-      this.profileId,
+      this.profileId
     );
     let result = [];
     while (response && response[listName] && response[listName].length > 0) {
@@ -67,7 +67,7 @@ class CampaignManagerAPI {
           entity,
           secondEntity,
           nextRequestOptions,
-          this.profileId,
+          this.profileId
         );
       } else {
         response = null;
@@ -94,7 +94,7 @@ class CampaignManagerAPI {
       // For reports
       return DoubleClickCampaigns[entity][secondEntity].list(
         profileId,
-        options,
+        options
       );
     }
   }
@@ -126,7 +126,7 @@ class CampaignManagerAPI {
     while (true) {
       const response = DoubleClickCampaigns.Reports.Files.list(
         this.profileId,
-        reportId,
+        reportId
       );
       const latestReportFile =
         response.items.length > 0 ? response.items[0] : null;
@@ -144,7 +144,7 @@ class CampaignManagerAPI {
         // Return close to the maximum allowed value for the sleep function
         if (sleepDuration * 1000 >= 64000) {
           Logger.log(
-            'Stop waiting for report to avoid execution time limit errors...',
+            "Stop waiting for report to avoid execution time limit errors..."
           );
           return;
         }
@@ -164,10 +164,10 @@ class CampaignManagerAPI {
    **/
   getLatestReportFileDataByRedirectURL(latestReportFile) {
     let options = {
-      method: 'GET',
+      method: "GET",
     };
-    const reportResponse = apiCall('', options, latestReportFile.urls.apiUrl);
-    Logger.log(`Retrieving data for report ${latestReportFile['reportId']}...`);
+    const reportResponse = apiCall("", options, latestReportFile.urls.apiUrl);
+    Logger.log(`Retrieving data for report ${latestReportFile["reportId"]}...`);
     return reportResponse;
   }
 
@@ -189,13 +189,13 @@ class CampaignManagerAPI {
       useCase,
       dateRange,
       dimensionFilters,
-      extraParams,
+      extraParams
     );
     const report = DoubleClickCampaigns.Reports.insert(
       reportBody,
-      this.profileId,
+      this.profileId
     );
-    DoubleClickCampaigns.Reports.run(this.profileId, report['id']);
+    DoubleClickCampaigns.Reports.run(this.profileId, report["id"]);
     return report;
   }
 
@@ -210,23 +210,23 @@ class CampaignManagerAPI {
    * @return {obj} dimensionFilters - The dimension filters object for the new report
    */
   buildReportDimensionFilters(filters) {
-    const filterItems = filters.split(';');
+    const filterItems = filters.split(";");
     let dimensionFilters = [];
     filterItems.forEach((filter) => {
       if (!filter) {
         return;
       }
-      const sFItems = filter.split('=');
-      const dimensionName = sFItems.length > 0 ? sFItems[0] : '';
+      const sFItems = filter.split("=");
+      const dimensionName = sFItems.length > 0 ? sFItems[0] : "";
       // Check if dimension filter is supported
       if (!this.isDimensionFilterSupported(dimensionName)) {
         Logger.log(
-          `Dimension filter not supported. Skipping ${dimensionName} dimension filter.`,
+          `Dimension filter not supported. Skipping ${dimensionName} dimension filter.`
         );
         return;
       }
       // Add each value as a dimension filter
-      const values = sFItems.length > 1 ? sFItems[1].split(',') : [];
+      const values = sFItems.length > 1 ? sFItems[1].split(",") : [];
       values.forEach((value) => {
         if (!value) {
           return;
@@ -234,8 +234,8 @@ class CampaignManagerAPI {
         dimensionFilters.push({
           dimensionName: dimensionName,
           value: value.trim(),
-          matchType: 'EXACT',
-          kind: 'dfareporting#dimensionValue',
+          matchType: "EXACT",
+          kind: "dfareporting#dimensionValue",
         });
       });
     });
@@ -249,9 +249,9 @@ class CampaignManagerAPI {
    *   @return {boolean} - True if the dimension filter is supported, false otherwise.
    */
   isDimensionFilterSupported(dimensionName) {
-    const supportedFilters = ['advertiserId'];
+    const supportedFilters = ["advertiserId"];
     const dimensionFound = supportedFilters.filter(
-      (item) => item === dimensionName,
+      (item) => item === dimensionName
     );
     return dimensionFound && dimensionFound.length > 0;
   }
@@ -272,287 +272,341 @@ class CampaignManagerAPI {
     useCase,
     dateRange,
     dimensionFilters,
-    extraParams,
+    extraParams
   ) {
     const useCaseSchemas = {
       [GHOST_PLACEMENTS_KEY]: {
-        type: 'STANDARD',
+        type: "STANDARD",
         name: `CM360 ${useCase} Monitor Report`,
         criteria: {
           dateRange: {
-            kind: 'dfareporting#dateRange',
+            kind: "dfareporting#dateRange",
             relativeDateRange: dateRange,
           },
           dimensions: [
             {
-              kind: 'fareporting#sortedDimension',
-              name: 'date',
+              kind: "fareporting#sortedDimension",
+              name: "date",
             },
             {
-              kind: 'fareporting#sortedDimension',
-              name: 'advertiserId',
+              kind: "fareporting#sortedDimension",
+              name: "advertiserId",
             },
             {
-              kind: 'fareporting#sortedDimension',
-              name: 'advertiser',
+              kind: "fareporting#sortedDimension",
+              name: "advertiser",
             },
             {
-              kind: 'fareporting#sortedDimension',
-              name: 'campaignId',
+              kind: "fareporting#sortedDimension",
+              name: "campaignId",
             },
             {
-              kind: 'fareporting#sortedDimension',
-              name: 'campaign',
+              kind: "fareporting#sortedDimension",
+              name: "campaign",
             },
             {
-              kind: 'fareporting#sortedDimension',
-              name: 'site',
+              kind: "fareporting#sortedDimension",
+              name: "site",
             },
             {
-              kind: 'fareporting#sortedDimension',
-              name: 'placementId',
+              kind: "fareporting#sortedDimension",
+              name: "placementId",
             },
             {
-              kind: 'fareporting#sortedDimension',
-              name: 'placement',
+              kind: "fareporting#sortedDimension",
+              name: "placement",
             },
           ],
           dimensionFilters: dimensionFilters,
-          metricNames: ['impressions', 'clicks', 'totalConversions'],
+          metricNames: ["impressions", "clicks", "totalConversions"],
         },
         schedule: {
           active: true,
-          repeats: 'WEEKLY',
+          repeats: "WEEKLY",
           every: 1,
-          repeatsOnWeekDays: 'MONDAY',
-          startDate: '2023-05-10',
-          expirationDate: '2050-05-10',
+          repeatsOnWeekDays: "MONDAY",
+          startDate: "2023-05-10",
+          expirationDate: "2050-05-10",
         },
       },
       [DEFAULT_ADS_RATE_KEY]: {
-        type: 'STANDARD',
+        type: "STANDARD",
         name: `CM360 ${useCase} Monitor Report`,
         criteria: {
           dateRange: {
-            kind: 'dfareporting#dateRange',
+            kind: "dfareporting#dateRange",
             relativeDateRange: dateRange,
           },
           dimensions: [
             {
-              kind: 'fareporting#sortedDimension',
-              name: 'date',
+              kind: "fareporting#sortedDimension",
+              name: "date",
             },
             {
-              kind: 'fareporting#sortedDimension',
-              name: 'advertiserId',
+              kind: "fareporting#sortedDimension",
+              name: "advertiserId",
             },
             {
-              kind: 'fareporting#sortedDimension',
-              name: 'advertiser',
+              kind: "fareporting#sortedDimension",
+              name: "advertiser",
             },
             {
-              kind: 'fareporting#sortedDimension',
-              name: 'campaignId',
+              kind: "fareporting#sortedDimension",
+              name: "campaignId",
             },
             {
-              kind: 'fareporting#sortedDimension',
-              name: 'campaign',
+              kind: "fareporting#sortedDimension",
+              name: "campaign",
             },
             {
-              kind: 'fareporting#sortedDimension',
-              name: 'site',
+              kind: "fareporting#sortedDimension",
+              name: "site",
             },
             {
-              kind: 'fareporting#sortedDimension',
-              name: 'placementId',
+              kind: "fareporting#sortedDimension",
+              name: "placementId",
             },
             {
-              kind: 'fareporting#sortedDimension',
-              name: 'placement',
+              kind: "fareporting#sortedDimension",
+              name: "placement",
             },
             {
-              kind: 'fareporting#sortedDimension',
-              name: 'adId',
+              kind: "fareporting#sortedDimension",
+              name: "adId",
             },
             {
-              kind: 'fareporting#sortedDimension',
-              name: 'ad',
+              kind: "fareporting#sortedDimension",
+              name: "ad",
             },
             {
-              kind: 'fareporting#sortedDimension',
-              name: 'adType',
+              kind: "fareporting#sortedDimension",
+              name: "adType",
             },
           ],
           dimensionFilters: dimensionFilters,
-          metricNames: ['impressions', 'clicks'],
+          metricNames: ["impressions", "clicks"],
         },
         schedule: {
           active: true,
-          repeats: 'WEEKLY',
+          repeats: "WEEKLY",
           every: 1,
-          repeatsOnWeekDays: 'MONDAY',
-          startDate: '2023-05-10',
-          expirationDate: '2050-05-10',
+          repeatsOnWeekDays: "MONDAY",
+          startDate: "2023-05-10",
+          expirationDate: "2050-05-10",
         },
       },
       [FLOODLIGHT_TRENDS_KEY]: {
-        type: 'FLOODLIGHT',
+        type: "FLOODLIGHT",
         name: `CM360 ${useCase} Monitor Report`,
         floodlightCriteria: {
           dateRange: {
-            kind: 'dfareporting#dateRange',
+            kind: "dfareporting#dateRange",
             relativeDateRange: dateRange,
           },
           floodlightConfigId: {
-            kind: 'dfareporting#dimensionValue',
-            dimensionName: 'floodlightConfigId',
+            kind: "dfareporting#dimensionValue",
+            dimensionName: "floodlightConfigId",
             value: extraParams,
-            matchType: 'EXACT',
+            matchType: "EXACT",
           },
           dimensions: [
             {
-              kind: 'fareporting#sortedDimension',
-              name: 'week',
+              kind: "fareporting#sortedDimension",
+              name: "week",
             },
             {
-              kind: 'fareporting#sortedDimension',
-              name: 'floodlightConfigId',
+              kind: "fareporting#sortedDimension",
+              name: "floodlightConfigId",
             },
             {
-              kind: 'fareporting#sortedDimension',
-              name: 'activityId',
+              kind: "fareporting#sortedDimension",
+              name: "activityId",
             },
             {
-              kind: 'fareporting#sortedDimension',
-              name: 'activity',
+              kind: "fareporting#sortedDimension",
+              name: "activity",
             },
           ],
           dimensionFilters: dimensionFilters,
-          metricNames: ['floodlightImpressions'],
+          metricNames: ["floodlightImpressions"],
         },
         schedule: {
           active: true,
-          repeats: 'WEEKLY',
+          repeats: "WEEKLY",
           every: 1,
-          repeatsOnWeekDays: 'MONDAY',
-          startDate: '2023-05-10',
-          expirationDate: '2050-05-10',
+          repeatsOnWeekDays: "MONDAY",
+          startDate: "2023-05-10",
+          expirationDate: "2050-05-10",
         },
       },
       [OUT_OF_FLIGHT_PLACEMENTS_KEY]: {
-        type: 'STANDARD',
+        type: "STANDARD",
         name: `CM360 ${useCase} Monitor Report`,
         criteria: {
           dateRange: {
-            kind: 'dfareporting#dateRange',
+            kind: "dfareporting#dateRange",
             relativeDateRange: dateRange,
           },
           dimensions: [
             {
-              kind: 'fareporting#sortedDimension',
-              name: 'date',
+              kind: "fareporting#sortedDimension",
+              name: "date",
             },
             {
-              kind: 'fareporting#sortedDimension',
-              name: 'advertiserId',
+              kind: "fareporting#sortedDimension",
+              name: "advertiserId",
             },
             {
-              kind: 'fareporting#sortedDimension',
-              name: 'advertiser',
+              kind: "fareporting#sortedDimension",
+              name: "advertiser",
             },
             {
-              kind: 'fareporting#sortedDimension',
-              name: 'campaignId',
+              kind: "fareporting#sortedDimension",
+              name: "campaignId",
             },
             {
-              kind: 'fareporting#sortedDimension',
-              name: 'campaign',
+              kind: "fareporting#sortedDimension",
+              name: "campaign",
             },
             {
-              kind: 'fareporting#sortedDimension',
-              name: 'site',
+              kind: "fareporting#sortedDimension",
+              name: "site",
             },
             {
-              kind: 'fareporting#sortedDimension',
-              name: 'placementId',
+              kind: "fareporting#sortedDimension",
+              name: "placementId",
             },
             {
-              kind: 'fareporting#sortedDimension',
-              name: 'placement',
+              kind: "fareporting#sortedDimension",
+              name: "placement",
             },
             {
-              kind: 'fareporting#sortedDimension',
-              name: 'placementStartDate',
+              kind: "fareporting#sortedDimension",
+              name: "placementStartDate",
             },
             {
-              kind: 'fareporting#sortedDimension',
-              name: 'placementEndDate',
+              kind: "fareporting#sortedDimension",
+              name: "placementEndDate",
             },
           ],
           dimensionFilters: dimensionFilters,
-          metricNames: ['impressions', 'clicks'],
+          metricNames: ["impressions", "clicks"],
         },
         schedule: {
           active: true,
-          repeats: 'WEEKLY',
+          repeats: "WEEKLY",
           every: 1,
-          repeatsOnWeekDays: 'MONDAY',
-          startDate: '2023-05-10',
-          expirationDate: '2050-05-10',
+          repeatsOnWeekDays: "MONDAY",
+          startDate: "2023-05-10",
+          expirationDate: "2050-05-10",
         },
       },
       [TRACKING_ADS_KEY]: {
-        type: 'STANDARD',
+        type: "STANDARD",
         name: `CM360 ${useCase} Monitor Report`,
         criteria: {
           dateRange: {
-            kind: 'dfareporting#dateRange',
+            kind: "dfareporting#dateRange",
             relativeDateRange: dateRange,
           },
           dimensions: [
             {
-              kind: 'fareporting#sortedDimension',
-              name: 'date',
+              kind: "fareporting#sortedDimension",
+              name: "date",
             },
             {
-              kind: 'fareporting#sortedDimension',
-              name: 'advertiserId',
+              kind: "fareporting#sortedDimension",
+              name: "advertiserId",
             },
             {
-              kind: 'fareporting#sortedDimension',
-              name: 'advertiser',
+              kind: "fareporting#sortedDimension",
+              name: "advertiser",
             },
             {
-              kind: 'fareporting#sortedDimension',
-              name: 'campaignId',
+              kind: "fareporting#sortedDimension",
+              name: "campaignId",
             },
             {
-              kind: 'fareporting#sortedDimension',
-              name: 'campaign',
+              kind: "fareporting#sortedDimension",
+              name: "campaign",
             },
             {
-              kind: 'fareporting#sortedDimension',
-              name: 'site',
+              kind: "fareporting#sortedDimension",
+              name: "site",
             },
             {
-              kind: 'fareporting#sortedDimension',
-              name: 'placementId',
+              kind: "fareporting#sortedDimension",
+              name: "placementId",
             },
             {
-              kind: 'fareporting#sortedDimension',
-              name: 'placement',
+              kind: "fareporting#sortedDimension",
+              name: "placement",
             },
           ],
           dimensionFilters: dimensionFilters,
-          metricNames: ['impressions', 'clicks'],
+          metricNames: ["impressions", "clicks"],
         },
         schedule: {
           active: true,
-          repeats: 'WEEKLY',
+          repeats: "WEEKLY",
           every: 1,
-          repeatsOnWeekDays: 'MONDAY',
-          startDate: '2023-05-10',
-          expirationDate: '2050-05-10',
+          repeatsOnWeekDays: "MONDAY",
+          startDate: "2023-05-10",
+          expirationDate: "2050-05-10",
+        },
+      },
+      [DEFAULT_LANDING_PAGE_KEY]: {
+        type: "STANDARD",
+        name: `CM360 ${useCase} Monitor Report`,
+        criteria: {
+          dateRange: {
+            kind: "dfareporting#dateRange",
+            relativeDateRange: dateRange,
+          },
+          dimensions: [
+            {
+              kind: "fareporting#sortedDimension",
+              name: "date",
+            },
+            {
+              kind: "fareporting#sortedDimension",
+              name: "advertiserId",
+            },
+            {
+              kind: "fareporting#sortedDimension",
+              name: "advertiser",
+            },
+            {
+              kind: "fareporting#sortedDimension",
+              name: "campaignId",
+            },
+            {
+              kind: "fareporting#sortedDimension",
+              name: "campaign",
+            },
+            {
+              kind: "fareporting#sortedDimension",
+              name: "placementId",
+            },
+            {
+              kind: "fareporting#sortedDimension",
+              name: "placement",
+            },
+            {
+              kind: "fareporting#sortedDimension",
+              name: "landingPageUrl",
+            },
+          ],
+          dimensionFilters: dimensionFilters,
+          metricNames: ["clicks"],
+        },
+        schedule: {
+          active: true,
+          repeats: "WEEKLY",
+          every: 1,
+          repeatsOnWeekDays: "MONDAY",
+          startDate: "2023-05-10",
+          expirationDate: "2050-05-10",
         },
       },
     };
