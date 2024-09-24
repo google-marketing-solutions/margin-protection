@@ -21,6 +21,7 @@
 
 import { PropertyStore } from 'common/types';
 
+import BigQuery = GoogleAppsScript.BigQuery;
 import Properties = GoogleAppsScript.Properties;
 import Cache = GoogleAppsScript.Cache;
 import Mail = GoogleAppsScript.Mail;
@@ -327,6 +328,7 @@ export function mockAppsScript() {
   (globalThis.UrlFetchApp as unknown as FakeUrlFetchApp) =
     new FakeUrlFetchApp();
   (globalThis.Drive as unknown as FakeDrive) = new FakeDrive();
+  (globalThis.BigQuery as unknown as FakeBigQuery) = new FakeBigQuery();
 }
 
 class FakeUrlFetchApp {
@@ -592,3 +594,13 @@ class FakeRichTextValue {
 }
 
 class FakeFilter {}
+
+class FakeBigQuery {
+  Jobs = new FakeBigQueryJobs();
+}
+
+class FakeBigQueryJobs {
+  query: () => BigQuery.Schema.QueryResponse = () => {
+    throw new Error('Not implemented');
+  };
+}

@@ -66,6 +66,11 @@ export const RULE_SETTINGS_SHEET = 'Rule Settings';
 export const GENERAL_SETTINGS_SHEET = 'General/Settings';
 
 /**
+ * Used to figure out the GCP project name. May be blank (if BigQuery isn't used).
+ */
+export const GCP_PROJECT_RANGE = 'GCP_PROJECT_ID';
+
+/**
  * Provides a useful data structure to get campaign ID settings.
  *
  * Defaults to the row with campaignId: 'default' if no campaign ID override is
@@ -496,6 +501,65 @@ export const HELPERS = {
   getSheetId() {
     return SpreadsheetApp.getActive().getId();
   },
+  /**
+   * Retrieve data from BigQuery if BigQuery is enabled. Otherwise, throws an error.
+   *
+   * @param query A GoogleSQL query
+   * @returns An array of objects where each object is keyed to the query's column labels.
+   */
+  bigQueryGet(query: string): Array<Record<string, unknown>> {
+    const projectId = this.getValueFromRangeByName({
+      name: GCP_PROJECT_RANGE,
+      allowEmpty: false,
+    }) as string;
+    const result = BigQuery.Jobs.query(
+      {
+        query,
+        useLegacySql: false,
+      },
+      projectId,
+    );
+    const headers = result.schema.fields.map((h) => h.name);
+    const rows = result.rows.map((row) =>
+      Object.fromEntries(row.f.map((column, i) => [headers[i], column.v])),
+    );
+    return rows;
+  },
+  isBigQueryEnabled() {
+    return Boolean(
+      this.getValueFromRangeByName({
+        name: GCP_PROJECT_RANGE,
+        allowEmpty: true,
+      }),
+    );
+  },
+
+  /**
+   * Realistically-typed value getter from a named range.
+   */
+  getValueFromRangeByName<AllowEmpty extends boolean>(args: {
+    name: string;
+    allowEmpty: AllowEmpty;
+  }): AllowEmpty extends true ? string | number | undefined : string | number {
+    const range = this.getRangeByName(args.name);
+    const value = range.getValue();
+    if (!value && !args.allowEmpty) {
+      throw new Error(`Require a value in named range '${args.name}'`);
+    }
+
+    return value || undefined;
+  },
+
+  getRangeByName(name: string) {
+    const range = SpreadsheetApp.getActive().getRangeByName(name);
+    if (!range) {
+      throw new Error(
+        `Missing an expected range '${name}'. You may need to get a new version of this sheet from the template.`,
+      );
+    }
+
+    return range;
+  },
 };
 
 /**
@@ -828,7 +892,7 @@ export abstract class AppsScriptFrontend<T extends ClientTypes<T>> {
   exportAsCsv(ruleName: string, matrix: string[][]) {
     const folder = this.getOrCreateFolder('reports');
     const sheetId = HELPERS.getSheetId();
-    const label: string = this.getRangeByName(LABEL_RANGE).getValue();
+    const label: string = HELPERS.getRangeByName(LABEL_RANGE).getValue();
     const currentTime = new Date(Date.now()).toISOString();
     const category = this.category;
     const file = Utilities.newBlob(
@@ -864,7 +928,7 @@ export abstract class AppsScriptFrontend<T extends ClientTypes<T>> {
     folderName: string,
     parent?: GoogleAppsScript.Spreadsheet.Range,
   ): string {
-    const parentId = parent ?? this.getRangeByName('DRIVE_ID');
+    const parentId = parent ?? HELPERS.getRangeByName('DRIVE_ID');
     if (!parentId || !parentId.getValue()) {
       throw new Error(
         'Missing a named range and/or a value in named range `DRIVE_ID`.',
@@ -959,33 +1023,6 @@ export abstract class AppsScriptFrontend<T extends ClientTypes<T>> {
           `=COUNTIF(INDIRECT("'" & A${i + 1} & " - Results'!B:B"), TRUE)`,
         ]),
       );
-  }
-
-  /**
-   * Realistically-typed value getter from a named range.
-   */
-  getValueFromRangeByName<AllowEmpty extends boolean>(args: {
-    name: string;
-    allowEmpty: AllowEmpty;
-  }): AllowEmpty extends true ? string | number | undefined : string | number {
-    const range = this.getRangeByName(args.name);
-    const value = range.getValue();
-    if (!value && !args.allowEmpty) {
-      throw new Error(`Require a value in named range '${args.name}'.`);
-    }
-
-    return value || undefined;
-  }
-
-  getRangeByName(name: string) {
-    const range = SpreadsheetApp.getActive().getRangeByName(name);
-    if (!range) {
-      throw new Error(
-        `Missing an expected range '${name}'. You may need to get a new version of this sheet from the template.`,
-      );
-    }
-
-    return range;
   }
 
   displaySetupModal() {}
