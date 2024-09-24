@@ -410,7 +410,7 @@ function getOutOfFlightPlacementsAlerts(config, data) {
       placementDateYear,
       placementDateMonth,
       placementDateDay
-    ); // fmorales
+    );
 
     // Rule 1. Placements with impressions > Threshold out of flight schedule
     const threshold = config.rules[0].ruleThreshold
