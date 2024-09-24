@@ -19,7 +19,11 @@
  * @fileoverview frontend/apps script hooks for SA360 launch monitor
  */
 
-import { AppsScriptFrontend, getTemplateSetting } from 'common/sheet_helpers';
+import {
+  AppsScriptFrontend,
+  getTemplateSetting,
+  HELPERS,
+} from 'common/sheet_helpers';
 import { FrontendArgs, ParamDefinition, RuleExecutor } from 'common/types';
 import { SearchAdsClientTypes } from 'sa360/src/types';
 
@@ -64,15 +68,15 @@ export class SearchAdsFrontend extends AppsScriptFrontend<SearchAdsClientTypes> 
   }
 
   override getIdentity() {
-    const loginCustomerId = this.getValueFromRangeByName({
+    const loginCustomerId = HELPERS.getValueFromRangeByName({
       name: LOGIN_CUSTOMER_ID,
       allowEmpty: true,
     });
-    const customerIdsDirty = this.getValueFromRangeByName({
+    const customerIdsDirty = HELPERS.getValueFromRangeByName({
       name: CUSTOMER_IDS,
       allowEmpty: false,
     });
-    const label = this.getValueFromRangeByName({
+    const label = HELPERS.getValueFromRangeByName({
       name: LABEL_RANGE,
       allowEmpty: true,
     });
@@ -90,9 +94,9 @@ export class SearchAdsFrontend extends AppsScriptFrontend<SearchAdsClientTypes> 
   override displaySetupModal() {
     const template = HtmlService.createTemplateFromFile('html/setup');
     template['agencyId'] =
-      this.getRangeByName(LOGIN_CUSTOMER_ID).getValue() || '';
+      HELPERS.getRangeByName(LOGIN_CUSTOMER_ID).getValue() || '';
     template['advertiserId'] =
-      this.getRangeByName(CUSTOMER_IDS).getValue() || '';
+      HELPERS.getRangeByName(CUSTOMER_IDS).getValue() || '';
     const htmlOutput = template.evaluate().setWidth(350).setHeight(400);
     SpreadsheetApp.getUi().showModalDialog(htmlOutput, 'Set up');
 

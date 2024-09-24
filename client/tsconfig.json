@@ -1,17 +1,5 @@
 {
-  "compilerOptions": {
-    "baseUrl": "../",
-    "outDir": "sa360_api",
-    "skipLibCheck": true,
-    "module": "esnext",
-    "moduleResolution": "classic",
-    "target": "es2020",
-    "lib": ["esnext", "dom"],
-    "noImplicitThis": true,
-    "paths": {
-      "common": ["common"]
-    }
-  },
-  "include": ["src/**/*", "../dv360_api/*.ts", "outs.d.ts"],
-  "exclude": ["node_modules/**/*", "dist/**/*", "**/*_test.ts"]
+  "extends": "../tsconfig.json",
+  "include": ["*.ts", "outs.d.ts"],
+  "exclude": ["node_modules/**/*", "dist/**/*"]
 }

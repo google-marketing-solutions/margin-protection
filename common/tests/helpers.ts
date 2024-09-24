@@ -182,18 +182,23 @@ export class FakeFrontend extends AppsScriptFrontend<TestClientTypes> {
 /**
  * Set up named ranges so basic things can work in frontend.
  */
-export function scaffoldSheetWithNamedRanges() {
+export function scaffoldSheetWithNamedRanges(
+  { blanks: blank = [] }: { blanks: string[] } = { blanks: [] },
+) {
   for (const [i, [constName, value]] of [
     ['ENTITY_ID', '1'],
     ['ID_TYPE', 'Advertiser'],
     ['EMAIL_LIST', ''],
     ['LABEL', 'Acme Inc.'],
+    ['GCP_PROJECT_ID', 'myproject'],
   ].entries()) {
     const range = SpreadsheetApp.getActive()
       .getActiveSheet()
       .getRange(`$A$${i + 1}`);
     SpreadsheetApp.getActive().setNamedRange(constName, range);
-    SpreadsheetApp.getActive().getRangeByName(constName)!.setValue(value);
+    SpreadsheetApp.getActive()
+      .getRangeByName(constName)!
+      .setValue(blank.indexOf(constName) < 0 ? value : '');
   }
 }
 

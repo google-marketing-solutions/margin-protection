@@ -168,8 +168,8 @@ export class DisplayVideoFrontend
 
   override displaySetupModal() {
     const template = HtmlService.createTemplateFromFile('html/setup');
-    template['id'] = this.getRangeByName(ENTITY_ID).getValue() || '';
-    template['idType'] = this.getRangeByName(ID_TYPE).getValue() || '';
+    template['id'] = HELPERS.getRangeByName(ENTITY_ID).getValue() || '';
+    template['idType'] = HELPERS.getRangeByName(ID_TYPE).getValue() || '';
     const htmlOutput = template.evaluate().setWidth(350).setHeight(400);
     SpreadsheetApp.getUi().showModalDialog(htmlOutput, 'Set up');
     return template['id'];
