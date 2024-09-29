@@ -24,7 +24,6 @@ import {
   HELPERS,
   LABEL_RANGE,
   addSettingWithDescription,
-  getOrCreateSheet,
 } from 'common/sheet_helpers';
 import { FrontendArgs, FrontendInterface } from 'common/types';
 import { RuleRange } from 'dv360/src/client';
@@ -64,10 +63,10 @@ export const migrations: Record<
     campaignValues = ruleRange.getValues(RuleGranularity.CAMPAIGN);
     ioValues = ruleRange.getValues(RuleGranularity.INSERTION_ORDER);
     active.deleteSheet(ruleSettingsSheet);
-    getOrCreateSheet('Rule Settings - Campaign')
+    HELPERS.getOrCreateSheet('Rule Settings - Campaign')
       .getRange(1, 1, campaignValues.length, campaignValues[0].length)
       .setValues(campaignValues);
-    getOrCreateSheet('Rule Settings - Insertion Order')
+    HELPERS.getOrCreateSheet('Rule Settings - Insertion Order')
       .getRange(1, 1, ioValues.length, ioValues[0].length)
       .setValues(ioValues);
   },
@@ -101,7 +100,7 @@ export const migrations: Record<
     if (active.getRangeByName(REPORT_LABEL)) {
       return;
     }
-    const sheet = getOrCreateSheet('General/Settings');
+    const sheet = HELPERS.getOrCreateSheet('General/Settings');
     const range = sheet.getRange('A6:C7');
     HELPERS.insertRows(range);
     const reportLabel = sheet.getRange('B6:C6').merge();
@@ -119,7 +118,7 @@ export const migrations: Record<
     ]);
   },
   '2.1': (frontend) => {
-    const sheet = getOrCreateSheet('Rule Settings - Campaign');
+    const sheet = HELPERS.getOrCreateSheet('Rule Settings - Campaign');
     const ruleRange = new RuleRange(
       sheet.getDataRange().getValues(),
       frontend.client,

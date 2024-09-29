@@ -23,12 +23,11 @@ import {
   FakePropertyStore,
   mockAppsScript,
 } from '../test_helpers/mock_apps_script';
-import { ParamDefinition, RuleGetter } from '../types';
+import { ParamDefinition, RuleExecutorClass, RuleGetter } from '../types';
 
 import {
   HELPERS,
   SettingMap,
-  getOrCreateSheet,
   sortMigrations,
   transformToParamValues,
 } from '../sheet_helpers';
@@ -37,10 +36,13 @@ import {
   FakeClient,
   FakeFrontend,
   Granularity,
+  newRule,
   RuleRange,
   scaffoldSheetWithNamedRanges,
   TestClientInterface,
+  TestClientTypes,
 } from './helpers';
+import { equalTo } from 'common/checks';
 
 function setUp() {
   mockAppsScript();
@@ -234,7 +236,7 @@ describe('Rule Settings helper functions', () => {
       ],
       ['1', 'one', 'Col 1', 'Col 2', 'Col 3', 'Col 4', 'Col 5', 'Col 6'],
     ];
-    const range = getOrCreateSheet(`Rule Settings - default`).getRange(
+    const range = HELPERS.getOrCreateSheet(`Rule Settings - default`).getRange(
       1,
       1,
       expected.length,
@@ -245,7 +247,7 @@ describe('Rule Settings helper functions', () => {
 
   it('writes back to the spreadsheet - cares about changes', () => {
     mockAppsScript();
-    const sheet = getOrCreateSheet('Rule Settings - default');
+    const sheet = HELPERS.getOrCreateSheet('Rule Settings - default');
     rules.writeBack(Granularity.DEFAULT);
     const expected = [
       ['', '', 'Category A', '', 'Category B', '', '', 'Category C'],
@@ -342,6 +344,127 @@ describe('sortMigrations', () => {
       ['0.0.1', 'a'],
       ['0.1', 'b'],
     ]);
+  });
+});
+
+describe('rule sheet', () => {
+  let frontend: FakeFrontend;
+  const rules: Record<string, RuleExecutorClass<TestClientTypes>> = {};
+
+  beforeEach(() => {
+    const values = {
+      '1': equalTo(42, 1, {}),
+      '42': equalTo(42, 42, {}),
+    };
+    rules['ruleA'] = newRule({
+      params: {},
+      valueFormat: { label: 'Some Value' },
+      name: 'Rule A',
+      description: 'The rule for rule A',
+      granularity: Granularity.DEFAULT,
+      async callback() {
+        return { values };
+      },
+    });
+    rules['ruleB'] = newRule({
+      params: {},
+      valueFormat: { label: 'Some Value' },
+      name: 'Rule B',
+      description: 'The rule for rule B',
+      granularity: Granularity.DEFAULT,
+      async callback() {
+        return { values };
+      },
+    });
+    rules['ruleC'] = newRule({
+      params: {},
+      valueFormat: { label: 'Some Value' },
+      name: 'No HTML',
+      description: 'This <strong>is too much <em>HTML</em></strong>',
+      granularity: Granularity.DEFAULT,
+      async callback() {
+        return { values };
+      },
+    });
+    rules['ruleD'] = newRule({
+      params: {},
+      valueFormat: { label: 'Some Value' },
+      name: 'Paragraphs',
+      description: '<p>One line</p><p>Another line</p>',
+      granularity: Granularity.DEFAULT,
+      async callback() {
+        return { values };
+      },
+    });
+    mockAppsScript();
+    frontend = new FakeFrontend({
+      ruleRangeClass: RuleRange,
+      rules: Object.values(rules),
+      version: '1.0',
+      clientInitializer: () => new FakeClient(),
+      migrations: {},
+      properties: new FakePropertyStore(),
+    });
+  });
+
+  it('loads rules fresh when empty', async () => {
+    await frontend.initializeRules();
+    const sheet = SpreadsheetApp.getActive().getSheetByName(
+      'Enable/Disable Rules',
+    );
+    const values = sheet.getRange(1, 1, 3, 3).getValues();
+
+    expect(values).toEqual([
+      ['Rule Name', 'Description', 'Enabled'],
+      ['Rule A', 'The rule for rule A', true],
+      ['Rule B', 'The rule for rule B', true],
+    ]);
+  });
+
+  it('strips non-paragraph HTML tags from descriptions', async () => {
+    await frontend.initializeRules();
+    const sheet = SpreadsheetApp.getActive().getSheetByName(
+      'Enable/Disable Rules',
+    );
+    const values = sheet.getRange(4, 2, 1, 1).getValues();
+
+    expect(values).toEqual([['This is too much HTML']]);
+  });
+
+  it('converts paragraph HTML tags to newlines', async () => {
+    await frontend.initializeRules();
+    const sheet = SpreadsheetApp.getActive().getSheetByName(
+      'Enable/Disable Rules',
+    );
+    const values = sheet.getRange(5, 2, 1, 1).getValues();
+
+    expect(values).toEqual([['One line\n\nAnother line']]);
+  });
+
+  it('returns an object of enabled / disabled rules', async () => {
+    for (const rule of Object.values(rules)) {
+      frontend.client.addRule(rule, [[''], ['']]);
+    }
+    const values = [
+      ['Rule Name', 'Description', 'Enabled'],
+      ['Rule A', 'The rule for rule A', true],
+      ['Rule B', 'The rule for rule B', false],
+      ['No HTML', 'The rule for rule A', true],
+      ['Paragraphs', 'The rule for rule B', false],
+    ];
+    SpreadsheetApp.getActive()
+      .insertSheet('Enable/Disable Rules')
+      .getRange(1, 1, values.length, values[0].length)
+      .setValues(values);
+
+    const mapObject = frontend.setUpRuleSheet();
+
+    expect(Object.fromEntries(mapObject)).toEqual({
+      'Rule A': true,
+      'Rule B': false,
+      'No HTML': true,
+      Paragraphs: false,
+    });
   });
 });
 
@@ -450,7 +573,6 @@ describe('Test emails', () => {
       migrations: {},
       properties: new FakePropertyStore(),
     });
-    console.log('new frontend');
   });
 
   it('sends anomalies to a user whenever they are new', () => {
@@ -487,6 +609,10 @@ describe('Test emails', () => {
 });
 
 describe('BigQuery interop', () => {
+  beforeEach(() => {
+    mockAppsScript();
+  });
+
   it('converts a BigQuery object into the desired output', () => {
     scaffoldSheetWithNamedRanges();
     globalThis.BigQuery.Jobs.query = () => ({

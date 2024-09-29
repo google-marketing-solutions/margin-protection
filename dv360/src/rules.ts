@@ -78,7 +78,7 @@ export const geoTargetRule = newRule({
     must be partial matches of canonical names in
     <a href="https://developers.google.com/google-ads/api/reference/data/geotargets">this list.</a>`,
   valueFormat: {
-    label: 'Geo Targets Set?',
+    label: 'Result',
   },
   helper: `=HYPERLINK(
     "https://developers.google.com/google-ads/api/reference/data/geotargets", "Separate values with commas. Partial match any canonical name linked.")`,

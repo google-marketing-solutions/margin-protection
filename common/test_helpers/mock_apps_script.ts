@@ -125,14 +125,12 @@ class FakeRange {
         return newArr;
       }),
     );
-
-    this.sheet.lastRow = this.sheet.cells.length + 1;
-    this.sheet.lastColumn = this.sheet.cells[0].length + 1;
     return this;
   }
 
   setValue(value: string) {
     this.arrayRange[0][0] = value;
+    this.sheet.cells[this.row][this.column] = value;
     return this;
   }
 
@@ -168,14 +166,24 @@ class FakeRange {
   getFilter() {
     return new FakeFilter();
   }
+
+  insertCheckboxes() {
+    for (let r = this.row; r < this.row + this.numRows; r++) {
+      for (let c = this.column; c < this.column + this.numColumns; c++) {
+        if (!this.sheet.checkboxes[r]) {
+          this.sheet.checkboxes[r] = {};
+        }
+        this.sheet.checkboxes[r][c] = true;
+      }
+    }
+  }
 }
 
 class FakeSheet {
   readonly cells: string[][] = Array.from({ length: 100 }).map(() =>
     Array.from({ length: 30 }),
   );
-  lastRow = 1;
-  lastColumn = 1;
+  readonly checkboxes: Record<number, Record<number, boolean>> = {};
   private readonly bandings: FakeBandings[] = [];
 
   getRange(a1Notation: string): FakeRange;
@@ -198,13 +206,18 @@ class FakeSheet {
     } else if (!column) {
       throw new Error('Required to include a column');
     }
-    this.lastRow = (numRows ?? 0) + arg1 - 1;
-    this.lastColumn = (numColumns ?? 0) + column - 1;
     return new FakeRange(this, arg1, column, numRows, numColumns);
   }
 
   getDataRange(): FakeRange {
-    return new FakeRange(this, 1, 1, this.lastRow, this.lastColumn);
+    return new FakeRange(this, 1, 1, this.getLastRow(), this.getLastColumn());
+  }
+
+  getLastColumn() {
+    const lastIndexes = this.cells.map((row) =>
+      row.findLastIndex((cell) => cell),
+    );
+    return Math.max(...lastIndexes) + 1;
   }
 
   clear(): FakeSheet {
@@ -222,7 +235,10 @@ class FakeSheet {
   }
 
   getLastRow() {
-    return this.cells.length;
+    return (
+      this.cells.findLastIndex((row) => row.filter((cell) => cell).length > 0) +
+      1
+    );
   }
 
   deleteRows(start: number, end: number) {
@@ -574,13 +590,24 @@ class FakeTextStyle {
     return this;
   }
 
+  setForegroundColor() {
+    return this;
+  }
+
+  setFontFamily() {
+    return this;
+  }
+
   build() {
     return this;
   }
 }
 
 class FakeRichTextValue {
-  setText() {
+  text: string;
+
+  setText(text: string) {
+    this.text = text;
     return this;
   }
 
@@ -590,6 +617,10 @@ class FakeRichTextValue {
 
   build() {
     return this;
+  }
+
+  getText() {
+    return this.text;
   }
 }
 
