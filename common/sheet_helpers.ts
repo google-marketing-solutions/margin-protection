@@ -740,14 +740,13 @@ export abstract class AppsScriptFrontend<T extends ClientTypes<T>> {
     const report: { [rule: string]: { [campaignId: string]: Value } } = {};
     await this.initializeSheets();
     const thresholds: Array<[Rule, Promise<{ values: Values }>]> =
-      Object.values(this.client.ruleStore).map((rule) => {
-        return [rule, rule.run()];
-      });
+      Object.values(this.client.ruleStore)
+        .filter((rule) => rule.enabled)
+        .map((rule) => {
+          return [rule, rule.run()];
+        });
 
     for (const [rule, threshold] of thresholds) {
-      if (!rule.enabled) {
-        continue;
-      }
       const { values } = await threshold;
       for (const value of Object.values(values)) {
         const fieldKey = Object.entries(value.fields ?? [['', 'all']])
