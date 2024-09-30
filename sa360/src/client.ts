@@ -20,7 +20,7 @@
  */
 
 import { ReportFactory } from 'common/ads_api';
-import { JoinType, QueryBuilder } from 'common/ads_api_types';
+import { Query, QueryBuilder } from 'common/ads_api_types';
 import { newRuleBuilder } from 'common/client_helpers';
 import { AbstractRuleRange } from 'common/sheet_helpers';
 import {
@@ -88,13 +88,12 @@ export class Client implements ClientInterface {
   }
 
   getReport<
-    Q extends QueryBuilder<Params, Joins>,
+    Q extends QueryBuilder<Query<Params>>,
     Output extends string,
     Params extends string,
-    Joins extends JoinType<Params> | undefined,
   >(
-    report: ReportClass<Q, Output, Params, Joins>,
-  ): ReportInterface<Q, Output, Params, Joins> {
+    report: ReportClass<Q, Output, Params>,
+  ): ReportInterface<Q, Output, Params> {
     return this.reportFactory.create(report);
   }
 

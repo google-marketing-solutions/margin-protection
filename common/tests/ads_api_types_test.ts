@@ -136,4 +136,29 @@ describe('Ads API Types', () => {
 
     [test1, test2, test3, test4].forEach((test) => expect(test).toBeDefined());
   });
+
+  it('infers types from buildQuery', () => {
+    const _query = buildQuery({
+      queryParams: ['a', 'b'],
+      queryFrom: 'foo',
+      joins: { a: undefined, b: undefined },
+    });
+
+    const test1: AssertSubtype<typeof _query.queryParams, ['a', 'b']> = true;
+    const test2: AssertEqual<
+      typeof _query.joins,
+      { a: undefined; b: undefined }
+    > = true;
+
+    // @ts-expect-error This type should not Assert<> to false.
+    const test3: AssertSubtype<typeof _query.queryParams, ['a', 'b']> = false;
+
+    // @ts-expect-error This type should not Assert<> to false.
+    const test4: AssertEqual<
+      typeof _query.joins,
+      { a: undefined; b: undefined }
+    > = false;
+
+    [test1, test2, test3, test4].forEach((test) => expect(test).toBeDefined());
+  });
 });

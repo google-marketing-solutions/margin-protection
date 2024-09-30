@@ -126,9 +126,8 @@ export type DotsToObject<S extends string> = S extends ''
  * Converts a report format to the expected response output.
  */
 export type ReportResponse<
-  Q extends QueryBuilder<P, J>,
-  P extends string = Q['queryParams'][number],
-  J extends JoinType<P> | undefined = Q['joins'],
+  Q extends QueryBuilder<Query<Params>>,
+  Params extends string = Q['queryParams'][number],
 > = UnionToIntersection<DotsToObject<Q['queryParams'][number]>> & {};
 
 /**
@@ -154,9 +153,8 @@ export declare interface GoogleAdsApiInterface {
    * @param queryWheres Optional list of WHERE clauses to filter the results.
    */
   query<
-    Q extends QueryBuilder<Params, Joins>,
+    Q extends QueryBuilder<Query<Params>>,
     Params extends string = Q['queryParams'][number],
-    Joins extends JoinType<Params> | undefined = Q['joins'],
   >(
     customerIds: string,
     query: Q,
@@ -187,14 +185,9 @@ export declare interface AdsReportType<
  * fetches data in {@link GoogleAdsApiInterface#query}.
  */
 export function buildQuery<
+  Q extends QueryBuilder<Query<Params>>,
   Params extends string,
-  Joins extends JoinType<Params> | undefined = undefined,
->(args: {
-  queryParams: ReadonlyArray<StringLiteral<Params>>;
-  queryFrom: string;
-  queryWheres?: string[];
-  joins?: Joins;
-}): QueryBuilder<StringLiteral<Params>, Joins> {
+>(args: Q): Q {
   return args;
 }
 
@@ -231,23 +224,22 @@ export type JoinType<Params extends string> = Partial<{
  * simplify business logic.
  */
 export interface QueryBuilder<
-  Params extends string,
-  Joins extends JoinType<Params> | undefined = undefined,
+  Q extends Query<Params>,
+  Params extends string = Q['params'],
 > {
-  queryParams: readonly Params[];
+  queryParams: readonly Q['params'][];
   queryFrom: string;
   queryWheres?: string[];
-  joins?: Joins;
+  joins?: Q['joins'];
 }
 
 /**
  * A report used to retrieve data from the API.
  */
 export interface ReportInterface<
-  Q extends QueryBuilder<Params, Joins>,
+  Q extends QueryBuilder<Query<Params>>,
   Output extends string,
   Params extends string = Q['queryParams'][number],
-  Joins extends JoinType<Params> | undefined = Q['joins'],
 > {
   /**
    * Returns the full report based on the results of the object.
@@ -270,14 +262,17 @@ export interface ReportInterface<
    */
   transform(
     result: ReportResponse<Q>,
-    joins: Joins extends undefined
+    joins: Q['joins'] extends undefined
       ? never
       : Record<
-          keyof Joins,
+          keyof Q['joins'],
           Record<
             string,
             Record<
-              Extract<Joins[keyof Joins], UnknownReportClass>['output'][number],
+              Extract<
+                Q['joins'][keyof Q['joins']],
+                UnknownReportClass
+              >['output'][number],
               string
             >
           >
@@ -290,35 +285,23 @@ export interface ReportInterface<
  */
 export interface ReportFactoryInterface {
   create<
-    Q extends QueryBuilder<Params, Joins>,
+    Q extends QueryBuilder<Query<Params>>,
     Output extends string,
-    Params extends string,
-    Joins extends JoinType<Params> | undefined,
-    ChildReport extends ReportInterface<
-      Q,
-      Output,
-      Params,
-      Joins
-    > = ReportInterface<Q, Output, Params, Joins>,
+    Params extends string = Q['queryParams'][number],
+    ChildReport extends ReportInterface<Q, Output> = ReportInterface<Q, Output>,
   >(
-    reportClass: ReportClass<Q, Output, Params, Joins, ChildReport>,
-  ): ReportInterface<Q, Output, Params, Joins>;
+    reportClass: ReportClass<Q, Output, Params, ChildReport>,
+  ): ReportInterface<Q, Output, Params>;
 }
 
 /**
  * Report class - represents the class that gets the {@link Report} object.
  */
 export interface ReportClass<
-  Q extends QueryBuilder<Params, Joins>,
+  Q extends QueryBuilder<Query<Params>>,
   Output extends string,
   Params extends string = Q['queryParams'][number],
-  Joins extends JoinType<Params> | undefined = Q['joins'],
-  ChildReport extends ReportInterface<
-    Q,
-    Output,
-    Params,
-    Joins
-  > = ReportInterface<Q, Output, Params, Joins>,
+  ChildReport extends ReportInterface<Q, Output> = ReportInterface<Q, Output>,
 > {
   new (
     api: GoogleAdsApiInterface,
@@ -329,4 +312,9 @@ export interface ReportClass<
   ): ChildReport;
   query: Q;
   output: Output[];
+}
+
+export interface Query<S extends string> {
+  params: S;
+  joins: JoinType<S>;
 }
