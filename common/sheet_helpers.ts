@@ -444,7 +444,7 @@ export abstract class AbstractRuleRange<T extends ClientTypes<T>>
   abstract getRuleMetadata(
     granularity: T['ruleGranularity'],
     id: string,
-  ): Promise<undefined | string[]>;
+  ): Promise<string[]>;
 
   async getRuleHeaders(): Promise<string[]> {
     return [];
