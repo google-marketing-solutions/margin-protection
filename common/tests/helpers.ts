@@ -84,6 +84,9 @@ export interface AdsClientInterface
  * Stub for rule range
  */
 export class RuleRange extends AbstractRuleRange<TestClientTypes> {
+  async getRuleMetadata() {
+    return [];
+  }
   async getRows() {
     return [{ id: '1', displayName: 'Campaign 1', advertiserId: '1' }];
   }
