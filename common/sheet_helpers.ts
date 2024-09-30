@@ -438,14 +438,15 @@ export abstract class AbstractRuleRange<T extends ClientTypes<T>>
       this.setRow('none', record.id, [
         record.id,
         record.displayName,
-        ...(await this.getRuleMetadata(rule.granularity, record.id)),
+        ...((await this.getRuleMetadata(rule.granularity, record.id)) ?? []),
       ]);
     }
   }
 
-  async getRuleMetadata(granularity: T['ruleGranularity'], id: string) {
-    return [];
-  }
+  abstract getRuleMetadata(
+    granularity: T['ruleGranularity'],
+    id: string,
+  ): Promise<undefined | [advertiserId: string, advertiserName: string]>;
 
   async getRuleHeaders(): Promise<string[]> {
     return [];

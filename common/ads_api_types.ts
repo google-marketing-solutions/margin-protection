@@ -182,6 +182,9 @@ export declare interface AdsReportType<
 
 /**
  * Helper function to create a report type with less verbosity.
+ *
+ * This is used as the parameter for {@link ReportClass#query} and
+ * fetches data in {@link GoogleAdsApiInterface#query}.
  */
 export function buildQuery<
   Params extends string,

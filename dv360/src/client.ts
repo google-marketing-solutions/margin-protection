@@ -448,7 +448,7 @@ export class RuleRange extends AbstractRuleRange<DisplayVideoClientTypes> {
   override async getRuleMetadata(granularity: RuleGranularity, id: string) {
     const { campaignMap, hasAdvertiserName } = await this.getCampaignMap();
     if (!hasAdvertiserName) {
-      return [];
+      return undefined;
     }
     let campaignId: string;
     if (granularity === RuleGranularity.CAMPAIGN) {
@@ -461,7 +461,7 @@ export class RuleRange extends AbstractRuleRange<DisplayVideoClientTypes> {
       campaignMap[campaignId].advertiserId,
       //checked in `hasAdvertiserName`
       campaignMap[campaignId].advertiserName!,
-    ];
+    ] satisfies [string, string];
   }
 }
 
