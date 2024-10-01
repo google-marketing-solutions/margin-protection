@@ -29,6 +29,6 @@
     "push": "yarn build:dev && clasp push",
     "push:prod": "yarn build:prod && clasp push",
     "push:client": "yarn --cwd ../client push",
-    "test": "echo 'run tests from the base directory'"
+    "test": "yarn --cwd .. test dv360/src/tests/*_test.ts"
   }
 }

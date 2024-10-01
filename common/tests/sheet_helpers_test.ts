@@ -466,6 +466,31 @@ describe('rule sheet', () => {
       Paragraphs: false,
     });
   });
+
+  it('has checkboxes in the correct rows', async () => {
+    type Checkboxes = GoogleAppsScript.Spreadsheet.Spreadsheet & {
+      checkboxes: Record<number, Record<number, boolean>>;
+    };
+
+    await frontend.initializeRules();
+    const sheet = SpreadsheetApp.getActive().getSheetByName(
+      'Enable/Disable Rules',
+    ) as unknown as Checkboxes;
+
+    expect(sheet.getRange('A1:A5').getValues().flat(1)).toEqual([
+      'Rule Name',
+      'Rule A',
+      'Rule B',
+      'No HTML',
+      'Paragraphs',
+    ]);
+    expect(sheet.checkboxes).toEqual({
+      2: { 3: true },
+      3: { 3: true },
+      4: { 3: true },
+      5: { 3: true },
+    });
+  });
 });
 
 describe('test HELPERS', () => {
