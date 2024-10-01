@@ -19,72 +19,58 @@
  * @fileoverview types for Google Ads
  */
 
-// g3-format-prettier
-
 import * as AdTypes from 'common/ads_api_types';
-import {AdsClientArgs} from 'common/ads_api_types';
 
 import {
-  BaseClientArgs,
   BaseClientInterface,
+  ClientTypes,
   RecordInfo,
+  FrontendInterface,
 } from 'common/types';
-import {
-  AdGroupReport,
-  AdGroupTargetReport,
-  CampaignReport,
-  CampaignTargetReport,
-} from 'sa360/src/api';
 
 /**
- * Extends the base client interface with SA360-specific features.
+ * Represents the related interfaces for SA360.
  */
-export interface ClientInterface
-  extends BaseClientInterface<ClientInterface, RuleGranularity, ClientArgs> {
-  getCampaignReport(): Promise<CampaignReport>;
-  getCampaignTargetReport(): Promise<CampaignTargetReport>;
-  getAdGroupReport(): Promise<AdGroupReport>;
-  getAdGroupTargetReport(): Promise<AdGroupTargetReport>;
-  getAllAdGroups(): Promise<RecordInfo[]>;
-  args: ClientArgs;
+export interface SearchAdsClientTypes
+  extends ClientTypes<SearchAdsClientTypes> {
+  client: ClientInterface;
+  ruleGranularity: RuleGranularity;
+  clientArgs: ClientArgs;
+  frontend: FrontendInterface<SearchAdsClientTypes>;
 }
 
 /**
  * Args for the new SA360 API.
  */
-export interface ClientArgsV2 extends AdsClientArgs {
+export interface ClientArgs extends AdTypes.AdsClientArgs {
   fullFetch?: boolean;
 }
 
 /**
  * Convenience wrapper for a {@link AdTypes.ReportInterface}.
  */
-export interface ReportInterface<
+export type ReportInterface<
   Q extends AdTypes.QueryBuilder<Params, Joins>,
   Output extends string,
   Params extends string,
   Joins extends AdTypes.JoinType<Params> | undefined = AdTypes.JoinType<Params>,
-> extends AdTypes.ReportInterface<Q, Output, Params, Joins> {}
+> = AdTypes.ReportInterface<Q, Output, Params, Joins>;
 
 /**
  * Convenience wrapper for a {@link AdTypes.ReportClass}.
  */
-export interface ReportClass<
+export type ReportClass<
   Q extends AdTypes.QueryBuilder<Params, Joins>,
   Output extends string,
   Params extends string,
   Joins extends AdTypes.JoinType<Params> | undefined = AdTypes.JoinType<Params>,
-> extends AdTypes.ReportClass<Q, Output, Params, Joins> {}
+> = AdTypes.ReportClass<Q, Output, Params, Joins>;
 
 /**
  * Extends the base client interface with SA360-specific features.
  */
-export interface ClientInterfaceV2
-  extends BaseClientInterface<
-    ClientInterfaceV2,
-    RuleGranularity,
-    ClientArgsV2
-  > {
+export interface ClientInterface
+  extends BaseClientInterface<SearchAdsClientTypes> {
   getAllAdGroups(): Promise<RecordInfo[]>;
   getReport<
     Q extends AdTypes.QueryBuilder<Params, Joins>,
@@ -94,20 +80,6 @@ export interface ClientInterfaceV2
   >(
     Report: ReportClass<Q, Output, Params, Joins>,
   ): ReportInterface<Q, Output, Params, Joins>;
-}
-
-/**
- * An agency ID and, optionally, an advertiser ID to narrow down.
- */
-export interface ClientArgs extends BaseClientArgs {
-  agencyId: string;
-  advertiserId?: string;
-
-  /**
-   * False = incremental pull
-   * True = pull everything
-   */
-  fullFetch?: boolean;
 }
 
 /**

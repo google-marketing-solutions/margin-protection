@@ -19,16 +19,12 @@
  * @fileoverview Client helpers - frontend agnostic.
  */
 
-// g3-format-prettier
-
-import {transformToParamValues} from './sheet_helpers';
+import { transformToParamValues } from './sheet_helpers';
 import {
-  BaseClientArgs,
-  BaseClientInterface,
+  ClientTypes,
   ParamDefinition,
   RuleExecutor,
   RuleExecutorClass,
-  RuleGranularity,
   RuleParams,
   Settings,
 } from './types';
@@ -54,29 +50,27 @@ import {
  */
 
 // This returns a function that is self-typed.
-// tslint:disable-next-line:no-return-only-generics
-export function newRuleBuilder<
-  C extends BaseClientInterface<C, G, A>,
-  G extends RuleGranularity<G>,
-  A extends BaseClientArgs,
->(): <P extends Record<keyof P, ParamDefinition>>(
-  p: RuleParams<C, G, A, P> & ThisType<RuleExecutor<C, G, A, P>>,
-) => RuleExecutorClass<C, G, A, P> {
+export function newRuleBuilder<T extends ClientTypes<T>>(): <
+  P extends Record<keyof P, ParamDefinition>,
+>(
+  p: RuleParams<T, P> & ThisType<RuleExecutor<T, P>>,
+) => RuleExecutorClass<T, P> {
   return function newRule<P extends Record<keyof P, ParamDefinition>>(
-    ruleDefinition: RuleParams<C, G, A, P>,
-  ): RuleExecutorClass<C, G, A, P> {
-    const ruleClass = class implements RuleExecutor<C, G, A, P> {
+    ruleDefinition: RuleParams<T, P>,
+  ): RuleExecutorClass<T, P> {
+    const ruleClass = class implements RuleExecutor<T, P> {
       readonly settings: Settings<Record<keyof P, string>>;
       readonly name: string = ruleDefinition.name;
       readonly description: string = ruleDefinition.description;
       readonly params = ruleDefinition.params;
       readonly helper = ruleDefinition.helper ?? '';
-      readonly granularity: G = ruleDefinition.granularity;
+      readonly granularity: T['ruleGranularity'] = ruleDefinition.granularity;
       readonly valueFormat = ruleDefinition.valueFormat;
+      readonly enabled = true;
       static definition = ruleDefinition;
 
       constructor(
-        readonly client: C,
+        readonly client: T['client'],
         settingsArray: ReadonlyArray<string[]>,
       ) {
         this.settings = transformToParamValues(settingsArray, this.params);
@@ -87,7 +81,7 @@ export function newRuleBuilder<
       }
     };
 
-    Object.defineProperty(ruleClass, 'name', {value: ruleDefinition.name});
+    Object.defineProperty(ruleClass, 'name', { value: ruleDefinition.name });
     return ruleClass;
   };
 }

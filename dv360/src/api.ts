@@ -19,9 +19,12 @@
  * @fileoverview Contains a DAO for DBM access.
  */
 
-// g3-format-prettier
-
-import {IDType, QueryReportParams} from './types';
+import {
+  BudgetReportInterface,
+  IDType,
+  LineItemBudgetReportInterface,
+  QueryReportParams,
+} from './types';
 
 /** The API version to use. Exposed for testing. */
 export const DBM_API_VERSION = 'v2';
@@ -38,7 +41,7 @@ interface Query {
   };
 }
 
-interface Report {
+interface ReportInterface {
   key: {
     queryId: Readonly<string>;
     reportId: Readonly<string>;
@@ -54,10 +57,10 @@ interface QueryBody {
     dataRange:
       | {
           range: 'CUSTOM_DATES';
-          customEndDate: {month: number; year: number; day: number};
-          customStartDate: {month: number; year: number; day: number};
+          customEndDate: { month: number; year: number; day: number };
+          customStartDate: { month: number; year: number; day: number };
         }
-      | {range: string};
+      | { range: string };
     format: string;
     sendNotification: boolean;
   };
@@ -65,11 +68,14 @@ interface QueryBody {
     type: string;
     groupBys: readonly string[];
     metrics: readonly string[];
-    filters: Array<{type: string; value: string}>;
+    filters: Array<{ type: string; value: string }>;
   };
 }
 
-abstract class Report {
+abstract class Report implements ReportInterface {
+  key: { queryId: Readonly<string>; reportId: Readonly<string> };
+  metadata: { googleCloudStoragePath: Readonly<string> };
+
   protected readonly properties: GoogleAppsScript.Properties.Properties;
   protected readonly report: Record<string, number>;
   abstract getReportName(): string;
@@ -104,7 +110,7 @@ abstract class Report {
       (JSON.parse(
         UrlFetchApp.fetch(
           getQueryUrl('queries'),
-          apiParams({'payload': JSON.stringify(this.queryBody())}),
+          apiParams({ payload: JSON.stringify(this.queryBody()) }),
         ).getContentText(),
       ) as Query);
     this.properties.setProperty(queryTitle, query.queryId);
@@ -131,7 +137,7 @@ abstract class Report {
       UrlFetchApp.fetch(
         getQueryUrl(`queries/${queryId}:run?synchronous=true`),
         apiParams({
-          'payload': JSON.stringify({
+          payload: JSON.stringify({
             dataRange: getDataRange(this.params.startDate, this.params.endDate),
           }),
         }),
@@ -145,7 +151,7 @@ abstract class Report {
   protected fetchReport(reportUrl: string): string[][] {
     const query: string = UrlFetchApp.fetch(
       reportUrl,
-      apiParams({'contentType': undefined}),
+      apiParams({ contentType: undefined }),
     ).getContentText();
 
     return Utilities.parseCsv(query.split('\n\n')[0]);
@@ -169,7 +175,7 @@ export class ImpressionReport
     insertionOrderId: string,
     countries: string[],
   ) {
-    const report = {...this.report};
+    const report = { ...this.report };
     let validImpressions = 0;
     for (const country of countries) {
       const key = `${insertionOrderId},${country}`;
@@ -214,7 +220,7 @@ export class ImpressionReport
         title: this.getQueryTitle(),
         dataRange: {
           // note - this is a placeholder. date range will always be overridden.
-          'range': 'LAST_7_DAYS',
+          range: 'LAST_7_DAYS',
         },
         format: 'CSV',
         sendNotification: false,
@@ -234,6 +240,85 @@ export class ImpressionReport
         ],
       },
     };
+  }
+}
+
+/**
+ * Contains calls associated with getting a budget report.
+ */
+export class LineItemBudgetReport
+  extends Report
+  implements LineItemBudgetReportInterface
+{
+  override getReportName() {
+    return 'Line Item Spend';
+  }
+
+  /**
+   * Provides the total spent on an insertion order for budget segment(s).
+   *
+   * The budget segment starts on `startDate` and ends on `endDate`.
+   */
+  getSpendForLineItem(lineItemId: string): number {
+    return this.report[lineItemId];
+  }
+
+  /**
+   * The body of a query request.
+   *
+   * Only used if the appropriate version for the current insertion order
+   * doesn't already exist.
+   */
+  protected queryBody() {
+    return {
+      metadata: {
+        title: `${this.getQueryTitle()} ${
+          this.params.idType === IDType.PARTNER ? 'P' : 'A'
+        }${this.params.id}`,
+        dataRange: getDataRange(this.params.startDate, this.params.endDate),
+        format: 'CSV',
+        sendNotification: false,
+      },
+      params: {
+        type: 'STANDARD',
+        groupBys: [
+          'FILTER_ADVERTISER',
+          'FILTER_LINE_ITEM',
+          'FILTER_ADVERTISER_CURRENCY',
+        ],
+        metrics: ['METRIC_BILLABLE_COST_ADVERTISER'],
+        filters: [
+          {
+            type:
+              this.params.idType === IDType.PARTNER
+                ? 'FILTER_PARTNER'
+                : 'FILTER_ADVERTISER',
+            value: String(this.params.id),
+          },
+        ],
+      },
+    };
+  }
+
+  protected getReport(): Record<string, number> {
+    const queryId = this.fetchQueryId();
+    const reportUrl = this.fetchReportUrl(queryId);
+    const report = this.fetchReport(reportUrl);
+    const headers = Object.fromEntries(
+      report[0].map((header, idx) => [header, idx]),
+    );
+
+    const lineItemId = headers['Line Item ID'];
+    const billableCost = headers['Billable Cost (Adv Currency)'];
+    return report.slice(1, report.length).reduce(
+      (prev, curr) => {
+        const key = curr[lineItemId];
+        prev[key] ??= 0;
+        prev[key] += Number(curr[billableCost]);
+        return prev;
+      },
+      {} as { [lineItemId: string]: number },
+    );
   }
 }
 
@@ -282,8 +367,9 @@ export class BudgetReport extends Report implements BudgetReportInterface {
           'FILTER_BUDGET_SEGMENT_START_DATE',
           'FILTER_BUDGET_SEGMENT_END_DATE',
           'FILTER_BUDGET_SEGMENT_DESCRIPTION',
+          'FILTER_ADVERTISER_CURRENCY',
         ],
-        metrics: ['METRIC_BILLABLE_COST_USD'],
+        metrics: ['METRIC_BILLABLE_COST_ADVERTISER'],
         filters: [
           {
             type:
@@ -306,19 +392,20 @@ export class BudgetReport extends Report implements BudgetReportInterface {
     );
 
     const insertionOrderId = headers['Insertion Order ID'];
-    const mediaCost = headers['Billable Cost (USD)'];
+    const billableCost = headers['Billable Cost (Adv Currency)'];
     const startDate = headers['Budget Segment Start Date'];
     const endDate = headers['Budget Segment End Date'];
+
     return report.slice(1, report.length).reduce(
       (prev, curr) => {
         const startTime = new Date(curr[startDate]).getTime();
         const endTime = new Date(curr[endDate]).getTime();
         const key = `${curr[insertionOrderId]},${startTime},${endTime}`;
         prev[key] ??= 0;
-        prev[key] += Number(curr[mediaCost]);
+        prev[key] += Number(curr[billableCost]);
         return prev;
       },
-      {} as {[insertionOrderId: string]: number},
+      {} as { [insertionOrderId: string]: number },
     );
   }
 }
@@ -331,7 +418,7 @@ function getExistingQueryByName(
 ): Query | null {
   const queryResponse = JSON.parse(
     UrlFetchApp.fetch(getQueryUrl('queries'), apiParams()).getContentText(),
-  ) as {queries: Query[]};
+  ) as { queries: Query[] };
   if (!queryResponse.queries) {
     return null;
   }
@@ -347,13 +434,13 @@ function getExistingQueryByName(
 /**
  * Provides sensible defaults to build a `UrlFetchApp` params object.
  */
-function apiParams(requestParams?: {[key: string]: unknown}) {
+function apiParams(requestParams?: { [key: string]: unknown }) {
   const token = ScriptApp.getOAuthToken();
   const baseParams = {
-    'contentType': 'application/json',
-    'headers': {
-      'Authorization': `Bearer ${token}`,
-      'Accept': 'application/json',
+    contentType: 'application/json',
+    headers: {
+      Authorization: `Bearer ${token}`,
+      Accept: 'application/json',
     },
   };
   return Object.assign({}, baseParams, requestParams || {});
@@ -377,24 +464,6 @@ function getDataRange(customStartDate: Date, customEndDate: Date) {
 
 function getQueryUrl(uri: string) {
   return `https://${DBM_URL}/${DBM_API_VERSION}/${uri}`;
-}
-
-/**
- * A budget report DAO.
- */
-export interface BudgetReportInterface {
-  /**
-   * Gets the spend for the specific insertion order budget segment. Lazy
-   * loaded.
-   * @param insertionOrderId
-   * @param startTime The time in seconds since epoch
-   * @param endTime The time in seconds since epoch
-   */
-  getSpendForInsertionOrder(
-    insertionOrderId: string,
-    startTime: number,
-    endTime: number,
-  ): number;
 }
 
 /**

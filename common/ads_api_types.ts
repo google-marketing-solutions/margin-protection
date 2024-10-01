@@ -19,9 +19,7 @@
  * @fileoverview Ads API-specific types for SA360 and Google Ads
  */
 
-// g3-format-prettier
-
-import {BaseClientArgs} from './types';
+import { BaseClientArgs } from './types';
 
 /**
  * Manages query (input) and expected output pairs for each report type.
@@ -78,7 +76,7 @@ export interface AccountMap {
 /**
  * Ads-specific minimum requirements for client arguments.
  */
-export interface AdsClientArgs extends BaseClientArgs {
+export interface AdsClientArgs extends BaseClientArgs<AdsClientArgs> {
   loginCustomerId?: string;
   customerIds: string;
 }
@@ -118,11 +116,11 @@ export type DotsToObject<S extends string> = S extends ''
   ? never
   : S extends `${infer First}.${infer Rest}`
     ? '' extends First
-      ? {}
-      : {[key in CamelCase<First>]: DotsToObject<Rest>}
+      ? object
+      : { [key in CamelCase<First>]: DotsToObject<Rest> }
     : '' extends S
-      ? {}
-      : {[key in CamelCase<S>]: unknown};
+      ? object
+      : { [key in CamelCase<S>]: unknown };
 
 /**
  * Converts a report format to the expected response output.
@@ -139,10 +137,10 @@ export type ReportResponse<
  * Turns a|b|c into a & b & c.
  */
 export type UnionToIntersection<U> = (
-  U extends {} ? (k: U) => void : never
+  U extends object ? (k: U) => void : never
 ) extends (k: infer I) => void
   ? I
-  : {};
+  : object;
 
 /**
  * Google Ads API interface
@@ -184,6 +182,9 @@ export declare interface AdsReportType<
 
 /**
  * Helper function to create a report type with less verbosity.
+ *
+ * This is used as the parameter for {@link ReportClass#query} and
+ * fetches data in {@link GoogleAdsApiInterface#query}.
  */
 export function buildQuery<
   Params extends string,
@@ -208,7 +209,7 @@ export interface RecursiveRecord<K, V> {
  * Represents an "any-" type {@link ReportClass} for containers.
  */
 // We don't know what will be in a report class.
-// tslint:disable-next-line:no-any
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export type UnknownReportClass = ReportClass<any, any, any>;
 
 /**

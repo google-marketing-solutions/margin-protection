@@ -19,13 +19,10 @@
  * @fileoverview Client for SA360.
  */
 
-import {ReportFactory,} from 'common/ads_api';
-import {
-  JoinType,
-  QueryBuilder,
-} from 'common/ads_api_types';
-import {newRuleBuilder} from 'common/client_helpers';
-import {AbstractRuleRange} from 'common/sheet_helpers';
+import { ReportFactory } from 'common/ads_api';
+import { JoinType, QueryBuilder } from 'common/ads_api_types';
+import { newRuleBuilder } from 'common/client_helpers';
+import { AbstractRuleRange } from 'common/sheet_helpers';
 import {
   ExecutorResult,
   ParamDefinition,
@@ -36,198 +33,38 @@ import {
   RuleParams,
 } from 'common/types';
 import {
-  AdGroupReport,
-  AdGroupTargetReport,
-  CampaignReport,
-  CampaignTargetReport,
-} from 'sa360/src/api';
-import {
   ClientArgs,
-  ClientArgsV2,
   ClientInterface,
-  ClientInterfaceV2,
   ReportClass,
   ReportInterface,
   RuleGranularity,
+  SearchAdsClientTypes,
 } from 'sa360/src/types';
 
-import {AD_GROUP_REPORT, CAMPAIGN_REPORT} from './api_v2';
-
-/**
- * Creates a new rule for SA360.
- */
-export const newRule = newRuleBuilder<
-  ClientInterface,
-  RuleGranularity,
-  ClientArgs
->() as <P extends Record<keyof P, ParamDefinition>>(
-  p: RuleParams<ClientInterface, RuleGranularity, ClientArgs, P>,
-) => RuleExecutorClass<ClientInterface, RuleGranularity, ClientArgs, P>;
+import { AD_GROUP_REPORT, CAMPAIGN_REPORT } from './api';
 
 /**
  * Creates a new rule for the new SA360.
  */
-export const newRuleV2 = newRuleBuilder<
-  ClientInterfaceV2,
-  RuleGranularity,
-  ClientArgsV2
->() as <P extends Record<keyof P, ParamDefinition>>(
-  p: RuleParams<ClientInterfaceV2, RuleGranularity, ClientArgsV2, P>,
-) => RuleExecutorClass<ClientInterfaceV2, RuleGranularity, ClientArgsV2, P>;
-
-/**
- * Wrapper client around the DV360 API for testability and efficiency.
- *
- * Any methods that are added as wrappers to the API should pool requests,
- * either through caching or some other method.
- */
-export class Client implements ClientInterface {
-  readonly ruleStore: {
-    [ruleName: string]: RuleExecutor<
-      ClientInterface,
-      RuleGranularity,
-      ClientArgs,
-      Record<string, ParamDefinition>
-    >;
-  } = {};
-  private campaignReport: CampaignReport | undefined;
-  private campaignTargetReport: CampaignTargetReport | undefined;
-  private adGroupReport: AdGroupReport | undefined;
-  private adGroupTargetReport: AdGroupTargetReport | undefined;
-  private campaigns: RecordInfo[] | undefined;
-  private adGroups: RecordInfo[] | undefined;
-
-  constructor(
-    readonly args: ClientArgs,
-    readonly properties: PropertyStore,
-  ) {}
-
-  async getCampaignReport(): Promise<CampaignReport> {
-    if (!this.campaignReport) {
-      this.campaignReport = await CampaignReport.buildReport(this.args);
-    }
-    return this.campaignReport;
-  }
-
-  async getCampaignTargetReport(): Promise<CampaignTargetReport> {
-    if (!this.campaignTargetReport) {
-      this.campaignTargetReport = await CampaignTargetReport.buildReport(
-        this.args,
-      );
-    }
-    return this.campaignTargetReport;
-  }
-
-  async getAdGroupReport(): Promise<AdGroupReport> {
-    if (!this.adGroupReport) {
-      this.adGroupReport = await AdGroupReport.buildReport(this.args);
-    }
-
-    return this.adGroupReport;
-  }
-
-  async getAdGroupTargetReport(): Promise<AdGroupTargetReport> {
-    if (!this.adGroupTargetReport) {
-      this.adGroupTargetReport = await AdGroupTargetReport.buildReport(
-        this.args,
-      );
-    }
-
-    return this.adGroupTargetReport;
-  }
-
-  /**
-   * Adds a rule to be checked by `this.validate()`.
-   *
-   * These rules are called whenever `this.validate()` is called, and added to
-   * state.
-   *
-   */
-  addRule<Params extends Record<keyof Params, ParamDefinition>>(
-    rule: RuleExecutorClass<
-      ClientInterface,
-      RuleGranularity,
-      ClientArgs,
-      Params
-    >,
-    settingsArray: ReadonlyArray<string[]>,
-  ) {
-    this.ruleStore[rule.definition.name] = new rule(this, settingsArray);
-    return this;
-  }
-
-  getRule(ruleName: string) {
-    return this.ruleStore[ruleName];
-  }
-
-  getUniqueKey(prefix: string) {
-    return `${prefix}-${this.args.agencyId}-${this.args.advertiserId ?? 'a'}`;
-  }
-
-  /**
-   * Executes each added callable rule once per call to this method.
-   *
-   * This function is meant to be scheduled or otherwise called
-   * by the client. It relies on a rule changing state using the anomaly
-   * library.
-   */
-  async validate() {
-    type Executor = RuleExecutor<
-      ClientInterface,
-      RuleGranularity,
-      ClientArgs,
-      Record<string, ParamDefinition>
-    >;
-    const thresholds: Array<[Executor, Function]> = Object.values(
-      this.ruleStore,
-    ).reduce(
-      (prev, rule) => {
-        return [...prev, [rule, rule.run.bind(rule)]];
-      },
-      [] as Array<[Executor, Function]>,
-    );
-    const rules: Record<string, Executor> = {};
-    const results: Record<string, ExecutorResult> = {};
-    for (const [rule, thresholdCallable] of thresholds) {
-      results[rule.name] = await thresholdCallable();
-      rules[rule.name] = rule;
-    }
-
-    return {rules, results};
-  }
-
-  async getAllCampaigns(): Promise<RecordInfo[]> {
-    if (!this.campaigns) {
-      const campaignReport = await this.getCampaignReport();
-      this.campaigns = campaignReport.getCampaigns();
-    }
-    return this.campaigns;
-  }
-
-  async getAllAdGroups(): Promise<RecordInfo[]> {
-    if (!this.adGroups) {
-      const adGroupReport = await this.getAdGroupReport();
-      this.adGroups = adGroupReport.getAdGroups();
-    }
-    return this.adGroups;
-  }
-}
+export const newRule = newRuleBuilder<SearchAdsClientTypes>() as <
+  P extends Record<keyof P, ParamDefinition>,
+>(
+  p: RuleParams<SearchAdsClientTypes, P>,
+) => RuleExecutorClass<SearchAdsClientTypes, P>;
 
 /**
  * Client for the new SA360
  */
-export class ClientV2 implements ClientInterfaceV2 {
+export class Client implements ClientInterface {
   readonly ruleStore: {
     [ruleName: string]: RuleExecutor<
-      ClientInterfaceV2,
-      RuleGranularity,
-      ClientArgsV2,
+      SearchAdsClientTypes,
       Record<string, ParamDefinition>
     >;
   } = {};
 
   constructor(
-    readonly args: ClientArgsV2,
+    readonly args: ClientArgs,
     readonly properties: PropertyStore,
     readonly reportFactory: ReportFactory,
   ) {}
@@ -269,28 +106,25 @@ export class ClientV2 implements ClientInterfaceV2 {
    * library.
    */
   async validate() {
-    type Executor = RuleExecutor<
-      ClientInterfaceV2,
-      RuleGranularity,
-      ClientArgsV2,
-      Record<string, ParamDefinition>
-    >;
-    const thresholds: Array<[Executor, Function]> = Object.values(
-      this.ruleStore,
-    ).reduce(
-      (prev, rule) => {
-        return [...prev, [rule, rule.run.bind(rule)]];
-      },
-      [] as Array<[Executor, Function]>,
-    );
+    type Executor = RuleExecutor<SearchAdsClientTypes>;
+    const thresholds: Array<[Executor, () => Promise<ExecutorResult>]> =
+      Object.values(this.ruleStore).reduce(
+        (prev, rule) => {
+          return [...prev, [rule, rule.run.bind(rule)]];
+        },
+        [] as Array<[Executor, () => ExecutorResult]>,
+      );
     const rules: Record<string, Executor> = {};
     const results: Record<string, ExecutorResult> = {};
     for (const [rule, thresholdCallable] of thresholds) {
+      if (!rule.enabled) {
+        continue;
+      }
       results[rule.name] = await thresholdCallable();
       rules[rule.name] = rule;
     }
 
-    return {rules, results};
+    return { rules, results };
   }
 
   /**
@@ -301,12 +135,7 @@ export class ClientV2 implements ClientInterfaceV2 {
    *
    */
   addRule<Params extends Record<keyof Params, ParamDefinition>>(
-    rule: RuleExecutorClass<
-      ClientInterfaceV2,
-      RuleGranularity,
-      ClientArgsV2,
-      Params
-    >,
+    rule: RuleExecutorClass<SearchAdsClientTypes>,
     settingsArray: ReadonlyArray<string[]>,
   ) {
     this.ruleStore[rule.definition.name] = new rule(this, settingsArray);
@@ -317,28 +146,10 @@ export class ClientV2 implements ClientInterfaceV2 {
 /**
  * SA360 rule args splits.
  */
-export class RuleRange extends AbstractRuleRange<
-  ClientInterface,
-  RuleGranularity,
-  ClientArgs
-> {
-  async getRows(ruleGranularity: RuleGranularity) {
-    if (ruleGranularity === RuleGranularity.CAMPAIGN) {
-      return this.client.getAllCampaigns();
-    } else {
-      return this.client.getAllAdGroups();
-    }
+export class RuleRange extends AbstractRuleRange<SearchAdsClientTypes> {
+  async getRuleMetadata() {
+    return [];
   }
-}
-
-/**
- * SA360 rule args splits.
- */
-export class RuleRangeV2 extends AbstractRuleRange<
-  ClientInterfaceV2,
-  RuleGranularity,
-  ClientArgsV2
-> {
   async getRows(ruleGranularity: RuleGranularity) {
     if (ruleGranularity === RuleGranularity.CAMPAIGN) {
       return this.client.getAllCampaigns();

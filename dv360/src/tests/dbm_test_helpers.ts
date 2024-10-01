@@ -20,9 +20,7 @@
  *
  */
 
-// g3-format-prettier
-
-import {DBM_API_VERSION, DBM_URL} from '../api';
+import { DBM_API_VERSION, DBM_URL } from '../api';
 
 interface Params {
   [parameter: string]: unknown;
@@ -121,7 +119,7 @@ abstract class MatchTable {
       }
     }
     // tslint:disable-next-line:enforce-name-casing This is to mock existing variables.
-    (globalThis as unknown as {UrlFetchApp: MockUrlFetchApp}).UrlFetchApp =
+    (globalThis as unknown as { UrlFetchApp: MockUrlFetchApp }).UrlFetchApp =
       new MockUrlFetchApp(Object.assign({}, this.routes));
   }
 
@@ -142,8 +140,8 @@ abstract class MatchTable {
   private postRun(params: Params, key = '') {
     ++this.runPostHits;
     return JSON.stringify({
-      'metadata': {
-        'googleCloudStoragePath': `https://path/to/report${key}`,
+      metadata: {
+        googleCloudStoragePath: `https://path/to/report${key}`,
       },
     });
   }
@@ -169,7 +167,7 @@ abstract class MatchTable {
   private listQueries() {
     ++this.queryGetHits;
     return JSON.stringify({
-      'queries': this.storedQueries,
+      queries: this.storedQueries,
     });
   }
 
@@ -186,7 +184,7 @@ export class BudgetMatchTable extends MatchTable {
   protected override getReport() {
     ++this.reportGetHits;
     return (
-      'Campaign ID,Insertion Order ID,Budget Segment Start Date,Budget Segment End Date,Billable Cost (USD)\n' +
+      'Campaign ID,Insertion Order ID,Budget Segment Start Date,Budget Segment End Date,Billable Cost (Adv Currency)\n' +
       '1,IO2,2022/12/17,2022/12/27,0.020020\n' +
       '1,IO3,2022/12/17,2022/12/27,0.030030\n' +
       '1,IO4,2022/12/17,2022/12/27,0.040040\n' +

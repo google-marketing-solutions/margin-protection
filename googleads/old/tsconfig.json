@@ -1,17 +1,5 @@
 {
-  "compilerOptions": {
-    "baseUrl": "../",
-    "outDir": "googleads_api",
-    "skipLibCheck": true,
-    "module": "esnext",
-    "moduleResolution": "classic",
-    "target": "es2020",
-    "lib": ["esnext", "dom"],
-    "noImplicitThis": true,
-    "paths": {
-      "common": ["common"]
-    }
-  },
-  "include": ["src/**/*", "../googelads_api/*.ts", "outs.d.ts"],
-  "exclude": ["node_modules/**/*", "dist/**/*", "**/*_test.ts"]
+  "extends": "../../tsconfig.json",
+  "include": ["src/**/*", "outs.d.ts"],
+  "exclude": ["node_modules/**/*", "dist/**/*"]
 }

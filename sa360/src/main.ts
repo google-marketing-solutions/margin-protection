@@ -17,14 +17,7 @@
 
 /**
  * @fileoverview Implement and bootstrap Apps Script.
- *
- * BEGIN-INTERNAL
- * This can and should be excluded and re-written in customer-specific
- * implementations.
- * END-INTERNAL
  */
-
-// g3-format-prettier
 
 import {
   CredentialManager,
@@ -32,18 +25,21 @@ import {
   ReportFactory,
   SA360_API_ENDPOINT,
 } from 'common/ads_api';
+import { AppsScriptPropertyStore } from 'common/sheet_helpers';
+import { PropertyStore } from 'common/types';
+import { Client, RuleRange } from 'sa360/src/client';
 import {
-  lazyLoadApp,
-  toExport,
-} from 'common/sheet_helpers';
-import {PropertyStore} from 'common/types';
-import {
-  ClientV2,
-  RuleRangeV2,
-} from 'sa360/src/client';
+  budgetPacingRule,
+  campaignStatusRule,
+  adGroupStatusRule,
+  adGroupAudienceTargetRule,
+  ageTargetRule,
+  genderTargetRule,
+  geoTargetRule,
+  campaignAudienceTargetRule,
+} from 'sa360/src/rules';
 
-import {migrationsV2, NewSearchAdsFrontEnd} from './frontend';
-import {ClientArgsV2, ClientInterfaceV2, RuleGranularity} from './types';
+import { migrations, SearchAdsFrontend } from './frontend';
 
 /**
  * The sheet version the app currently has.
@@ -56,10 +52,19 @@ export const CURRENT_SHEET_VERSION = '2.0';
 /**
  * Generate a front-end object for lazy loading.
  */
-export function getFrontEnd(properties: PropertyStore) {
-  return new NewSearchAdsFrontEnd({
-    ruleRangeClass: RuleRangeV2,
-    rules: [],
+export function getFrontend(properties: PropertyStore) {
+  return new SearchAdsFrontend({
+    ruleRangeClass: RuleRange,
+    rules: [
+      budgetPacingRule,
+      campaignStatusRule,
+      adGroupStatusRule,
+      adGroupAudienceTargetRule,
+      ageTargetRule,
+      genderTargetRule,
+      geoTargetRule,
+      campaignAudienceTargetRule,
+    ],
     version: CURRENT_SHEET_VERSION,
     clientInitializer(clientArgs, properties) {
       const apiFactory = new GoogleAdsApiFactory({
@@ -68,21 +73,45 @@ export function getFrontEnd(properties: PropertyStore) {
         apiEndpoint: SA360_API_ENDPOINT,
       });
       const reportFactory = new ReportFactory(apiFactory, clientArgs);
-      return new ClientV2(clientArgs, properties, reportFactory);
+      return new Client(clientArgs, properties, reportFactory);
     },
-    migrations: migrationsV2,
+    migrations,
     properties,
   });
 }
 
-lazyLoadApp<
-  ClientInterfaceV2,
-  RuleGranularity,
-  ClientArgsV2,
-  NewSearchAdsFrontEnd
->(getFrontEnd);
+async function onOpen(properties = new AppsScriptPropertyStore()) {
+  await getFrontend(properties).onOpen();
+}
 
-global.onOpen = toExport.onOpen;
-global.initializeSheets = toExport.initializeSheets;
-global.launchMonitor = toExport.launchMonitor;
-global.preLaunchQa = toExport.preLaunchQa;
+async function initializeSheets(properties = new AppsScriptPropertyStore()) {
+  await getFrontend(properties).initializeSheets();
+}
+
+async function initializeRules(properties = new AppsScriptPropertyStore()) {
+  await getFrontend(properties).initializeRules();
+}
+
+async function preLaunchQa(properties = new AppsScriptPropertyStore()) {
+  await getFrontend(properties).preLaunchQa();
+}
+
+async function launchMonitor(properties = new AppsScriptPropertyStore()) {
+  await getFrontend(properties).launchMonitor();
+}
+
+async function displaySetupModal(properties = new AppsScriptPropertyStore()) {
+  await getFrontend(properties).displaySetupModal();
+}
+
+function displayGlossary(properties = new AppsScriptPropertyStore()) {
+  getFrontend(properties).displayGlossary();
+}
+
+global.onOpen = onOpen;
+global.initializeSheets = initializeSheets;
+global.initializeRules = initializeRules;
+global.preLaunchQa = preLaunchQa;
+global.launchMonitor = launchMonitor;
+global.displaySetupModal = displaySetupModal;
+global.displayGlossary = displayGlossary;

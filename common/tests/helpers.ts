@@ -19,29 +19,31 @@
  * @fileoverview Test helpers for the common library.
  */
 
-// g3-format-prettier
-
-import {AdsClientArgs} from 'common/ads_api_types';
-import {FakePropertyStore} from 'common/test_helpers/mock_apps_script';
+import {
+  ClientTypes,
+  DefinedParameters,
+  RuleExecutorClass,
+  RuleParams,
+} from '../types';
+import { FakePropertyStore } from '../test_helpers/mock_apps_script';
 
 import {
   CredentialManager,
-  GET_LEAF_ACCOUNTS_REPORT,
   GoogleAdsApi,
   GoogleAdsApiFactory,
   ReportFactory,
 } from '../ads_api';
-import {AbstractRuleRange, AppsScriptFrontEnd} from '../sheet_helpers';
+import { AbstractRuleRange, AppsScriptFrontend } from '../sheet_helpers';
+import { newRuleBuilder } from 'common/client_helpers';
 import {
   AppsScriptFunctions,
   BaseClientArgs,
   BaseClientInterface,
   ExecutorResult,
-  FrontEndArgs,
+  FrontendArgs,
   ParamDefinition,
   RecordInfo,
   RuleExecutor,
-  RuleExecutorClass,
   RuleGetter,
 } from '../types';
 
@@ -52,15 +54,19 @@ export enum Granularity {
   DEFAULT = 'default',
 }
 
+export interface TestClientTypes extends ClientTypes<TestClientTypes> {
+  client: TestClientInterface;
+  ruleGranularity: Granularity;
+  clientArgs: ClientArgs;
+}
+
+type ClientArgs = BaseClientArgs<ClientArgs>;
+
 /**
  * Test client interface for use in tests.
  */
 export interface TestClientInterface
-  extends BaseClientInterface<
-    TestClientInterface,
-    Granularity,
-    BaseClientArgs
-  > {
+  extends BaseClientInterface<TestClientTypes> {
   id: string;
   getAllCampaigns(): Promise<RecordInfo[]>;
 }
@@ -69,7 +75,7 @@ export interface TestClientInterface
  * Test ad client interface for use in tests.
  */
 export interface AdsClientInterface
-  extends BaseClientInterface<AdsClientInterface, Granularity, AdsClientArgs> {
+  extends BaseClientInterface<TestClientTypes> {
   id: string;
   getAllCampaigns(): Promise<RecordInfo[]>;
 }
@@ -77,13 +83,12 @@ export interface AdsClientInterface
 /**
  * Stub for rule range
  */
-export class RuleRange extends AbstractRuleRange<
-  TestClientInterface,
-  Granularity,
-  BaseClientArgs
-> {
+export class RuleRange extends AbstractRuleRange<TestClientTypes> {
+  async getRuleMetadata() {
+    return [];
+  }
   async getRows() {
-    return [{id: '1', displayName: 'Campaign 1', advertiserId: '1'}];
+    return [{ id: '1', displayName: 'Campaign 1', advertiserId: '1' }];
   }
 }
 
@@ -91,56 +96,35 @@ export class RuleRange extends AbstractRuleRange<
  * Test client for use in tests.
  */
 export class FakeClient implements TestClientInterface {
-  readonly args: BaseClientArgs = {label: 'test'};
+  id: string = 'test';
+  readonly args: ClientArgs = { label: 'test' };
   readonly ruleStore: {
-    [ruleName: string]: RuleExecutor<
-      TestClientInterface,
-      Granularity,
-      BaseClientArgs,
-      Record<string, ParamDefinition>
-    >;
+    [ruleName: string]: RuleExecutor<TestClientTypes>;
   } = {};
   readonly properties = new FakePropertyStore();
 
-  getRule(
-    ruleName: string,
-  ): RuleExecutor<
-    TestClientInterface,
-    Granularity,
-    BaseClientArgs,
-    Record<string, ParamDefinition>
-  > {
+  getRule(): RuleExecutor<TestClientTypes, Record<string, ParamDefinition>> {
     throw new Error('Method not implemented.');
   }
-  getUniqueKey(prefix: string): string {
+  getUniqueKey(): string {
     throw new Error('Method not implemented.');
   }
   validate(): Promise<{
     rules: Record<
       string,
-      RuleExecutor<
-        TestClientInterface,
-        Granularity,
-        BaseClientArgs,
-        Record<string, ParamDefinition>
-      >
+      RuleExecutor<TestClientTypes, Record<string, ParamDefinition>>
     >;
     results: Record<string, ExecutorResult>;
   }> {
     throw new Error('Method not implemented.');
   }
   addRule<Params extends Record<keyof Params, ParamDefinition>>(
-    rule: RuleExecutorClass<
-      TestClientInterface,
-      Granularity,
-      BaseClientArgs,
-      Params
-    >,
+    rule: RuleExecutorClass<TestClientTypes>,
     settingsArray: ReadonlyArray<string[]>,
-  ): TestClientInterface {
-    throw new Error('Method not implemented.');
+  ): FakeClient {
+    this.ruleStore[rule.definition.name] = new rule(this, settingsArray);
+    return this;
   }
-  id = 'something';
 
   getAllCampaigns(): Promise<[]> {
     return Promise.resolve([]);
@@ -150,12 +134,7 @@ export class FakeClient implements TestClientInterface {
 /**
  * A fake frontend for testing.
  */
-export class FakeFrontEnd extends AppsScriptFrontEnd<
-  TestClientInterface,
-  Granularity,
-  BaseClientArgs,
-  FakeFrontEnd
-> {
+export class FakeFrontend extends AppsScriptFrontend<TestClientTypes> {
   readonly calls: Record<AppsScriptFunctions, number> = {
     onOpen: 0,
     initializeSheets: 0,
@@ -166,21 +145,15 @@ export class FakeFrontEnd extends AppsScriptFrontEnd<
   };
   private readonly messages: GoogleAppsScript.Mail.MailAdvancedParameters[] =
     [];
+  private readonly old: GoogleAppsScript.Mail.MailAdvancedParameters[] = [];
 
-  constructor(
-    args: FrontEndArgs<
-      TestClientInterface,
-      Granularity,
-      BaseClientArgs,
-      FakeFrontEnd
-    >,
-  ) {
+  constructor(args: FrontendArgs<TestClientTypes>) {
     scaffoldSheetWithNamedRanges();
     super('Fake', args);
   }
 
-  getIdentity(): BaseClientArgs {
-    return {label: 'test'};
+  getIdentity(): ClientArgs {
+    return { label: 'test' };
   }
 
   override async onOpen() {
@@ -204,15 +177,15 @@ export class FakeFrontEnd extends AppsScriptFrontEnd<
     rules: RuleGetter[],
     message: GoogleAppsScript.Mail.MailAdvancedParameters,
   ) {
-    const noop: GoogleAppsScript.Mail.MailApp['sendEmail'] = ((
-      message: GoogleAppsScript.Mail.MailAdvancedParameters,
-    ) => {}) as GoogleAppsScript.Mail.MailApp['sendEmail'];
+    const noop: GoogleAppsScript.Mail.MailApp['sendEmail'] =
+      (() => {}) as GoogleAppsScript.Mail.MailApp['sendEmail'];
     super.sendEmailAlert(rules, message, noop);
 
     this.messages.push(message);
   }
 
   getMessages() {
+    this.old.splice(0, 0, ...this.messages);
     return this.messages.splice(0, this.messages.length);
   }
 }
@@ -220,18 +193,23 @@ export class FakeFrontEnd extends AppsScriptFrontEnd<
 /**
  * Set up named ranges so basic things can work in frontend.
  */
-export function scaffoldSheetWithNamedRanges() {
+export function scaffoldSheetWithNamedRanges(
+  { blanks: blank = [] }: { blanks: string[] } = { blanks: [] },
+) {
   for (const [i, [constName, value]] of [
     ['ENTITY_ID', '1'],
     ['ID_TYPE', 'Advertiser'],
     ['EMAIL_LIST', ''],
     ['LABEL', 'Acme Inc.'],
+    ['GCP_PROJECT_ID', 'myproject'],
   ].entries()) {
     const range = SpreadsheetApp.getActive()
       .getActiveSheet()
       .getRange(`$A$${i + 1}`);
     SpreadsheetApp.getActive().setNamedRange(constName, range);
-    SpreadsheetApp.getActive().getRangeByName(constName)!.setValue(value);
+    SpreadsheetApp.getActive()
+      .getRangeByName(constName)!
+      .setValue(blank.indexOf(constName) < 0 ? value : '');
   }
 }
 
@@ -246,10 +224,10 @@ const FAKE_API_ENDPOINT = {
  */
 export function bootstrapGoogleAdsApi(
   {
-    mockLeafAccounts = {'1': ['123']},
+    mockLeafAccounts = { '1': ['123'] },
     spyOnLeaf = true,
-  }: {mockLeafAccounts: Record<string, string[]>; spyOnLeaf: boolean} = {
-    mockLeafAccounts: {'1': ['123']},
+  }: { mockLeafAccounts: Record<string, string[]>; spyOnLeaf: boolean } = {
+    mockLeafAccounts: { '1': ['123'] },
     spyOnLeaf: true,
   },
 ) {
@@ -278,14 +256,8 @@ export function bootstrapGoogleAdsApi(
   });
   const mockQuery: jasmine.Spy = spyOn(api, 'queryOne');
   spyOn(apiFactory, 'create').and.callFake(() => api);
-  return {api, reportFactory, mockQuery};
+  return { api, reportFactory, mockQuery };
 }
-
-/**
- * Like TestClientInterface only for Ads.
- */
-export interface AdsClientInterface
-  extends BaseClientInterface<AdsClientInterface, Granularity, AdsClientArgs> {}
 
 /**
  * Create an iterator from a list of options.
@@ -293,3 +265,12 @@ export interface AdsClientInterface
 export function iterator<T>(...a: T[]): IterableIterator<T> {
   return a[Symbol.iterator]();
 }
+
+/**
+ * Creates a new test rule.
+ */
+export const newRule = newRuleBuilder<TestClientTypes>() as <
+  P extends DefinedParameters<P>,
+>(
+  p: RuleParams<TestClientTypes, P>,
+) => RuleExecutorClass<TestClientTypes>;

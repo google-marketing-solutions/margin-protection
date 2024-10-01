@@ -19,11 +19,30 @@
  * @fileoverview DAO for the Google Ads API and SA360 API
  */
 
-// g3-format-prettier
-
 import * as AdTypes from './ads_api_types';
 
 import URLFetchRequestOptions = GoogleAppsScript.URL_Fetch.URLFetchRequestOptions;
+
+// type boilerplate - separated out for readability
+type DefinedJoin<Joins> = Exclude<Joins, undefined>;
+type JoinKey<Joins> = keyof DefinedJoin<Joins>;
+type JoinOutputKey<Joins> = Extract<
+  DefinedJoin<Joins>[JoinKey<Joins>],
+  AdTypes.UnknownReportClass
+>['output'][number];
+type JoinDict<Joins> = Record<
+  JoinKey<Joins>,
+  Record<
+    string,
+    Record<
+      Extract<
+        DefinedJoin<Joins>[JoinKey<Joins>],
+        AdTypes.UnknownReportClass
+      >['query']['output'][number],
+      string
+    >
+  >
+>;
 
 // Ads API has a limit of 10k rows.
 const MAX_PAGE_SIZE = 10_000;
@@ -121,7 +140,7 @@ export class GoogleAdsApi implements AdTypes.GoogleAdsApiInterface {
             'developer-token': this.apiInstructions.developerToken,
           }
         : {}),
-      'Authorization': `Bearer ${token}`,
+      Authorization: `Bearer ${token}`,
       'login-customer-id': String(this.apiInstructions.loginCustomerId),
     };
   }
@@ -136,10 +155,13 @@ export class GoogleAdsApi implements AdTypes.GoogleAdsApiInterface {
     queryWheres: string[] = [],
   ): IterableIterator<AdTypes.ReportResponse<Q>> {
     for (const customerId of splitCids(customerIds)) {
-      yield* this.queryOne({query, customerId, queryWheres});
+      yield* this.queryOne({ query, customerId, queryWheres });
     }
   }
 
+  /**
+   * Handles the actual work for the query conversion to AQL, then executes.
+   */
   *queryOne<
     Q extends AdTypes.QueryBuilder<Params, Joins>,
     Params extends string = Q['queryParams'][number],
@@ -156,25 +178,40 @@ export class GoogleAdsApi implements AdTypes.GoogleAdsApiInterface {
     const url = `https://${this.apiInstructions.apiEndpoint.url}/${this.apiInstructions.apiEndpoint.version}/customers/${customerId}/${this.apiInstructions.apiEndpoint.call}`;
     const params: AdTypes.AdsSearchRequest = {
       pageSize: MAX_PAGE_SIZE,
-      query: qlifyQuery(query, queryWheres),
+      query: this.qlifyQuery(query, queryWheres),
       customerId,
     };
-    let pageToken;
+    let pageToken: string;
     do {
       const req: URLFetchRequestOptions = {
         method: 'post',
         headers: this.requestHeaders(),
         contentType: 'application/json',
-        payload: JSON.stringify({...params, pageToken}),
+        payload: JSON.stringify({ ...params, pageToken }),
       };
-      const res = JSON.parse(
-        UrlFetchApp.fetch(url, req).getContentText(),
-      ) as AdTypes.AdsSearchResponse<AdTypes.ReportResponse<Q>>;
-      pageToken = res.nextPageToken;
-      for (const row of res.results || []) {
-        yield row;
+      try {
+        const res = JSON.parse(
+          UrlFetchApp.fetch(url, req).getContentText(),
+        ) as AdTypes.AdsSearchResponse<AdTypes.ReportResponse<Q>>;
+        pageToken = res.nextPageToken;
+        for (const row of res.results || []) {
+          yield row;
+        }
+      } catch {
+        throw new Error('bad');
       }
     } while (pageToken);
+  }
+
+  /**
+   * A thin wrapper around {@link qlifyQuery} for testing.
+   */
+  qlifyQuery<
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    Q extends AdTypes.QueryBuilder<Params, any>,
+    Params extends string,
+  >(query: Q, queryWheres: string[] = []): string {
+    return qlifyQuery(query, queryWheres);
   }
 }
 
@@ -196,6 +233,11 @@ export abstract class Report<
     protected readonly factory: AdTypes.ReportFactoryInterface,
   ) {}
 
+  /**
+   * Iteratively retrieves query results and returns them as a generator.
+   * @param queryWheres An array of filters to place into the WHERE clause
+   *   of an AQL query.
+   */
   private *mapIterators(queryWheres: string[] = []) {
     for (const customerId of this.clientIds) {
       yield* this.api.query<Q, Params, Joins>(
@@ -218,27 +260,6 @@ export abstract class Report<
   fetch(queryWheres: string[] = []): Record<string, Record<Output, string>> {
     const results = this.mapIterators(queryWheres);
 
-    // type boilerplate - separated out for readability
-    type DefinedJoin = Exclude<Joins, undefined>;
-    type JoinKey = keyof DefinedJoin;
-    type JoinOutputKey = Extract<
-      DefinedJoin[JoinKey],
-      AdTypes.UnknownReportClass
-    >['output'][number];
-    type JoinDict = Record<
-      JoinKey,
-      Record<
-        string,
-        Record<
-          Extract<
-            DefinedJoin[JoinKey],
-            AdTypes.UnknownReportClass
-          >['query']['output'][number],
-          string
-        >
-      >
-    >;
-
     let resultsHolder:
       | IterableIterator<AdTypes.ReportResponse<Q>>
       | Array<AdTypes.ReportResponse<Q>> = results;
@@ -257,43 +278,59 @@ export abstract class Report<
     // This is a single line because otherwise TypeScript gets upset
     // that we haven't declared individual pieces of the code. This winds up
     // being more typesafe than using {@code Partial}s.
-    const joins: undefined | JoinDict =
+    const joins: undefined | JoinDict<Joins> =
       prefetchedJoins === undefined
         ? undefined
         : (Object.fromEntries(
             Array.from(
               prefetchedJoins,
-              ([joinKey, [joinClass, joinMatchKeys]]) => {
-                const joinObject = this.factory.create(joinClass);
-                // Ensure we get the right type back with "satisfies".
-                // Array.from has specific ideas of the data types it wants to return.
-                return [
-                  joinKey,
-                  joinObject.fetch(
-                    // get filtered join objects.
-                    joinMatchKeys,
-                  ),
-                ] satisfies [
-                  JoinKey,
-                  Record<string, Record<JoinOutputKey, string>>,
-                ];
-              },
+              this.joinMergeFunction.bind(
+                this,
+              ) as typeof this.joinMergeFunction,
             ),
-          ) as Record<JoinKey, Record<string, Record<JoinOutputKey, string>>>);
+          ) as Record<
+            JoinKey<Joins>,
+            Record<string, Record<JoinOutputKey<Joins>, string>>
+          >);
     // finally - transform results and filtered join results.
     return Object.fromEntries(
       Array.from(resultsHolder, (result) => {
         if (joins === undefined) {
           return this.transform(result);
         }
-        return this.transform(
-          result,
-          joins as Joins extends undefined
-            ? never
-            : Exclude<typeof joins, undefined>,
-        );
-      }),
+        try {
+          return this.transform(
+            result,
+            joins as Joins extends undefined
+              ? never
+              : Exclude<typeof joins, undefined>,
+          );
+        } catch {
+          return null;
+        }
+        // clean any empty values
+      }).filter((e) => e),
     );
+  }
+
+  /**
+   * Fetches the data in a join.
+   *
+   * This allows the parent query to leverage join data in a transform.
+   */
+  private joinMergeFunction([joinKey, [joinClass, joinMatchKeys]]): [
+    JoinKey<Joins>,
+    Record<string, Record<JoinOutputKey<Joins>, string>>,
+  ] {
+    const joinObject = this.factory.create(joinClass);
+    const dedupedJoinMatchKeys = [...new Set(joinMatchKeys)].join(',');
+    const dedupedJoinMatchQuery = `${joinClass.query.queryFrom}.id IN (${dedupedJoinMatchKeys})`;
+    // Ensure we get the right type back with "satisfies".
+    // Array.from has specific ideas of the data types it wants to return.
+    return [joinKey, joinObject.fetch([dedupedJoinMatchQuery])] satisfies [
+      JoinKey<Joins>,
+      Record<string, Record<JoinOutputKey<Joins>, string>>,
+    ];
   }
 
   abstract transform(
@@ -349,6 +386,10 @@ export abstract class Report<
 
   /**
    * Prefetches any join values.
+   *
+   * This gets called when a join is requested so that the data can be populated
+   * in the Report object. We use this instead of lazy loading because we depend on
+   * the data immediately.
    */
   protected prefetchForJoins(
     results: IterableIterator<AdTypes.ReportResponse<Q>>,
@@ -358,6 +399,7 @@ export abstract class Report<
       reportClass: AdTypes.UnknownReportClass,
       match: Array<string | number>,
     ];
+    type JoinClassDict = Record<keyof Joins, AdTypes.UnknownReportClass>;
     if (joins === undefined) {
       return [undefined, undefined];
     }
@@ -368,7 +410,7 @@ export abstract class Report<
       newResults.push(result);
       // each dot portion of a join key should match to a column in the result.
       for (const [join, report] of Object.entries<AdTypes.UnknownReportClass>(
-        joins as Record<keyof Joins, AdTypes.UnknownReportClass>,
+        joins as JoinClassDict,
       )) {
         if (!joinMatchKeys.has(join as keyof Joins)) {
           joinMatchKeys.set(join as keyof Joins, [report, []]);
@@ -382,7 +424,7 @@ export abstract class Report<
             .reduce<AdTypes.RecursiveRecord<string, string | number>>(
               // Reduce functions don't have a way to let your end result be
               // typed as anything other than the input type.
-              // tslint:disable-next-line:no-any
+              // eslint-disable-next-line @typescript-eslint/no-explicit-any
               (res, j) => res[j] as any,
               result as AdTypes.RecursiveRecord<string, string | number>,
             ) as unknown as string | number,
@@ -461,7 +503,7 @@ export class ReportFactory implements AdTypes.ReportFactoryInterface {
           this.clientArgs.loginCustomerId || this.clientArgs.customerIds,
         );
         const expand = (account: string): string[] => {
-          const rows = api.query(customerId, GET_LEAF_ACCOUNTS_REPORT.query);
+          const rows = api.query(account, GET_LEAF_ACCOUNTS_REPORT.query);
           const customerIds: string[] = [];
           for (const row of rows) {
             customerIds.push(String(row.customerClient!.id!));
@@ -492,6 +534,14 @@ export class ReportFactory implements AdTypes.ReportFactoryInterface {
  *
  * This is useful for making reports without having to write a new
  * report class.
+ *
+ * The {@link ReportClass} that's returned is allows you to link to
+ * {@link Report#fetch} data from the API.
+ *
+ * @example
+ *   // handled transparently by the Client.
+ *   const reportClass = makeReport(args, query, transform)
+ *   client.getReport(reportClass).fetch();
  */
 export function makeReport<
   Q extends AdTypes.QueryBuilder<Params, Joins>,
@@ -521,9 +571,6 @@ export function makeReport<
       >,
     ) {
       if (joins === undefined) {
-        // overloading of parameters to allow only `result` is the preferred
-        // method. Blocked by https://github.com/microsoft/TypeScript/issues/54539
-        // tslint:disable-next-line:ban-as-never
         return args.transform(result, undefined as never);
       } else {
         return args.transform(
@@ -538,11 +585,11 @@ export function makeReport<
 }
 
 /**
- * Turn a query into an AdsQL string.
+ * Turn a {@link AdTypes.QueryBuilder<Params, any>} into an AdsQL string.
  */
 export function qlifyQuery<
   // joins are tricky, and we don't really care what they do here.
-  // tslint:disable-next-line:no-any
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   Q extends AdTypes.QueryBuilder<Params, any>,
   Params extends string,
 >(query: Q, queryWheres: string[] = []): string {
@@ -592,4 +639,3 @@ export const GET_LEAF_ACCOUNTS_REPORT = makeReport({
     ];
   },
 });
-

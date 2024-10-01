@@ -559,6 +559,7 @@ function getCampaignActualBudget(campaign) {
 
 function writeToResultSheet() {
   console.log('Writing results to sheets...');
+
   const languageResultSheet = createOrClearSheet(
     languageResultSheetName,
   );

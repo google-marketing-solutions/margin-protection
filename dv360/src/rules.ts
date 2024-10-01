@@ -19,30 +19,22 @@
  * @fileoverview Contains rules tailored for the current client.
  */
 
-// g3-format-prettier
-
 import {
   AssignedTargetingOption,
   InsertionOrder,
 } from 'dv360_api/dv360_resources';
 import {
   InsertionOrderBudgetSegment,
+  PACING_TYPE,
+  PacingType,
   TARGETING_TYPE,
 } from 'dv360_api/dv360_types';
-import {
-  equalTo,
-  inRange,
-  lessThanOrEqualTo,
-} from 'common/checks';
-import {
-  Settings,
-  Value,
-  Values,
-} from 'common/types';
+import { equalTo, inRange, lessThanOrEqualTo } from 'common/checks';
+import { Settings, Values } from 'common/types';
 
-import {getDate, newRule} from './client';
-import {DailyBudget} from './rule_types';
-import {ClientInterface, RuleGranularity} from './types';
+import { getDate, newRule } from './client';
+import { ClientInterface, RuleGranularity } from './types';
+import { DailyBudget } from './rule_types';
 
 const DAY_DENOMINATOR = 1000 * 24 * 60 * 60;
 
@@ -64,11 +56,6 @@ const RULES = {
 };
 
 /**
- * Provides a mechanism to preload checks with tests.
- */
-type AbridgedCheck = (value: number, fields: {[key: string]: string}) => Value;
-
-/**
  * Adds a geotarget rule.
  *
  * Must have only US targets, and must contain at least one geo-target, to pass.
@@ -83,18 +70,25 @@ export const geoTargetRule = newRule({
     must be partial matches of canonical names in
     <a href="https://developers.google.com/google-ads/api/reference/data/geotargets">this list.</a>`,
   valueFormat: {
-    label: 'Geo Targets Set?',
+    label: 'Result',
   },
   helper: `=HYPERLINK(
     "https://developers.google.com/google-ads/api/reference/data/geotargets", "Separate values with commas. Partial match any canonical name linked.")`,
   params: {
-    geotargeting: {
-      label: 'Geo Targets',
+    allowedTargets: {
+      label: 'Allowed Geo Targets',
+      validationFormulas: [
+        '=REGEXMATCH(INDIRECT(ADDRESS(ROW(), COLUMN())), "^[a-zA-Z ]+(,\\s*[a-zA-Z ]+)?$")',
+      ],
+      defaultValue: 'United States',
+    },
+    requiredTargets: {
+      label: 'Required Geo Targets',
       validationFormulas: [
         '=REGEXMATCH(INDIRECT(ADDRESS(ROW(), COLUMN())), "^[a-zA-Z ]+(,\\s*[a-zA-Z ]+)?$")',
       ],
     },
-    excludes: {
+    excludedTargets: {
       label: 'Excluded Geo Targets',
       validationFormulas: [
         '=REGEXMATCH(INDIRECT(ADDRESS(ROW(), COLUMN())), "^[a-zA-Z ]+(,\\s*[a-zA-Z ]+)?$")',
@@ -102,10 +96,6 @@ export const geoTargetRule = newRule({
     },
   },
   granularity: RuleGranularity.CAMPAIGN,
-  defaults: {
-    geotargeting: 'United States',
-    excludes: '',
-  },
   async callback() {
     const values: Values = {};
 
@@ -114,49 +104,90 @@ export const geoTargetRule = newRule({
       id,
       displayName,
     } of await this.client.getAllCampaigns()) {
-      const targetingOptionApi = new this.client.args.assignedTargetingOptions!(
-        TARGETING_TYPE.GEO_REGION,
-        advertiserId,
-        {campaignId: id},
-      );
-      let hasOnlyValidGeo = true;
+      const targetingOptionApi =
+        new this.client.dao.accessors.assignedTargetingOptions!(
+          TARGETING_TYPE.GEO_REGION,
+          advertiserId,
+          { campaignId: id },
+        );
       const campaignSettings = this.settings.getOrDefault(id);
 
       let targetingOptionsLength = 0;
 
+      function splitTarget(campaignSetting: string) {
+        return campaignSetting
+          ? campaignSetting.split(',').map((country: string) => country.trim())
+          : [];
+      }
+      const allowedTargets = splitTarget(campaignSettings.allowedTargets);
+      const requiredTargets = splitTarget(campaignSettings.requiredTargets);
+      const excludedTargets = splitTarget(campaignSettings.excludedTargets);
+      const errors: string[] = [];
+      const foundRequiredIndexes = new Set<number>();
+
       targetingOptionApi.list((targetingOptions: AssignedTargetingOption[]) => {
-        function hasAllowedGeo(targetingOption: AssignedTargetingOption) {
-          const displayName = targetingOption.getDisplayName();
-          if (!displayName) {
-            throw new Error('Missing display name');
+        for (const targetingOption of targetingOptions) {
+          if (!targetingOption) {
+            continue;
           }
-          const geoTargets = campaignSettings.geotargeting
-            .split(',')
-            .map((country: string) => country.trim());
-          const excludes = campaignSettings.excludes
-            .split(',')
-            .map((country: string) => country.trim());
-
+          const targetName = targetingOption.getDisplayName();
           if (targetingOption.getTargetingDetails()['negative']) {
-            return !excludes.some(
-              (geoTarget: string) => displayName.indexOf(geoTarget) >= 0,
+            const exclude = excludedTargets.filter(
+              (exc) => targetName.indexOf(exc) >= 0,
             );
+            if (exclude.length) {
+              errors.push(`"${targetName}" found and is an excluded target`);
+            }
+            continue;
           }
-          return geoTargets.some(
-            (geoTarget: string) => displayName.indexOf(geoTarget) >= 0,
-          );
-        }
 
-        // Don't accidentally overwrite hasOnlyValidGeo if it's been set to
-        // false.
-        if (hasOnlyValidGeo) {
-          hasOnlyValidGeo = Boolean(
-            targetingOptions.length && targetingOptions.every(hasAllowedGeo),
+          // find any values not listed in allowedTargets
+          const allowed = allowedTargets.filter(
+            (allowed) => targetName.indexOf(allowed) >= 0,
           );
+          if (allowed.length === 0) {
+            errors.push(`"${targetName}" not an allowed target`);
+          }
+
+          if (requiredTargets.length) {
+            const foundRequiredIndex = requiredTargets.findIndex(
+              (req) => targetName.indexOf(req) >= 0,
+            );
+            if (foundRequiredIndex >= 0) {
+              foundRequiredIndexes.add(foundRequiredIndex);
+            }
+          }
         }
         targetingOptionsLength += targetingOptions.length;
       });
-      values[id] = equalTo(1, hasOnlyValidGeo ? 1 : 0, {
+
+      if (requiredTargets.length) {
+        const missingRequiredTargets = requiredTargets.filter(
+          (_, ix) => !foundRequiredIndexes.has(ix),
+        );
+        errors.push(
+          ...missingRequiredTargets.map(
+            (req) => `"${req}" was required but not targeted`,
+          ),
+        );
+      }
+
+      const errorMessage = (() => {
+        if (errors.length) {
+          return errors.join(',');
+        }
+        if (
+          !targetingOptionsLength &&
+          (requiredTargets.length ||
+            allowedTargets.length ||
+            excludedTargets.length)
+        ) {
+          return 'No targeting set';
+        }
+
+        return 'OK';
+      })();
+      values[id] = equalTo('OK', errorMessage, {
         'Advertiser ID': advertiserId,
         'Campaign Name': displayName,
         'Campaign ID': id,
@@ -164,7 +195,7 @@ export const geoTargetRule = newRule({
       });
     }
 
-    return {values};
+    return { values };
   },
 });
 
@@ -189,19 +220,24 @@ export const budgetPacingPercentageRule = newRule({
     min: {
       label: 'Min. Percent Ahead/Behind',
       validationFormulas: RULES.LESS_THAN_MAX,
+      defaultValue: '0',
     },
     max: {
       label: 'Max. Percent Ahead/Behind',
       validationFormulas: RULES.GREATER_THAN_MIN,
+      defaultValue: '0.5',
+    },
+    pacingType: {
+      label: 'Pacing Type',
+      defaultValue: PACING_TYPE.AHEAD,
     },
   },
-  defaults: {min: '0', max: '0.5'},
   async callback() {
-    const rules: {[campaignId: string]: AbridgedCheck} = {};
     const values: Values = {};
 
-    const dateRange: {earliestStartDate?: Date; latestEndDate?: Date} = {};
-
+    const dateRange: { earliestStartDate?: Date; latestEndDate?: Date } = {};
+    type SettingsObj =
+      typeof this.settings extends Settings<infer I> ? I : never;
     const results: Array<{
       budget: number;
       campaignId: string;
@@ -209,16 +245,18 @@ export const budgetPacingPercentageRule = newRule({
       insertionOrderId: string;
       startDate: Date;
       endDate: Date;
+      settings: SettingsObj;
+      pacingType: PacingType;
     }> = [];
     const today = Date.now();
     const todayDate = new Date(today);
-    for (const insertionOrder of this.client.getAllInsertionOrders()) {
-      const {insertionOrderId, displayName} = getPacingVariables(
-        this.client,
-        insertionOrder,
-        this.settings,
-        rules,
-      );
+    for (const insertionOrder of Object.values(
+      this.client.getAllInsertionOrders(),
+    )) {
+      const pacingType = insertionOrder.getInsertionOrderPacing().pacingType;
+      const insertionOrderId = insertionOrder.getId()!;
+      const displayName = insertionOrder.getDisplayName();
+      const settings = this.settings.getOrDefault(insertionOrderId);
       for (const budgetSegment of insertionOrder.getInsertionOrderBudgetSegments()) {
         const startDate = getDate(budgetSegment.dateRange.startDate);
         const endDate = getDate(budgetSegment.dateRange.endDate);
@@ -231,26 +269,21 @@ export const budgetPacingPercentageRule = newRule({
         ) {
           continue;
         }
-        dateRange.earliestStartDate =
-          dateRange.earliestStartDate && dateRange.earliestStartDate < startDate
-            ? dateRange.earliestStartDate
-            : startDate;
-        dateRange.latestEndDate =
-          dateRange.latestEndDate && dateRange.latestEndDate < endDate
-            ? dateRange.latestEndDate
-            : endDate;
+        expandDateRanges(dateRange, startDate, endDate);
         results.push({
           campaignId: insertionOrder.getCampaignId(),
           displayName,
           insertionOrderId,
           startDate,
           endDate,
+          settings,
+          pacingType,
           budget: Number(budgetSegment.budgetAmountMicros) / 1_000_000,
         });
       }
     }
     if (!dateRange.earliestStartDate || !dateRange.latestEndDate) {
-      return {values};
+      return { values };
     }
     const budgetReport = this.client.getBudgetReport({
       startDate: dateRange.earliestStartDate,
@@ -263,6 +296,8 @@ export const budgetPacingPercentageRule = newRule({
       insertionOrderId,
       startDate,
       endDate,
+      settings,
+      pacingType,
     } of results) {
       const startTimeSeconds = startDate.getTime();
       const endTimeSeconds = endDate.getTime();
@@ -280,60 +315,36 @@ export const budgetPacingPercentageRule = newRule({
         budget / (flightDuration / DAY_DENOMINATOR);
       const spendToTimeElapsed = spend / (timeElapsed / DAY_DENOMINATOR);
       const percent = spendToTimeElapsed / budgetToFlightDuration - 1;
-      values[insertionOrderId] = rules[insertionOrderId](percent, {
-        'Insertion Order ID': insertionOrderId,
-        'Display Name': displayName,
-        'Campaign ID': campaignId,
-        'Flight Start': startDate.toDateString(),
-        'Flight End': endDate.toDateString(),
-        'Spend': `$${spend.toString()}`,
-        'Budget': `$${budget.toString()}`,
-        'Pacing': `${(spendToTimeElapsed / budgetToFlightDuration) * 100}%`,
-        'Days Elapsed': (timeElapsed / DAY_DENOMINATOR).toString(),
-        'Flight Duration': (flightDuration / DAY_DENOMINATOR).toString(),
-      });
+      values[insertionOrderId] = humanReadableError(
+        settings,
+        pacingType,
+        percent,
+        {
+          'Insertion Order ID': insertionOrderId,
+          'Display Name': displayName,
+          'Campaign ID': campaignId,
+          'Flight Start': startDate.toDateString(),
+          'Flight End': endDate.toDateString(),
+          Spend: `$${spend.toString()}`,
+          Budget: `$${budget.toString()}`,
+          Pacing: `${(spendToTimeElapsed / budgetToFlightDuration) * 100}%`,
+          'Days Elapsed': (timeElapsed / DAY_DENOMINATOR).toString(),
+          'Flight Duration': (flightDuration / DAY_DENOMINATOR).toString(),
+        },
+      );
     }
-    return {values};
+    return { values };
   },
 });
 
-function getPacingVariables<P extends Record<'min' | 'max', string>>(
-  client: ClientInterface,
-  insertionOrder: InsertionOrder,
-  settings: Settings<P>,
-  rules: {[p: string]: AbridgedCheck},
-) {
-  const insertionOrderId = insertionOrder.getId()!;
-  const campaignSettings = settings.getOrDefault(insertionOrderId);
-  if (!rules[insertionOrderId]) {
-    rules[insertionOrderId] = (
-      value: number,
-      fields: {[key: string]: string},
-    ) =>
-      inRange(
-        {
-          min: Number(campaignSettings.min),
-          max: Number(campaignSettings.max),
-        },
-        value,
-        fields,
-      );
-  }
-  const displayName = insertionOrder.getDisplayName();
-  if (!displayName) {
-    throw new Error('Missing ID or Display Name for Insertion Order.');
-  }
-  return {insertionOrderId, displayName};
-}
-
 /**
- * Sets a violation if budget is pacing `days` ahead of schedule.
+ * Sets a violation if budget is pacing `days` ahead of schedule in a line item.
  *
  * Compares DBM spend against DV360 budgets over a flight duration.
  */
-export const budgetPacingDaysAheadRule = newRule({
-  name: 'Budget Pacing by Days Ahead/Behind',
-  description: `<p>Counts the number of days ahead or behind an IO segment is vs.
+export const budgetPacingRuleLineItem = newRule({
+  name: 'Budget Pacing by Days Ahead/Behind (Line Item)',
+  description: `<p>Counts the number of days ahead or behind a Line Item is vs.
     plan. It uses the following formula: <code>((Budget / Plan Days) / 
     (Spend / Time Elapsed Since Duration Start)) * Time Elapsed Since Duration Start 
     - Time Elapsed Since Duration Start</code>.</p>
@@ -346,114 +357,110 @@ export const budgetPacingDaysAheadRule = newRule({
   },
   params: {
     min: {
-      label: 'Min. Days Ahead/Behind (+/-)',
+      label: 'Min. Percent Ahead/Behind',
       validationFormulas: RULES.LESS_THAN_MAX,
+      defaultValue: '0',
     },
     max: {
-      label: 'Max. Days Ahead/Behind (+/-)',
+      label: 'Max. Percent Ahead/Behind',
       validationFormulas: RULES.GREATER_THAN_MIN,
+      defaultValue: '0.5',
+    },
+    pacingType: {
+      label: 'Pacing Type',
+      defaultValue: PACING_TYPE.AHEAD,
     },
   },
-  defaults: {
-    min: '-1',
-    max: '1',
-  },
-  granularity: RuleGranularity.INSERTION_ORDER,
+  granularity: RuleGranularity.LINE_ITEM,
   async callback() {
-    const rules: {[campaignId: string]: AbridgedCheck} = {};
+    type SettingsObj =
+      typeof this.settings extends Settings<infer I> ? I : never;
     const values: Values = {};
-    const result: Array<{
+    const results: Array<{
       campaignId: string;
       displayName: string;
-      insertionOrderId: string;
+      lineItemId: string;
       budget: number;
       startDate: Date;
       endDate: Date;
+      pacingType: PacingType;
+      settings: SettingsObj;
     }> = [];
-    const dateRange: {earliestStartDate?: Date; latestEndDate?: Date} = {};
-    const today = Date.now();
-    const todayDate = new Date(today);
-    for (const insertionOrder of this.client.getAllInsertionOrders()) {
-      if (
-        insertionOrder.getInsertionOrderBudget().budgetUnit !==
-        'BUDGET_UNIT_CURRENCY'
-      ) {
+    const dateRange: { earliestStartDate?: Date; latestEndDate?: Date } = {};
+    for (const lineItem of this.client.getAllLineItems()) {
+      const budget = lineItem.getLineItemBudget();
+      const flight = lineItem.getLineItemFlight().dateRange;
+      if (!dateRange) {
+        throw new Error(
+          `Missing a date range in Line Item ${lineItem.getId()}`,
+        );
+      }
+      const startDate = getDate(flight.startDate);
+      const endDate = getDate(flight.endDate);
+      expandDateRanges(dateRange, startDate, endDate);
+      if (budget.budgetUnit !== 'BUDGET_UNIT_CURRENCY') {
         continue;
       }
-      const {insertionOrderId, displayName} = getPacingVariables(
-        this.client,
-        insertionOrder,
-        this.settings,
-        rules,
-      );
-      for (const budgetSegment of insertionOrder.getInsertionOrderBudgetSegments()) {
-        const startDate = getDate(budgetSegment.dateRange.startDate);
-        const endDate = getDate(budgetSegment.dateRange.endDate);
-        if (!(startDate < todayDate && todayDate < endDate)) {
-          continue;
-        }
-
-        dateRange.earliestStartDate =
-          dateRange.earliestStartDate && dateRange.earliestStartDate < startDate
-            ? dateRange.earliestStartDate
-            : startDate;
-        dateRange.latestEndDate =
-          dateRange.latestEndDate && dateRange.latestEndDate > endDate
-            ? dateRange.latestEndDate
-            : endDate;
-        result.push({
-          campaignId: insertionOrder.getCampaignId(),
-          displayName,
-          insertionOrderId,
-          budget: Number(budgetSegment.budgetAmountMicros) / 1_000_000,
-          startDate,
-          endDate,
-        });
-      }
+      const pacingType = lineItem.getLineItemPacing().pacingType;
+      const settings = this.settings.getOrDefault(lineItem.getId());
+      results.push({
+        campaignId: lineItem.getCampaignId(),
+        displayName: lineItem.getDisplayName(),
+        lineItemId: lineItem.getId(),
+        startDate,
+        endDate,
+        settings,
+        pacingType,
+        budget: Number(budget.maxAmount) / 1_000_000,
+      });
     }
     if (!dateRange.earliestStartDate || !dateRange.latestEndDate) {
-      return {values};
+      return { values };
     }
-    const budgetReport = this.client.getBudgetReport({
+    const budgetReport = this.client.getLineItemBudgetReport({
       startDate: dateRange.earliestStartDate,
       endDate: dateRange.latestEndDate,
     });
     for (const {
       campaignId,
       displayName,
-      insertionOrderId,
+      lineItemId,
       budget,
       startDate,
       endDate,
-    } of result) {
-      const startTimeSeconds = startDate.getTime();
-      const endTimeSeconds = endDate.getTime();
-      const spend = budgetReport.getSpendForInsertionOrder(
-        insertionOrderId,
-        startTimeSeconds,
-        endTimeSeconds,
-      );
+      pacingType,
+      settings,
+    } of results) {
+      const spend = budgetReport.getSpendForLineItem(lineItemId);
       if (spend === undefined) {
         continue;
       }
-      const daysToCampaignEnd =
-        (endTimeSeconds - startTimeSeconds) / DAY_DENOMINATOR;
-      const daysToToday = (today - startTimeSeconds) / DAY_DENOMINATOR;
-      const budgetPerDay = budget / daysToCampaignEnd;
-      const actualSpendPerDay = spend / daysToToday;
-      const days =
-        (actualSpendPerDay / budgetPerDay) * daysToToday - daysToToday;
-      values[insertionOrderId] = rules[insertionOrderId](days, {
-        'Insertion Order ID': insertionOrderId,
+      const startTimeSeconds = startDate.getTime();
+      const endTimeSeconds = endDate.getTime();
+      const today = Date.now();
+      const flightDuration = endTimeSeconds - startTimeSeconds;
+      const timeElapsed = today - startTimeSeconds;
+      if (spend === undefined) {
+        continue;
+      }
+      const budgetToFlightDuration =
+        budget / (flightDuration / DAY_DENOMINATOR);
+      const spendToTimeElapsed = spend / (timeElapsed / DAY_DENOMINATOR);
+      const percent = spendToTimeElapsed / budgetToFlightDuration - 1;
+      values[lineItemId] = humanReadableError(settings, pacingType, percent, {
+        'Line Item ID': lineItemId,
         'Display Name': displayName,
         'Campaign ID': campaignId,
         'Flight Start': startDate.toDateString(),
         'Flight End': endDate.toDateString(),
-        'Spend': spend.toString(),
-        'Budget': budget.toString(),
+        Spend: `$${spend.toString()}`,
+        Budget: `$${budget.toString()}`,
+        Pacing: `${(spendToTimeElapsed / budgetToFlightDuration) * 100}%`,
+        'Days Elapsed': (timeElapsed / DAY_DENOMINATOR).toString(),
+        'Flight Duration': (flightDuration / DAY_DENOMINATOR).toString(),
       });
     }
-    return {values};
+    return { values };
   },
 });
 
@@ -473,15 +480,13 @@ export const dailyBudgetRule = newRule({
     min: {
       label: 'Min. Daily Budget',
       validationFormulas: RULES.LESS_THAN_MAX,
+      defaultValue: '0',
     },
     max: {
       label: 'Max. Daily Budget',
       validationFormulas: RULES.GREATER_THAN_MIN,
+      defaultValue: '1000000',
     },
-  },
-  defaults: {
-    min: '0',
-    max: '1000000',
   },
   granularity: RuleGranularity.INSERTION_ORDER,
   async callback() {
@@ -507,13 +512,13 @@ export const dailyBudgetRule = newRule({
           {
             'Insertion Order ID': insertionOrderId,
             'Display Name': displayName,
-            'Budget': dailyBudgets.budget.toString(),
+            Budget: dailyBudgets.budget.toString(),
             'Flight Duration': dailyBudgets.flightDurationDays.toString(),
           },
         );
       }
     }
-    return {values};
+    return { values };
   },
 });
 
@@ -555,7 +560,7 @@ function checkPlannedDailyBudget(
 }
 
 function calculateOuterBounds(
-  range: {startDate: Date | undefined; endDate: Date | undefined},
+  range: { startDate: Date | undefined; endDate: Date | undefined },
   budgetSegment: InsertionOrderBudgetSegment,
   todayDate: Date,
 ) {
@@ -588,20 +593,23 @@ export const impressionsByGeoTarget = newRule({
     numberFormat: '0%',
   },
   params: {
-    countries: {label: 'Allowed Countries (Comma Separated)'},
+    countries: {
+      label: 'Allowed Countries (Comma Separated)',
+      defaultValue: 'US',
+    },
     maxOutside: {
       label: 'Max. Percent Outside Geos',
       validationFormulas: RULES.GREATER_THAN_MIN,
+      defaultValue: '0.01',
     },
   },
   granularity: RuleGranularity.INSERTION_ORDER,
   helper: `=HYPERLINK(
     "https://developers.google.com/google-ads/api/reference/data/geotargets", "Use the 2-digit country codes found in this report.")`,
-  defaults: {countries: 'US', maxOutside: '0.01'},
   async callback() {
     const values: Values = {};
 
-    const range: {startDate: Date | undefined; endDate: Date | undefined} = {
+    const range: { startDate: Date | undefined; endDate: Date | undefined } = {
       startDate: undefined,
       endDate: undefined,
     };
@@ -609,7 +617,7 @@ export const impressionsByGeoTarget = newRule({
     const today = Date.now();
     const todayDate = new Date(today);
     const result: {
-      [insertionOrderId: string]: {campaignId: string; displayName: string};
+      [insertionOrderId: string]: { campaignId: string; displayName: string };
     } = {};
 
     for (const insertionOrder of this.client.getAllInsertionOrders()) {
@@ -623,9 +631,9 @@ export const impressionsByGeoTarget = newRule({
     }
 
     if (!range.startDate || !range.endDate) {
-      return {values};
+      return { values };
     }
-    const impressionReport = new this.client.args.impressionReport!({
+    const impressionReport = new this.client.dao.accessors.impressionReport!({
       idType: this.client.args.idType,
       id: this.client.args.id,
       ...(range as {
@@ -634,9 +642,10 @@ export const impressionsByGeoTarget = newRule({
       }),
     });
 
-    for (const [insertionOrderId, {campaignId, displayName}] of Object.entries(
-      result,
-    )) {
+    for (const [
+      insertionOrderId,
+      { campaignId, displayName },
+    ] of Object.entries(result)) {
       const campaignSettings = this.settings.getOrDefault(insertionOrderId);
       const impressions = impressionReport.getImpressionPercentOutsideOfGeos(
         insertionOrderId,
@@ -654,6 +663,46 @@ export const impressionsByGeoTarget = newRule({
         },
       );
     }
-    return {values};
+    return { values };
   },
 });
+
+function expandDateRanges(
+  dateRange: { earliestStartDate?: Date; latestEndDate?: Date },
+  startDate: Date,
+  endDate: Date,
+) {
+  dateRange.earliestStartDate =
+    dateRange.earliestStartDate && dateRange.earliestStartDate < startDate
+      ? dateRange.earliestStartDate
+      : startDate;
+  dateRange.latestEndDate =
+    dateRange.latestEndDate && dateRange.latestEndDate > endDate
+      ? dateRange.latestEndDate
+      : endDate;
+}
+
+function humanReadableError(
+  settings: { min: string; max: string; pacingType: string },
+  pacingType: PacingType,
+  percent: number,
+  fields: Record<string, string>,
+) {
+  const values: [pace: string, pacingType: string] = ['', ''];
+  if (percent < Number(settings.min)) {
+    values[0] = `${percent * 100}% (< ${Number(settings.min) * 100}%)`;
+  } else if (percent > Number(settings.max)) {
+    values[0] = `${percent * 100}% (> ${Number(settings.max) * 100}%)`;
+  } else {
+    values[0] = 'Pace OK';
+  }
+  if (settings.pacingType !== pacingType) {
+    values[1] = `Pacing Type ${pacingType} != ${settings.pacingType}`;
+  }
+  const value = values[1] ? values.join('; ') : values[0];
+  return {
+    value,
+    anomalous: value !== 'Pace OK',
+    fields,
+  };
+}

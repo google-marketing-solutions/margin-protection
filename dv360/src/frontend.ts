@@ -19,27 +19,20 @@
  * @fileoverview frontend/apps script hooks for DV360 launch monitor
  */
 
-// g3-format-prettier
-
 import {
-  AppsScriptFrontEnd,
-  AppsScriptPropertyStore,
+  AppsScriptFrontend,
   HELPERS,
   LABEL_RANGE,
   addSettingWithDescription,
-  getOrCreateSheet,
 } from 'common/sheet_helpers';
-import {FrontEndArgs} from 'common/types';
-import {RuleRange} from 'dv360/src/client';
-import {
-  ClientArgs,
-  ClientInterface,
-} from 'dv360/src/types';
-
-import {IDType, RuleGranularity} from './types';
+import { FrontendArgs, FrontendInterface } from 'common/types';
+import { RuleRange } from 'dv360/src/client';
+import { IDType, RuleGranularity, DisplayVideoClientTypes } from './types';
 
 const ENTITY_ID = 'ENTITY_ID';
 const ID_TYPE = 'ID_TYPE';
+const REPORT_LABEL = 'REPORT_LABEL';
+const DRIVE_ID = 'DRIVE_ID';
 
 /**
  * The name of the general settings sheet.
@@ -52,7 +45,7 @@ export const GENERAL_SETTINGS_SHEET = 'General/Settings';
  */
 export const migrations: Record<
   string,
-  (frontend: DisplayVideoFrontEnd) => void
+  (frontend: DisplayVideoFrontend) => void
 > = {
   '1.1': (frontend) => {
     const active = SpreadsheetApp.getActive();
@@ -70,17 +63,17 @@ export const migrations: Record<
     campaignValues = ruleRange.getValues(RuleGranularity.CAMPAIGN);
     ioValues = ruleRange.getValues(RuleGranularity.INSERTION_ORDER);
     active.deleteSheet(ruleSettingsSheet);
-    getOrCreateSheet('Rule Settings - Campaign')
+    HELPERS.getOrCreateSheet('Rule Settings - Campaign')
       .getRange(1, 1, campaignValues.length, campaignValues[0].length)
       .setValues(campaignValues);
-    getOrCreateSheet('Rule Settings - Insertion Order')
+    HELPERS.getOrCreateSheet('Rule Settings - Insertion Order')
       .getRange(1, 1, ioValues.length, ioValues[0].length)
       .setValues(ioValues);
   },
-  '1.2': (frontend) => {
+  '1.2': () => {
     // encrypt rules
     const properties = PropertiesService.getScriptProperties().getProperties();
-    const newProperties = {...properties};
+    const newProperties = { ...properties };
     for (const [key, property] of Object.entries(properties)) {
       if (
         [
@@ -104,13 +97,16 @@ export const migrations: Record<
   },
   '1.3': () => {
     const active = SpreadsheetApp.getActive();
-    const sheet = getOrCreateSheet('General/Settings');
+    if (active.getRangeByName(REPORT_LABEL)) {
+      return;
+    }
+    const sheet = HELPERS.getOrCreateSheet('General/Settings');
     const range = sheet.getRange('A6:C7');
     HELPERS.insertRows(range);
     const reportLabel = sheet.getRange('B6:C6').merge();
     const driveId = sheet.getRange('B7:C7').merge();
-    active.setNamedRange('REPORT_LABEL', reportLabel);
-    active.setNamedRange('DRIVE_ID', driveId);
+    active.setNamedRange(REPORT_LABEL, reportLabel);
+    active.setNamedRange(DRIVE_ID, driveId);
 
     addSettingWithDescription(sheet, 'A6', [
       'Report Label',
@@ -121,34 +117,31 @@ export const migrations: Record<
       "The ID of the Drive folder destination\n(copy in folder URL after '/folders/' and before the '?')",
     ]);
   },
-  '2.0': () => {
-    const properties = new AppsScriptPropertyStore();
-    Object.entries(properties.getProperties()).forEach(([k, v]) => {
-      properties.setProperty(
-        k,
-        JSON.stringify({values: JSON.parse(v), updated: new Date()}),
-      );
-    });
+  '2.1': (frontend) => {
+    const sheet = HELPERS.getOrCreateSheet('Rule Settings - Campaign');
+    const ruleRange = new RuleRange(
+      sheet.getDataRange().getValues(),
+      frontend.client,
+    );
+    const values = ruleRange.getValues();
+    const headers = values[2];
+    const geoTargetIndex = headers.findIndex((c) => c === 'Geo Targets');
+    if (geoTargetIndex === -1) {
+      return;
+    }
+    headers[geoTargetIndex] = 'Allowed Geo Targets';
+    sheet.getRange(1, 1, values.length, values[0].length).setValues(values);
   },
 };
 
 /**
  * Front-end configuration for DV360 Apps Script.
  */
-export class DisplayVideoFrontEnd extends AppsScriptFrontEnd<
-  ClientInterface,
-  RuleGranularity,
-  ClientArgs,
-  DisplayVideoFrontEnd
-> {
-  constructor(
-    args: FrontEndArgs<
-      ClientInterface,
-      RuleGranularity,
-      ClientArgs,
-      DisplayVideoFrontEnd
-    >,
-  ) {
+export class DisplayVideoFrontend
+  extends AppsScriptFrontend<DisplayVideoClientTypes>
+  implements FrontendInterface<DisplayVideoClientTypes>
+{
+  constructor(args: FrontendArgs<DisplayVideoClientTypes>) {
     super('DV360', args);
   }
 
@@ -174,8 +167,8 @@ export class DisplayVideoFrontEnd extends AppsScriptFrontEnd<
 
   override displaySetupModal() {
     const template = HtmlService.createTemplateFromFile('html/setup');
-    template['id'] = this.getRangeByName(ENTITY_ID).getValue() || '';
-    template['idType'] = this.getRangeByName(ID_TYPE).getValue() || '';
+    template['id'] = HELPERS.getRangeByName(ENTITY_ID).getValue() || '';
+    template['idType'] = HELPERS.getRangeByName(ID_TYPE).getValue() || '';
     const htmlOutput = template.evaluate().setWidth(350).setHeight(400);
     SpreadsheetApp.getUi().showModalDialog(htmlOutput, 'Set up');
     return template['id'];

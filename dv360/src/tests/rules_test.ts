@@ -15,32 +15,29 @@
  * limitations under the License.
  */
 
-// g3-format-prettier
-
-import {AssignedTargetingOption} from 'dv360_api/dv360_resources';
+import { AssignedTargetingOption } from 'dv360_api/dv360_resources';
+import { ApiDate, PACING_TYPE, TARGETING_TYPE } from 'dv360_api/dv360_types';
+import { AppsScriptPropertyStore } from 'common/sheet_helpers';
+import { mockAppsScript } from 'common/test_helpers/mock_apps_script';
+import { RuleExecutorClass } from 'common/types';
+import { Client } from '../client';
 import {
-  ApiDate,
-  TARGETING_TYPE,
-} from 'dv360_api/dv360_types';
-import {AppsScriptPropertyStore} from 'common/sheet_helpers';
-import {mockAppsScript} from 'common/test_helpers/mock_apps_script';
-import {RuleExecutorClass} from 'common/types';
-import {Client} from '../client';
-import {
-  budgetPacingDaysAheadRule,
   budgetPacingPercentageRule,
+  budgetPacingRuleLineItem,
   dailyBudgetRule,
   geoTargetRule,
   impressionsByGeoTarget,
 } from '../rules';
-import {ClientArgs, ClientInterface, RuleGranularity} from '../types';
+import { DisplayVideoClientTypes } from '../types';
 
 import {
   CampaignTemplate,
   generateTestClient,
   GeoTargetTestDataParams,
+  LineItemTemplate,
   InsertionOrderTemplate,
   InsertionOrderTestDataParams,
+  LineItemTestDataParams,
 } from './client_helpers';
 
 describe('Geo targeting Rule', () => {
@@ -58,7 +55,9 @@ describe('Geo targeting Rule', () => {
       advertiserId: '123',
       geoTargets: ['United States (Country)'],
     });
-    expect(values['c1']).toEqual(jasmine.objectContaining({anomalous: false}));
+    expect(values['c1']).toEqual(
+      jasmine.objectContaining({ anomalous: false }),
+    );
   });
 
   it('triggers an error when a non-US geo is found', async () => {
@@ -67,7 +66,10 @@ describe('Geo targeting Rule', () => {
       geoTargets: ['United States (Country)', 'Portugal (Country)'],
     });
     expect(values['c1']).toEqual(
-      jasmine.objectContaining({value: '0', anomalous: true}),
+      jasmine.objectContaining({
+        value: '"Portugal (Country)" not an allowed target',
+        anomalous: true,
+      }),
     );
   });
 
@@ -76,25 +78,84 @@ describe('Geo targeting Rule', () => {
       advertiserId: '456',
       excludes: ['United States (Country)'],
       columns: [
-        ['', 'Geo Targets', 'Excluded Geo Targets'],
-        ['c1', '', 'United States'],
+        [
+          '',
+          'Excluded Geo Targets',
+          'Allowed Geo Targets',
+          'Required Geo Targets',
+        ],
+        ['c1', 'United States', '', ''],
       ],
     });
     expect(values['c1']).toEqual(
-      jasmine.objectContaining({value: '0', anomalous: true}),
+      jasmine.objectContaining({
+        value: '"United States (Country)" found and is an excluded target',
+        anomalous: true,
+      }),
     );
   });
 
-  it('triggers an error when no geo is found', async () => {
-    const values = await generateGeoTestData({advertiserId: '789'});
+  it('triggers an error when a required geo is not found', async () => {
+    const values = await generateGeoTestData({
+      advertiserId: '456',
+      excludes: ['United States (Country)'],
+      columns: [
+        [
+          '',
+          'Required Geo Targets',
+          'Allowed Geo Targets',
+          'Excluded Geo Targets',
+        ],
+        ['c1', 'United Kingdom', '', ''],
+      ],
+    });
     expect(values['c1']).toEqual(
-      jasmine.objectContaining({value: '0', anomalous: true}),
+      jasmine.objectContaining({
+        value: '"United Kingdom" was required but not targeted',
+        anomalous: true,
+      }),
+    );
+  });
+
+  it('triggers an error when an excluded geo is set but there is no targeting', async () => {
+    const values = await generateGeoTestData({
+      advertiserId: '456',
+      columns: [
+        [
+          '',
+          'Required Geo Targets',
+          'Allowed Geo Targets',
+          'Excluded Geo Targets',
+        ],
+        ['c1', '', '', 'United States'],
+      ],
+    });
+    expect(values['c1']).toEqual(
+      jasmine.objectContaining({ value: 'No targeting set', anomalous: true }),
+    );
+  });
+
+  it('triggers an error when an allowed geo is set but there is no targeting', async () => {
+    const values = await generateGeoTestData({
+      advertiserId: '456',
+      columns: [
+        [
+          '',
+          'Required Geo Targets',
+          'Allowed Geo Targets',
+          'Excluded Geo Targets',
+        ],
+        ['c1', '', 'United States', ''],
+      ],
+    });
+    expect(values['c1']).toEqual(
+      jasmine.objectContaining({ value: 'No targeting set', anomalous: true }),
     );
   });
 });
 
 async function generateReportWithDateValues(
-  rule: typeof budgetPacingDaysAheadRule | typeof dailyBudgetRule,
+  rule: typeof budgetPacingPercentageRule | typeof dailyBudgetRule,
   startDate: number,
   endDate: number,
   includeInsertionOrderBudgetSegments = true,
@@ -150,7 +211,7 @@ async function generateImpressionReport(
     ['', 'Allowed Countries (Comma Separated)', 'Max. Percent Outside Geos'],
     ['default', 'US', '0.01'],
   ];
-  const {results} = await generateTestClient({
+  const { results } = await generateTestClient({
     id: '123',
     allCampaigns,
     allInsertionOrders,
@@ -162,7 +223,7 @@ async function generateImpressionReport(
   return results['Impressions by Geo Target'].values;
 }
 
-describe('Percentage Budget Pacing Rule', () => {
+describe('Percentage Budget Pacing Rule (Insertion Order)', () => {
   beforeEach(() => {
     jasmine.clock().install();
     jasmine.clock().mockDate(new Date(1970, 0, 3));
@@ -201,7 +262,7 @@ describe('Percentage Budget Pacing Rule', () => {
       6,
     );
     expect(values).toEqual({
-      'io1': jasmine.objectContaining({
+      io1: jasmine.objectContaining({
         anomalous: true,
       }),
     });
@@ -215,9 +276,9 @@ describe('Percentage Budget Pacing Rule', () => {
       anomalous: boolean,
     ]
   > = [
-    ['is below', 10, '-0.8', true],
+    ['is below', 10, '-80% (< 0%)', true],
     ['is equal to', 50, '0', false],
-    ['is above', 100, '1', true],
+    ['is above', 100, '100% (> 50%)', true],
   ];
 
   async function testData(fakeSpendAmount: number) {
@@ -237,8 +298,13 @@ describe('Percentage Budget Pacing Rule', () => {
         fakeSpendAmount,
       },
       [
-        ['', 'Min. Percent Ahead/Behind', 'Max. Percent Ahead/Behind'],
-        ['io1', '0', '0.5'],
+        [
+          '',
+          'Min. Percent Ahead/Behind',
+          'Max. Percent Ahead/Behind',
+          'Pacing Type',
+        ],
+        ['io1', '0', '0.5', 'PACING_TYPE_AHEAD'],
       ],
     );
   }
@@ -258,7 +324,7 @@ describe('Percentage Budget Pacing Rule', () => {
       it(`doesn't fail when pacing ${operator} threshold`, async () => {
         const values = await testData(fakeSpendAmount);
         expect(values['io1']).toEqual(
-          jasmine.objectContaining({anomalous: false}),
+          jasmine.objectContaining({ anomalous: false, value: 'Pace OK' }),
         );
       });
     }
@@ -290,9 +356,9 @@ describe('Percentage Budget Pacing Rule', () => {
       jasmine.objectContaining({
         'Insertion Order ID': 'io1',
         'Display Name': 'Insertion Order 1',
-        'Budget': '$100',
-        'Spend': '$50',
-        'Pacing': '100%',
+        Budget: '$100',
+        Spend: '$50',
+        Pacing: '100%',
         'Days Elapsed': '2',
         'Flight Duration': '4',
       }),
@@ -300,15 +366,20 @@ describe('Percentage Budget Pacing Rule', () => {
   });
 });
 
-describe('Daily Budget Pacing Rule', () => {
+describe('Percentage Budget Pacing Rule (Line Item)', () => {
   beforeEach(() => {
     jasmine.clock().install();
-    jasmine.clock().mockDate(new Date(1970, 0, 4));
+    jasmine.clock().mockDate(new Date(1970, 0, 3));
     mockAppsScript();
   });
 
   afterEach(() => {
     jasmine.clock().uninstall();
+    (
+      AppsScriptPropertyStore as unknown as {
+        cache: Record<string, string>;
+      }
+    ).cache = {};
   });
 
   const parameters: Array<[startDate: number, endDate: number]> = [
@@ -318,7 +389,7 @@ describe('Daily Budget Pacing Rule', () => {
   for (const [startDate, endDate] of parameters) {
     it(`skips rule when out of date range (${startDate} < 4 < ${endDate})`, async () => {
       const values = await generateReportWithDateValues(
-        budgetPacingDaysAheadRule,
+        budgetPacingPercentageRule,
         startDate,
         endDate,
         false,
@@ -329,12 +400,12 @@ describe('Daily Budget Pacing Rule', () => {
 
   it('checks rules when in date range', async () => {
     const values = await generateReportWithDateValues(
-      budgetPacingDaysAheadRule,
+      budgetPacingPercentageRule,
       1,
       6,
     );
     expect(values).toEqual({
-      'io1': jasmine.objectContaining({
+      io1: jasmine.objectContaining({
         anomalous: true,
       }),
     });
@@ -348,38 +419,35 @@ describe('Daily Budget Pacing Rule', () => {
       anomalous: boolean,
     ]
   > = [
-    ['is below', 10, '-2', true],
-    ['is equal to', 30, '0', false],
-    ['is above', 50, '2', true],
+    ['is below', 10, '-90% (< 0%)', true],
+    ['is equal to', 100, '0', false],
+    ['is above', 200, '100% (> 50%)', true],
   ];
 
   async function testData(fakeSpendAmount: number) {
-    return await generateInsertionOrderTestData(
-      budgetPacingDaysAheadRule,
+    return await generateLineItemTestData(
       {
         advertiserId: '123',
-        insertionOrderBudgetSegments: [
-          {
-            budgetAmountMicros: (100_000_000).toString(),
-            dateRange: {
-              startDate: new ApiDate(1970, 1, 1),
-              endDate: new ApiDate(1970, 1, 11),
-            },
-          },
-        ],
+        pacingType: PACING_TYPE.AHEAD,
         fakeSpendAmount,
       },
       [
-        ['', 'Min. Days Ahead/Behind (+/-)', 'Max. Days Ahead/Behind (+/-)'],
-        ['io1', '-1', '1'],
+        [
+          '',
+          'Min. Percent Ahead/Behind',
+          'Max. Percent Ahead/Behind',
+          'Pacing Type',
+        ],
+        ['default', '0', '0.5', 'PACING_TYPE_AHEAD'],
       ],
     );
   }
+
   for (const [operator, fakeSpendAmount, value, anomalous] of tests) {
     if (anomalous) {
       it(`fails when pacing ${operator} threshold`, async () => {
         const values = await testData(fakeSpendAmount);
-        expect(values['io1']).toEqual(
+        expect(values['li1']).toEqual(
           jasmine.objectContaining({
             value,
             anomalous,
@@ -389,15 +457,15 @@ describe('Daily Budget Pacing Rule', () => {
     } else {
       it(`doesn't fail when pacing ${operator} threshold`, async () => {
         const values = await testData(fakeSpendAmount);
-        expect(values['io1']).toEqual(
-          jasmine.objectContaining({anomalous: false}),
+        expect(values['li1']).toEqual(
+          jasmine.objectContaining({ anomalous: false, value: 'Pace OK' }),
         );
       });
     }
   }
-  it('Uses the provided parameters', async () => {
-    const values = await generateInsertionOrderTestData(
-      budgetPacingDaysAheadRule,
+
+  it('has the correct fields and values', async () => {
+    const values = await generateLineItemTestData(
       {
         advertiserId: '123',
         insertionOrderBudgetSegments: [
@@ -405,21 +473,32 @@ describe('Daily Budget Pacing Rule', () => {
             budgetAmountMicros: (100_000_000).toString(),
             dateRange: {
               startDate: new ApiDate(1970, 1, 1),
-              endDate: new ApiDate(1970, 1, 11),
+              endDate: new ApiDate(1970, 1, 5),
             },
           },
         ],
-        fakeSpendAmount: 30,
+        fakeSpendAmount: 50,
       },
       [
-        ['', 'Min. Days Ahead/Behind (+/-)', 'Max. Days Ahead/Behind (+/-)'],
-        ['default', '-10', '-9'],
+        [
+          '',
+          'Min. Percent Ahead/Behind',
+          'Max. Percent Ahead/Behind',
+          'Pacing Type',
+        ],
+        ['io1', '-10', '-10', 'PACING_TYPE_AHEAD'],
       ],
     );
-    expect(values['io1']).toEqual(
+
+    expect(values['li1'].fields).toEqual(
       jasmine.objectContaining({
-        value: '0',
-        anomalous: true,
+        'Line Item ID': 'li1',
+        'Display Name': 'Line Item 1',
+        Budget: '$100',
+        Spend: '$50',
+        Pacing: '50%',
+        'Days Elapsed': '2',
+        'Flight Duration': '2',
       }),
     );
   });
@@ -493,7 +572,7 @@ describe('Daily Budgets Rule', () => {
       it(`doesn't fail when daily budgets ${operator} range`, async () => {
         const values = await testData(fakeTotalBudget);
         expect(values['io1']).toEqual(
-          jasmine.objectContaining({anomalous: false}),
+          jasmine.objectContaining({ anomalous: false }),
         );
       });
     }
@@ -510,7 +589,7 @@ describe('Daily Budgets Rule', () => {
           endDate,
         );
         expect(values).toEqual({
-          'io1': jasmine.objectContaining({
+          io1: jasmine.objectContaining({
             anomalous: true,
           }),
         });
@@ -539,7 +618,7 @@ describe('impressionsByGeoTarget', () => {
   it('checks rules when in date range', async () => {
     const values = await generateImpressionReport(impressionsByGeoTarget, 1);
     expect(values).toEqual({
-      'io1': jasmine.objectContaining({
+      io1: jasmine.objectContaining({
         anomalous: true,
       }),
     });
@@ -555,8 +634,8 @@ export async function generateGeoTestData({
   geoTargets = [],
   excludes = [],
   columns = [
-    ['', 'Geo Targets', 'Excluded Geo Targets'],
-    ['default', 'United Kingdom, United States', ''],
+    ['', 'Required Geo Targets', 'Allowed Geo Targets', 'Excluded Geo Targets'],
+    ['default', '', 'United Kingdom, United States', ''],
   ],
   campaignId = 'c1',
 }: GeoTargetTestDataParams) {
@@ -584,7 +663,7 @@ export async function generateGeoTestData({
               TARGETING_TYPE.GEO_REGION,
               '',
               '',
-              {'displayName': geoTarget},
+              { displayName: geoTarget },
             ),
         ),
         ...excludes.map(
@@ -594,14 +673,14 @@ export async function generateGeoTestData({
               TARGETING_TYPE.GEO_REGION,
               '',
               '',
-              {'displayName': geoTarget, 'negative': true},
+              { displayName: geoTarget, negative: true },
             ),
         ),
       ],
     },
   };
 
-  const {results} = await generateTestClient({
+  const { results } = await generateTestClient({
     id: advertiserId,
     allCampaigns,
     allInsertionOrders,
@@ -613,10 +692,47 @@ export async function generateGeoTestData({
   return results['Geo Targeting'].values;
 }
 
+async function generateLineItemTestData<
+  Params extends Record<keyof Params, string>,
+>(
+  { advertiserId, fakeSpendAmount, pacingType }: LineItemTestDataParams,
+  params: string[][],
+) {
+  const LINE_ITEM_ID = 'li1';
+
+  const allLineItems = {
+    [advertiserId]: [
+      (template: LineItemTemplate) => {
+        template.id = LINE_ITEM_ID;
+        template.advertiserId = advertiserId;
+        template.pacing.pacingType = pacingType;
+        return template;
+      },
+    ],
+  };
+
+  const client = generateTestClient({
+    id: advertiserId,
+    allLineItems,
+    fakeSpendAmount,
+  });
+  const addRule = client.addRule.bind(client) as (
+    // simplification for testing
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    rule: any,
+    paramMap: string[][],
+  ) => Client;
+  const { results } = await addRule(
+    budgetPacingRuleLineItem,
+    params,
+  ).validate();
+  return Object.values(results)[0].values;
+}
+
 async function generateInsertionOrderTestData<
   Params extends Record<keyof Params, string>,
 >(
-  rule: RuleExecutorClass<ClientInterface, RuleGranularity, ClientArgs, Params>,
+  rule: RuleExecutorClass<DisplayVideoClientTypes, Params>,
   {
     advertiserId,
     insertionOrderBudgetSegments = [],
@@ -643,10 +759,11 @@ async function generateInsertionOrderTestData<
     fakeSpendAmount,
   });
   const addRule = client.addRule.bind(client) as (
-    // tslint:disable-next-line:no-any simplification for testing
+    // simplified for testing
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     rule: any,
     paramMap: string[][],
   ) => Client;
-  const {results} = await addRule(rule, params).validate();
+  const { results } = await addRule(rule, params).validate();
   return Object.values(results)[0].values;
 }

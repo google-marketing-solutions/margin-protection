@@ -1,0 +1,44 @@
+name: SA360 Build
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+
+jobs:
+  build-sa360:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Set bash to strict mode
+        run: set -euox pipefail
+
+      - name: Set Node.js 22.x
+        uses: actions/setup-node@v3
+        with:
+          node-version: 22.x
+
+      - name: Install dependencies
+        run: npx yarn --cwd ./sa360
+
+      - name: Build sa360 prod
+        run: npx yarn --cwd ./sa360 build:prod
+
+      - name: Build sa360 dev
+        run: npx yarn --cwd ./sa360 build:dev
+
+      - name: Ensure clasp is installed (for yarn push)
+        run: npx yarn --cwd ./sa360 clasp --help
+
+      - name: Print errors
+        run: find . -name "*.warn" -type f -exec cat {} \;
+
+      - name: output
+        run: echo $LAST_CMD
+
+      - name: Fail on errors
+        if: ${{ steps.build-sa360.outputs.error || steps.build-dev-sa360.outputs.error }}
+        run: exit 1

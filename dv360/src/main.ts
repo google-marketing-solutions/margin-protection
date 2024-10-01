@@ -19,24 +19,18 @@
  * @fileoverview Apps Script handlers.
  */
 
-// g3-format-prettier
+import { PropertyStore } from 'common/types';
 
+import { Client, RuleRange } from './client';
+import { DisplayVideoFrontend, migrations } from './frontend';
 import {
-  lazyLoadApp,
-  toExport,
-} from 'common/sheet_helpers';
-import {PropertyStore} from 'common/types';
-
-import {Client, RuleRange} from './client';
-import {DisplayVideoFrontEnd, migrations} from './frontend';
-import {
-  budgetPacingDaysAheadRule,
+  budgetPacingRuleLineItem,
   budgetPacingPercentageRule,
-  dailyBudgetRule,
   geoTargetRule,
   impressionsByGeoTarget,
+  dailyBudgetRule,
 } from './rules';
-import {ClientArgs, ClientInterface, RuleGranularity} from './types';
+import { AppsScriptPropertyStore } from 'common/sheet_helpers';
 
 /**
  * The sheet version the app currently has.
@@ -44,18 +38,21 @@ import {ClientArgs, ClientInterface, RuleGranularity} from './types';
  * This is used to manage migrations from one version of Launch Monitor to
  * another.
  */
-export const CURRENT_SHEET_VERSION = '1.5';
+export const CURRENT_SHEET_VERSION = '2.1';
 
 /**
  * Retrieves the front-end as a function.
  *
- * Broken out for testability.
+ * @param properties A {@link PropertyStore} is used to update client configuration
+ *   for client libraries when using a server/client relationship.
  */
-export function getFrontEnd(properties: PropertyStore) {
-  return new DisplayVideoFrontEnd({
+export function getFrontend(
+  properties: PropertyStore = new AppsScriptPropertyStore(),
+) {
+  return new DisplayVideoFrontend({
     ruleRangeClass: RuleRange,
     rules: [
-      budgetPacingDaysAheadRule,
+      budgetPacingRuleLineItem,
       budgetPacingPercentageRule,
       dailyBudgetRule,
       geoTargetRule,
@@ -70,18 +67,38 @@ export function getFrontEnd(properties: PropertyStore) {
   });
 }
 
-/**
- * The application functions.
- *
- * Exported for testing.
- */
-lazyLoadApp<ClientInterface, RuleGranularity, ClientArgs, DisplayVideoFrontEnd>(
-  getFrontEnd,
-);
+async function onOpen(properties = new AppsScriptPropertyStore()) {
+  await getFrontend(properties).onOpen();
+}
 
-global.onOpen = toExport.onOpen;
-global.initializeSheets = toExport.initializeSheets;
-global.launchMonitor = toExport.launchMonitor;
-global.preLaunchQa = toExport.preLaunchQa;
-global.displayGlossary = toExport.displayGlossary;
-global.displaySetupGuide = toExport.displaySetupGuide;
+async function initializeSheets(properties = new AppsScriptPropertyStore()) {
+  await getFrontend(properties).initializeSheets();
+}
+
+async function initializeRules(properties = new AppsScriptPropertyStore()) {
+  await getFrontend(properties).initializeRules();
+}
+
+async function preLaunchQa(properties = new AppsScriptPropertyStore()) {
+  await getFrontend(properties).preLaunchQa();
+}
+
+async function launchMonitor(properties = new AppsScriptPropertyStore()) {
+  await getFrontend(properties).launchMonitor();
+}
+
+async function displaySetupModal(properties = new AppsScriptPropertyStore()) {
+  await getFrontend(properties).displaySetupModal();
+}
+
+function displayGlossary(properties = new AppsScriptPropertyStore()) {
+  getFrontend(properties).displayGlossary();
+}
+
+global.onOpen = onOpen;
+global.initializeSheets = initializeSheets;
+global.initializeRules = initializeRules;
+global.preLaunchQa = preLaunchQa;
+global.launchMonitor = launchMonitor;
+global.displaySetupModal = displaySetupModal;
+global.displayGlossary = displayGlossary;

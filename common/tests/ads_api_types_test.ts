@@ -15,11 +15,12 @@
  * limitations under the License.
  */
 
-// g3-format-prettier
-
-import 'jasmine';
-
-import {buildQuery, CamelCase, DotsToObject, ReportInterface,} from 'common/ads_api_types';
+import {
+  buildQuery,
+  CamelCase,
+  DotsToObject,
+  ReportInterface,
+} from '../ads_api_types';
 
 type AssertSubtype<TestType, End> = End extends TestType ? true : false;
 
@@ -46,8 +47,8 @@ describe('Ads API Types', () => {
       return {};
     }
 
-    transform(reportRow: {b: string}) {
-      return ['a', {a: 'a'}] as [string, {a: string}];
+    transform() {
+      return ['a', { a: 'a' }] as [string, { a: string }];
     }
   }
   class ChildReport2 implements ReportInterface<typeof CHILD_QUERY2, 'b'> {
@@ -58,8 +59,8 @@ describe('Ads API Types', () => {
       return {};
     }
 
-    transform(reportRow: {c: string}) {
-      return ['a', {b: 'b'}] as [string, {b: string}];
+    transform() {
+      return ['a', { b: 'b' }] as [string, { b: string }];
     }
   }
   it('adjusts underscores to camel cases', () => {
@@ -68,7 +69,6 @@ describe('Ads API Types', () => {
   });
 
   it('does not camel case where not necessary', () => {
-    // tslint:disable-next-line:ban-ts-suppressions
     // @ts-expect-error This type should not Assert<> to true.
     const test1: AssertEqual<CamelCase<'myunderscore'>, 'myUnderscore'> = true;
     expect(test1).toBeDefined();
@@ -78,24 +78,23 @@ describe('Ads API Types', () => {
     const test1: AssertSubtype<
       DotsToObject<'my.dot_notation.works_well'>,
       {
-        my: {dotNotation: {worksWell: ''}};
+        my: { dotNotation: { worksWell: '' } };
       }
     > = true;
     expect(test1).toBeDefined();
   });
 
   it('handles blanks', () => {
-    // tslint:disable:no-any
-    const test1: AssertEqual<DotsToObject<any>, {}> = true;
-    // tslint:disable-next-line:ban-ts-suppressions
+    /* eslint-disable @typescript-eslint/no-explicit-any */
+    const test1: AssertEqual<DotsToObject<any>, object> = true;
     // @ts-expect-error This type should not Assert<> to true.
-    const test2: AssertEqual<DotsToObject<any>, {'': ''}> = true;
+    const test2: AssertEqual<DotsToObject<any>, { '': '' }> = true;
     [test1, test2].forEach((test) => expect(test).toBeDefined());
-    // tslint:enable:no-any
+    /* eslint-enable @typescript-eslint/no-explicit-any */
   });
 
   it('infers types from Report', () => {
-    const request = buildQuery({
+    const _request = buildQuery({
       queryParams: ['a_b_c.def', 'b'],
       queryFrom: 'test',
       joins: {
@@ -105,36 +104,34 @@ describe('Ads API Types', () => {
     });
 
     const test1: AssertSubtype<
-      typeof request.joins,
+      typeof _request.joins,
       {
-      'aBC.def': typeof ChildReport1;
-      b: typeof ChildReport2;
-    }
+        'aBC.def': typeof ChildReport1;
+        b: typeof ChildReport2;
+      }
     > = true;
     const test2: AssertSubtype<
-      typeof request.joins,
+      typeof _request.joins,
       {
-      c: typeof ChildReport2;
-      b: typeof ChildReport2;
-    }
+        c: typeof ChildReport2;
+        b: typeof ChildReport2;
+      }
     > = false;
-    // tslint:disable-next-line:ban-ts-suppressions
     // @ts-expect-error This type should not Assert<> to true.
     const test3: AssertSubtype<
-      typeof request.joins,
+      typeof _request.joins,
       {
-      bad1: typeof ChildReport2;
-      bad2: typeof ChildReport2;
-    }
+        bad1: typeof ChildReport2;
+        bad2: typeof ChildReport2;
+      }
     > = true;
-    // tslint:disable-next-line:ban-ts-suppressions
     // @ts-expect-error This type should not Assert<> to false.
     const test4: AssertSubtype<
-      typeof request.joins,
+      typeof _request.joins,
       {
-      'aBC.def': typeof ChildReport1;
-      b: typeof ChildReport2;
-    }
+        'aBC.def': typeof ChildReport1;
+        b: typeof ChildReport2;
+      }
     > = false;
 
     [test1, test2, test3, test4].forEach((test) => expect(test).toBeDefined());

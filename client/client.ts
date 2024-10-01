@@ -21,15 +21,13 @@
  *   ops teams to update code in a central location.
  */
 
-// g3-format-prettier
-
 declare global {
   const LaunchMonitor: Exported;
 }
 
-import {PropertyStore} from 'common/types';
+import { PropertyStore } from 'common/types';
 
-import {AppsScriptPropertyStore} from 'common/sheet_helpers';
+import { AppsScriptPropertyStore } from 'common/sheet_helpers';
 
 interface Exported {
   onOpen(properties: PropertyStore): void;
@@ -39,7 +37,6 @@ interface Exported {
   displayGlossary(properties: PropertyStore): void;
   displaySetupGuide(properties: PropertyStore): void;
 }
-
 
 function onOpen() {
   LaunchMonitor.onOpen(new AppsScriptPropertyStore());
@@ -64,7 +61,6 @@ function displayGlossary() {
 function displaySetupGuide() {
   LaunchMonitor.displaySetupGuide(new AppsScriptPropertyStore());
 }
-
 
 global.onOpen = onOpen;
 global.initializeSheets = initializeSheets;

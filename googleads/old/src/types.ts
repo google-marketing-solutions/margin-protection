@@ -19,16 +19,19 @@
  * @fileoverview Google Ads-specific interfaces.
  */
 
-// g3-format-prettier
+import { AdsClientArgs } from 'common/ads_api_types';
+import { BaseClientInterface, ClientTypes } from 'common/types';
 
-import {AdsClientArgs} from 'common/ads_api_types';
-import {BaseClientInterface} from 'common/types';
+export interface AdsClientTypes extends ClientTypes<AdsClientTypes> {
+  client: ClientInterface;
+  ruleGranularity: RuleGranularity;
+  clientArgs: ClientArgs;
+}
 
 /**
  * Extends the base client interface with Google Ads-specific features.
  */
-export interface ClientInterface
-  extends BaseClientInterface<ClientInterface, RuleGranularity, ClientArgs> {}
+export type ClientInterface = BaseClientInterface<AdsClientTypes>;
 
 /**
  * Necessary Ads API request metadata

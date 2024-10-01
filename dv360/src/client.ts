@@ -19,69 +19,55 @@
  * @fileoverview Client class for DV360.
  */
 
-// g3-format-prettier
-
 import {
   Advertisers,
   AssignedTargetingOptions,
   Campaigns,
   InsertionOrders,
+  LineItems,
 } from 'dv360_api/dv360';
 import {
   Advertiser,
   Campaign,
   InsertionOrder,
+  LineItem,
 } from 'dv360_api/dv360_resources';
-import {newRuleBuilder} from 'common/client_helpers';
+import { newRuleBuilder } from 'common/client_helpers';
 
-import {AbstractRuleRange} from 'common/sheet_helpers';
+import { AbstractRuleRange } from 'common/sheet_helpers';
 import {
+  DefinedParameters,
   ExecutorResult,
   ParamDefinition,
   PropertyStore,
   RecordInfo,
-  RuleDefinition,
   RuleExecutor,
   RuleExecutorClass,
   Settings,
 } from 'common/types';
 
-import {RawApiDate} from 'dv360_api/dv360_types';
-import {BudgetReport, BudgetReportInterface, ImpressionReport} from './api';
+import { RawApiDate } from 'dv360_api/dv360_types';
+import { BudgetReport, ImpressionReport, LineItemBudgetReport } from './api';
 import {
+  Accessors,
+  BudgetReportInterface,
   ClientArgs,
   ClientInterface,
+  DisplayVideoClientTypes,
   IDType,
-  QueryReportParams,
+  LineItemBudgetReportInterface,
   RuleGranularity,
+  RuleParams,
 } from './types';
 
 /**
  * A new rule in SA360.
  */
-export const newRule = newRuleBuilder<
-  ClientInterface,
-  RuleGranularity,
-  ClientArgs
->() as <P extends Record<keyof P, ParamDefinition>>(
+export const newRule = newRuleBuilder<DisplayVideoClientTypes>() as <
+  P extends DefinedParameters<P>,
+>(
   p: RuleParams<P>,
-) => RuleExecutorClass<ClientInterface, RuleGranularity, ClientArgs, P>;
-
-/**
- * Parameters for a rule, with `this` methods from {@link RuleUtilities}.
- */
-type RuleParams<Params extends Record<keyof Params, ParamDefinition>> =
-  RuleDefinition<Params, RuleGranularity> &
-    ThisType<
-      RuleExecutor<ClientInterface, RuleGranularity, ClientArgs, Params>
-    >;
-
-/**
- * A report class that can return a Report object.
- */
-export interface ReportConstructor<T> {
-  new (params: QueryReportParams): T;
-}
+) => RuleExecutorClass<DisplayVideoClientTypes>;
 
 /**
  * Contains a `RuleContainer` along with information to instantiate it.
@@ -104,7 +90,7 @@ export interface RuleStoreEntry<
   /**
    * Contains a rule's metadata.
    */
-  rule: RuleExecutorClass<ClientInterface, RuleGranularity, ClientArgs, Params>;
+  rule: RuleExecutorClass<DisplayVideoClientTypes, Params>;
 
   /**
    * Content in the form of {advertiserId: {paramKey: paramValue}}.
@@ -122,26 +108,18 @@ export interface RuleStoreEntry<
  */
 export class Client implements ClientInterface {
   private storedInsertionOrders: InsertionOrder[] = [];
+  private storedLineItems: LineItem[] = [];
   private storedCampaigns: RecordInfo[] = [];
   private savedBudgetReport?: BudgetReportInterface;
+  private savedLineItemBudgetReport?: LineItemBudgetReportInterface;
 
   readonly args: Required<ClientArgs>;
   readonly ruleStore: {
-    [ruleName: string]: RuleExecutor<
-      ClientInterface,
-      RuleGranularity,
-      ClientArgs,
-      Record<string, ParamDefinition>
-    >;
+    [ruleName: string]: RuleExecutor<DisplayVideoClientTypes>;
   };
 
   addRule<Params extends Record<keyof Params, ParamDefinition>>(
-    rule: RuleExecutorClass<
-      ClientInterface,
-      RuleGranularity,
-      ClientArgs,
-      Params
-    >,
+    rule: RuleExecutorClass<DisplayVideoClientTypes>,
     settingsArray: ReadonlyArray<string[]>,
   ): ClientInterface {
     this.ruleStore[rule.definition.name] = new rule(this, settingsArray);
@@ -149,14 +127,19 @@ export class Client implements ClientInterface {
   }
 
   constructor(
-    args: Omit<ClientArgs, 'idType' | 'id'> & {advertiserId: string},
+    args: Omit<ClientArgs, 'idType' | 'id'> & { advertiserId: string },
     properties: PropertyStore,
   );
   constructor(
-    args: Omit<ClientArgs, 'idType' | 'id'> & {partnerId: string},
+    args: Omit<ClientArgs, 'idType' | 'id'> & { partnerId: string },
     properties: PropertyStore,
+    dao?: DataAccessObject,
   );
-  constructor(args: ClientArgs, properties: PropertyStore);
+  constructor(
+    args: ClientArgs,
+    properties: PropertyStore,
+    dao?: DataAccessObject,
+  );
   constructor(
     args: Omit<ClientArgs, 'idType' | 'id'> &
       Partial<Pick<ClientArgs, 'idType' | 'id'>> & {
@@ -164,21 +147,15 @@ export class Client implements ClientInterface {
         partnerId?: string;
       },
     readonly properties: PropertyStore,
+    readonly dao = new DataAccessObject(),
   ) {
     this.args = {
-      advertisers: args.advertisers || Advertisers,
-      assignedTargetingOptions:
-        args.assignedTargetingOptions || AssignedTargetingOptions,
       idType:
         args.idType ?? (args.advertiserId ? IDType.ADVERTISER : IDType.PARTNER),
       id:
         args.id ??
-        (args.advertiserId ? args.advertiserId : args.partnerId ?? ''),
+        (args.advertiserId ? args.advertiserId : (args.partnerId ?? '')),
       label: args.label ?? `${args.idType} ${args.id}`,
-      campaigns: args.campaigns || Campaigns,
-      insertionOrders: args.insertionOrders || InsertionOrders,
-      budgetReport: args.budgetReport || BudgetReport,
-      impressionReport: args.impressionReport || ImpressionReport,
     };
 
     this.ruleStore = {};
@@ -196,36 +173,51 @@ export class Client implements ClientInterface {
    */
   async validate() {
     type Executor = RuleExecutor<
-      ClientInterface,
-      RuleGranularity,
-      ClientArgs,
+      DisplayVideoClientTypes,
       Record<string, ParamDefinition>
     >;
-    const thresholds: Array<[Executor, Function]> = Object.values(
-      this.ruleStore,
-    ).reduce(
-      (prev, rule) => {
-        return [...prev, [rule, rule.run.bind(rule)]];
-      },
-      [] as Array<[Executor, Function]>,
-    );
+    const thresholds: Array<[Executor, () => Promise<ExecutorResult>]> =
+      Object.values(this.ruleStore)
+        .filter((rule) => rule.enabled)
+        .reduce(
+          (prev, rule) => {
+            return [...prev, [rule, rule.run.bind(rule)]];
+          },
+          [] as Array<[Executor, () => Promise<ExecutorResult>]>,
+        );
     const rules: Record<string, Executor> = {};
     const results: Record<string, ExecutorResult> = {};
     for (const [rule, thresholdCallable] of thresholds) {
+      if (!rule.enabled) {
+        continue;
+      }
       results[rule.name] = await thresholdCallable();
       rules[rule.name] = rule;
     }
 
-    return {rules, results};
+    return { rules, results };
   }
 
+  getAllLineItems(): LineItem[] {
+    if (!this.storedLineItems.length) {
+      this.storedLineItems =
+        this.args.idType === IDType.ADVERTISER
+          ? this.getAllLineItemsForAdvertiser(this.args.id)
+          : this.getAllAdvertisersForPartner().reduce(
+              (arr, { advertiserId }) =>
+                arr.concat(this.getAllLineItemsForAdvertiser(advertiserId)),
+              [] as LineItem[],
+            );
+    }
+    return this.storedLineItems;
+  }
   getAllInsertionOrders(): InsertionOrder[] {
     if (!this.storedInsertionOrders.length) {
       this.storedInsertionOrders =
         this.args.idType === IDType.ADVERTISER
           ? this.getAllInsertionOrdersForAdvertiser(this.args.id)
           : this.getAllAdvertisersForPartner().reduce(
-              (arr, advertiserId) =>
+              (arr, { advertiserId }) =>
                 arr.concat(
                   this.getAllInsertionOrdersForAdvertiser(advertiserId),
                 ),
@@ -235,7 +227,7 @@ export class Client implements ClientInterface {
     return this.storedInsertionOrders;
   }
 
-  async getAllCampaigns() {
+  async getAllCampaigns(): Promise<RecordInfo[]> {
     if (!this.storedCampaigns.length) {
       const campaignsWithSegments = this.getAllInsertionOrders().reduce(
         (prev, io) => {
@@ -251,10 +243,13 @@ export class Client implements ClientInterface {
               campaignsWithSegments.has(campaign.id),
             )
           : this.getAllAdvertisersForPartner().reduce(
-              (arr, advertiserId) =>
+              (arr, { advertiserId, advertiserName }) =>
                 arr.concat(
-                  this.getAllCampaignsForAdvertiser(advertiserId).filter(
-                    (campaign) => campaignsWithSegments.has(campaign.id),
+                  this.getAllCampaignsForAdvertiser(
+                    advertiserId,
+                    advertiserName,
+                  ).filter((campaign) =>
+                    campaignsWithSegments.has(campaign.id),
                   ),
                 ),
               [] as RecordInfo[],
@@ -265,24 +260,44 @@ export class Client implements ClientInterface {
     return this.storedCampaigns;
   }
 
-  getAllAdvertisersForPartner(): string[] {
+  getAllAdvertisersForPartner(): Array<{
+    advertiserId: string;
+    advertiserName: string;
+  }> {
     const cache = CacheService.getScriptCache();
-    const result: string[] = [];
-    const advertisers = cache.get('advertisers');
+    const result: Array<{ advertiserId: string; advertiserName: string }> = [];
+    const advertisers = cache.get('advertisers:2');
     if (advertisers) {
-      return JSON.parse(advertisers) as string[];
+      return JSON.parse(advertisers) as Array<{
+        advertiserId: string;
+        advertiserName: string;
+      }>;
     }
-    const advertiserApi = new this.args.advertisers(this.args.id);
+    const advertiserApi = new this.dao.accessors.advertisers(this.args.id);
     advertiserApi.list((advertisers: Advertiser[]) => {
       for (const advertiser of advertisers) {
-        const id = advertiser.getId();
-        if (!id) {
+        const advertiserId = advertiser.getId();
+        const advertiserName = advertiser.getDisplayName();
+        if (!advertiserId) {
           throw new Error('Advertiser ID is missing.');
         }
-        result.push(id);
+        if (!advertiserName) {
+          throw new Error('Advertiser name is missing.');
+        }
+        result.push({ advertiserId, advertiserName });
       }
     });
-    cache.put('advertisers', JSON.stringify(result), 120);
+    cache.put('advertisers:2', JSON.stringify(result), 120);
+
+    return result;
+  }
+
+  getAllLineItemsForAdvertiser(advertiserId: string): LineItem[] {
+    let result: LineItem[] = [];
+    const lineItemApi = new this.dao.accessors.lineItems(advertiserId);
+    lineItemApi.list((lineItems: LineItem[]) => {
+      result = result.concat(lineItems);
+    });
 
     return result;
   }
@@ -290,7 +305,9 @@ export class Client implements ClientInterface {
   getAllInsertionOrdersForAdvertiser(advertiserId: string): InsertionOrder[] {
     let result: InsertionOrder[] = [];
     const todayDate = new Date();
-    const insertionOrderApi = new this.args.insertionOrders(advertiserId);
+    const insertionOrderApi = new this.dao.accessors.insertionOrders(
+      advertiserId,
+    );
     insertionOrderApi.list((ios: InsertionOrder[]) => {
       result = result.concat(
         ios.filter((io) => {
@@ -307,9 +324,12 @@ export class Client implements ClientInterface {
     return result;
   }
 
-  getAllCampaignsForAdvertiser(advertiserId: string): RecordInfo[] {
+  getAllCampaignsForAdvertiser(
+    advertiserId: string,
+    advertiserName?: string,
+  ): RecordInfo[] {
     const result: RecordInfo[] = [];
-    const campaignApi = new this.args.campaigns(advertiserId);
+    const campaignApi = new this.dao.accessors.campaigns(advertiserId);
     campaignApi.list((campaigns: Campaign[]) => {
       for (const campaign of campaigns) {
         const id = campaign.getId();
@@ -318,6 +338,7 @@ export class Client implements ClientInterface {
         }
         result.push({
           advertiserId,
+          ...(advertiserName ? { advertiserName } : {}),
           id,
           displayName: campaign.getDisplayName()!,
         });
@@ -335,7 +356,7 @@ export class Client implements ClientInterface {
     endDate: Date;
   }): BudgetReportInterface {
     if (!this.savedBudgetReport) {
-      this.savedBudgetReport = new this.args.budgetReport({
+      this.savedBudgetReport = new this.dao.accessors.budgetReport({
         idType: this.args.idType,
         id: this.args.id,
         startDate,
@@ -343,6 +364,25 @@ export class Client implements ClientInterface {
       });
     }
     return this.savedBudgetReport;
+  }
+
+  getLineItemBudgetReport({
+    startDate,
+    endDate,
+  }: {
+    startDate: Date;
+    endDate: Date;
+  }): LineItemBudgetReportInterface {
+    if (!this.savedLineItemBudgetReport) {
+      this.savedLineItemBudgetReport =
+        new this.dao.accessors.lineItemBudgetReport({
+          idType: this.args.idType,
+          id: this.args.id,
+          startDate,
+          endDate,
+        });
+    }
+    return this.savedLineItemBudgetReport;
   }
 
   getUniqueKey(prefix: string) {
@@ -362,20 +402,85 @@ export function getDate(rawApiDate: RawApiDate): Date {
 /**
  * DV360 rule args splits.
  */
-export class RuleRange extends AbstractRuleRange<
-  ClientInterface,
-  RuleGranularity,
-  ClientArgs
-> {
+export class RuleRange extends AbstractRuleRange<DisplayVideoClientTypes> {
+  private hasAdvertiserName: boolean | undefined = undefined;
+  private readonly campaignMap: Record<string, RecordInfo> = {};
+
   async getRows(ruleGranularity: RuleGranularity) {
     if (ruleGranularity === RuleGranularity.CAMPAIGN) {
       return this.client.getAllCampaigns();
     } else {
-      return this.client.getAllInsertionOrders().map((io) => ({
+      return Object.values(this.client.getAllInsertionOrders()).map((io) => ({
         advertiserId: io.getAdvertiserId(),
         id: io.getId()!,
         displayName: io.getDisplayName()!,
       }));
     }
   }
+
+  async getRuleHeaders(): Promise<string[]> {
+    const { hasAdvertiserName } = await this.getCampaignMap();
+    if (!hasAdvertiserName) {
+      return [];
+    }
+    return ['Advertiser ID', 'Advertiser Name'];
+  }
+
+  private async getCampaignMap(): Promise<{
+    campaignMap: Record<string, RecordInfo>;
+    hasAdvertiserName: boolean;
+  }> {
+    if (this.hasAdvertiserName === undefined) {
+      const allCampaigns =
+        (await this.client.getAllCampaigns()) as RecordInfo[];
+      for (const campaign of allCampaigns) {
+        this.campaignMap[campaign.id] = campaign;
+      }
+      this.hasAdvertiserName =
+        allCampaigns[0] && allCampaigns[0].advertiserName !== undefined;
+    }
+    return {
+      campaignMap: this.campaignMap,
+      hasAdvertiserName: this.hasAdvertiserName,
+    };
+  }
+
+  override async getRuleMetadata(granularity: RuleGranularity, id: string) {
+    const { campaignMap, hasAdvertiserName } = await this.getCampaignMap();
+    if (!hasAdvertiserName) {
+      return undefined;
+    }
+    let campaignId: string;
+    if (granularity === RuleGranularity.CAMPAIGN) {
+      campaignId = id;
+    } else {
+      const insertionOrders = this.client.getAllInsertionOrders();
+      campaignId = insertionOrders[0] && insertionOrders[0].getCampaignId();
+    }
+    return [
+      campaignMap[campaignId].advertiserId,
+      //checked in `hasAdvertiserName`
+      campaignMap[campaignId].advertiserName!,
+    ] satisfies [string, string];
+  }
+}
+
+/**
+ * Manages interactions between API components and the client.
+ *
+ * Exposed to help stub tests.
+ */
+export class DataAccessObject {
+  constructor(
+    readonly accessors: Accessors = {
+      budgetReport: BudgetReport,
+      lineItemBudgetReport: LineItemBudgetReport,
+      impressionReport: ImpressionReport,
+      advertisers: Advertisers,
+      assignedTargetingOptions: AssignedTargetingOptions,
+      campaigns: Campaigns,
+      insertionOrders: InsertionOrders,
+      lineItems: LineItems,
+    },
+  ) {}
 }
