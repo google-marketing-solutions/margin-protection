@@ -1,7 +1,8 @@
-const spreadsheetId = '1qmOv2aY0OPLFJRlpsxR8AyzzRUF70vfs73QHlvASndo'; // Replace with your sheet's ID
+const spreadsheetId = ''; // Replace with your sheet's ID
 
 const fetchOnlyActiveCampaignsCell = 'B7';
 
+const languageConfigSheetName = 'Language config'
 const geoTargetingConfigSheetName = 'Geo Targeting config';
 const budgetConfigSheetName = 'Budget config';
 const setupSheetName = 'Setup';
@@ -12,6 +13,7 @@ const fetchOnlyActiveCampaigns = setupSheet
   .getRange(fetchOnlyActiveCampaignsCell)
   .getValue();
 
+var languageConfigSheet = null;
 var geoTargetingConfigSheet = null;
 var budgetConfigSheet = null;
 
@@ -44,6 +46,70 @@ function syncCampaigns(account) {
 }
 
 function setUpConfigSheets() {
+  languageConfigSheet = createOrClearSheet(languageConfigSheetName);
+
+  var range = languageConfigSheet.getRange('A1:E1');
+  range.merge();
+  var richText = SpreadsheetApp.newRichTextValue()
+    .setText(
+      'Complete desired languages for each campaigns. If no preference for a single campaign, leave blank (empty)',
+    )
+    .setTextStyle(SpreadsheetApp.newTextStyle().setBold(true).build())
+    .build();
+
+  range.setBackground('#ea4335');
+  range.setHorizontalAlignment('center');
+  range.setVerticalAlignment('middle');
+  range.setFontSize(12);
+  range.setFontColor('#FFFFFF');
+  range.setBorder(
+    true,
+    true,
+    true,
+    true,
+    null,
+    null,
+    '#000000',
+    SpreadsheetApp.BorderStyle.SOLID_THICK,
+  );
+  range.setRichTextValue(richText);
+  languageConfigSheet.insertRows(2);
+  languageConfigSheet.setColumnWidths(1, 1, 120);
+  languageConfigSheet.setColumnWidths(2, 1, 300);
+  languageConfigSheet.setColumnWidths(3, 1, 120);
+  languageConfigSheet.setColumnWidths(4, 2, 300);
+
+  languageConfigSheet.appendRow([
+    'Customer ID',
+    'Customer name',
+    'Campaign ID',
+    'Campaign name',
+    'Desired languages'
+  ]);
+  languageConfigSheet.insertRowBefore(2);
+  range = languageConfigSheet.getRange('A3:E3');
+  range.setBorder(
+    null,
+    null,
+    true,
+    null,
+    null,
+    null,
+    '#000000',
+    SpreadsheetApp.BorderStyle.SOLID,
+  );
+  range = languageConfigSheet.getRange('A3:E999');
+  range.setBorder(
+    null,
+    null,
+    null,
+    null,
+    true,
+    null,
+    '#000000',
+    SpreadsheetApp.BorderStyle.SOLID,
+  );
+
   geoTargetingConfigSheet = createOrClearSheet(geoTargetingConfigSheetName);
 
   var range = geoTargetingConfigSheet.getRange('A1:F1');
@@ -242,6 +308,13 @@ function addCampaignsToConfigSheets(account, campaignsIterator) {
     console.log(
       'Found campaign ' + campaign.getId() + ' - ' + campaign.getName(),
     );
+
+    languageConfigSheet.appendRow([
+      account.getCustomerId(),
+      account.getName(),
+      campaign.getId(),
+      campaign.getName(),
+    ]);
 
     geoTargetingConfigSheet.appendRow([
       account.getCustomerId(),
