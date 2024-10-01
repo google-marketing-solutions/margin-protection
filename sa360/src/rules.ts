@@ -477,29 +477,50 @@ interface TrackSettingsChangeArgs {
 export function trackSettingsChanges(
   settingsChangeArgs: TrackSettingsChangeArgs,
 ): Value {
-  const settings = new Set(settingsChangeArgs.stored);
+  const settings = new Set(
+    settingsChangeArgs.stored.filter((s) => s && s !== '-'),
+  );
   // targets are in the format ['a,b,c', 'd,e,f'] so we need to combine then
   // re-split them.
-  const targetsSet = new Set(settingsChangeArgs.targets.join(',').split(','));
+  const targetsSet = new Set(
+    settingsChangeArgs.targets
+      .filter((t) => t)
+      .join(',')
+      .split(','),
+  );
   const newValues: string[] = [];
+  let settingsCount = 0;
   for (const setting of settings) {
-    if (setting && !targetsSet.has(setting)) {
+    ++settingsCount;
+    if (!targetsSet.has(setting)) {
       newValues.push(`${setting} DELETED`);
     } else {
       targetsSet.delete(setting);
     }
   }
   for (const target of targetsSet) {
-    newValues.push(`${target} ADDED`);
-    if (settingsChangeArgs.stored.join(',') === '') {
+    if (target && settingsCount && !settings.has(target)) {
+      newValues.push(`${target} ADDED`);
+    }
+    if (target !== '' && settingsChangeArgs.stored.join(',') === '') {
       settings.add(target);
     }
   }
+
+  if (
+    !newValues.length &&
+    settingsChangeArgs.targets.length === 1 &&
+    !settingsChangeArgs.targets[0]
+  ) {
+    settings.add('-');
+  }
+
   settingsChangeArgs.stored.splice(
     0,
     settingsChangeArgs.stored.length,
     ...settings,
   );
+
   return objectEquals(
     newValues.join(', ') || NO_CHANGES,
     settingsChangeArgs.fields,

@@ -40,7 +40,7 @@ function main() {
         REPORTS_CONFIG_ROW_START,
         REPORTS_CONFIG_COL_START,
         reportsSheet.getLastRow(),
-        reportsSheet.getLastColumn()
+        reportsSheet.getLastColumn(),
       )
       .getValues();
     const useCasesConfig = getUseCasesConfiguration();
@@ -54,13 +54,13 @@ function main() {
 
       if (!profileId) {
         Logger.log(
-          `WARNING: Profile ID not provided. Skipping this row ${row}`
+          `WARNING: Profile ID not provided. Skipping this row ${row}`,
         );
         if (useCase) {
           logExecutionStatus(
             row,
             `WARNING: Profile ID not provided. Skipping this row.`,
-            `${date.toDateString()} ${date.toTimeString()}`
+            `${date.toDateString()} ${date.toTimeString()}`,
           );
         }
         return;
@@ -69,12 +69,12 @@ function main() {
 
       // Get CM360 Account information
       const accounts = campaignManagerAPI.list(
-        "Accounts",
+        'Accounts',
         null,
-        "accounts",
-        {}
+        'accounts',
+        {},
       );
-      const accountId = accounts.length > 0 ? accounts[0].id : "";
+      const accountId = accounts.length > 0 ? accounts[0].id : '';
       if (!accountId) {
         Logger.log(`Account not found for Profile ID ${profileId}.`);
       }
@@ -84,7 +84,7 @@ function main() {
         logExecutionStatus(
           row,
           `Use Case ${useCase} is disabled for Profile ID ${profileId} and CM360 Account ${accountId}. Execution skipped.`,
-          `${date.toDateString()} ${date.toTimeString()}`
+          `${date.toDateString()} ${date.toTimeString()}`,
         );
         return;
       }
@@ -93,7 +93,7 @@ function main() {
       let reportId = reportRow[REPORTS_CONFIG_REPORT_ID_COLUMN - 1];
       if (!reportId) {
         Logger.log(
-          `Report ID not provided for Profile ID ${profileId} and CM360 Account ${accountId}, creating a new report in CM360...`
+          `Report ID not provided for Profile ID ${profileId} and CM360 Account ${accountId}, creating a new report in CM360...`,
         );
         const dateRange = reportRow[REPORTS_CONFIG_REPORT_DATE_RANGE - 1];
         const filters = reportRow[REPORTS_CONFIG_FILTERS_COLUMN - 1];
@@ -103,15 +103,15 @@ function main() {
           logExecutionStatus(
             row,
             `ERROR: The Extra Parameters column is required when executing the ${FLOODLIGHT_TRENDS_KEY} use case. Execution skipped.`,
-            `${date.toDateString()} ${date.toTimeString()}`
+            `${date.toDateString()} ${date.toTimeString()}`,
           );
           return;
         }
-        if (useCase === FLOODLIGHT_TRENDS_KEY && dateRange != "LAST_14_DAYS") {
+        if (useCase === FLOODLIGHT_TRENDS_KEY && dateRange != 'LAST_14_DAYS') {
           logExecutionStatus(
             row,
             `ERROR: Date range for the ${FLOODLIGHT_TRENDS_KEY} use case must be LAST_14_DAYS. Execution skipped.`,
-            `${date.toDateString()} ${date.toTimeString()}`
+            `${date.toDateString()} ${date.toTimeString()}`,
           );
           return;
         }
@@ -119,7 +119,7 @@ function main() {
           useCase,
           dateRange,
           filters.trim(),
-          extraParams.trim()
+          extraParams.trim(),
         );
         reportId = report.id;
         // Add report Id and account Id to the Config sheet for visualization purposes and future executions of existing reports
@@ -139,17 +139,17 @@ function main() {
         profileId,
         accountId,
         reportId,
-        campaignManagerAPI
+        campaignManagerAPI,
       );
       if (!reportData || reportData.length <= 1) {
         Logger.log(
-          "main: There is no data in the report. Skipping execution..."
+          'main: There is no data in the report. Skipping execution...',
         );
         // Long message... format later
         logExecutionStatus(
           row,
-          "WARNING: The report is not ready or there is no data in the report. Please check the report status directly in CM360 and run again the script or wait for the trigger to run it automatically. Execution was skipped.",
-          `${date.toDateString()} ${date.toTimeString()}`
+          'WARNING: The report is not ready or there is no data in the report. Please check the report status directly in CM360 and run again the script or wait for the trigger to run it automatically. Execution was skipped.',
+          `${date.toDateString()} ${date.toTimeString()}`,
         );
         return;
       }
@@ -166,45 +166,45 @@ function main() {
       switch (useCase) {
         case GHOST_PLACEMENTS_KEY:
           // Only rule 3 uses a threshold to evaluate the rule
-          if (threshold !== "") {
+          if (threshold !== '') {
             // Override default value from the Use Cases Config tab if value provided in this column
-            config["rules"][2]["ruleThreshold"] = parseFloat(threshold);
+            config['rules'][2]['ruleThreshold'] = parseFloat(threshold);
           }
           issues = getGhostPlacementsAlerts(config, reportData);
           break;
 
         case DEFAULT_ADS_RATE_KEY:
           // Only rule 1 uses a threshold to evaluate the rule
-          if (threshold !== "") {
+          if (threshold !== '') {
             // Override default value from the Use Cases Config tab if value provided in this column
-            config["rules"][0]["ruleThreshold"] = parseFloat(threshold);
+            config['rules'][0]['ruleThreshold'] = parseFloat(threshold);
           }
           issues = getDefaultAdsRateAlerts(config, reportData);
           break;
 
         case FLOODLIGHT_TRENDS_KEY:
           // Only rule 1 uses a threshold to evaluate the rule
-          if (threshold !== "") {
+          if (threshold !== '') {
             // Override default value from the Use Cases Config tab if value provided in this column
-            config["rules"][0]["ruleThreshold"] = parseFloat(threshold);
+            config['rules'][0]['ruleThreshold'] = parseFloat(threshold);
           }
           issues = getFloodlightTrendsAlerts(config, reportData);
           break;
 
         case OUT_OF_FLIGHT_PLACEMENTS_KEY:
           // Only rule 1 uses a threshold to evaluate the rule
-          if (threshold !== "") {
+          if (threshold !== '') {
             // Override default value from the Use Cases Config tab if value provided in this column
-            config["rules"][0]["ruleThreshold"] = parseFloat(threshold);
+            config['rules'][0]['ruleThreshold'] = parseFloat(threshold);
           }
           issues = getOutOfFlightPlacementsAlerts(config, reportData);
           break;
 
         case TRACKING_ADS_KEY:
           // Only rule 1 uses a threshold to evaluate the rule
-          if (threshold !== "") {
+          if (threshold !== '') {
             // Override default value from the Use Cases Config tab if value provided in this column
-            config["rules"][0]["ruleThreshold"] = parseFloat(threshold);
+            config['rules'][0]['ruleThreshold'] = parseFloat(threshold);
           }
           issues = getTrackingAdsAlerts(config, reportData);
           break;
@@ -222,7 +222,7 @@ function main() {
       const dataToSheetStartRow = 1;
       const dataToSheetStartColumn = 1;
       // Replace report data in case the use case returns a different set of data
-      reportData = !issues["data"] ? reportData : issues["data"];
+      reportData = !issues['data'] ? reportData : issues['data'];
       addDataToSheet(
         reportDataSheetName,
         BLUE_RGB_COLOR,
@@ -230,20 +230,20 @@ function main() {
         dataToSheetStartColumn,
         config.columnToResize,
         config.numColsToResize,
-        reportData
+        reportData,
       );
       flagUseCaseIssues(config, reportDataSheetName);
       // Sort table by the columns that make sense for the use case
       shortTableByColumns(
         reportDataSheetName,
         config.rangeToSort,
-        config.sortByColumns
+        config.sortByColumns,
       );
       // Creat a Filter View in the table
       createFilterForTable(reportDataSheetName, config.rangeToFilter);
 
       // Send email if any issues found
-      if (emails && issues["issues"].length > 0) {
+      if (emails && issues['issues'].length > 0) {
         // Send email only if there are issues
         sendEmail(
           getEmailParameters(
@@ -252,12 +252,12 @@ function main() {
             accountId,
             reportId,
             emailMessage,
-            emails
-          )
+            emails,
+          ),
         );
       } else {
         Logger.log(
-          `There are no issues identified for use case ${useCase} or email recipients were not provided for alerts. Skipping email notification...`
+          `There are no issues identified for use case ${useCase} or email recipients were not provided for alerts. Skipping email notification...`,
         );
       }
 
@@ -265,7 +265,7 @@ function main() {
       logExecutionStatus(
         row,
         `SUCCESS`,
-        `${date.toDateString()} ${date.toTimeString()}`
+        `${date.toDateString()} ${date.toTimeString()}`,
       );
     });
   } catch (e) {
@@ -273,7 +273,7 @@ function main() {
     logExecutionStatus(
       currentRow,
       `ERROR: ${e}`,
-      `${date.toDateString()} ${date.toTimeString()}`
+      `${date.toDateString()} ${date.toTimeString()}`,
     );
   }
 }
@@ -295,12 +295,12 @@ function getExistingReportData(
   profileId,
   accountId,
   reportId,
-  campaignManagerAPI
+  campaignManagerAPI,
 ) {
   const latestReportFile = campaignManagerAPI.getLatestReportFile(reportId);
   if (!latestReportFile) {
     Logger.log(
-      `The report for Profile ID ${profileId} and CM360 Account ID ${accountId} is still running for use case ${useCase} and it will probably take longer than the script execution limit (5 mins) in this Google Spreadsheet.`
+      `The report for Profile ID ${profileId} and CM360 Account ID ${accountId} is still running for use case ${useCase} and it will probably take longer than the script execution limit (5 mins) in this Google Spreadsheet.`,
     );
     return;
   }
@@ -321,6 +321,6 @@ function flagUseCaseIssues(config, reportDataSheetName) {
   addConditionalFormattingToSheet(
     reportDataSheetName,
     config.flagColumnRange,
-    config.rules
+    config.rules,
   );
 }

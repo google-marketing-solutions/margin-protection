@@ -6,11 +6,7 @@
 
 import { TARGETING_TYPE } from 'dv360_api/dv360_types';
 import { equalTo } from 'common/checks';
-import {
-  getOrCreateSheet,
-  HELPERS,
-  RULE_SETTINGS_SHEET,
-} from 'common/sheet_helpers';
+import { HELPERS, RULE_SETTINGS_SHEET } from 'common/sheet_helpers';
 import {
   FakeHtmlOutput,
   FakePropertyStore,
@@ -107,6 +103,126 @@ describe('Rule value filling', () => {
   });
 });
 
+describe('validate/launchMonitor functions', () => {
+  let frontend: DisplayVideoFrontend;
+
+  beforeEach(async () => {
+    jasmine.clock().install();
+    jasmine.clock().mockDate(new Date(Date.UTC(1970, 0, 1)));
+    const allCampaigns: Record<string, CampaignTemplateConverter[]> = {
+      '1': [
+        (campaign) => {
+          campaign.id = 'c1';
+          campaign.displayName = "Campaign 1';";
+          return campaign;
+        },
+      ],
+    };
+    const allInsertionOrders: Record<
+      string,
+      InsertionOrderTemplateConverter[]
+    > = {
+      c1: [
+        (insertionOrder) => {
+          insertionOrder.campaignId = 'c1';
+          return insertionOrder;
+        },
+      ],
+    };
+    setUp();
+    frontend = getFrontend(() =>
+      testData({ allCampaigns, allInsertionOrders }),
+    );
+    HtmlService.createTemplateFromFile = () =>
+      ({ evaluate: () => new FakeHtmlOutput() }) as unknown as HtmlTemplate;
+    // force private methods to be visible, so we can manipulate them.
+    await frontend.initializeRules();
+  });
+
+  it('runs with no errors', async () => {
+    await frontend.launchMonitor();
+
+    expect(
+      SpreadsheetApp.getActive()
+        .getSheetByName('Budget Pacing by Percent Ahead - Results')
+        .getDataRange()
+        .getValues(),
+    ).toEqual([]);
+  });
+
+  it('runs with errors', async () => {
+    scaffoldSheetWithNamedRanges();
+    SpreadsheetApp.getActive()
+      .getSheetByName('Rule Settings - Campaign')
+      .getRange(4, 2)
+      .setValue('Nowhere');
+    await frontend.launchMonitor();
+
+    expect(
+      SpreadsheetApp.getActive()
+        .getSheetByName('Geo Targeting - Results')
+        .getDataRange()
+        .getValues(),
+    ).toEqual([
+      [
+        'Result',
+        'anomalous',
+        'Advertiser ID',
+        'Campaign Name',
+        'Campaign ID',
+        'Number of Geos',
+      ],
+      [
+        '"United States" not an allowed target',
+        'true',
+        '1',
+        'Campaign 1',
+        'c1',
+        '1',
+      ],
+    ]);
+  });
+
+  it('skips disabled rules', async () => {
+    scaffoldSheetWithNamedRanges();
+    SpreadsheetApp.getActive()
+      .getSheetByName('Rule Settings - Campaign')
+      .getRange(4, 2)
+      .setValue('Nowhere');
+    await frontend.initializeRules();
+    const range = SpreadsheetApp.getActive()
+      .getSheetByName('Enable/Disable Rules')
+      .getDataRange();
+    const currentSettings = range.getValues();
+    const geoTargetRuleName = currentSettings[1][0];
+    const budgetPacingRuleName = currentSettings[2][0];
+
+    currentSettings[1][2] = false; // geotargets
+    currentSettings[2][2] = true; // pacing
+    range.setValues(currentSettings);
+    await frontend.launchMonitor();
+
+    // first perform sanity checks
+    expect(budgetPacingRuleName).toEqual(budgetPacingPercentageRule.name);
+    expect(geoTargetRuleName).toEqual(geoTargetRule.name);
+    // then validate that pacing doesn't work (it's disabled).
+    expect(
+      SpreadsheetApp.getActive().getSheetByName(
+        `${budgetPacingPercentageRule.name} - Results`,
+      ),
+    ).toBeDefined();
+    expect(
+      SpreadsheetApp.getActive().getSheetByName(
+        `${geoTargetRule.name} - Results`,
+      ),
+    ).toBeUndefined();
+  });
+
+  afterEach(() => {
+    jasmine.clock().uninstall();
+  });
+});
+
 describe('Pre-Launch QA menu option', () => {
   let frontend: DisplayVideoFrontend;
 
@@ -140,12 +256,37 @@ describe('Pre-Launch QA menu option', () => {
     await frontend.preLaunchQa();
 
     expect(origValues[9][9]).toEqual('lorem ipsum');
-    expect(sheet.getDataRange().getValues()).toContain([
+    expect(sheet.getDataRange().getValues()).toHaveSize(3);
+    expect(sheet.getDataRange().getValues()[2]).toEqual([
       'Geo Targeting',
       'Advertiser ID: 1, Campaign Name: Campaign 1, Campaign ID: c1, Number of Geos: 1',
       'OK',
       'false',
     ]);
+  });
+
+  it('ignores disabled rules', async () => {
+    const noise = Array.from<string>({ length: 10 })
+      .fill('')
+      .map(() => Array.from<string>({ length: 10 }).fill('lorem ipsum'));
+
+    const values = [
+      ['Rule Name', 'Description', 'Enabled'],
+      ['Geo Targeting', '', false],
+    ];
+    HELPERS.getOrCreateSheet('Enable/Disable Rules')
+      .getRange(1, 1, values.length, values[0].length)
+      .setValues(values);
+    await frontend.preLaunchQa();
+
+    const sheet = SpreadsheetApp.getActive().getSheetByName(
+      'Pre-Launch QA Results',
+    )!;
+    sheet.getRange(1, 1, noise.length, noise[0].length).setValues(noise);
+    // try again
+    await frontend.preLaunchQa();
+
+    expect(sheet.getDataRange().getValues()).toHaveSize(2);
   });
 });
 
@@ -330,7 +471,6 @@ describe('Export as CSV', () => {
       mimeType: FOLDER,
       title: 'launch_monitor',
     };
-    console.log(Utilities);
     frontend.exportAsCsv('my check', [['it works!']]);
     const folderId = fakeFiles.files['reports'];
     expect(fakeFiles.folders[folderId.id!]).toEqual([
@@ -365,11 +505,13 @@ describe('Fill check values', () => {
     const noise = Array.from<string>({ length: 10 })
       .fill('')
       .map(() => Array.from<string>({ length: 10 }).fill('lorem ipsum'));
-    const sheet = getOrCreateSheet(RULE_SETTINGS_SHEET + ' - Insertion Order')!;
+    const sheet = HELPERS.getOrCreateSheet(
+      RULE_SETTINGS_SHEET + ' - Insertion Order',
+    )!;
     sheet.clear();
     sheet.getRange(1, 1, noise.length, noise[0].length).setValues(noise);
     await rules.fillRuleValues(geoTargetRule.definition);
-    expect((await rules.getValues())[0].length).toEqual(5);
+    expect(rules.getValues()[0].length).toEqual(5);
   });
 });
 
@@ -494,7 +636,7 @@ describe('initializeRules', () => {
   });
 
   it('creates a settings page', () => {
-    const sheet = getOrCreateSheet('Rule Settings - Insertion Order');
+    const sheet = HELPERS.getOrCreateSheet('Rule Settings - Insertion Order');
     expect(sheet).toBeTruthy();
   });
 });
@@ -523,6 +665,7 @@ function scaffoldSheetWithNamedRanges(
     ['ID_TYPE', level],
     ['EMAIL_LIST', ''],
     ['LABEL', 'Acme Inc.'],
+    ['LAUNCH_MONITOR_OPTION', 'Sheets only'],
   ].entries()) {
     const range = SpreadsheetApp.getActive()
       .getActiveSheet()

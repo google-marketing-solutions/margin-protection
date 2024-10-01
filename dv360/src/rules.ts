@@ -30,7 +30,7 @@ import {
   TARGETING_TYPE,
 } from 'dv360_api/dv360_types';
 import { equalTo, inRange, lessThanOrEqualTo } from 'common/checks';
-import { Settings, Value, Values } from 'common/types';
+import { Settings, Values } from 'common/types';
 
 import { getDate, newRule } from './client';
 import { ClientInterface, RuleGranularity } from './types';
@@ -56,14 +56,6 @@ const RULES = {
 };
 
 /**
- * Provides a mechanism to preload checks with tests.
- */
-type AbridgedCheck = (
-  value: string,
-  fields: { [key: string]: string },
-) => Value;
-
-/**
  * Adds a geotarget rule.
  *
  * Must have only US targets, and must contain at least one geo-target, to pass.
@@ -78,7 +70,7 @@ export const geoTargetRule = newRule({
     must be partial matches of canonical names in
     <a href="https://developers.google.com/google-ads/api/reference/data/geotargets">this list.</a>`,
   valueFormat: {
-    label: 'Geo Targets Set?',
+    label: 'Result',
   },
   helper: `=HYPERLINK(
     "https://developers.google.com/google-ads/api/reference/data/geotargets", "Separate values with commas. Partial match any canonical name linked.")`,
@@ -241,7 +233,6 @@ export const budgetPacingPercentageRule = newRule({
     },
   },
   async callback() {
-    const rules: { [campaignId: string]: AbridgedCheck } = {};
     const values: Values = {};
 
     const dateRange: { earliestStartDate?: Date; latestEndDate?: Date } = {};
@@ -384,7 +375,6 @@ export const budgetPacingRuleLineItem = newRule({
   async callback() {
     type SettingsObj =
       typeof this.settings extends Settings<infer I> ? I : never;
-    const rules: { [lineItemId: string]: AbridgedCheck } = {};
     const values: Values = {};
     const results: Array<{
       campaignId: string;

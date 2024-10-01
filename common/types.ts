@@ -123,6 +123,7 @@ export interface RuleExecutor<
   run: () => Promise<ExecutorResult>;
   helper: string;
   granularity: T['ruleGranularity'];
+  enabled: boolean;
 }
 
 /**

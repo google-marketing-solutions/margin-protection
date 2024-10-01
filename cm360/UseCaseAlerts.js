@@ -23,8 +23,8 @@ function getGhostPlacementsAlerts(config, data) {
     // Rule evaluation happens here
     // Rule 1. 3PAS Creative Scenario - This rule is at position 0 in the rules array
     if (
-      advertiserName.startsWith("BidManager_Advertiser_DO_NOT_EDIT_") &&
-      placementName.includes("DFA Zero placement")
+      advertiserName.startsWith('BidManager_Advertiser_DO_NOT_EDIT_') &&
+      placementName.includes('DFA Zero placement')
     ) {
       let brokenRules = `[${config.rules[0].ruleName}]`;
       const threshold = config.rules[2].ruleThreshold
@@ -39,10 +39,10 @@ function getGhostPlacementsAlerts(config, data) {
       issues.push(row);
     } else if (
       advertiserName.startsWith(
-        "BidManager_SeparateSpotlightAdvertiser_DO_NOT_EDIT"
+        'BidManager_SeparateSpotlightAdvertiser_DO_NOT_EDIT',
       ) &&
-      campaignName.startsWith("BidManager_Campaign_DO_NOT_EDIT_") &&
-      placementName.includes("DFA Zero placement")
+      campaignName.startsWith('BidManager_Campaign_DO_NOT_EDIT_') &&
+      placementName.includes('DFA Zero placement')
     ) {
       // Rule 2. Wrapped Tags in DV360 - This rule is at position 1 in the rules array
       let brokenRules = `[${config.rules[1].ruleName}]`;
@@ -58,8 +58,8 @@ function getGhostPlacementsAlerts(config, data) {
       issues.push(row);
     } else {
       // No issues, add an empty string
-      row.push("");
-      row.push("");
+      row.push('');
+      row.push('');
     }
   });
   return { issues: issues };
@@ -96,13 +96,13 @@ function getDefaultAdsRateAlerts(config, data) {
       };
     }
     if (adType === DA_DEFAULT_AD_TYPE) {
-      placementsMap[placementId]["sumImpressionsDefaultAds"] += impressions;
-      placementsMap[placementId]["defaultAds"] += 1;
+      placementsMap[placementId]['sumImpressionsDefaultAds'] += impressions;
+      placementsMap[placementId]['defaultAds'] += 1;
     } else {
-      placementsMap[placementId]["otherAds"] += 1;
+      placementsMap[placementId]['otherAds'] += 1;
     }
-    placementsMap[placementId]["sumImpressionsAllAds"] += impressions;
-    placementsMap[placementId]["allAds"] += 1;
+    placementsMap[placementId]['sumImpressionsAllAds'] += impressions;
+    placementsMap[placementId]['allAds'] += 1;
   });
 
   // 2. Calculate default ads impressions sum percentage of total impressions (all Ads)
@@ -114,10 +114,10 @@ function getDefaultAdsRateAlerts(config, data) {
         : 0;
     if (placement.sumImpressionsAllAds === 0) {
       Logger.log(
-        `Divisor is 0, setting percentage to 0 for Placement ID ${placementId}. sumImpressionsDefaultAds: ${placement.sumImpressionsDefaultAds} - sumImpressionsAllAds: ${placement.sumImpressionsAllAds}`
+        `Divisor is 0, setting percentage to 0 for Placement ID ${placementId}. sumImpressionsDefaultAds: ${placement.sumImpressionsDefaultAds} - sumImpressionsAllAds: ${placement.sumImpressionsAllAds}`,
       );
     }
-    placement["defaultAdsPercentage"] = percentage;
+    placement['defaultAdsPercentage'] = percentage;
   }
 
   // 3. Identify default ads rates > threshold defined in the use case configuration
@@ -160,8 +160,8 @@ function getDefaultAdsRateAlerts(config, data) {
       issues.push(row);
     } else {
       // No issues, add an empty string
-      row.push("");
-      row.push("");
+      row.push('');
+      row.push('');
     }
   });
   return { issues: issues };
@@ -186,19 +186,19 @@ function getFloodlightTrendsAlerts(config, data) {
       return;
     }
     // Insert week label as the first column as a placeholder to match the column indexes
-    row.splice(0, 0, "");
+    row.splice(0, 0, '');
     const week = row[FT_WEEK_COLUMN - 1];
     const floodlightConfigId = row[FT_FLOODLIGHT_CONFIG_COLUMN - 1];
     const activityId = row[FT_ACTIVITY_ID_COLUMN - 1];
     const floodlightImpressions = parseInt(
-      row[FT_FLOODLIGHT_IMPRESSIONS_COLUMN - 1]
+      row[FT_FLOODLIGHT_IMPRESSIONS_COLUMN - 1],
     );
     const activityKey = `${floodlightConfigId}-${activityId}`;
 
     // Check if the placement conversions are from weekBeforeLast, lastWeek or currentWeek
     const weekLabel = ftDetermineWeekForPlacement(week);
     switch (weekLabel) {
-      case "weekBeforeLast":
+      case 'weekBeforeLast':
         if (!weekBeforeLastActivities[activityKey]) {
           weekBeforeLastActivities[activityKey] = {
             week: week,
@@ -206,13 +206,13 @@ function getFloodlightTrendsAlerts(config, data) {
           };
         } else {
           console.log(
-            `WARNING: Activity ${week} - ${activityKey} was found twice in the report for weekBeforeLastActivities`
+            `WARNING: Activity ${week} - ${activityKey} was found twice in the report for weekBeforeLastActivities`,
           );
         }
-        weekBeforeLastActivities[activityKey]["floodlightImpressionsSum"] +=
+        weekBeforeLastActivities[activityKey]['floodlightImpressionsSum'] +=
           floodlightImpressions;
         break;
-      case "lastWeek":
+      case 'lastWeek':
         // Because how dates are calculated, consider the placement in the last week when the difference === 2 weeks: https://www.epochconverter.com/weeks/2023
         if (!lastWeekActivities[activityKey]) {
           lastWeekActivities[activityKey] = {
@@ -221,18 +221,18 @@ function getFloodlightTrendsAlerts(config, data) {
           };
         } else {
           console.log(
-            `WARNING: Activity ${week} - ${activityKey} was found twice in the report for lastWeekActivities`
+            `WARNING: Activity ${week} - ${activityKey} was found twice in the report for lastWeekActivities`,
           );
         }
-        lastWeekActivities[activityKey]["floodlightImpressionsSum"] +=
+        lastWeekActivities[activityKey]['floodlightImpressionsSum'] +=
           floodlightImpressions;
         break;
-      case "currentWeek":
+      case 'currentWeek':
         // Ignore Activity ${week} - ${activityKey} for the current week (Sunday) since they will be evaluated in the next run next week.`)
         break;
       default:
         Logger.log(
-          `Activity ${week} - ${activityKey} is not from weekBeforeLast, lastWeek or currentWeek. Please check`
+          `Activity ${week} - ${activityKey} is not from weekBeforeLast, lastWeek or currentWeek. Please check`,
         );
     }
   });
@@ -252,14 +252,14 @@ function getFloodlightTrendsAlerts(config, data) {
     const floodlightConfigId = row[FT_FLOODLIGHT_CONFIG_COLUMN - 1];
     const activityId = row[FT_ACTIVITY_ID_COLUMN - 1];
     const floodlightImpressions = parseInt(
-      row[FT_FLOODLIGHT_IMPRESSIONS_COLUMN - 1]
+      row[FT_FLOODLIGHT_IMPRESSIONS_COLUMN - 1],
     );
     const activityKey = `${floodlightConfigId}-${activityId}`;
 
     // Find row to compare from weekBeforeLastActivities
     let weekLabel = ftDetermineWeekForPlacement(week);
     switch (weekLabel) {
-      case "lastWeek":
+      case 'lastWeek':
         // If current row ActivityId is from last week, compare it against the same ActivityId from before last week
         const weekBeforeLastFloodlightImpressionsSum =
           weekBeforeLastActivities[activityKey];
@@ -267,21 +267,21 @@ function getFloodlightTrendsAlerts(config, data) {
           // Compare only if found in before last week map. It might not be there since this could be a new placement
           ftEvaluateVarianceAndAddIssues(
             config,
-            weekBeforeLastFloodlightImpressionsSum["floodlightImpressionsSum"],
+            weekBeforeLastFloodlightImpressionsSum['floodlightImpressionsSum'],
             floodlightImpressions,
             row,
-            issues
+            issues,
           );
         } else {
           // ActivityId was not found in  weekBeforeLastActivities, there is nothing to compare against, no issue identified
-          row.push("");
-          row.push("");
+          row.push('');
+          row.push('');
         }
         break;
       default:
         // ActivityId ${activityKey} not found before last week, last week, there is nothing to compare against,  no issue identified
-        row.push("");
-        row.push("");
+        row.push('');
+        row.push('');
         break;
     }
     // Update week label with the correct weekLabel
@@ -300,7 +300,7 @@ function getFloodlightTrendsAlerts(config, data) {
     let weekLabel = ftDetermineWeekForPlacement(week);
     // Filter currentWeek data to avoid confusion for the users, which will be always 1 day (Sunday on current week) since the script executes on Monday
     // This will show to the user only comparisons between last week and the week before last week
-    if (weekLabel === "currentWeek") {
+    if (weekLabel === 'currentWeek') {
       return;
     }
     // Only add data from last week and the week before last week
@@ -318,7 +318,7 @@ function getFloodlightTrendsAlerts(config, data) {
  *  @return {str} weekLabel - The week label: weekBeforeLast, lastWeek, currentWeek
  */
 function ftDetermineWeekForPlacement(week) {
-  const weekParts = week.split("-");
+  const weekParts = week.split('-');
   const year = parseInt(weekParts[0]);
   const month = parseInt(weekParts[1]) - 1; // monthIndex for new Date() = Integer value representing the month, beginning with 0 for January to 11 for December.
   const day = parseInt(weekParts[2]);
@@ -329,11 +329,11 @@ function ftDetermineWeekForPlacement(week) {
   let beforeLastWeek = new Date(today.getTime() - 14 * 24 * 60 * 60 * 1000);
 
   if (reportWeek < lastWeek && reportWeek <= beforeLastWeek) {
-    return "weekBeforeLast";
+    return 'weekBeforeLast';
   } else if (reportWeek <= lastWeek) {
-    return "lastWeek";
+    return 'lastWeek';
   } else {
-    return "currentWeek";
+    return 'currentWeek';
   }
 }
 
@@ -349,7 +349,7 @@ function ftEvaluateVarianceAndAddIssues(
   floodlightImpressionsWeekBefore,
   floodlightImpressionsWeek,
   row,
-  issues
+  issues,
 ) {
   const variance =
     (floodlightImpressionsWeekBefore - floodlightImpressionsWeek) /
@@ -364,13 +364,13 @@ function ftEvaluateVarianceAndAddIssues(
     const vLabel =
       variance === 1 ? variance * 100 : (variance * 100).toFixed(2);
     row.push(
-      `Rules: ${brokenRules}\n'Week before last' conversions for this Floodlight Configuration and Activity ID: ${floodlightImpressionsWeekBefore}\nVariance: ${vLabel}%`
+      `Rules: ${brokenRules}\n'Week before last' conversions for this Floodlight Configuration and Activity ID: ${floodlightImpressionsWeekBefore}\nVariance: ${vLabel}%`,
     );
     issues.push(row);
   } else {
     // No issues, add an empty string
-    row.push("");
-    row.push("");
+    row.push('');
+    row.push('');
   }
 }
 
@@ -394,7 +394,7 @@ function getOutOfFlightPlacementsAlerts(config, data) {
     }
     const impressions = parseInt(row[OFP_IMPRESSIONS_COLUMN - 1]);
     const placementEndDateStr = row[OFP_PLACEMENT_END_DATE_COLUMN - 1];
-    const placementEndDateParts = placementEndDateStr.split("-");
+    const placementEndDateParts = placementEndDateStr.split('-');
     const year = parseInt(placementEndDateParts[0]);
     const month = parseInt(placementEndDateParts[1]) - 1; // monthIndex for new Date() = Integer value representing the month, beginning with 0 for January to 11 for December.
     const day = parseInt(placementEndDateParts[2]);
@@ -402,14 +402,14 @@ function getOutOfFlightPlacementsAlerts(config, data) {
 
     // Compare the impression date to the end date, meaning the day the impressions served to the end date
     const placementDateStr = row[OFP_DATE_COLUMN - 1];
-    const placementDateParts = placementDateStr.split("-");
+    const placementDateParts = placementDateStr.split('-');
     const placementDateYear = parseInt(placementDateParts[0]);
     const placementDateMonth = parseInt(placementDateParts[1]) - 1;
     const placementDateDay = parseInt(placementDateParts[2]);
     const placementDate = new Date(
       placementDateYear,
       placementDateMonth,
-      placementDateDay
+      placementDateDay,
     );
 
     // Rule 1. Placements with impressions > Threshold out of flight schedule
@@ -424,8 +424,8 @@ function getOutOfFlightPlacementsAlerts(config, data) {
       issues.push(row);
     } else {
       // No issues, add an empty string
-      row.push("");
-      row.push("");
+      row.push('');
+      row.push('');
     }
   });
   return { issues: issues };
@@ -474,8 +474,8 @@ function getTrackingAdsAlerts(config, data) {
       issues.push(row);
     } else {
       // Neither issue nor warning
-      row.push("");
-      row.push("");
+      row.push('');
+      row.push('');
     }
   });
   return { issues: issues };
@@ -501,7 +501,7 @@ function getDefaultLandingPageAlerts(config, data) {
     }
     const landingPage = row[DLP_LANDING_PAGE_COLUMN - 1];
     // Rule evaluation happens here
-    if (landingPage === "http://google.com") {
+    if (landingPage === 'http://google.com') {
       // Rule 1: landing page is set to the default value google.com
       let brokenRules = `Rules: [${config.rules[0].ruleName}]`;
       row.push(config.rules[0].ruleType);
@@ -509,8 +509,8 @@ function getDefaultLandingPageAlerts(config, data) {
       issues.push(row);
     } else {
       // No issues, add an empty string
-      row.push("");
-      row.push("");
+      row.push('');
+      row.push('');
     }
   });
 
@@ -527,7 +527,7 @@ function getUseCasesConfiguration() {
       USE_CASES_CONFIG_ROW_START,
       USE_CASES_CONFIG_COL_START,
       useCasesSheet.getLastRow(),
-      useCasesSheet.getLastColumn()
+      useCasesSheet.getLastColumn(),
     )
     .getValues();
   let useCasesMap = {};
@@ -537,11 +537,11 @@ function getUseCasesConfiguration() {
       return;
     }
     const useCaseThreshold = parseFloat(
-      useCaseRow[USE_CASES_CONFIG_THRESHOLD_COLUMN]
+      useCaseRow[USE_CASES_CONFIG_THRESHOLD_COLUMN],
     );
     const otherConfigs = getOtherConfigsByUseCase(
       useCaseName,
-      useCaseThreshold
+      useCaseThreshold,
     );
     useCasesMap[useCaseName] = { ...otherConfigs };
   });
@@ -560,30 +560,30 @@ function getOtherConfigsByUseCase(useCase, useCaseThreshold) {
     [GHOST_PLACEMENTS_KEY]: {
       rules: [
         {
-          ruleName: "3PAS Creative Scenario",
-          ruleDescription: "3PAS Creative Scenario",
-          ruleType: "ISSUE",
+          ruleName: '3PAS Creative Scenario',
+          ruleDescription: '3PAS Creative Scenario',
+          ruleType: 'ISSUE',
           ruleThreshold: null, // no threshold for this rule
-          color: "#ea4335",
+          color: '#ea4335',
         },
         {
-          ruleName: "Wrapped Tags in DV360",
-          ruleDescription: "Wrapped Tags in DV360",
-          ruleType: "ISSUE",
+          ruleName: 'Wrapped Tags in DV360',
+          ruleDescription: 'Wrapped Tags in DV360',
+          ruleType: 'ISSUE',
           ruleThreshold: null, // no threshold for this rule
-          color: "#ea4335",
+          color: '#ea4335',
         },
         {
-          ruleName: "Total Conversions > Threshold",
-          ruleDescription: "Total Conversions > Threshold",
-          ruleType: "ISSUE",
+          ruleName: 'Total Conversions > Threshold',
+          ruleDescription: 'Total Conversions > Threshold',
+          ruleType: 'ISSUE',
           ruleThreshold: useCaseThreshold,
-          color: "#ea4335",
+          color: '#ea4335',
         },
       ],
-      flagColumnRange: "L2:L",
-      rangeToSort: "A2:M",
-      rangeToFilter: "A1:M",
+      flagColumnRange: 'L2:L',
+      rangeToSort: 'A2:M',
+      rangeToFilter: 'A1:M',
       sortByColumns: [
         { column: GP_PLACEMENT_ID_COLUMN, ascending: true },
         { column: GP_DATE_COLUMN, ascending: true },
@@ -594,16 +594,16 @@ function getOtherConfigsByUseCase(useCase, useCaseThreshold) {
     [DEFAULT_ADS_RATE_KEY]: {
       rules: [
         {
-          ruleName: "Default Ads Rate > Threshold",
-          ruleDescription: "Default Ads Rate > Threshold",
-          ruleType: "ISSUE",
+          ruleName: 'Default Ads Rate > Threshold',
+          ruleDescription: 'Default Ads Rate > Threshold',
+          ruleType: 'ISSUE',
           ruleThreshold: useCaseThreshold,
-          color: "#ea4335",
+          color: '#ea4335',
         },
       ],
-      flagColumnRange: "N2:N",
-      rangeToSort: "A2:O",
-      rangeToFilter: "A1:O",
+      flagColumnRange: 'N2:N',
+      rangeToSort: 'A2:O',
+      rangeToFilter: 'A1:O',
       sortByColumns: [
         { column: DA_PLACEMENT_ID_COLUMN, ascending: true },
         { column: DA_DATE_COLUMN, ascending: true },
@@ -615,17 +615,17 @@ function getOtherConfigsByUseCase(useCase, useCaseThreshold) {
       rules: [
         {
           ruleName:
-            "For week on week trends flag for more than Threshold variance for floodlight impressions",
+            'For week on week trends flag for more than Threshold variance for floodlight impressions',
           ruleDescription:
-            "For week on week trends flag for more than Threshold variance for floodlight impressions",
-          ruleType: "ISSUE",
+            'For week on week trends flag for more than Threshold variance for floodlight impressions',
+          ruleType: 'ISSUE',
           ruleThreshold: useCaseThreshold,
-          color: "#ea4335",
+          color: '#ea4335',
         },
       ],
-      flagColumnRange: "G2:G",
-      rangeToSort: "A2:H",
-      rangeToFilter: "A1:H",
+      flagColumnRange: 'G2:G',
+      rangeToSort: 'A2:H',
+      rangeToFilter: 'A1:H',
       sortByColumns: [
         { column: FT_WEEK_COLUMN, ascending: false },
         { column: FT_ACTIVITY_ID_COLUMN, ascending: true },
@@ -637,17 +637,17 @@ function getOtherConfigsByUseCase(useCase, useCaseThreshold) {
       rules: [
         {
           ruleName:
-            "Placements with impressions > Threshold out of flight schedule",
+            'Placements with impressions > Threshold out of flight schedule',
           ruleDescription:
-            "Placements with impressions > Threshold out of flight schedule",
-          ruleType: "ISSUE",
+            'Placements with impressions > Threshold out of flight schedule',
+          ruleType: 'ISSUE',
           ruleThreshold: useCaseThreshold,
-          color: "#ea4335",
+          color: '#ea4335',
         },
       ],
-      flagColumnRange: "M2:M",
-      rangeToSort: "A2:N",
-      rangeToFilter: "A1:N",
+      flagColumnRange: 'M2:M',
+      rangeToSort: 'A2:N',
+      rangeToFilter: 'A1:N',
       sortByColumns: [
         { column: OFP_PLACEMENT_ID_COLUMN, ascending: true },
         { column: OFP_DATE_COLUMN, ascending: true },
@@ -658,30 +658,30 @@ function getOtherConfigsByUseCase(useCase, useCaseThreshold) {
     [TRACKING_ADS_KEY]: {
       rules: [
         {
-          ruleName: "Rule 1: clicks > threshold && impressions < clicks",
-          ruleDescription: "Rule 1: clicks > threshold && impressions < clicks",
-          ruleType: "ISSUE",
+          ruleName: 'Rule 1: clicks > threshold && impressions < clicks',
+          ruleDescription: 'Rule 1: clicks > threshold && impressions < clicks',
+          ruleType: 'ISSUE',
           ruleThreshold: useCaseThreshold,
-          color: "#ea4335",
+          color: '#ea4335',
         },
         {
-          ruleName: "Rule 2: impressions > 0 and clicks > impressions",
-          ruleDescription: "Rule 2: impressions > 0 and clicks > impressions",
-          ruleType: "ISSUE",
+          ruleName: 'Rule 2: impressions > 0 and clicks > impressions',
+          ruleDescription: 'Rule 2: impressions > 0 and clicks > impressions',
+          ruleType: 'ISSUE',
           ruleThreshold: null, // no threshold for this rule
-          color: "#ff6d01",
+          color: '#ff6d01',
         },
         {
-          ruleName: "Rule 3: clicks > impressions",
-          ruleDescription: "Rule 3: clicks > impressions",
-          ruleType: "WARNING",
+          ruleName: 'Rule 3: clicks > impressions',
+          ruleDescription: 'Rule 3: clicks > impressions',
+          ruleType: 'WARNING',
           ruleThreshold: null, // no threshold for this rule
-          color: "#FFFFCC",
+          color: '#FFFFCC',
         },
       ],
-      flagColumnRange: "K2:K",
-      rangeToSort: "A2:L",
-      rangeToFilter: "A1:L",
+      flagColumnRange: 'K2:K',
+      rangeToSort: 'A2:L',
+      rangeToFilter: 'A1:L',
       sortByColumns: [
         { column: TA_PLACEMENT_ID_COLUMN, ascending: true },
         { column: TA_DATE_COLUMN, ascending: true },
@@ -693,17 +693,17 @@ function getOtherConfigsByUseCase(useCase, useCaseThreshold) {
       rules: [
         {
           ruleName:
-            "Rule 1: landing page is set to the default value: http://google.com",
+            'Rule 1: landing page is set to the default value: http://google.com',
           ruleDescription:
-            "Rule 1: landing page is set to the default value: http://google.com",
-          ruleType: "ISSUE",
+            'Rule 1: landing page is set to the default value: http://google.com',
+          ruleType: 'ISSUE',
           ruleThreshold: null, // no threshold for this rule
-          color: "#ea4335",
+          color: '#ea4335',
         },
       ],
-      flagColumnRange: "J2:J",
-      rangeToSort: "A2:K",
-      rangeToFilter: "A1:K",
+      flagColumnRange: 'J2:J',
+      rangeToSort: 'A2:K',
+      rangeToFilter: 'A1:K',
       sortByColumns: [{ column: DLP_DATE_COLUMN, ascending: true }],
       columnToResize: 11,
       numColsToResize: 1,

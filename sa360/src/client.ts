@@ -117,6 +117,9 @@ export class Client implements ClientInterface {
     const rules: Record<string, Executor> = {};
     const results: Record<string, ExecutorResult> = {};
     for (const [rule, thresholdCallable] of thresholds) {
+      if (!rule.enabled) {
+        continue;
+      }
       results[rule.name] = await thresholdCallable();
       rules[rule.name] = rule;
     }
@@ -144,19 +147,9 @@ export class Client implements ClientInterface {
  * SA360 rule args splits.
  */
 export class RuleRange extends AbstractRuleRange<SearchAdsClientTypes> {
-  async getRows(ruleGranularity: RuleGranularity) {
-    if (ruleGranularity === RuleGranularity.CAMPAIGN) {
-      return this.client.getAllCampaigns();
-    } else {
-      return this.client.getAllAdGroups();
-    }
+  async getRuleMetadata() {
+    return [];
   }
-}
-
-/**
- * SA360 rule args splits.
- */
-export class RuleRangeV2 extends AbstractRuleRange<SearchAdsClientTypes> {
   async getRows(ruleGranularity: RuleGranularity) {
     if (ruleGranularity === RuleGranularity.CAMPAIGN) {
       return this.client.getAllCampaigns();
