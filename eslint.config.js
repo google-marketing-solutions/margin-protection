@@ -21,11 +21,12 @@ const rules = {
     },
   ],
   'max-lines-per-function': [
-    'error', {
+    'error',
+    {
       max: 200,
       skipBlankLines: true,
       skipComments: true,
-    }
+    },
   ],
 };
 

@@ -87,6 +87,9 @@ export async function generateGeoTestData({
   return results['Geo Targeting'].values;
 }
 
+/**
+ * Generates line item test data
+ */
 export async function generateLineItemTestData<
   Params extends Record<keyof Params, string>,
 >({
@@ -131,6 +134,9 @@ export async function generateLineItemTestData<
   return Object.values(results)[0].values;
 }
 
+/**
+ * Generates fake insertion order test data.
+ */
 export async function generateInsertionOrderTestData<
   Params extends Record<keyof Params, string>,
 >(
@@ -170,6 +176,9 @@ export async function generateInsertionOrderTestData<
   return Object.values(results)[0].values;
 }
 
+/**
+ * Generates a fake impressions report
+ */
 export async function generateImpressionReport(
   rule: typeof impressionsByGeoTarget,
   fakeImpressionAmount: number,
@@ -209,6 +218,9 @@ export async function generateImpressionReport(
   return results['Impressions by Geo Target'].values;
 }
 
+/**
+ * Generates a fake insertion order report.
+ */
 export async function generateInsertionOrderReportWithDateValues(
   startDate: number,
   endDate: number,
@@ -237,6 +249,10 @@ export async function generateInsertionOrderReportWithDateValues(
     ],
   );
 }
+
+/**
+ * Generates a fake line item report.
+ */
 export async function generateLineItemReport(
   startDate: number,
   endDate: number,
@@ -258,6 +274,9 @@ export async function generateLineItemReport(
   });
 }
 
+/**
+ * Test data for the daily budget rule.
+ */
 export async function dailyBudgetRuleTestData(fakeTotalBudget: number) {
   return await generateInsertionOrderTestData(
     dailyBudgetRule,
@@ -288,6 +307,9 @@ export async function dailyBudgetRuleTestData(fakeTotalBudget: number) {
   );
 }
 
+/**
+ * Generates test data for the budget pacing rule for line items.
+ */
 export async function lineItemPacingRuleTestData(fakeSpendAmount: number) {
   return await generateLineItemTestData({
     advertiserId: '123',
@@ -308,6 +330,9 @@ export async function lineItemPacingRuleTestData(fakeSpendAmount: number) {
   });
 }
 
+/**
+ * Generates test data for the budget pacing rule for insertion orders.
+ */
 export async function insertionOrderPacingRuleTestData(
   fakeSpendAmount: number,
 ) {
