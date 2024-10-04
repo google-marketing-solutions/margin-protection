@@ -1268,10 +1268,10 @@ export abstract class AppsScriptFrontend<T extends ClientTypes<T>> {
           ),
         );
       }
-      const rules = ranges.get(rule.granularity)!;
+      const ruleRange = ranges.get(rule.granularity)!;
 
       for (const [id, column] of rule.settings.entries()) {
-        rules.setRow(rule.name, id, column);
+        ruleRange.setRow(rule.name, id, column);
       }
     }
 

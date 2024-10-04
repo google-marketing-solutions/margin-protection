@@ -180,6 +180,7 @@ describe('validate/launchMonitor functions', () => {
   });
 
   it('skips disabled rules', async () => {
+    console.log('en');
     scaffoldSheetWithNamedRanges();
     SpreadsheetApp.getActive()
       .getSheetByName('Rule Settings - Campaign')
@@ -208,10 +209,11 @@ describe('validate/launchMonitor functions', () => {
       ),
     ).toBeDefined();
     expect(
-      SpreadsheetApp.getActive().getSheetByName(
-        `${geoTargetRule.name} - Results`,
-      ),
-    ).toBeUndefined();
+      SpreadsheetApp.getActive()
+        .getSheetByName(`${geoTargetRule.name} - Results`)
+        .getDataRange()
+        .getValues(),
+    ).toEqual([]);
   });
 
   afterEach(() => {

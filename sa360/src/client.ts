@@ -117,10 +117,12 @@ export class Client implements ClientInterface {
     const results: Record<string, ExecutorResult> = {};
     for (const [rule, thresholdCallable] of thresholds) {
       if (!rule.enabled) {
-        continue;
+        results[rule.name] = { values: {} };
+        rules[rule.name] = rule;
+      } else {
+        results[rule.name] = await thresholdCallable();
+        rules[rule.name] = rule;
       }
-      results[rule.name] = await thresholdCallable();
-      rules[rule.name] = rule;
     }
 
     return { rules, results };

@@ -149,10 +149,11 @@ describe('validate/launchMonitor functions', () => {
       ),
     ).toBeDefined();
     expect(
-      SpreadsheetApp.getActive().getSheetByName(
-        `${geoTargetRule.name} - Results`,
-      ),
-    ).toBeUndefined();
+      SpreadsheetApp.getActive()
+        .getSheetByName(`${geoTargetRule.name} - Results`)
+        .getDataRange()
+        .getValues(),
+    ).toEqual([]);
   });
 
   afterEach(() => {

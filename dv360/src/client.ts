@@ -177,22 +177,22 @@ export class Client implements ClientInterface {
       Record<string, ParamDefinition>
     >;
     const thresholds: Array<[Executor, () => Promise<ExecutorResult>]> =
-      Object.values(this.ruleStore)
-        .filter((rule) => rule.enabled)
-        .reduce(
-          (prev, rule) => {
-            return [...prev, [rule, rule.run.bind(rule)]];
-          },
-          [] as Array<[Executor, () => Promise<ExecutorResult>]>,
-        );
+      Object.values(this.ruleStore).reduce(
+        (prev, rule) => {
+          return [...prev, [rule, rule.run.bind(rule)]];
+        },
+        [] as Array<[Executor, () => Promise<ExecutorResult>]>,
+      );
     const rules: Record<string, Executor> = {};
     const results: Record<string, ExecutorResult> = {};
     for (const [rule, thresholdCallable] of thresholds) {
       if (!rule.enabled) {
-        continue;
+        results[rule.name] = { values: {} };
+        rules[rule.name] = rule;
+      } else {
+        results[rule.name] = await thresholdCallable();
+        rules[rule.name] = rule;
       }
-      results[rule.name] = await thresholdCallable();
-      rules[rule.name] = rule;
     }
 
     return { rules, results };
