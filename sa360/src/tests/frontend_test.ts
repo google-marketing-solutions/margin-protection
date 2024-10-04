@@ -13,7 +13,7 @@ import {
   ReportFactory,
   SA360_API_ENDPOINT,
 } from 'common/ads_api';
-import { JoinType, QueryBuilder } from 'common/ads_api_types';
+import { Query, QueryBuilder } from 'common/ads_api_types';
 
 describe('initializeSheets', () => {
   let frontend: SearchAdsFrontend;
@@ -250,12 +250,11 @@ function testData(
   };
 
   client.getReport = <
-    Q extends QueryBuilder<P, J>,
+    Q extends QueryBuilder<Query<P>>,
     O extends string,
     P extends string,
-    J extends JoinType<P>,
   >(
-    reportClass: ReportClass<Q, O, P, J>,
+    reportClass: ReportClass<Q, O, P>,
   ) => {
     return {
       fetch() {
@@ -278,7 +277,7 @@ function testData(
           ) as unknown as Record<O, string>,
         ];
       },
-    } satisfies ReportInterface<Q, O, P, J>;
+    } satisfies ReportInterface<Q, O, P>;
   };
   return client;
 }
