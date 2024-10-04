@@ -1015,6 +1015,9 @@ export abstract class AppsScriptFrontend<T extends ClientTypes<T>> {
         this.exportAsCsv(rule.name, matrix);
       }
     }
+    if (ruleSheets.length == 0) {
+      return;
+    }
     HELPERS.getOrCreateSheet('Summary')
       .getRange(1, 1, ruleSheets.length, 2)
       .setValues(
