@@ -174,14 +174,12 @@ export class Client implements ClientInterface {
   async validate() {
     type Executor = RuleExecutor<DisplayVideoClientTypes>;
     const thresholds: Array<[Executor, () => Promise<ExecutorResult>]> =
-      Object.values(this.ruleStore)
-        .filter((rule) => rule.enabled)
-        .reduce(
-          (prev, rule) => {
-            return [...prev, [rule, rule.run.bind(rule)]];
-          },
-          [] as Array<[Executor, () => Promise<ExecutorResult>]>,
-        );
+      Object.values(this.ruleStore).reduce(
+        (prev, rule) => {
+          return [...prev, [rule, rule.run.bind(rule)]];
+        },
+        [] as Array<[Executor, () => Promise<ExecutorResult>]>,
+      );
     const rules: Record<string, Executor> = {};
     const results: Record<string, ExecutorResult> = {};
     for (const [rule, thresholdCallable] of thresholds) {

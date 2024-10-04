@@ -180,6 +180,7 @@ describe('validate/launchMonitor functions', () => {
   });
 
   it('skips disabled rules', async () => {
+    console.log('en');
     scaffoldSheetWithNamedRanges();
     SpreadsheetApp.getActive()
       .getSheetByName('Rule Settings - Campaign')
