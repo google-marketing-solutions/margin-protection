@@ -19,7 +19,12 @@
  * @fileoverview Test helpers for the common library.
  */
 
-import { ClientTypes } from '../types';
+import {
+  ClientTypes,
+  DefinedParameters,
+  RuleExecutorClass,
+  RuleParams,
+} from '../types';
 import { FakePropertyStore } from '../test_helpers/mock_apps_script';
 
 import {
@@ -29,6 +34,7 @@ import {
   ReportFactory,
 } from '../ads_api';
 import { AbstractRuleRange, AppsScriptFrontend } from '../sheet_helpers';
+import { newRuleBuilder } from 'common/client_helpers';
 import {
   AppsScriptFunctions,
   BaseClientArgs,
@@ -78,6 +84,9 @@ export interface AdsClientInterface
  * Stub for rule range
  */
 export class RuleRange extends AbstractRuleRange<TestClientTypes> {
+  async getRuleMetadata() {
+    return [];
+  }
   async getRows() {
     return [{ id: '1', displayName: 'Campaign 1', advertiserId: '1' }];
   }
@@ -87,6 +96,7 @@ export class RuleRange extends AbstractRuleRange<TestClientTypes> {
  * Test client for use in tests.
  */
 export class FakeClient implements TestClientInterface {
+  id: string = 'test';
   readonly args: ClientArgs = { label: 'test' };
   readonly ruleStore: {
     [ruleName: string]: RuleExecutor<TestClientTypes>;
@@ -108,12 +118,13 @@ export class FakeClient implements TestClientInterface {
   }> {
     throw new Error('Method not implemented.');
   }
-  addRule<
-    Params extends Record<keyof Params, ParamDefinition>,
-  >(): TestClientInterface {
-    throw new Error('Method not implemented.');
+  addRule<Params extends Record<keyof Params, ParamDefinition>>(
+    rule: RuleExecutorClass<TestClientTypes>,
+    settingsArray: ReadonlyArray<string[]>,
+  ): FakeClient {
+    this.ruleStore[rule.definition.name] = new rule(this, settingsArray);
+    return this;
   }
-  id = 'something';
 
   getAllCampaigns(): Promise<[]> {
     return Promise.resolve([]);
@@ -254,3 +265,12 @@ export function bootstrapGoogleAdsApi(
 export function iterator<T>(...a: T[]): IterableIterator<T> {
   return a[Symbol.iterator]();
 }
+
+/**
+ * Creates a new test rule.
+ */
+export const newRule = newRuleBuilder<TestClientTypes>() as <
+  P extends DefinedParameters<P>,
+>(
+  p: RuleParams<TestClientTypes, P>,
+) => RuleExecutorClass<TestClientTypes>;

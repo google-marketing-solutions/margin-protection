@@ -66,6 +66,7 @@ export function newRuleBuilder<T extends ClientTypes<T>>(): <
       readonly helper = ruleDefinition.helper ?? '';
       readonly granularity: T['ruleGranularity'] = ruleDefinition.granularity;
       readonly valueFormat = ruleDefinition.valueFormat;
+      readonly enabled = true;
       static definition = ruleDefinition;
 
       constructor(

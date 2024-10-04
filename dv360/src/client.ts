@@ -110,7 +110,6 @@ export class Client implements ClientInterface {
   private storedInsertionOrders: InsertionOrder[] = [];
   private storedLineItems: LineItem[] = [];
   private storedCampaigns: RecordInfo[] = [];
-  private storedAdvertiserIds: string[] = [];
   private savedBudgetReport?: BudgetReportInterface;
   private savedLineItemBudgetReport?: LineItemBudgetReportInterface;
 
@@ -178,15 +177,20 @@ export class Client implements ClientInterface {
       Record<string, ParamDefinition>
     >;
     const thresholds: Array<[Executor, () => Promise<ExecutorResult>]> =
-      Object.values(this.ruleStore).reduce(
-        (prev, rule) => {
-          return [...prev, [rule, rule.run.bind(rule)]];
-        },
-        [] as Array<[Executor, () => Promise<ExecutorResult>]>,
-      );
+      Object.values(this.ruleStore)
+        .filter((rule) => rule.enabled)
+        .reduce(
+          (prev, rule) => {
+            return [...prev, [rule, rule.run.bind(rule)]];
+          },
+          [] as Array<[Executor, () => Promise<ExecutorResult>]>,
+        );
     const rules: Record<string, Executor> = {};
     const results: Record<string, ExecutorResult> = {};
     for (const [rule, thresholdCallable] of thresholds) {
+      if (!rule.enabled) {
+        continue;
+      }
       results[rule.name] = await thresholdCallable();
       rules[rule.name] = rule;
     }
@@ -444,7 +448,7 @@ export class RuleRange extends AbstractRuleRange<DisplayVideoClientTypes> {
   override async getRuleMetadata(granularity: RuleGranularity, id: string) {
     const { campaignMap, hasAdvertiserName } = await this.getCampaignMap();
     if (!hasAdvertiserName) {
-      return [];
+      return undefined;
     }
     let campaignId: string;
     if (granularity === RuleGranularity.CAMPAIGN) {
@@ -457,7 +461,7 @@ export class RuleRange extends AbstractRuleRange<DisplayVideoClientTypes> {
       campaignMap[campaignId].advertiserId,
       //checked in `hasAdvertiserName`
       campaignMap[campaignId].advertiserName!,
-    ];
+    ] satisfies [string, string];
   }
 }
 

@@ -21,8 +21,6 @@
 
 import {
   PropertyStore,
-  RuleParams,
-  Settings,
   Value,
   Values,
   ClientTypes,
@@ -438,14 +436,15 @@ export abstract class AbstractRuleRange<T extends ClientTypes<T>>
       this.setRow('none', record.id, [
         record.id,
         record.displayName,
-        ...(await this.getRuleMetadata(rule.granularity, record.id)),
+        ...((await this.getRuleMetadata(rule.granularity, record.id)) ?? []),
       ]);
     }
   }
 
-  async getRuleMetadata(granularity: T['ruleGranularity'], id: string) {
-    return [];
-  }
+  abstract getRuleMetadata(
+    granularity: T['ruleGranularity'],
+    id: string,
+  ): Promise<string[]>;
 
   async getRuleHeaders(): Promise<string[]> {
     return [];
@@ -453,7 +452,7 @@ export abstract class AbstractRuleRange<T extends ClientTypes<T>>
 
   writeBack(ruleGranularity: T['ruleGranularity']) {
     const values = this.getValues(ruleGranularity);
-    const range = getOrCreateSheet(
+    const range = HELPERS.getOrCreateSheet(
       `Rule Settings - ${ruleGranularity}`,
     ).getRange(1, 1, values.length, values[0].length);
     range.setValues(values);
@@ -461,14 +460,6 @@ export abstract class AbstractRuleRange<T extends ClientTypes<T>>
   }
 
   abstract getRows(granularity: T['ruleGranularity']): Promise<RecordInfo[]>;
-}
-
-/**
- * Convenience method to optionally create, then retrieve a sheet by name.
- */
-export function getOrCreateSheet(sheetName: string) {
-  const active = SpreadsheetApp.getActive();
-  return active.getSheetByName(sheetName) || active.insertSheet(sheetName);
 }
 
 const SCRIPT_PULL = 'scriptPull';
@@ -560,6 +551,10 @@ export const HELPERS = {
 
     return range;
   },
+  getOrCreateSheet(sheetName: string) {
+    const active = SpreadsheetApp.getActive();
+    return active.getSheetByName(sheetName) || active.insertSheet(sheetName);
+  },
 };
 
 /**
@@ -616,7 +611,7 @@ export abstract class AppsScriptFrontend<T extends ClientTypes<T>> {
   async onOpen() {
     SpreadsheetApp.getUi()
       .createMenu('Launch Monitor')
-      .addItem('Sync Campaigns', 'initializeSheets')
+      .addItem('Fetch Data', 'initializeSheets')
       .addItem('Pre-Launch QA', 'preLaunchQa')
       .addItem('Show Glossary', 'displayGlossary')
       .addToUi();
@@ -630,18 +625,14 @@ export abstract class AppsScriptFrontend<T extends ClientTypes<T>> {
    */
   async initializeRules() {
     const numberOfHeaders = 3;
-    const sheets = this.injectedArgs.rules.reduce(
-      (prev, rule) => {
-        (prev[rule.definition.granularity.toString()] ??= [] as Array<
-          RuleExecutorClass<T>
-        >).push(rule);
-        return prev;
-      },
-      {} as Record<string, Array<RuleExecutorClass<T>>>,
-    );
+
+    const sheets: Record<string, Array<RuleExecutorClass<T>>> = {};
+    for (const rule of this.injectedArgs.rules) {
+      (sheets[rule.definition.granularity.toString()] ??= []).push(rule);
+    }
 
     for (const [sheetName, ruleClasses] of Object.entries(sheets)) {
-      const ruleSheet = getOrCreateSheet(
+      const ruleSheet = HELPERS.getOrCreateSheet(
         `${RULE_SETTINGS_SHEET} - ${sheetName}`,
       );
       ruleSheet.getRange('A:Z').clearDataValidations();
@@ -703,6 +694,10 @@ export abstract class AppsScriptFrontend<T extends ClientTypes<T>> {
         }
       }
     }
+    const enabledObject = this.setUpRuleSheet();
+    for (const [key, enabled] of enabledObject) {
+      this.client.ruleStore[key].enabled = enabled;
+    }
   }
 
   /** Adds the validation at the desired column. */
@@ -745,9 +740,11 @@ export abstract class AppsScriptFrontend<T extends ClientTypes<T>> {
     const report: { [rule: string]: { [campaignId: string]: Value } } = {};
     await this.initializeSheets();
     const thresholds: Array<[Rule, Promise<{ values: Values }>]> =
-      Object.values(this.client.ruleStore).map((rule) => {
-        return [rule, rule.run()];
-      });
+      Object.values(this.client.ruleStore)
+        .filter((rule) => rule.enabled)
+        .map((rule) => {
+          return [rule, rule.run()];
+        });
 
     for (const [rule, threshold] of thresholds) {
       const { values } = await threshold;
@@ -761,7 +758,7 @@ export abstract class AppsScriptFrontend<T extends ClientTypes<T>> {
       }
     }
 
-    const sheet = getOrCreateSheet('Pre-Launch QA Results');
+    const sheet = HELPERS.getOrCreateSheet('Pre-Launch QA Results');
     const lastUpdated = [
       `Last Updated ${new Date(Date.now()).toISOString()}`,
       '',
@@ -977,7 +974,7 @@ export abstract class AppsScriptFrontend<T extends ClientTypes<T>> {
       const rule = rules[uniqueKey];
       const ruleSheet = `${rule.name} - Results`;
       ruleSheets.push(rule.name);
-      const sheet = getOrCreateSheet(ruleSheet);
+      const sheet = HELPERS.getOrCreateSheet(ruleSheet);
       sheet.clear();
       const values = Object.values(result.values).filter(
         (value) => value.anomalous,
@@ -1015,7 +1012,7 @@ export abstract class AppsScriptFrontend<T extends ClientTypes<T>> {
         this.exportAsCsv(rule.name, matrix);
       }
     }
-    getOrCreateSheet('Summary')
+    HELPERS.getOrCreateSheet('Summary')
       .getRange(1, 1, ruleSheets.length, 2)
       .setValues(
         ruleSheets.map((rule, i) => [
@@ -1032,7 +1029,9 @@ export abstract class AppsScriptFrontend<T extends ClientTypes<T>> {
    */
   async initializeSheets() {
     if (!this.getIdentity()) {
-      this.displaySetupModal();
+      throw new Error(
+        'No identity set - please go to General/Configuration and fill in required fields.',
+      );
     }
 
     this.migrate();
@@ -1040,6 +1039,45 @@ export abstract class AppsScriptFrontend<T extends ClientTypes<T>> {
     await this.initializeRules();
   }
 
+  /**
+   * Add a rule sheet with enable/disable checks.
+   *
+   * @returns An object mapping rules to their state (enabled/disabled).
+   */
+  setUpRuleSheet(): Array<[key: string, enabled: boolean]> {
+    const sheet = HELPERS.getOrCreateSheet('Enable/Disable Rules');
+    const currentValues = sheet.getDataRange().getValues();
+    const ENABLED_COLUMN = 3;
+    const RULE_INDEX = 0;
+
+    let enabledMap: Record<string, boolean> = {};
+    if (currentValues[0] && currentValues[0][0] !== '') {
+      const enabledIndex = currentValues[0].findIndex((c) => c === 'Enabled');
+      enabledMap = Object.fromEntries(
+        currentValues.map((r) => [r[RULE_INDEX], r[enabledIndex]]),
+      );
+    }
+    const regex = new RegExp('</?.*?>', 'g');
+    const paras = new RegExp('<p>(.*?)</p>(?!$)', 'g');
+
+    const ruleRows = [
+      ['Rule Name', 'Description', 'Enabled'],
+      ...Object.entries(this.client.ruleStore).map(([key, rule]) => [
+        key,
+        rule.description.replaceAll(paras, '$1\n\n').replaceAll(regex, ''),
+        enabledMap[key] ?? true,
+      ]),
+    ];
+    sheet
+      .getRange(1, 1, ruleRows.length, ruleRows[0].length)
+      .setValues(ruleRows);
+    sheet
+      .getRange(2, ENABLED_COLUMN, ruleRows.length - 1, 1)
+      .insertCheckboxes();
+    return ruleRows
+      .slice(1)
+      .map((row) => [row[0] as string, row[2] as boolean]);
+  }
   /**
    * Handle migrations for Google Sheets (sheets getting added/removed).
    */
@@ -1215,7 +1253,9 @@ export abstract class AppsScriptFrontend<T extends ClientTypes<T>> {
         ranges.set(
           rule.granularity,
           new this.injectedArgs.ruleRangeClass(
-            getOrCreateSheet(`${RULE_SETTINGS_SHEET} - ${rule.granularity}`)
+            HELPERS.getOrCreateSheet(
+              `${RULE_SETTINGS_SHEET} - ${rule.granularity}`,
+            )
               .getDataRange()
               .getValues(),
             this.client,
@@ -1233,62 +1273,6 @@ export abstract class AppsScriptFrontend<T extends ClientTypes<T>> {
       range.writeBack(granularity);
     }
   }
-}
-
-/**
- * Creates new rule with the metadata needed to generate settings.
- *
- * Wrapping in this function gives us access to all methods in {@link
- * RuleUtilities} as part of `this` in our `callback`.
- *
- * Example:
- *
- * ```
- * newRule({
- *   //...
- *   callback(client, settings) {
- *     // insert rule logic here
- *     return {values};
- *   }
- * });
- * ```
- */
-
-// This returns a function, a use case that this lint rule doesn't
-// apply to.
-export function newRuleBuilder<T extends ClientTypes<T>>(): <
-  P extends Record<keyof P, ParamDefinition>,
->(
-  p: RuleParams<T, P>,
-) => RuleExecutorClass<T, P> {
-  return function newRule<P extends Record<keyof P, ParamDefinition>>(
-    ruleDefinition: RuleParams<T, P>,
-  ): RuleExecutorClass<T, P> {
-    const ruleClass = class implements RuleExecutor<T, P> {
-      readonly description = ruleDefinition.description;
-      readonly settings: Settings<Record<keyof P, string>>;
-      readonly name: string = ruleDefinition.name;
-      readonly params = ruleDefinition.params;
-      readonly helper = ruleDefinition.helper ?? '';
-      readonly granularity: T['ruleGranularity'] = ruleDefinition.granularity;
-      readonly valueFormat = ruleDefinition.valueFormat;
-      static definition = ruleDefinition;
-
-      constructor(
-        readonly client: T['client'],
-        settingsArray: Readonly<string[][]>,
-      ) {
-        this.settings = transformToParamValues(settingsArray, this.params);
-      }
-
-      async run(): Promise<ExecutorResult> {
-        return await ruleDefinition.callback.bind(this)();
-      }
-    };
-
-    Object.defineProperty(ruleClass, 'name', { value: ruleDefinition.name });
-    return ruleClass;
-  };
 }
 
 /**

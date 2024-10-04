@@ -1,8 +1,10 @@
-const spreadsheetId = '1qmOv2aY0OPLFJRlpsxR8AyzzRUF70vfs73QHlvASndo'; // Replace with your sheet's ID
+const spreadsheetId = ''; // Replace with your sheet's ID
 
+const languageConfigSheetName = 'Language config';
 const geoTargetingConfigSheetName = 'Geo Targeting config';
 const budgetConfigSheetName = 'Budget config';
 
+const languageResultSheetName = 'Language results';
 const geoTargetingResultSheetName = 'Geo Targeting results';
 const budgetResultSheetName = 'Budget results';
 const setupSheetName = 'Setup';
@@ -15,9 +17,8 @@ const fetchOnlyActiveCampaignsCell = 'B7';
 
 const spreadsheet = SpreadsheetApp.openById(spreadsheetId);
 const setupSheet = spreadsheet.getSheetByName(setupSheetName);
-const geoTargetingConfigSheet = spreadsheet.getSheetByName(
-  geoTargetingConfigSheetName,
-);
+const languageConfigSheet = spreadsheet.getSheetByName(languageConfigSheetName);
+const geoTargetingConfigSheet = spreadsheet.getSheetByName(geoTargetingConfigSheetName);
 const budgetConfigSheet = spreadsheet.getSheetByName(budgetConfigSheetName);
 
 const mode = setupSheet.getRange(outputModeCell).getValue();
@@ -28,9 +29,11 @@ const fetchOnlyActiveCampaigns = setupSheet
   .getRange(fetchOnlyActiveCampaignsCell)
   .getValue();
 
+const languageResult = [];
 const geoTargetingResult = [];
 const budgetResult = [];
 
+var languageMisconfigured = [];
 var geoTargetingMisconfigured = [];
 var budgetMisconfigured = [];
 
@@ -40,6 +43,7 @@ function main() {
   checkInput();
   checkAccount(getCurrentAccount());
   writeToResultSheet();
+  languageMisconfigured = languageResult.filter((r) => r.misconfigured);
   geoTargetingMisconfigured = geoTargetingResult.filter((r) => r.misconfigured);
   budgetMisconfigured = budgetResult.filter((r) => r.misconfigured);
 
@@ -182,8 +186,86 @@ function checkCampaignIterator(account, campaignIterator) {
   while (campaignIterator.hasNext()) {
     const campaign = campaignIterator.next();
 
+    checkSingleCampaignLanguage(account, campaign);
     checkSingleCampaignGeoTarget(account, campaign);
     checkSingleCampaignBudget(account, campaign);
+  }
+}
+
+function checkSingleCampaignLanguage(account, campaign) {
+  const accountId = account.getCustomerId();
+  const accountName = account.getName();
+  const campaignId = campaign.getId();
+  const campaignName = campaign.getName();
+
+  const actualLanguagesNames = [];
+
+  const actualLanguages = campaign
+    .targeting()
+    .languages()
+    .get();
+  while (actualLanguages.hasNext()) {
+    var target = actualLanguages.next();
+    actualLanguagesNames.push(target.getName());
+  }
+
+  const range = languageConfigSheet.getDataRange();
+  const values = range.getValues();
+
+  var desiredLanguagesStr = '';
+
+  for (var i = 0; i < values.length; i++) {
+    if (values[i][2] == campaignId) {
+      // Account ID is in column A and Campaign ID is in column C
+      desiredLanguagesStr = values[i][4]; // Desired Languages is in column E
+
+      break;
+    }
+  }
+
+  var desiredLanguagesNames = desiredLanguagesStr.split(',');
+
+  desiredLanguagesNames = desiredLanguagesNames
+    .map((obj) => obj.trim())
+    .filter((obj) => obj !== '' && obj !== '-');
+
+  if (desiredLanguagesNames.length === 0) {
+    languageResult.push({
+      accountId,
+      accountName,
+      campaignId,
+      campaignName,
+      desiredLanguagesNames,
+      actualLanguagesNames,
+      misconfigured: false,
+    });
+    console.log('Ok - No desired config');
+    return;
+  }
+
+  // Compare and log discrepancies (if any)
+  if (!arraysHaveSameElements(desiredLanguagesNames, actualLanguagesNames)) {
+    languageResult.push({
+      accountId,
+      accountName,
+      campaignId,
+      campaignName,
+      desiredLanguagesNames,
+      actualLanguagesNames,
+      misconfigured: true,
+    });
+    console.log('Misconfigured');
+  } else {
+    languageResult.push({
+      accountId,
+      accountName,
+      campaignId,
+      campaignName,
+      desiredLanguagesNames,
+      actualLanguagesNames,
+      misconfigured: false,
+    });
+    console.log('Ok');
   }
 }
 
@@ -477,6 +559,64 @@ function getCampaignActualBudget(campaign) {
 
 function writeToResultSheet() {
   console.log('Writing results to sheets...');
+
+  const languageResultSheet = createOrClearSheet(
+    languageResultSheetName,
+  );
+  languageResultSheet.appendRow([
+    'Customer ID',
+    'Customer name',
+    'Campaign ID',
+    'Campaign name',
+    'Desired languages',
+    'Current languages',
+    'MISCONFIGURED',
+  ]);
+  languageResult.forEach((r) => {
+    languageResultSheet.appendRow([
+      r.accountId,
+      r.accountName,
+      r.campaignId,
+      r.campaignName,
+      r.desiredLanguagesNames.length !== 0 ? r.desiredLanguagesNames.join(', ') : '-',
+      r.actualLanguagesNames.length !== 0 ? r.actualLanguagesNames.join(', ') : '-',
+      r.misconfigured,
+    ]);
+  });
+
+  range = languageResultSheet.getRange('A1:G1');
+
+  range.setBackground('#D9D9D9');
+  range.setBorder(
+    null,
+    null,
+    true,
+    null,
+    null,
+    null,
+    '#000000',
+    SpreadsheetApp.BorderStyle.SOLID_THICK,
+  );
+
+  range = languageResultSheet.getRange('A2:G999');
+  range.setBorder(
+    null,
+    null,
+    null,
+    null,
+    true,
+    null,
+    '#000000',
+    SpreadsheetApp.BorderStyle.SOLID,
+  );
+
+  languageResultSheet.setColumnWidths(1, 1, 120);
+  languageResultSheet.setColumnWidths(2, 1, 300);
+  languageResultSheet.setColumnWidths(3, 1, 120);
+  languageResultSheet.setColumnWidths(4, 3, 300);
+  languageResultSheet.setColumnWidths(7, 1, 120);
+
+
   const geoTargetingResultSheet = createOrClearSheet(
     geoTargetingResultSheetName,
   );
