@@ -21,20 +21,12 @@ const rules = {
     },
   ],
   'max-lines-per-function': [
-<<<<<<< HEAD
     'error',
     {
       max: 200,
       skipBlankLines: true,
       skipComments: true,
     },
-=======
-    'error', {
-      max: 200,
-      skipBlankLines: true,
-      skipComments: true,
-    }
->>>>>>> 35fecad (fix tests and refactor long functions)
   ],
 };
 
