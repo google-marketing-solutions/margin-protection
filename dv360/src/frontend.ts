@@ -118,13 +118,21 @@ export const migrations: Record<
     ]);
   },
   '2.1': (frontend) => {
-    const sheet = HELPERS.getOrCreateSheet('Rule Settings - Campaign');
+    const sheet = SpreadsheetApp.getActive().getSheetByName(
+      'Rule Settings - Campaign',
+    );
+    if (!sheet) {
+      return;
+    }
     const ruleRange = new RuleRange(
       sheet.getDataRange().getValues(),
       frontend.client,
     );
     const values = ruleRange.getValues();
     const headers = values[2];
+    if (!headers) {
+      return;
+    }
     const geoTargetIndex = headers.findIndex((c) => c === 'Geo Targets');
     if (geoTargetIndex === -1) {
       return;
