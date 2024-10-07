@@ -172,10 +172,7 @@ export class Client implements ClientInterface {
    * by the client.
    */
   async validate() {
-    type Executor = RuleExecutor<
-      DisplayVideoClientTypes,
-      Record<string, ParamDefinition>
-    >;
+    type Executor = RuleExecutor<DisplayVideoClientTypes>;
     const thresholds: Array<[Executor, () => Promise<ExecutorResult>]> =
       Object.values(this.ruleStore).reduce(
         (prev, rule) => {
