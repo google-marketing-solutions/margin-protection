@@ -67,31 +67,52 @@ export function getFrontend(
   });
 }
 
-async function onOpen(properties = new AppsScriptPropertyStore()) {
+async function onOpen(
+  _: GoogleAppsScript.Events.SheetsOnOpen,
+  properties = new AppsScriptPropertyStore(),
+) {
   await getFrontend(properties).onOpen();
 }
 
-async function initializeSheets(properties = new AppsScriptPropertyStore()) {
+async function initializeSheets(
+  _: GoogleAppsScript.Events.TimeDriven,
+  properties = new AppsScriptPropertyStore(),
+) {
   await getFrontend(properties).initializeSheets();
 }
 
-async function initializeRules(properties = new AppsScriptPropertyStore()) {
+async function initializeRules(
+  _: GoogleAppsScript.Events.TimeDriven,
+  properties = new AppsScriptPropertyStore(),
+) {
   await getFrontend(properties).initializeRules();
 }
 
-async function preLaunchQa(properties = new AppsScriptPropertyStore()) {
+async function preLaunchQa(
+  _: GoogleAppsScript.Events.TimeDriven,
+  properties = new AppsScriptPropertyStore(),
+) {
   await getFrontend(properties).preLaunchQa();
 }
 
-async function launchMonitor(properties = new AppsScriptPropertyStore()) {
+async function launchMonitor(
+  _: GoogleAppsScript.Events.TimeDriven,
+  properties = new AppsScriptPropertyStore(),
+) {
   await getFrontend(properties).launchMonitor();
 }
 
-async function displaySetupModal(properties = new AppsScriptPropertyStore()) {
+async function displaySetupModal(
+  _: GoogleAppsScript.Events.TimeDriven,
+  properties = new AppsScriptPropertyStore(),
+) {
   await getFrontend(properties).displaySetupModal();
 }
 
-function displayGlossary(properties = new AppsScriptPropertyStore()) {
+function displayGlossary(
+  _: GoogleAppsScript.Events.TimeDriven,
+  properties = new AppsScriptPropertyStore(),
+) {
   getFrontend(properties).displayGlossary();
 }
 

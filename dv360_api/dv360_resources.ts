@@ -687,7 +687,7 @@ export class InsertionOrder extends DisplayVideoResource {
       const budget = resource['budget'] as InsertionOrderBudget;
       const mappedPacing = PacingMapper.map(pacing);
       const mappedFrequencyCap = FrequencyCapMapper.map(frequencyCap);
-      const mappedKpi = KpiMapper.map(kpi);
+      const mappedKpi = KpiMapper.map(kpi) || {};
       const mappedBudget = InsertionOrderBudgetMapper.map(budget);
 
       if (mappedPacing && mappedFrequencyCap && mappedKpi && mappedBudget) {

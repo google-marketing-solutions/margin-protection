@@ -50,21 +50,19 @@ export interface ClientArgs extends AdTypes.AdsClientArgs {
  * Convenience wrapper for a {@link AdTypes.ReportInterface}.
  */
 export type ReportInterface<
-  Q extends AdTypes.QueryBuilder<Params, Joins>,
+  Q extends AdTypes.QueryBuilder<AdTypes.Query<Params>>,
   Output extends string,
-  Params extends string,
-  Joins extends AdTypes.JoinType<Params> | undefined = AdTypes.JoinType<Params>,
-> = AdTypes.ReportInterface<Q, Output, Params, Joins>;
+  Params extends string = Q['queryParams'][number],
+> = AdTypes.ReportInterface<Q, Output, Params>;
 
 /**
  * Convenience wrapper for a {@link AdTypes.ReportClass}.
  */
 export type ReportClass<
-  Q extends AdTypes.QueryBuilder<Params, Joins>,
+  Q extends AdTypes.QueryBuilder<AdTypes.Query<Params>>,
   Output extends string,
-  Params extends string,
-  Joins extends AdTypes.JoinType<Params> | undefined = AdTypes.JoinType<Params>,
-> = AdTypes.ReportClass<Q, Output, Params, Joins>;
+  Params extends string = Q['queryParams'][number],
+> = AdTypes.ReportClass<Q, Output, Params>;
 
 /**
  * Extends the base client interface with SA360-specific features.
@@ -73,13 +71,12 @@ export interface ClientInterface
   extends BaseClientInterface<SearchAdsClientTypes> {
   getAllAdGroups(): Promise<RecordInfo[]>;
   getReport<
-    Q extends AdTypes.QueryBuilder<Params, Joins>,
+    Q extends AdTypes.QueryBuilder<AdTypes.Query<Params>>,
     Output extends string,
-    Params extends string,
-    Joins extends AdTypes.JoinType<Params> | undefined,
+    Params extends string = Q['queryParams'][number],
   >(
-    Report: ReportClass<Q, Output, Params, Joins>,
-  ): ReportInterface<Q, Output, Params, Joins>;
+    Report: ReportClass<Q, Output>,
+  ): ReportInterface<Q, Output>;
 }
 
 /**

@@ -22,6 +22,7 @@
 import {
   AssignedTargetingOption,
   InsertionOrder,
+  LineItem,
 } from 'dv360_api/dv360_resources';
 import {
   InsertionOrderBudgetSegment,
@@ -235,53 +236,13 @@ export const budgetPacingPercentageRule = newRule({
   async callback() {
     const values: Values = {};
 
-    const dateRange: { earliestStartDate?: Date; latestEndDate?: Date } = {};
     type SettingsObj =
       typeof this.settings extends Settings<infer I> ? I : never;
-    const results: Array<{
-      budget: number;
-      campaignId: string;
-      displayName: string;
-      insertionOrderId: string;
-      startDate: Date;
-      endDate: Date;
-      settings: SettingsObj;
-      pacingType: PacingType;
-    }> = [];
-    const today = Date.now();
-    const todayDate = new Date(today);
-    for (const insertionOrder of Object.values(
-      this.client.getAllInsertionOrders(),
-    )) {
-      const pacingType = insertionOrder.getInsertionOrderPacing().pacingType;
-      const insertionOrderId = insertionOrder.getId()!;
-      const displayName = insertionOrder.getDisplayName();
-      const settings = this.settings.getOrDefault(insertionOrderId);
-      for (const budgetSegment of insertionOrder.getInsertionOrderBudgetSegments()) {
-        const startDate = getDate(budgetSegment.dateRange.startDate);
-        const endDate = getDate(budgetSegment.dateRange.endDate);
-        if (!(startDate < todayDate && todayDate < endDate)) {
-          continue;
-        }
-        if (
-          insertionOrder.getInsertionOrderBudget().budgetUnit !==
-          'BUDGET_UNIT_CURRENCY'
-        ) {
-          continue;
-        }
-        expandDateRanges(dateRange, startDate, endDate);
-        results.push({
-          campaignId: insertionOrder.getCampaignId(),
-          displayName,
-          insertionOrderId,
-          startDate,
-          endDate,
-          settings,
-          pacingType,
-          budget: Number(budgetSegment.budgetAmountMicros) / 1_000_000,
-        });
-      }
-    }
+    const { results, dateRange } =
+      getInsertionOrderBudgetPacingResult<SettingsObj>(
+        this.settings,
+        this.client.getAllInsertionOrders(),
+      );
     if (!dateRange.earliestStartDate || !dateRange.latestEndDate) {
       return { values };
     }
@@ -296,13 +257,11 @@ export const budgetPacingPercentageRule = newRule({
       insertionOrderId,
       startDate,
       endDate,
-      settings,
+      setting,
       pacingType,
     } of results) {
       const startTimeSeconds = startDate.getTime();
       const endTimeSeconds = endDate.getTime();
-      const flightDuration = endTimeSeconds - startTimeSeconds;
-      const timeElapsed = today - startTimeSeconds;
       const spend = budgetReport.getSpendForInsertionOrder(
         insertionOrderId,
         startTimeSeconds,
@@ -311,12 +270,22 @@ export const budgetPacingPercentageRule = newRule({
       if (spend === undefined) {
         continue;
       }
-      const budgetToFlightDuration =
-        budget / (flightDuration / DAY_DENOMINATOR);
-      const spendToTimeElapsed = spend / (timeElapsed / DAY_DENOMINATOR);
-      const percent = spendToTimeElapsed / budgetToFlightDuration - 1;
+      const today = Date.now();
+      const {
+        spendToTimeElapsed,
+        budgetToFlightDuration,
+        flightDuration,
+        timeElapsed,
+        percent,
+      } = calculatePacing({
+        startTimeSeconds,
+        endTimeSeconds,
+        spend,
+        budget,
+        today,
+      });
       values[insertionOrderId] = humanReadableError(
-        settings,
+        setting,
         pacingType,
         percent,
         {
@@ -376,44 +345,10 @@ export const budgetPacingRuleLineItem = newRule({
     type SettingsObj =
       typeof this.settings extends Settings<infer I> ? I : never;
     const values: Values = {};
-    const results: Array<{
-      campaignId: string;
-      displayName: string;
-      lineItemId: string;
-      budget: number;
-      startDate: Date;
-      endDate: Date;
-      pacingType: PacingType;
-      settings: SettingsObj;
-    }> = [];
-    const dateRange: { earliestStartDate?: Date; latestEndDate?: Date } = {};
-    for (const lineItem of this.client.getAllLineItems()) {
-      const budget = lineItem.getLineItemBudget();
-      const flight = lineItem.getLineItemFlight().dateRange;
-      if (!dateRange) {
-        throw new Error(
-          `Missing a date range in Line Item ${lineItem.getId()}`,
-        );
-      }
-      const startDate = getDate(flight.startDate);
-      const endDate = getDate(flight.endDate);
-      expandDateRanges(dateRange, startDate, endDate);
-      if (budget.budgetUnit !== 'BUDGET_UNIT_CURRENCY') {
-        continue;
-      }
-      const pacingType = lineItem.getLineItemPacing().pacingType;
-      const settings = this.settings.getOrDefault(lineItem.getId());
-      results.push({
-        campaignId: lineItem.getCampaignId(),
-        displayName: lineItem.getDisplayName(),
-        lineItemId: lineItem.getId(),
-        startDate,
-        endDate,
-        settings,
-        pacingType,
-        budget: Number(budget.maxAmount) / 1_000_000,
-      });
-    }
+    const { results, dateRange } = getLineItemBudgetPacingResult<SettingsObj>(
+      this.settings,
+      this.client.getAllLineItems(),
+    );
     if (!dateRange.earliestStartDate || !dateRange.latestEndDate) {
       return { values };
     }
@@ -429,7 +364,7 @@ export const budgetPacingRuleLineItem = newRule({
       startDate,
       endDate,
       pacingType,
-      settings,
+      setting,
     } of results) {
       const spend = budgetReport.getSpendForLineItem(lineItemId);
       if (spend === undefined) {
@@ -447,7 +382,7 @@ export const budgetPacingRuleLineItem = newRule({
         budget / (flightDuration / DAY_DENOMINATOR);
       const spendToTimeElapsed = spend / (timeElapsed / DAY_DENOMINATOR);
       const percent = spendToTimeElapsed / budgetToFlightDuration - 1;
-      values[lineItemId] = humanReadableError(settings, pacingType, percent, {
+      values[lineItemId] = humanReadableError(setting, pacingType, percent, {
         'Line Item ID': lineItemId,
         'Display Name': displayName,
         'Campaign ID': campaignId,
@@ -672,14 +607,12 @@ function expandDateRanges(
   startDate: Date,
   endDate: Date,
 ) {
-  dateRange.earliestStartDate =
-    dateRange.earliestStartDate && dateRange.earliestStartDate < startDate
-      ? dateRange.earliestStartDate
-      : startDate;
-  dateRange.latestEndDate =
-    dateRange.latestEndDate && dateRange.latestEndDate > endDate
-      ? dateRange.latestEndDate
-      : endDate;
+  if (!dateRange.earliestStartDate || dateRange.earliestStartDate < startDate) {
+    dateRange.earliestStartDate = startDate;
+  }
+  if (!dateRange.latestEndDate || dateRange.latestEndDate > endDate) {
+    dateRange.latestEndDate = endDate;
+  }
 }
 
 function humanReadableError(
@@ -705,4 +638,133 @@ function humanReadableError(
     anomalous: value !== 'Pace OK',
     fields,
   };
+}
+
+interface PacingParameters {
+  budget: number;
+  today: number;
+  startTimeSeconds: number;
+  endTimeSeconds: number;
+  spend: number;
+}
+
+function calculatePacing({
+  startTimeSeconds,
+  endTimeSeconds,
+  spend,
+  budget,
+  today,
+}: PacingParameters) {
+  const flightDuration = endTimeSeconds - startTimeSeconds;
+  const timeElapsed = today - startTimeSeconds;
+  const budgetToFlightDuration = budget / (flightDuration / DAY_DENOMINATOR);
+  const spendToTimeElapsed = spend / (timeElapsed / DAY_DENOMINATOR);
+  const percent = spendToTimeElapsed / budgetToFlightDuration - 1;
+
+  return {
+    percent,
+    spendToTimeElapsed,
+    flightDuration,
+    timeElapsed,
+    budgetToFlightDuration,
+    spend,
+  };
+}
+
+function getLineItemBudgetPacingResult<SettingsObj>(
+  settings: Settings<SettingsObj>,
+  lineItems: LineItem[],
+) {
+  const results: Array<{
+    campaignId: string;
+    displayName: string;
+    lineItemId: string;
+    budget: number;
+    startDate: Date;
+    endDate: Date;
+    pacingType: PacingType;
+    setting: SettingsObj;
+  }> = [];
+  const dateRange: { earliestStartDate?: Date; latestEndDate?: Date } = {};
+  const today = Date.now();
+  const todayDate = new Date(today);
+  for (const lineItem of lineItems) {
+    const budget = lineItem.getLineItemBudget();
+    const flight = lineItem.getLineItemFlight().dateRange;
+    if (!dateRange) {
+      throw new Error(`Missing a date range in Line Item ${lineItem.getId()}`);
+    }
+    const startDate = getDate(flight.startDate);
+    const endDate = getDate(flight.endDate);
+    if (!(startDate < todayDate && todayDate < endDate)) {
+      continue;
+    }
+    expandDateRanges(dateRange, startDate, endDate);
+    if (budget.budgetUnit !== 'BUDGET_UNIT_CURRENCY') {
+      continue;
+    }
+    const pacingType = lineItem.getLineItemPacing().pacingType;
+    const setting = settings.getOrDefault(lineItem.getId()) as SettingsObj;
+    results.push({
+      campaignId: lineItem.getCampaignId(),
+      displayName: lineItem.getDisplayName(),
+      lineItemId: lineItem.getId(),
+      startDate,
+      endDate,
+      setting,
+      pacingType,
+      budget: Number(budget.maxAmount) / 1_000_000,
+    });
+  }
+
+  return { results, dateRange };
+}
+
+function getInsertionOrderBudgetPacingResult<SettingsObj>(
+  settings: Settings<SettingsObj>,
+  insertionOrders: InsertionOrder[],
+) {
+  const dateRange: { earliestStartDate?: Date; latestEndDate?: Date } = {};
+  const results: Array<{
+    budget: number;
+    campaignId: string;
+    displayName: string;
+    insertionOrderId: string;
+    startDate: Date;
+    endDate: Date;
+    setting: SettingsObj;
+    pacingType: PacingType;
+  }> = [];
+  const todayDate = new Date();
+  for (const insertionOrder of Object.values(insertionOrders)) {
+    const pacingType = insertionOrder.getInsertionOrderPacing().pacingType;
+    const insertionOrderId = insertionOrder.getId()!;
+    const displayName = insertionOrder.getDisplayName();
+    const setting = settings.getOrDefault(insertionOrderId) as SettingsObj;
+    for (const budgetSegment of insertionOrder.getInsertionOrderBudgetSegments()) {
+      const startDate = getDate(budgetSegment.dateRange.startDate);
+      const endDate = getDate(budgetSegment.dateRange.endDate);
+      if (!(startDate < todayDate && todayDate < endDate)) {
+        continue;
+      }
+      if (
+        insertionOrder.getInsertionOrderBudget().budgetUnit !==
+        'BUDGET_UNIT_CURRENCY'
+      ) {
+        continue;
+      }
+      expandDateRanges(dateRange, startDate, endDate);
+      results.push({
+        campaignId: insertionOrder.getCampaignId(),
+        displayName,
+        insertionOrderId,
+        startDate,
+        endDate,
+        setting,
+        pacingType,
+        budget: Number(budgetSegment.budgetAmountMicros) / 1_000_000,
+      });
+    }
+  }
+  return { results, dateRange };
 }

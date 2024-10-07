@@ -1130,7 +1130,7 @@ export const LineItemFlightMapper: MapperWithJsonOut<LineItemFlight> = {
 export interface LineItemBudget {
   budgetAllocationType?: BudgetAllocationType;
   budgetUnit?: BudgetUnit;
-  maxAmount?: number;
+  maxAmount?: string;
 }
 
 /**

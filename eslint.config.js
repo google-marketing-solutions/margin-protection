@@ -20,6 +20,14 @@ const rules = {
       caughtErrorsIgnorePattern: '^_',
     },
   ],
+  'max-lines-per-function': [
+    'error',
+    {
+      max: 200,
+      skipBlankLines: true,
+      skipComments: true,
+    },
+  ],
 };
 
 export default [

@@ -146,9 +146,8 @@ export class GoogleAdsApi implements AdTypes.GoogleAdsApiInterface {
   }
 
   *query<
-    Q extends AdTypes.QueryBuilder<Params, Joins>,
+    Q extends AdTypes.QueryBuilder<AdTypes.Query<Params>>,
     Params extends string = Q['queryParams'][number],
-    Joins extends AdTypes.JoinType<Params> | undefined = Q['joins'],
   >(
     customerIds: string,
     query: Q,
@@ -163,9 +162,8 @@ export class GoogleAdsApi implements AdTypes.GoogleAdsApiInterface {
    * Handles the actual work for the query conversion to AQL, then executes.
    */
   *queryOne<
-    Q extends AdTypes.QueryBuilder<Params, Joins>,
+    Q extends AdTypes.QueryBuilder<AdTypes.Query<Params>>,
     Params extends string = Q['queryParams'][number],
-    Joins extends AdTypes.JoinType<Params> | undefined = Q['joins'],
   >({
     query,
     customerId,
@@ -207,9 +205,8 @@ export class GoogleAdsApi implements AdTypes.GoogleAdsApiInterface {
    * A thin wrapper around {@link qlifyQuery} for testing.
    */
   qlifyQuery<
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    Q extends AdTypes.QueryBuilder<Params, any>,
-    Params extends string,
+    Q extends AdTypes.QueryBuilder<AdTypes.Query<Params>>,
+    Params extends string = Q['queryParams'][number],
   >(query: Q, queryWheres: string[] = []): string {
     return qlifyQuery(query, queryWheres);
   }
@@ -219,11 +216,10 @@ export class GoogleAdsApi implements AdTypes.GoogleAdsApiInterface {
  * Base class for all report types.
  */
 export abstract class Report<
-  Q extends AdTypes.QueryBuilder<Params, Joins>,
+  Q extends AdTypes.QueryBuilder<AdTypes.Query<Params>>,
   Output extends string,
   Params extends string = Q['queryParams'][number],
-  Joins extends AdTypes.JoinType<Params> | undefined = Q['joins'],
-> implements AdTypes.ReportInterface<Q, Output, Params, Joins>
+> implements AdTypes.ReportInterface<Q, Output>
 {
   constructor(
     protected readonly api: AdTypes.GoogleAdsApiInterface,
@@ -240,11 +236,7 @@ export abstract class Report<
    */
   private *mapIterators(queryWheres: string[] = []) {
     for (const customerId of this.clientIds) {
-      yield* this.api.query<Q, Params, Joins>(
-        customerId,
-        this.query,
-        queryWheres,
-      );
+      yield* this.api.query<Q>(customerId, this.query, queryWheres);
     }
   }
 
@@ -278,7 +270,7 @@ export abstract class Report<
     // This is a single line because otherwise TypeScript gets upset
     // that we haven't declared individual pieces of the code. This winds up
     // being more typesafe than using {@code Partial}s.
-    const joins: undefined | JoinDict<Joins> =
+    const joins: undefined | JoinDict<Q['joins']> =
       prefetchedJoins === undefined
         ? undefined
         : (Object.fromEntries(
@@ -289,8 +281,8 @@ export abstract class Report<
               ) as typeof this.joinMergeFunction,
             ),
           ) as Record<
-            JoinKey<Joins>,
-            Record<string, Record<JoinOutputKey<Joins>, string>>
+            JoinKey<Q['joins']>,
+            Record<string, Record<JoinOutputKey<Q['joins']>, string>>
           >);
     // finally - transform results and filtered join results.
     return Object.fromEntries(
@@ -301,7 +293,7 @@ export abstract class Report<
         try {
           return this.transform(
             result,
-            joins as Joins extends undefined
+            joins as Q['joins'] extends undefined
               ? never
               : Exclude<typeof joins, undefined>,
           );
@@ -319,8 +311,8 @@ export abstract class Report<
    * This allows the parent query to leverage join data in a transform.
    */
   private joinMergeFunction([joinKey, [joinClass, joinMatchKeys]]): [
-    JoinKey<Joins>,
-    Record<string, Record<JoinOutputKey<Joins>, string>>,
+    JoinKey<Q['joins']>,
+    Record<string, Record<JoinOutputKey<Q['joins']>, string>>,
   ] {
     const joinObject = this.factory.create(joinClass);
     const dedupedJoinMatchKeys = [...new Set(joinMatchKeys)].join(',');
@@ -328,20 +320,20 @@ export abstract class Report<
     // Ensure we get the right type back with "satisfies".
     // Array.from has specific ideas of the data types it wants to return.
     return [joinKey, joinObject.fetch([dedupedJoinMatchQuery])] satisfies [
-      JoinKey<Joins>,
-      Record<string, Record<JoinOutputKey<Joins>, string>>,
+      JoinKey<Q['joins']>,
+      Record<string, Record<JoinOutputKey<Q['joins']>, string>>,
     ];
   }
 
   abstract transform(
     result: AdTypes.ReportResponse<Q>,
     joins: Record<
-      keyof Exclude<Joins, undefined>,
+      keyof Exclude<Q['joins'], undefined>,
       Record<
         string,
         Record<
           Extract<
-            Joins[keyof Joins],
+            Q['joins'][keyof Q['joins']],
             AdTypes.UnknownReportClass
           >['query']['output'][number],
           string
@@ -362,16 +354,16 @@ export abstract class Report<
 
   abstract transform(
     result: AdTypes.ReportResponse<Q>,
-    joins: Joins extends undefined
+    joins: Q['joins'] extends undefined
       ? never
-      : Joins[keyof Joins] extends AdTypes.UnknownReportClass
+      : Q['joins'][keyof Q['joins']] extends AdTypes.UnknownReportClass
         ? Record<
-            keyof Joins,
+            keyof Q['joins'],
             Record<
               string,
               Record<
                 Extract<
-                  Joins[keyof Joins],
+                  Q['joins'][keyof Q['joins']],
                   AdTypes.UnknownReportClass
                 >['output'][number],
                 string
@@ -393,17 +385,17 @@ export abstract class Report<
    */
   protected prefetchForJoins(
     results: IterableIterator<AdTypes.ReportResponse<Q>>,
-    joins: undefined | Joins,
+    joins: undefined | Q['joins'],
   ) {
     type JoinRows = [
       reportClass: AdTypes.UnknownReportClass,
       match: Array<string | number>,
     ];
-    type JoinClassDict = Record<keyof Joins, AdTypes.UnknownReportClass>;
+    type JoinClassDict = Record<keyof Q['joins'], AdTypes.UnknownReportClass>;
     if (joins === undefined) {
       return [undefined, undefined];
     }
-    const joinMatchKeys = new Map<keyof Joins, JoinRows>();
+    const joinMatchKeys = new Map<keyof Q['joins'], JoinRows>();
     const newResults: Array<AdTypes.ReportResponse<Q>> = [];
 
     for (const result of results) {
@@ -412,13 +404,13 @@ export abstract class Report<
       for (const [join, report] of Object.entries<AdTypes.UnknownReportClass>(
         joins as JoinClassDict,
       )) {
-        if (!joinMatchKeys.has(join as keyof Joins)) {
-          joinMatchKeys.set(join as keyof Joins, [report, []]);
+        if (!joinMatchKeys.has(join as keyof Q['joins'])) {
+          joinMatchKeys.set(join as keyof Q['joins'], [report, []]);
         }
         // for a joinKey e.g. my.path.to.some.id, retrieve the value in
         // the corresponding object ({"my": {"path": {"to": {"some": {"id": "1"}}}}})
         // such that the end result is "1".
-        (joinMatchKeys.get(join as keyof Joins) as JoinRows)[1].push(
+        (joinMatchKeys.get(join as keyof Q['joins']) as JoinRows)[1].push(
           join
             .split('.')
             .reduce<AdTypes.RecursiveRecord<string, string | number>>(
@@ -461,18 +453,15 @@ export class ReportFactory implements AdTypes.ReportFactoryInterface {
    * report format ({@link ReportResponse}).
    */
   create<
-    Q extends AdTypes.QueryBuilder<Params, Joins>,
+    Q extends AdTypes.QueryBuilder<AdTypes.Query<Params>>,
     Output extends string,
     Params extends string = Q['queryParams'][number],
-    Joins extends AdTypes.JoinType<Params> | undefined = Q['joins'],
     ChildReport extends AdTypes.ReportInterface<
       Q,
-      Output,
-      Params,
-      Joins
-    > = AdTypes.ReportInterface<Q, Output, Params, Joins>,
+      Output
+    > = AdTypes.ReportInterface<Q, Output>,
   >(
-    reportClass: AdTypes.ReportClass<Q, Output, Params, Joins, ChildReport>,
+    reportClass: AdTypes.ReportClass<Q, Output, Params, ChildReport>,
   ): ChildReport {
     const allClientIds = splitCids(this.clientArgs.customerIds);
     if (!this.clientArgs.loginCustomerId && allClientIds.length > 1) {
@@ -544,25 +533,24 @@ export class ReportFactory implements AdTypes.ReportFactoryInterface {
  *   client.getReport(reportClass).fetch();
  */
 export function makeReport<
-  Q extends AdTypes.QueryBuilder<Params, Joins>,
+  Q extends AdTypes.QueryBuilder<AdTypes.Query<Params>>,
   Output extends string,
   Params extends string = Q['queryParams'][number],
-  Joins extends AdTypes.JoinType<Params> | undefined = Q['joins'],
 >(args: {
   output: Output[];
   query: Q;
-  transform: AdTypes.ReportInterface<Q, Output, Params, Joins>['transform'];
-}): AdTypes.ReportClass<Q, Output, Params, Joins> {
-  return class ReportImpl extends Report<Q, Output, Params, Joins> {
+  transform: AdTypes.ReportInterface<Q, Output>['transform'];
+}): AdTypes.ReportClass<Q, Output> {
+  return class ReportImpl extends Report<Q, Output> {
     transform(
       result: AdTypes.ReportResponse<Q>,
       joins?: Record<
-        keyof Joins,
+        keyof Q['joins'],
         Record<
           string,
           Record<
             Extract<
-              Joins[keyof Joins],
+              Q['joins'][keyof Q['joins']],
               AdTypes.UnknownReportClass
             >['output'][number],
             string
@@ -581,17 +569,15 @@ export function makeReport<
     }
     static query = args.query;
     static output = args.output;
-  } satisfies AdTypes.ReportClass<Q, Output, Params, Joins>;
+  } satisfies AdTypes.ReportClass<Q, Output>;
 }
 
 /**
  * Turn a {@link AdTypes.QueryBuilder<Params, any>} into an AdsQL string.
  */
 export function qlifyQuery<
-  // joins are tricky, and we don't really care what they do here.
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  Q extends AdTypes.QueryBuilder<Params, any>,
-  Params extends string,
+  Q extends AdTypes.QueryBuilder<AdTypes.Query<Params>>,
+  Params extends string = Q['queryParams'][number],
 >(query: Q, queryWheres: string[] = []): string {
   const aql = `SELECT ${query.queryParams.join(', ')} FROM ${query.queryFrom}`;
   const allWheres = [...(query.queryWheres ?? []), ...queryWheres];
