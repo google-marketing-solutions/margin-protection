@@ -236,9 +236,8 @@ export const budgetPacingPercentageRule = newRule({
   async callback() {
     const values: Values = {};
 
-    type SettingsObj = typeof this.settings extends Settings<infer I>
-      ? I
-      : never;
+    type SettingsObj =
+      typeof this.settings extends Settings<infer I> ? I : never;
     const {results, dateRange} =
       getInsertionOrderBudgetPacingResult<SettingsObj>(
         this.settings,
@@ -343,9 +342,8 @@ export const budgetPacingRuleLineItem = newRule({
   },
   granularity: RuleGranularity.LINE_ITEM,
   async callback() {
-    type SettingsObj = typeof this.settings extends Settings<infer I>
-      ? I
-      : never;
+    type SettingsObj =
+      typeof this.settings extends Settings<infer I> ? I : never;
     const values: Values = {};
     const {results, dateRange} = getLineItemBudgetPacingResult<SettingsObj>(
       this.settings,

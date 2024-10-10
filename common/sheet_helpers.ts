@@ -429,7 +429,7 @@ export abstract class AbstractRuleRange<T extends ClientTypes<T>>
         record.id,
         Array.from({length}).map((unused, index) =>
           currentSettings && currentSettings[record.id]
-            ? currentSettings[record.id][headersByIndex[index]] ?? ''
+            ? (currentSettings[record.id][headersByIndex[index]] ?? '')
             : '',
         ),
       );

@@ -24,7 +24,10 @@ jobs:
       - name: Install yarn
         run: npm -g install yarn
 
-      - name: Install dependencies
+      - name: Install parent dependencies
+        run: npx yarn
+
+      - name: Install DV360 dependencies
         run: npx yarn --cwd ./dv360
 
       - name: Build dv360 prod

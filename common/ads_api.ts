@@ -357,20 +357,20 @@ export abstract class Report<
     joins: Q['joins'] extends undefined
       ? never
       : Q['joins'][keyof Q['joins']] extends AdTypes.UnknownReportClass
-      ? Record<
-          keyof Q['joins'],
-          Record<
-            string,
+        ? Record<
+            keyof Q['joins'],
             Record<
-              Extract<
-                Q['joins'][keyof Q['joins']],
-                AdTypes.UnknownReportClass
-              >['output'][number],
-              string
+              string,
+              Record<
+                Extract<
+                  Q['joins'][keyof Q['joins']],
+                  AdTypes.UnknownReportClass
+                >['output'][number],
+                string
+              >
             >
           >
-        >
-      : undefined,
+        : undefined,
   ): readonly [
     key: string,
     record: Record<AdTypes.ArrayToUnion<Output[]>, string>,

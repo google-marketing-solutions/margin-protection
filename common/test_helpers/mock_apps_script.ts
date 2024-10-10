@@ -38,8 +38,8 @@ function a1NotationToRowColumn(a1Notation: string, start = true) {
   const row: number = parts[2]
     ? Number.parseInt(parts[2], 10)
     : start
-    ? 1
-    : 100_000;
+      ? 1
+      : 100_000;
   for (i = 0; i < letters.length; i++) {
     column += letters.charCodeAt(i) - a + 1;
   }

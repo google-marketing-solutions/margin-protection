@@ -154,7 +154,7 @@ export class Client implements ClientInterface {
         args.idType ?? (args.advertiserId ? IDType.ADVERTISER : IDType.PARTNER),
       id:
         args.id ??
-        (args.advertiserId ? args.advertiserId : args.partnerId ?? ''),
+        (args.advertiserId ? args.advertiserId : (args.partnerId ?? '')),
       label: args.label ?? `${args.idType} ${args.id}`,
     };
 
