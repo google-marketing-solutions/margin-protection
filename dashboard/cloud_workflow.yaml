@@ -72,7 +72,7 @@ get_last_report_date:
         assign:
           - project_id: ${project_id}
           - dataset_id: ${dataset_id}
-          - items: { rows: [f: [{ v: '' }]] }
+          - items: {rows: [f: [{v: ''}]]}
     - get_last_report_date:
         try:
           call: googleapis.bigquery.v2.jobs.query
