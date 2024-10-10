@@ -18,51 +18,47 @@
 import {equalTo, inRange, lessThanOrEqualTo} from '../checks';
 import {expect} from 'chai';
 
-describe('checks test', function () {
-  describe('check range logic', function () {
-    const test = {min: 1, max: 5};
-    for (const i of [1, 2, 3, 4, 5]) {
-      it(`${i} in range of ${test.min} and ${test.max}`, function () {
-        expect(inRange(test, i, {}).anomalous).to.be.false;
-      });
-    }
+describe('check range logic', function () {
+  const test = {min: 1, max: 5};
+  for (const i of [1, 2, 3, 4, 5]) {
+    it(`${i} in range of ${test.min} and ${test.max}`, function () {
+      expect(inRange(test, i, {}).anomalous).to.be.false;
+    });
+  }
 
-    for (const i of [0, 6]) {
-      it(`${i} outside of range ${test.min} and ${test.max}`, function () {
-        [0, 6].forEach(
-          (i) => expect(inRange(test, i, {}).anomalous).to.be.true,
-        );
-      });
-    }
+  for (const i of [0, 6]) {
+    it(`${i} outside of range ${test.min} and ${test.max}`, function () {
+      [0, 6].forEach((i) => expect(inRange(test, i, {}).anomalous).to.be.true);
+    });
+  }
+});
+
+describe('equalTo', function () {
+  const test = 2;
+
+  it('happy path', function () {
+    expect(equalTo(test, 2, {}).anomalous).to.be.false;
   });
 
-  describe('equalTo', function () {
-    const test = 2;
+  it('sad path', function () {
+    [1, '2', 2.1, 3].forEach(
+      (i) => expect(equalTo(test, i, {}).anomalous).to.be.true,
+    );
+  });
+});
 
-    it('happy path', function () {
-      expect(equalTo(test, 2, {}).anomalous).to.be.false;
-    });
+describe('lessThanOrEqualTo', function () {
+  const test = 2;
 
-    it('sad path', function () {
-      [1, '2', 2.1, 3].forEach(
-        (i) => expect(equalTo(test, i, {}).anomalous).to.be.true,
-      );
-    });
+  it('happy path', function () {
+    [0, 1, 1.9, 2].forEach(
+      (i) => expect(lessThanOrEqualTo(test, i, {}).anomalous).to.be.false,
+    );
   });
 
-  describe('lessThanOrEqualTo', function () {
-    const test = 2;
-
-    it('happy path', function () {
-      [0, 1, 1.9, 2].forEach(
-        (i) => expect(lessThanOrEqualTo(test, i, {}).anomalous).to.be.false,
-      );
-    });
-
-    it('sad path', function () {
-      [2.1, 3].forEach(
-        (i) => expect(lessThanOrEqualTo(test, i, {}).anomalous).to.be.true,
-      );
-    });
+  it('sad path', function () {
+    [2.1, 3].forEach(
+      (i) => expect(lessThanOrEqualTo(test, i, {}).anomalous).to.be.true,
+    );
   });
 });
