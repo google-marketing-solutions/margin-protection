@@ -259,10 +259,7 @@ export class Advertisers extends DisplayVideoApiClient {
     maxPages: number = -1,
   ) {
     super.listResources(
-      `advertisers?partnerId=${this.getPartnerId()}${buildParamString(params, {
-        prependStr: '&',
-        defaults: { filter: activeEntityFilter() },
-      })}`,
+      `advertisers?partnerId=${this.getPartnerId()}${buildParamString(params, { prependStr: '&', defaults: { filter: activeEntityFilter() } })}`,
       callback,
       maxPages,
     );
@@ -375,10 +372,7 @@ export class Campaigns extends DisplayVideoApiClient {
     maxPages: number = -1,
   ) {
     super.listResources(
-      `advertisers/${this.getAdvertiserId()}/campaigns${buildParamString(
-        params,
-        { defaults: { filter: activeEntityFilter() } },
-      )}`,
+      `advertisers/${this.getAdvertiserId()}/campaigns${buildParamString(params, { defaults: { filter: activeEntityFilter() } })}`,
       callback,
       maxPages,
     );
@@ -500,9 +494,7 @@ export class InsertionOrders extends DisplayVideoApiClient {
   ) {
     super.listResources(
       `advertisers/${this.getAdvertiserId()}/` +
-        `insertionOrders${buildParamString(params, {
-          defaults: { filter: activeEntityFilter() },
-        })}`,
+        `insertionOrders${buildParamString(params, { defaults: { filter: activeEntityFilter() } })}`,
       callback,
       maxPages,
     );
@@ -627,10 +619,7 @@ export class LineItems extends DisplayVideoApiClient {
     maxPages: number = -1,
   ) {
     super.listResources(
-      `advertisers/${this.getAdvertiserId()}/lineItems${buildParamString(
-        params,
-        { defaults: { filter: activeEntityFilter() } },
-      )}`,
+      `advertisers/${this.getAdvertiserId()}/lineItems${buildParamString(params, { defaults: { filter: activeEntityFilter() } })}`,
       callback,
       maxPages,
     );
@@ -761,10 +750,7 @@ export class InventorySources extends DisplayVideoApiClient {
       ? ['advertiserId', this.getAdvertiserId()]
       : ['partnerId', this.getPartnerId()];
     super.listResources(
-      `inventorySources?${key}=${value}${buildParamString(params, {
-        prependStr: '&',
-        defaults: { filter: activeEntityFilter() },
-      })}`,
+      `inventorySources?${key}=${value}${buildParamString(params, { prependStr: '&', defaults: { filter: activeEntityFilter() } })}`,
       callback,
       maxPages,
     );
@@ -803,28 +789,35 @@ export class InventorySources extends DisplayVideoApiClient {
   /**
    * @throws {!Error} As this method is not allowed for this type
    */
-  override createResource(): DisplayVideoResource {
+  override createResource(
+    requestUri: string,
+    payload: DisplayVideoResource,
+  ): DisplayVideoResource {
     throw ObjectUtil.error('405 Method Not Allowed');
   }
 
   /**
    * @throws {!Error} As this method is not allowed for this type
    */
-  override patchResource(): DisplayVideoResource {
+  override patchResource(requestUri: string): DisplayVideoResource {
     throw ObjectUtil.error('405 Method Not Allowed');
   }
 
   /**
    * @throws {!Error} As this method is not allowed for this type
    */
-  override patchResourceByComparison(): DisplayVideoResource {
+  override patchResourceByComparison(
+    requestUri: string,
+    original: DisplayVideoResource,
+    modified: DisplayVideoResource | null,
+  ): DisplayVideoResource {
     throw ObjectUtil.error('405 Method Not Allowed');
   }
 
   /**
    * @throws {!Error} As this method is not allowed for this type
    */
-  override deleteResource() {
+  override deleteResource(requestUri: string) {
     throw ObjectUtil.error('405 Method Not Allowed');
   }
 
@@ -883,9 +876,7 @@ export class TargetingOptions extends DisplayVideoApiClient {
   ) {
     super.listResources(
       `targetingTypes/${this.getTargetingType()}/targetingOptions` +
-        `?advertiserId=${this.getAdvertiserId()}${buildParamString(params, {
-          prependStr: '&',
-        })}`,
+        `?advertiserId=${this.getAdvertiserId()}${buildParamString(params, { prependStr: '&' })}`,
       callback,
       maxPages,
     );
@@ -961,28 +952,35 @@ export class TargetingOptions extends DisplayVideoApiClient {
   /**
    * @throws {!Error} As this method is not allowed for this type
    */
-  override createResource(): DisplayVideoResource {
+  override createResource(
+    requestUri: string,
+    payload: DisplayVideoResource,
+  ): DisplayVideoResource {
     throw ObjectUtil.error('405 Method Not Allowed');
   }
 
   /**
    * @throws {!Error} As this method is not allowed for this type
    */
-  override patchResource(): DisplayVideoResource {
+  override patchResource(requestUri: string): DisplayVideoResource {
     throw ObjectUtil.error('405 Method Not Allowed');
   }
 
   /**
    * @throws {!Error} As this method is not allowed for this type
    */
-  override patchResourceByComparison(): DisplayVideoResource {
+  override patchResourceByComparison(
+    requestUri: string,
+    original: DisplayVideoResource,
+    modified: DisplayVideoResource | null,
+  ): DisplayVideoResource {
     throw ObjectUtil.error('405 Method Not Allowed');
   }
 
   /**
    * @throws {!Error} As this method is not allowed for this type
    */
-  override deleteResource() {
+  override deleteResource(requestUri: string) {
     throw ObjectUtil.error('405 Method Not Allowed');
   }
 
@@ -1173,14 +1171,18 @@ export class AssignedTargetingOptions extends DisplayVideoApiClient {
   /**
    * @throws {!Error} As this method is not allowed for this type
    */
-  override patchResource(): DisplayVideoResource {
+  override patchResource(requestUri: string): DisplayVideoResource {
     throw ObjectUtil.error('405 Method Not Allowed');
   }
 
   /**
    * @throws {!Error} As this method is not allowed for this type
    */
-  override patchResourceByComparison(): DisplayVideoResource {
+  override patchResourceByComparison(
+    requestUri: string,
+    original: DisplayVideoResource,
+    modified: DisplayVideoResource | null,
+  ): DisplayVideoResource {
     throw ObjectUtil.error('405 Method Not Allowed');
   }
 
