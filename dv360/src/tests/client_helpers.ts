@@ -170,10 +170,12 @@ export interface InsertionOrderTemplate {
 }
 
 /**
- * Generates a client with stubbed endpoints for testing.
+ * Encapsulation of a test client creator.
+ *
+ * Call with {@link generateTestClient}.
  */
-export function generateTestClient(param: TestClientParams) {
-  const insertionOrderTemplate: InsertionOrderTemplate = {
+class TestClient {
+  private readonly insertionOrderTemplate: InsertionOrderTemplate = {
     id: 'io1',
     advertiserId: '1',
     displayName: 'Insertion Order 1',
@@ -213,7 +215,7 @@ export function generateTestClient(param: TestClientParams) {
     },
   };
 
-  const lineItemTemplate: LineItemTemplate = {
+  private readonly lineItemTemplate: LineItemTemplate = {
     id: 'li1',
     advertiserId: '1',
     insertionOrderId: 'io1',
@@ -226,7 +228,7 @@ export function generateTestClient(param: TestClientParams) {
     budget: {
       budgetAllocationType: 'LINE_ITEM_BUDGET_ALLOCATION_TYPE_AUTOMATIC',
       budgetUnit: 'BUDGET_UNIT_CURRENCY',
-      maxAmount: 100_000_000,
+      maxAmount: (100_000_000).toString(),
     },
     lineItemType: LINE_ITEM_TYPE.DISPLAY_DEFAULT,
     flight: {
@@ -250,7 +252,7 @@ export function generateTestClient(param: TestClientParams) {
       fixedBid: { bidAmountMicros: String(1_000_000) },
     },
   };
-  const campaignTemplate: CampaignTemplate = {
+  private readonly campaignTemplate: CampaignTemplate = {
     id: 'c1',
     advertiserId: '1',
     campaignGoal: {
@@ -269,7 +271,7 @@ export function generateTestClient(param: TestClientParams) {
     },
   };
 
-  const advertiserTemplate: AdvertiserTemplate = {
+  private readonly advertiserTemplate: AdvertiserTemplate = {
     partnerId: '1',
     id: 'a1',
     displayName: 'Advertiser 1',
@@ -278,138 +280,80 @@ export function generateTestClient(param: TestClientParams) {
       currencyCode: 'USD',
     },
   };
+  private readonly clientArgs: ClientArgs;
 
-  const clientArgs: ClientArgs = param.clientArgs
-    ? param.clientArgs
-    : {
-        id: param.id,
-        idType: IDType.ADVERTISER,
-        label: 'test',
-      };
+  constructor(private readonly params: TestClientParams) {
+    this.clientArgs = params.clientArgs
+      ? this.params.clientArgs
+      : {
+          id: this.params.id,
+          idType: IDType.ADVERTISER,
+          label: 'test',
+        };
+  }
+  generate() {
+    const accessors: Accessors = {
+      budgetReport: BudgetReport,
+      lineItemBudgetReport: LineItemBudgetReport,
+      impressionReport: ImpressionReport,
+      advertisers: Advertisers,
+      assignedTargetingOptions: AssignedTargetingOptions,
+      campaigns: Campaigns,
+      insertionOrders: InsertionOrders,
+      lineItems: LineItems,
+    };
+    if (this.params.allCampaigns) {
+      accessors.campaigns = fakeCampaignsClass(
+        this.params,
+        this.campaignTemplate,
+      );
+    }
 
-  const accessors: Accessors = {
-    budgetReport: BudgetReport,
-    lineItemBudgetReport: LineItemBudgetReport,
-    impressionReport: ImpressionReport,
-    advertisers: Advertisers,
-    assignedTargetingOptions: AssignedTargetingOptions,
-    campaigns: Campaigns,
-    insertionOrders: InsertionOrders,
-    lineItems: LineItems,
-  };
-  if (param.allCampaigns) {
-    class FakeCampaigns extends Campaigns {
-      readonly id: string = 'c1';
-      override list(callback: Callable<Campaign>) {
-        callback(
-          param.allCampaigns![param.id].map(
-            (c) => new Campaign(c({ ...campaignTemplate })),
-          ),
+    if (this.params.allAdvertisers) {
+      accessors.advertisers = fakeAdvertisersClass(
+        this.params,
+        this.advertiserTemplate,
+      );
+    }
+
+    if (this.params.allAssignedTargetingOptions) {
+      accessors.assignedTargetingOptions = fakeTargetingOptionsClass(
+        this.params,
+      );
+    }
+
+    if (this.params.allInsertionOrders) {
+      accessors.insertionOrders = fakeInsertionOrdersClass(
+        this.params,
+        this.insertionOrderTemplate,
+      );
+      if (this.params.fakeSpendAmount) {
+        accessors.budgetReport = fakeBudgetReportClass(this.params);
+      }
+    }
+
+    if (this.params.allLineItems) {
+      accessors.lineItems = fakeLineItemsClass(
+        this.params,
+        this.lineItemTemplate,
+      );
+      if (this.params.fakeSpendAmount) {
+        accessors.lineItemBudgetReport = fakeLineItemBudgetReportClass(
+          this.params,
         );
       }
     }
 
-    accessors.campaigns = FakeCampaigns;
+    if (this.params.fakeImpressionAmount) {
+      accessors.impressionReport = fakeImpressionsReportClass(this.params);
+    }
+
+    return new Client(
+      this.clientArgs,
+      new FakePropertyStore(),
+      new DataAccessObject(accessors),
+    );
   }
-
-  if (param.allAdvertisers) {
-    class FakeAdvertisers extends Advertisers {
-      override list(callback: Callable<Advertiser>) {
-        callback(
-          (Object.values(param.allAdvertisers).flat(1) || []).map(
-            (a) => new Advertiser(a({ ...advertiserTemplate })),
-          ),
-        );
-      }
-    }
-
-    accessors.advertisers = FakeAdvertisers;
-  }
-
-  if (param.allAssignedTargetingOptions) {
-    class FakeTargetingOptions extends AssignedTargetingOptions {
-      override list(callback: Callable<AssignedTargetingOption>) {
-        const campaignId = this.getCampaignId();
-        if (!campaignId) {
-          throw new Error('Missing campaign ID');
-        }
-        callback(param.allAssignedTargetingOptions![param.id][campaignId]);
-      }
-    }
-
-    accessors.assignedTargetingOptions = FakeTargetingOptions;
-  }
-
-  if (param.allInsertionOrders) {
-    class FakeInsertionOrders extends InsertionOrders {
-      override list(callback: Callable<InsertionOrder>) {
-        callback(
-          param.allInsertionOrders![param.id].map(
-            (c) => new InsertionOrder(c({ ...insertionOrderTemplate })),
-          ),
-        );
-      }
-    }
-
-    accessors.insertionOrders = FakeInsertionOrders;
-    if (param.fakeSpendAmount) {
-      class FakeBudgetReport extends BudgetReport {
-        protected override getReport() {
-          return {};
-        }
-
-        override getSpendForInsertionOrder() {
-          return param.fakeSpendAmount!;
-        }
-      }
-
-      accessors.budgetReport = FakeBudgetReport;
-    }
-  }
-
-  if (param.allLineItems) {
-    class FakeLineItems extends LineItems {
-      override list(callback: Callable<LineItem>) {
-        callback(
-          param.allLineItems![param.id].map(
-            (c) => new LineItem(c({ ...lineItemTemplate })),
-          ),
-        );
-      }
-    }
-    accessors.lineItems = FakeLineItems;
-    if (param.fakeSpendAmount) {
-      class FakeLineItemBudgetReport extends LineItemBudgetReport {
-        protected override getReport() {
-          return {};
-        }
-
-        override getSpendForLineItem(): number {
-          return param.fakeSpendAmount;
-        }
-      }
-      accessors.lineItemBudgetReport = FakeLineItemBudgetReport;
-    }
-  }
-
-  if (param.fakeImpressionAmount) {
-    class FakeImpressionReport extends ImpressionReport {
-      override getImpressionPercentOutsideOfGeos() {
-        return param.fakeImpressionAmount!;
-      }
-
-      override getReport() {
-        return {};
-      }
-    }
-
-    accessors.impressionReport = FakeImpressionReport;
-  }
-  return new Client(
-    clientArgs,
-    new FakePropertyStore(),
-    new DataAccessObject(accessors),
-  );
 }
 
 interface TestDataParams {
@@ -441,4 +385,124 @@ export interface InsertionOrderTestDataParams extends TestDataParams {
 export interface LineItemTestDataParams extends TestDataParams {
   fakeSpendAmount?: number;
   pacingType?: PacingType;
+  columns: string[][];
+  startDate: ApiDate;
+  endDate: ApiDate;
+  budget: string;
+}
+
+function fakeBudgetReportClass(params: TestClientParams) {
+  return class FakeBudgetReport extends BudgetReport {
+    protected override getReport() {
+      return {};
+    }
+
+    override getSpendForInsertionOrder() {
+      return params.fakeSpendAmount!;
+    }
+  };
+}
+
+function fakeTargetingOptionsClass(params: TestClientParams) {
+  return class FakeTargetingOptions extends AssignedTargetingOptions {
+    override list(callback: Callable<AssignedTargetingOption>) {
+      const campaignId = this.getCampaignId();
+      if (!campaignId) {
+        throw new Error('Missing campaign ID');
+      }
+      callback(params.allAssignedTargetingOptions![params.id][campaignId]);
+    }
+  };
+}
+
+function fakeInsertionOrdersClass(
+  params: TestClientParams,
+  insertionOrderTemplate: InsertionOrderTemplate,
+) {
+  return class FakeInsertionOrders extends InsertionOrders {
+    override list(callback: Callable<InsertionOrder>) {
+      callback(
+        params.allInsertionOrders![params.id].map(
+          (c) => new InsertionOrder(c({ ...insertionOrderTemplate })),
+        ),
+      );
+    }
+  };
+}
+
+function fakeLineItemsClass(
+  params: TestClientParams,
+  lineItemTemplate: LineItemTemplate,
+) {
+  return class FakeLineItems extends LineItems {
+    override list(callback: Callable<LineItem>) {
+      callback(
+        params.allLineItems![params.id].map(
+          (c) => new LineItem(c({ ...lineItemTemplate })),
+        ),
+      );
+    }
+  };
+}
+
+function fakeLineItemBudgetReportClass(params: TestClientParams) {
+  return class FakeLineItemBudgetReport extends LineItemBudgetReport {
+    protected override getReport() {
+      return {};
+    }
+
+    override getSpendForLineItem(): number {
+      return params.fakeSpendAmount;
+    }
+  };
+}
+
+function fakeImpressionsReportClass(params: TestClientParams) {
+  return class FakeImpressionReport extends ImpressionReport {
+    override getImpressionPercentOutsideOfGeos() {
+      return params.fakeImpressionAmount!;
+    }
+
+    override getReport() {
+      return {};
+    }
+  };
+}
+
+function fakeCampaignsClass(
+  params: TestClientParams,
+  campaignTemplate: CampaignTemplate,
+) {
+  return class FakeCampaigns extends Campaigns {
+    readonly id: string = 'c1';
+    override list(callback: Callable<Campaign>) {
+      callback(
+        params.allCampaigns![params.id].map(
+          (c) => new Campaign(c({ ...campaignTemplate })),
+        ),
+      );
+    }
+  };
+}
+
+function fakeAdvertisersClass(
+  params: TestClientParams,
+  advertiserTemplate: AdvertiserTemplate,
+) {
+  return class FakeAdvertisers extends Advertisers {
+    override list(callback: Callable<Advertiser>) {
+      callback(
+        (Object.values(params.allAdvertisers).flat(1) || []).map(
+          (a) => new Advertiser(a({ ...advertiserTemplate })),
+        ),
+      );
+    }
+  };
+}
+
+/**
+ * Provides a mock client for testing.
+ */
+export function generateTestClient(params: TestClientParams) {
+  return new TestClient(params).generate();
 }

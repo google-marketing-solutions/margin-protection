@@ -650,10 +650,12 @@ declare global {
      */
     findLast<S extends T>(
       predicate: (value: T, index: number, array: T[]) => value is S,
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       thisArg?: any,
     ): S | undefined;
     findLast(
       predicate: (value: T, index: number, array: T[]) => unknown,
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       thisArg?: any,
     ): T | undefined;
 
@@ -668,6 +670,7 @@ declare global {
      */
     findLastIndex(
       predicate: (value: T, index: number, array: T[]) => unknown,
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       thisArg?: any,
     ): number;
 

@@ -747,6 +747,9 @@ export abstract class AppsScriptFrontend<T extends ClientTypes<T>> {
         });
 
     for (const [rule, threshold] of thresholds) {
+      if (!rule.enabled) {
+        continue;
+      }
       const { values } = await threshold;
       for (const value of Object.values(values)) {
         const fieldKey = Object.entries(value.fields ?? [['', 'all']])
@@ -1012,6 +1015,9 @@ export abstract class AppsScriptFrontend<T extends ClientTypes<T>> {
         this.exportAsCsv(rule.name, matrix);
       }
     }
+    if (ruleSheets.length == 0) {
+      return;
+    }
     HELPERS.getOrCreateSheet('Summary')
       .getRange(1, 1, ruleSheets.length, 2)
       .setValues(
@@ -1262,10 +1268,10 @@ export abstract class AppsScriptFrontend<T extends ClientTypes<T>> {
           ),
         );
       }
-      const rules = ranges.get(rule.granularity)!;
+      const ruleRange = ranges.get(rule.granularity)!;
 
       for (const [id, column] of rule.settings.entries()) {
-        rules.setRow(rule.name, id, column);
+        ruleRange.setRow(rule.name, id, column);
       }
     }
 

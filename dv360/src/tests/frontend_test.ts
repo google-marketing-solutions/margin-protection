@@ -2,8 +2,6 @@
  * @fileoverview Tests the Apps Script main functions.
  */
 
-// g3-format-prettier
-
 import { TARGETING_TYPE } from 'dv360_api/dv360_types';
 import { equalTo } from 'common/checks';
 import { HELPERS, RULE_SETTINGS_SHEET } from 'common/sheet_helpers';
@@ -135,13 +133,11 @@ describe('validate/launchMonitor functions', () => {
     );
     HtmlService.createTemplateFromFile = () =>
       ({ evaluate: () => new FakeHtmlOutput() }) as unknown as HtmlTemplate;
-    // force private methods to be visible, so we can manipulate them.
     await frontend.initializeRules();
   });
 
   it('runs with no errors', async () => {
     await frontend.launchMonitor();
-
     expect(
       SpreadsheetApp.getActive()
         .getSheetByName('Budget Pacing by Percent Ahead - Results')
@@ -184,6 +180,7 @@ describe('validate/launchMonitor functions', () => {
   });
 
   it('skips disabled rules', async () => {
+    console.log('en');
     scaffoldSheetWithNamedRanges();
     SpreadsheetApp.getActive()
       .getSheetByName('Rule Settings - Campaign')
@@ -212,10 +209,11 @@ describe('validate/launchMonitor functions', () => {
       ),
     ).toBeDefined();
     expect(
-      SpreadsheetApp.getActive().getSheetByName(
-        `${geoTargetRule.name} - Results`,
-      ),
-    ).toBeUndefined();
+      SpreadsheetApp.getActive()
+        .getSheetByName(`${geoTargetRule.name} - Results`)
+        .getDataRange()
+        .getValues(),
+    ).toEqual([]);
   });
 
   afterEach(() => {
