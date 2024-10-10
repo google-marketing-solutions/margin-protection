@@ -18,9 +18,7 @@ const fetchOnlyActiveCampaignsCell = 'B7';
 const spreadsheet = SpreadsheetApp.openById(spreadsheetId);
 const setupSheet = spreadsheet.getSheetByName(setupSheetName);
 const languageConfigSheet = spreadsheet.getSheetByName(languageConfigSheetName);
-const geoTargetingConfigSheet = spreadsheet.getSheetByName(
-  geoTargetingConfigSheetName,
-);
+const geoTargetingConfigSheet = spreadsheet.getSheetByName(geoTargetingConfigSheetName);
 const budgetConfigSheet = spreadsheet.getSheetByName(budgetConfigSheetName);
 
 const mode = setupSheet.getRange(outputModeCell).getValue();
@@ -202,7 +200,10 @@ function checkSingleCampaignLanguage(account, campaign) {
 
   const actualLanguagesNames = [];
 
-  const actualLanguages = campaign.targeting().languages().get();
+  const actualLanguages = campaign
+    .targeting()
+    .languages()
+    .get();
   while (actualLanguages.hasNext()) {
     var target = actualLanguages.next();
     actualLanguagesNames.push(target.getName());
@@ -559,7 +560,9 @@ function getCampaignActualBudget(campaign) {
 function writeToResultSheet() {
   console.log('Writing results to sheets...');
 
-  const languageResultSheet = createOrClearSheet(languageResultSheetName);
+  const languageResultSheet = createOrClearSheet(
+    languageResultSheetName,
+  );
   languageResultSheet.appendRow([
     'Customer ID',
     'Customer name',
@@ -575,12 +578,8 @@ function writeToResultSheet() {
       r.accountName,
       r.campaignId,
       r.campaignName,
-      r.desiredLanguagesNames.length !== 0
-        ? r.desiredLanguagesNames.join(', ')
-        : '-',
-      r.actualLanguagesNames.length !== 0
-        ? r.actualLanguagesNames.join(', ')
-        : '-',
+      r.desiredLanguagesNames.length !== 0 ? r.desiredLanguagesNames.join(', ') : '-',
+      r.actualLanguagesNames.length !== 0 ? r.actualLanguagesNames.join(', ') : '-',
       r.misconfigured,
     ]);
   });
@@ -616,6 +615,7 @@ function writeToResultSheet() {
   languageResultSheet.setColumnWidths(3, 1, 120);
   languageResultSheet.setColumnWidths(4, 3, 300);
   languageResultSheet.setColumnWidths(7, 1, 120);
+
 
   const geoTargetingResultSheet = createOrClearSheet(
     geoTargetingResultSheetName,
@@ -793,11 +793,7 @@ function createEmailBody() {
     `;
   }
   body += `
-    ${
-      campaignsWerePaused
-        ? '<h2>Campaigns have been PAUSED.<h2>'
-        : '<h2>Campaigns have NOT been PAUSED.<h2>'
-    }
+    ${campaignsWerePaused ? '<h2>Campaigns have been PAUSED.<h2>' : '<h2>Campaigns have NOT been PAUSED.<h2>'}
   </body>
   </html>
   `;
@@ -830,26 +826,10 @@ function createEmailGeoTargetingBodyTable() {
           <td>${c.accountName}</td>
           <td>${c.campaignId}</td>
           <td>${c.campaignName}</td>
-          <td>${
-            c.desiredIncludedGeoTargetsNames.length !== 0
-              ? c.desiredIncludedGeoTargetsNames.join(', ')
-              : '-'
-          }</td>
-          <td>${
-            c.actualIncludedGeoTargetsNames.length !== 0
-              ? c.actualIncludedGeoTargetsNames.join(', ')
-              : '-'
-          }</td>
-          <td>${
-            c.desiredExcludedGeoTargetsNames.length !== 0
-              ? c.desiredExcludedGeoTargetsNames.join(', ')
-              : '-'
-          }</td>
-          <td>${
-            c.actualExcludedGeoTargetsNames.length !== 0
-              ? c.actualExcludedGeoTargetsNames.join(', ')
-              : '-'
-          }</td>
+          <td>${c.desiredIncludedGeoTargetsNames.length !== 0 ? c.desiredIncludedGeoTargetsNames.join(', ') : '-'}</td>
+          <td>${c.actualIncludedGeoTargetsNames.length !== 0 ? c.actualIncludedGeoTargetsNames.join(', ') : '-'}</td>
+          <td>${c.desiredExcludedGeoTargetsNames.length !== 0 ? c.desiredExcludedGeoTargetsNames.join(', ') : '-'}</td>
+          <td>${c.actualExcludedGeoTargetsNames.length !== 0 ? c.actualExcludedGeoTargetsNames.join(', ') : '-'}</td>
         </tr>
     `;
   });
