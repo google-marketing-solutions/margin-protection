@@ -57,10 +57,10 @@ interface QueryBody {
     dataRange:
       | {
           range: 'CUSTOM_DATES';
-          customEndDate: {month: number; year: number; day: number};
-          customStartDate: {month: number; year: number; day: number};
+          customEndDate: { month: number; year: number; day: number };
+          customStartDate: { month: number; year: number; day: number };
         }
-      | {range: string};
+      | { range: string };
     format: string;
     sendNotification: boolean;
   };
@@ -68,13 +68,13 @@ interface QueryBody {
     type: string;
     groupBys: readonly string[];
     metrics: readonly string[];
-    filters: Array<{type: string; value: string}>;
+    filters: Array<{ type: string; value: string }>;
   };
 }
 
 abstract class Report implements ReportInterface {
-  key: {queryId: Readonly<string>; reportId: Readonly<string>};
-  metadata: {googleCloudStoragePath: Readonly<string>};
+  key: { queryId: Readonly<string>; reportId: Readonly<string> };
+  metadata: { googleCloudStoragePath: Readonly<string> };
 
   protected readonly properties: GoogleAppsScript.Properties.Properties;
   protected readonly report: Record<string, number>;
@@ -110,7 +110,7 @@ abstract class Report implements ReportInterface {
       (JSON.parse(
         UrlFetchApp.fetch(
           getQueryUrl('queries'),
-          apiParams({payload: JSON.stringify(this.queryBody())}),
+          apiParams({ payload: JSON.stringify(this.queryBody()) }),
         ).getContentText(),
       ) as Query);
     this.properties.setProperty(queryTitle, query.queryId);
@@ -151,7 +151,7 @@ abstract class Report implements ReportInterface {
   protected fetchReport(reportUrl: string): string[][] {
     const query: string = UrlFetchApp.fetch(
       reportUrl,
-      apiParams({contentType: undefined}),
+      apiParams({ contentType: undefined }),
     ).getContentText();
 
     return Utilities.parseCsv(query.split('\n\n')[0]);
@@ -175,7 +175,7 @@ export class ImpressionReport
     insertionOrderId: string,
     countries: string[],
   ) {
-    const report = {...this.report};
+    const report = { ...this.report };
     let validImpressions = 0;
     for (const country of countries) {
       const key = `${insertionOrderId},${country}`;
@@ -317,7 +317,7 @@ export class LineItemBudgetReport
         prev[key] += Number(curr[billableCost]);
         return prev;
       },
-      {} as {[lineItemId: string]: number},
+      {} as { [lineItemId: string]: number },
     );
   }
 }
@@ -405,7 +405,7 @@ export class BudgetReport extends Report implements BudgetReportInterface {
         prev[key] += Number(curr[billableCost]);
         return prev;
       },
-      {} as {[insertionOrderId: string]: number},
+      {} as { [insertionOrderId: string]: number },
     );
   }
 }
@@ -418,7 +418,7 @@ function getExistingQueryByName(
 ): Query | null {
   const queryResponse = JSON.parse(
     UrlFetchApp.fetch(getQueryUrl('queries'), apiParams()).getContentText(),
-  ) as {queries: Query[]};
+  ) as { queries: Query[] };
   if (!queryResponse.queries) {
     return null;
   }
@@ -434,7 +434,7 @@ function getExistingQueryByName(
 /**
  * Provides sensible defaults to build a `UrlFetchApp` params object.
  */
-function apiParams(requestParams?: {[key: string]: unknown}) {
+function apiParams(requestParams?: { [key: string]: unknown }) {
   const token = ScriptApp.getOAuthToken();
   const baseParams = {
     contentType: 'application/json',

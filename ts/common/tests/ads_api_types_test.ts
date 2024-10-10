@@ -21,7 +21,7 @@ import {
   DotsToObject,
   ReportInterface,
 } from '../ads_api_types';
-import {expect} from 'chai';
+import { expect } from 'chai';
 
 type AssertSubtype<TestType, End> = End extends TestType ? true : false;
 
@@ -47,7 +47,7 @@ describe('Ads API Types', function () {
     const test1: AssertSubtype<
       DotsToObject<'my.dot_notation.works_well'>,
       {
-        my: {dotNotation: {worksWell: ''}};
+        my: { dotNotation: { worksWell: '' } };
       }
     > = true;
     expect(test1).not.to.be.undefined;
@@ -57,7 +57,7 @@ describe('Ads API Types', function () {
     /* eslint-disable @typescript-eslint/no-explicit-any */
     const test1: AssertEqual<DotsToObject<any>, object> = true;
     // @ts-expect-error This type should not Assert<> to true.
-    const test2: AssertEqual<DotsToObject<any>, {'': ''}> = true;
+    const test2: AssertEqual<DotsToObject<any>, { '': '' }> = true;
     [test1, test2].forEach((test) => expect(test).not.to.be.undefined);
     /* eslint-enable @typescript-eslint/no-explicit-any */
   });
@@ -112,13 +112,13 @@ describe('Ads API Types', function () {
     const _query = buildQuery({
       queryParams: ['a', 'b'],
       queryFrom: 'foo',
-      joins: {a: undefined, b: undefined},
+      joins: { a: undefined, b: undefined },
     });
 
     const test1: AssertSubtype<typeof _query.queryParams, ['a', 'b']> = true;
     const test2: AssertEqual<
       typeof _query.joins,
-      {a: undefined; b: undefined}
+      { a: undefined; b: undefined }
     > = true;
 
     // @ts-expect-error This type should not Assert<> to false.
@@ -127,7 +127,7 @@ describe('Ads API Types', function () {
     // @ts-expect-error This type should not Assert<> to false.
     const test4: AssertEqual<
       typeof _query.joins,
-      {a: undefined; b: undefined}
+      { a: undefined; b: undefined }
     > = false;
 
     [test1, test2, test3, test4].forEach(
@@ -153,7 +153,7 @@ class ChildReport1 implements ReportInterface<typeof CHILD_QUERY1, 'a'> {
   }
 
   transform() {
-    return ['a', {a: 'a'}] as [string, {a: string}];
+    return ['a', { a: 'a' }] as [string, { a: string }];
   }
 }
 class ChildReport2 implements ReportInterface<typeof CHILD_QUERY2, 'b'> {
@@ -165,6 +165,6 @@ class ChildReport2 implements ReportInterface<typeof CHILD_QUERY2, 'b'> {
   }
 
   transform() {
-    return ['a', {b: 'b'}] as [string, {b: string}];
+    return ['a', { b: 'b' }] as [string, { b: string }];
   }
 }

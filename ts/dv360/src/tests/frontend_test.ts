@@ -2,20 +2,20 @@
  * @fileoverview Tests the Apps Script main functions.
  */
 
-import {TARGETING_TYPE} from 'dv360_api/dv360_types';
-import {equalTo} from 'common/checks';
-import {HELPERS, RULE_SETTINGS_SHEET} from 'common/sheet_helpers';
+import { TARGETING_TYPE } from 'dv360_api/dv360_types';
+import { equalTo } from 'common/checks';
+import { HELPERS, RULE_SETTINGS_SHEET } from 'common/sheet_helpers';
 import {
   FakeHtmlOutput,
   FakePropertyStore,
   mockAppsScript,
 } from 'common/test_helpers/mock_apps_script';
-import {PropertyStore} from 'common/types';
+import { PropertyStore } from 'common/types';
 
-import {Client, RuleRange} from '../client';
-import {DisplayVideoFrontend, migrations} from '../frontend';
-import {budgetPacingPercentageRule, geoTargetRule} from '../rules';
-import {ClientArgs, ClientInterface, IDType} from '../types';
+import { Client, RuleRange } from '../client';
+import { DisplayVideoFrontend, migrations } from '../frontend';
+import { budgetPacingPercentageRule, geoTargetRule } from '../rules';
+import { ClientArgs, ClientInterface, IDType } from '../types';
 
 import {
   AdvertiserTemplateConverter,
@@ -25,11 +25,11 @@ import {
 } from './client_helpers';
 
 import HtmlTemplate = GoogleAppsScript.HTML.HtmlTemplate;
-import {AssignedTargetingOption} from 'dv360_api/dv360_resources';
+import { AssignedTargetingOption } from 'dv360_api/dv360_resources';
 
 import * as sinon from 'sinon';
-import {expect} from 'chai';
-import {tearDownStubs} from 'common/tests/helpers';
+import { expect } from 'chai';
+import { tearDownStubs } from 'common/tests/helpers';
 
 const FOLDER = 'application/vnd.google-apps.folder';
 
@@ -44,9 +44,9 @@ describe('Rule value filling', function () {
     {};
 
   beforeEach(async function () {
-    client = testData({allCampaigns, allInsertionOrders});
+    client = testData({ allCampaigns, allInsertionOrders });
 
-    ({stubs} = setUp());
+    ({ stubs } = setUp());
 
     rules = new RuleRange([[]], client);
     clock = sinon.useFakeTimers({
@@ -92,8 +92,8 @@ describe('Rule value filling', function () {
       return insertionOrderTemplate;
     });
 
-    (client as unknown as {storedCampaigns: []}).storedCampaigns = [];
-    (client as unknown as {storedInsertionOrders: []}).storedInsertionOrders =
+    (client as unknown as { storedCampaigns: [] }).storedCampaigns = [];
+    (client as unknown as { storedInsertionOrders: [] }).storedInsertionOrders =
       [];
 
     await rules.fillRuleValues(geoTargetRule.definition);
@@ -141,10 +141,12 @@ describe('validate/launchMonitor functions', function () {
         },
       ],
     };
-    ({stubs} = setUp());
-    frontend = getFrontend(() => testData({allCampaigns, allInsertionOrders}));
+    ({ stubs } = setUp());
+    frontend = getFrontend(() =>
+      testData({ allCampaigns, allInsertionOrders }),
+    );
     HtmlService.createTemplateFromFile = () =>
-      ({evaluate: () => new FakeHtmlOutput()}) as unknown as HtmlTemplate;
+      ({ evaluate: () => new FakeHtmlOutput() }) as unknown as HtmlTemplate;
     await frontend.initializeRules();
   });
 
@@ -240,10 +242,10 @@ describe('Pre-Launch QA menu option', function () {
   let stubs: sinon.SinonStub[];
 
   beforeEach(async function () {
-    ({stubs} = setUp());
+    ({ stubs } = setUp());
     frontend = getFrontend(() => testData({}));
     HtmlService.createTemplateFromFile = () =>
-      ({evaluate: () => new FakeHtmlOutput()}) as unknown as HtmlTemplate;
+      ({ evaluate: () => new FakeHtmlOutput() }) as unknown as HtmlTemplate;
     // force private methods to be visible, so we can manipulate them.
     await frontend.initializeRules();
     clock = sinon.useFakeTimers(new Date(Date.UTC(1970, 0, 1)));
@@ -255,9 +257,9 @@ describe('Pre-Launch QA menu option', function () {
   });
 
   it('clears check results that were previously set', async function () {
-    const noise = Array.from<string>({length: 10})
+    const noise = Array.from<string>({ length: 10 })
       .fill('')
-      .map(() => Array.from<string>({length: 10}).fill('lorem ipsum'));
+      .map(() => Array.from<string>({ length: 10 }).fill('lorem ipsum'));
     await frontend.preLaunchQa();
 
     const sheet = SpreadsheetApp.getActive().getSheetByName(
@@ -279,9 +281,9 @@ describe('Pre-Launch QA menu option', function () {
   });
 
   it('ignores disabled rules', async function () {
-    const noise = Array.from<string>({length: 10})
+    const noise = Array.from<string>({ length: 10 })
       .fill('')
-      .map(() => Array.from<string>({length: 10}).fill('lorem ipsum'));
+      .map(() => Array.from<string>({ length: 10 }).fill('lorem ipsum'));
 
     const values = [
       ['Rule Name', 'Description', 'Enabled'],
@@ -338,7 +340,7 @@ function testData(params: {
             TARGETING_TYPE.GEO_REGION,
             '',
             '',
-            {displayName: geoTarget},
+            { displayName: geoTarget },
           ),
       ),
     },
@@ -369,7 +371,7 @@ describe('Matrix to CSV', function () {
   let stubs: sinon.SinonStub[];
 
   beforeEach(function () {
-    ({stubs} = setUp());
+    ({ stubs } = setUp());
     frontend = getFrontend();
   });
 
@@ -421,8 +423,8 @@ interface FakeFiles {
   folders: Record<string, GoogleAppsScript.Drive.Schema.File[]>;
   files: Record<string, GoogleAppsScript.Drive.Schema.File>;
   get(id: string): GoogleAppsScript.Drive.Schema.File;
-  list(): {items?: GoogleAppsScript.Drive.Schema.File[]};
-  list({q}: {q?: string}): {items?: GoogleAppsScript.Drive.Schema.File[]};
+  list(): { items?: GoogleAppsScript.Drive.Schema.File[] };
+  list({ q }: { q?: string }): { items?: GoogleAppsScript.Drive.Schema.File[] };
   insert(
     schema: GoogleAppsScript.Drive.Schema.File,
     file: GoogleAppsScript.Base.Blob,
@@ -433,12 +435,12 @@ const fakeFiles: FakeFiles = {
   drives: {},
   folders: {},
   files: {},
-  list({q}: {q?: string} = {}) {
+  list({ q }: { q?: string } = {}) {
     if (!q) {
-      return {items: undefined};
+      return { items: undefined };
     }
     const title: string | null = (q.match(/title="([^"]+)"/) || [])[1];
-    return {items: this.folders[title]};
+    return { items: this.folders[title] };
   },
   insert(schema: GoogleAppsScript.Drive.Schema.File) {
     if (!schema.title) {
@@ -463,7 +465,7 @@ describe('Export as CSV', function () {
   let stubs: sinon.SinonStub[];
 
   beforeEach(function () {
-    ({stubs} = setUp());
+    ({ stubs } = setUp());
     frontend = getFrontend();
     oldDrive = Drive;
     Drive.Files =
@@ -514,7 +516,7 @@ describe('Fill check values', function () {
   let stubs: sinon.SinonStub[];
 
   beforeEach(async function () {
-    ({stubs} = setUp());
+    ({ stubs } = setUp());
     frontend = getFrontend(() => testData({}));
     rules = new RuleRange([[]], frontend.client);
     await frontend.initializeRules();
@@ -525,9 +527,9 @@ describe('Fill check values', function () {
   });
 
   it('removes extra fields', async function () {
-    const noise = Array.from<string>({length: 10})
+    const noise = Array.from<string>({ length: 10 })
       .fill('')
-      .map(() => Array.from<string>({length: 10}).fill('lorem ipsum'));
+      .map(() => Array.from<string>({ length: 10 }).fill('lorem ipsum'));
     const sheet = HELPERS.getOrCreateSheet(
       RULE_SETTINGS_SHEET + ' - Insertion Order',
     )!;
@@ -543,7 +545,7 @@ describe('getMatrixOfResults', function () {
   let stubs: sinon.SinonStub[];
 
   beforeEach(function () {
-    ({stubs} = setUp());
+    ({ stubs } = setUp());
     frontend = getFrontend();
   });
 
@@ -561,7 +563,7 @@ describe('getMatrixOfResults', function () {
 
   it('Provides 2-d array from a set of values with fields.', async function () {
     const result = frontend.getMatrixOfResults('value2', [
-      equalTo(1, 1, {test1: 'a', test2: 'b'}),
+      equalTo(1, 1, { test1: 'a', test2: 'b' }),
     ]);
     expect(result).to.eql([
       ['value2', 'anomalous', 'test1', 'test2'],
@@ -584,7 +586,7 @@ describe('Partner view', function () {
   });
 
   beforeEach(async function () {
-    ({stubs} = setUp({level: 'Partner'}));
+    ({ stubs } = setUp({ level: 'Partner' }));
     const allAdvertisers: Record<string, AdvertiserTemplateConverter[]> = {
       '1': [
         (advertiser) => {
@@ -654,7 +656,7 @@ describe('Partner view', function () {
 });
 
 describe('initializeRules', function () {
-  const allCampaigns: {[advertiserId: string]: CampaignTemplateConverter[]} =
+  const allCampaigns: { [advertiserId: string]: CampaignTemplateConverter[] } =
     {};
   let frontend: DisplayVideoFrontend;
   let clock: sinon.SinonFakeTimers;
@@ -669,8 +671,8 @@ describe('initializeRules', function () {
   });
 
   beforeEach(async function () {
-    ({stubs} = setUp());
-    frontend = getFrontend(() => testData({allCampaigns}));
+    ({ stubs } = setUp());
+    frontend = getFrontend(() => testData({ allCampaigns }));
     await frontend.initializeRules();
   });
 
@@ -685,23 +687,23 @@ describe('initializeRules', function () {
 });
 
 function setUp(
-  {level}: {level: 'Advertiser' | 'Partner'} = {
+  { level }: { level: 'Advertiser' | 'Partner' } = {
     level: 'Advertiser',
   },
 ) {
   mockAppsScript();
   PropertiesService.getScriptProperties().setProperty('sheet_version', '5.0');
-  scaffoldSheetWithNamedRanges({level});
-  const frontend = getFrontend(() => testData({idType: IDType.PARTNER}));
+  scaffoldSheetWithNamedRanges({ level });
+  const frontend = getFrontend(() => testData({ idType: IDType.PARTNER }));
   const insertRows = sinon
     .stub(HELPERS, 'insertRows')
     .callsFake((range) => range);
   const getSheetId = sinon.stub(HELPERS, 'getSheetId').callsFake(() => 'id1');
-  return {frontend, stubs: [insertRows, getSheetId]};
+  return { frontend, stubs: [insertRows, getSheetId] };
 }
 
 function scaffoldSheetWithNamedRanges(
-  {level}: {level: 'Advertiser' | 'Partner'} = {
+  { level }: { level: 'Advertiser' | 'Partner' } = {
     level: 'Advertiser',
   },
 ) {

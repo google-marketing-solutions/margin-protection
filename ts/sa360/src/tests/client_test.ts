@@ -15,13 +15,13 @@
  * limitations under the License.
  */
 
-import {equalTo} from 'common/checks';
-import {AppsScriptPropertyStore} from 'common/sheet_helpers';
-import {bootstrapGoogleAdsApi} from 'common/tests/helpers';
-import {mockAppsScript} from 'common/test_helpers/mock_apps_script';
-import {Client, newRule} from 'sa360/src/client';
-import {RuleGranularity} from 'sa360/src/types';
-import {expect} from 'chai';
+import { equalTo } from 'common/checks';
+import { AppsScriptPropertyStore } from 'common/sheet_helpers';
+import { bootstrapGoogleAdsApi } from 'common/tests/helpers';
+import { mockAppsScript } from 'common/test_helpers/mock_apps_script';
+import { Client, newRule } from 'sa360/src/client';
+import { RuleGranularity } from 'sa360/src/types';
+import { expect } from 'chai';
 
 describe('Client rules are validated', function () {
   let output: string[] = [];
@@ -34,9 +34,9 @@ describe('Client rules are validated', function () {
 
   beforeEach(function () {
     mockAppsScript();
-    client = generateTestClient({loginCustomerId: '123'});
+    client = generateTestClient({ loginCustomerId: '123' });
 
-    const values = {'1': equalTo(test, 1, {}), '42': equalTo(test, 42, {})};
+    const values = { '1': equalTo(test, 1, {}), '42': equalTo(test, 42, {}) };
 
     client.addRule(
       newRule({
@@ -44,10 +44,10 @@ describe('Client rules are validated', function () {
         name: 'ruleA',
         description: ``,
         granularity: RuleGranularity.CAMPAIGN,
-        valueFormat: {label: 'ruleA'},
+        valueFormat: { label: 'ruleA' },
         async callback() {
           output.push('ruleA');
-          return {values};
+          return { values };
         },
       }),
       defaultGrid,
@@ -58,10 +58,10 @@ describe('Client rules are validated', function () {
         name: 'ruleB',
         description: ``,
         granularity: RuleGranularity.CAMPAIGN,
-        valueFormat: {label: 'ruleB'},
+        valueFormat: { label: 'ruleB' },
         async callback() {
           output.push('ruleB');
-          return {values};
+          return { values };
         },
       }),
       defaultGrid,
@@ -82,7 +82,7 @@ describe('Client rules are validated', function () {
   });
 
   it('should have check results after validate() is run', async function () {
-    const {results} = await client.validate();
+    const { results } = await client.validate();
     expect(
       Object.values(results['ruleA'].values).map((value) => value.anomalous),
     ).to.eql([true, false]);
@@ -96,9 +96,9 @@ function generateTestClient({
   loginCustomerId?: string;
   customerIds?: string;
 }): Client {
-  const {reportFactory} = bootstrapGoogleAdsApi();
+  const { reportFactory } = bootstrapGoogleAdsApi();
   return new Client(
-    {loginCustomerId, customerIds, label: 'Fake'},
+    { loginCustomerId, customerIds, label: 'Fake' },
     new AppsScriptPropertyStore(),
     reportFactory,
   );

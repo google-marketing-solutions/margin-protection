@@ -19,7 +19,7 @@
  * @fileoverview Client helpers - frontend agnostic.
  */
 
-import {transformToParamValues} from './sheet_helpers';
+import { transformToParamValues } from './sheet_helpers';
 import {
   ClientTypes,
   ParamDefinition,
@@ -81,7 +81,7 @@ export function newRuleBuilder<T extends ClientTypes<T>>(): <
       }
     };
 
-    Object.defineProperty(ruleClass, 'name', {value: ruleDefinition.name});
+    Object.defineProperty(ruleClass, 'name', { value: ruleDefinition.name });
     return ruleClass;
   };
 }

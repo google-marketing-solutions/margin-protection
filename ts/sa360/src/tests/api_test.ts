@@ -27,7 +27,7 @@ import {
   ReportFactory,
   SA360_API_ENDPOINT,
 } from 'common/ads_api';
-import {ReportResponse, buildQuery} from 'common/ads_api_types';
+import { ReportResponse, buildQuery } from 'common/ads_api_types';
 import {
   AD_GROUP_REPORT,
   AD_GROUP_USER_LIST_REPORT,
@@ -37,7 +37,7 @@ import {
   CAMPAIGN_USER_LIST_REPORT,
   GENDER_TARGET_REPORT,
 } from 'sa360/src/api';
-import {expect} from 'chai';
+import { expect } from 'chai';
 import * as sinon from 'sinon';
 
 describe('The API', function () {
@@ -47,21 +47,21 @@ describe('The API', function () {
     let reportFactory: ReportFactory;
 
     beforeEach(function () {
-      ({api, reportFactory} = setUp());
+      ({ api, reportFactory } = setUp());
     });
 
     it('returns expected results from query', function () {
       mockQuery = sinon.stub(api, 'query');
       mockQuery.returns(
         iterator({
-          some: {one: 'one'},
-          other: {two: 'two'},
-          final: {three: 'three'},
+          some: { one: 'one' },
+          other: { two: 'two' },
+          final: { three: 'three' },
         }),
       );
       const report = reportFactory.create(FakeReport);
       expect(report.fetch()).to.deep.include({
-        one: {one: 'one', two: 'two', three: 'three'},
+        one: { one: 'one', two: 'two', three: 'three' },
       });
     });
   });
@@ -71,14 +71,14 @@ describe('The API', function () {
     let reportFactory: ReportFactory;
 
     beforeEach(function () {
-      ({api, reportFactory} = setUp());
+      ({ api, reportFactory } = setUp());
     });
 
     it('returns expected results', function () {
       const mockQuery = sinon.stub(api, 'query');
       mockQuery.returns(
         iterator(
-          ...[...Array.from({length: 5}).keys()].map((x: number) => ({
+          ...[...Array.from({ length: 5 }).keys()].map((x: number) => ({
             customer: {
               resourceName: 'customers/1',
               id: '1',
@@ -140,14 +140,14 @@ describe('The API', function () {
     let reportFactory: ReportFactory;
 
     beforeEach(function () {
-      ({api, reportFactory} = setUp());
+      ({ api, reportFactory } = setUp());
     });
 
     it('returns expected results', function () {
       const mockQuery = sinon.stub(api, 'query');
       mockQuery.returns(
         iterator(
-          ...[...Array.from({length: 5}).keys()].map((x) => ({
+          ...[...Array.from({ length: 5 }).keys()].map((x) => ({
             customer: {
               resourceName: 'customers/1',
               id: '1',
@@ -217,7 +217,7 @@ describe('The API', function () {
     let reportFactory: ReportFactory;
 
     beforeEach(function () {
-      ({api, reportFactory} = setUp());
+      ({ api, reportFactory } = setUp());
     });
 
     it('returns expected results', function () {
@@ -225,7 +225,7 @@ describe('The API', function () {
       mockQuery.callsFake((customerId, query) => {
         if (query === CAMPAIGN_TARGET_REPORT.query) {
           return iterator(
-            ...[...Array.from({length: 5}).keys()].map((x) => ({
+            ...[...Array.from({ length: 5 }).keys()].map((x) => ({
               campaignCriterion: {
                 resourceName: `customers/1/campaignCriteria/c1~gtc${x}`,
                 type: 'LOCATION',
@@ -247,7 +247,7 @@ describe('The API', function () {
           );
         } else {
           return iterator(
-            ...[...Array.from({length: 5}).fill('').keys()].map((x) => ({
+            ...[...Array.from({ length: 5 }).fill('').keys()].map((x) => ({
               geoTargetConstant: {
                 resourceName: `geoTargetConstants/gtc${x}`,
                 id: `gtc${x}`,
@@ -305,25 +305,25 @@ describe('The API', function () {
     let reportFactory: ReportFactory;
 
     beforeEach(function () {
-      ({api, reportFactory} = setUp());
+      ({ api, reportFactory } = setUp());
     });
 
     it('returns expected results', function () {
       const mockQuery = sinon.stub(api, 'query');
       mockQuery.returns(
         iterator(
-          ...[...Array.from({length: 5}).keys()].map((x) => ({
+          ...[...Array.from({ length: 5 }).keys()].map((x) => ({
             customer: {
               resourceName: 'customers/1',
               id: '1',
               descriptiveName: 'Customer 1',
             },
-            campaign: {resourceName: 'customers/1/campaigns/c1', id: 'c1'},
-            adGroup: {resourceName: 'customers/1/adGroups/ag1', id: 'ag1'},
+            campaign: { resourceName: 'customers/1/campaigns/c1', id: 'c1' },
+            adGroup: { resourceName: 'customers/1/adGroups/ag1', id: 'ag1' },
             adGroupCriterion: {
               resourceName: `customers/1/adGroupCriteria/ag1~agc${x}`,
               criterionId: `agc${x}`,
-              ageRange: {type: `AGE_RANGE_${x}`},
+              ageRange: { type: `AGE_RANGE_${x}` },
             },
           })),
         ),
@@ -379,25 +379,25 @@ describe('The API', function () {
     let reportFactory: ReportFactory;
 
     beforeEach(function () {
-      ({api, reportFactory} = setUp());
+      ({ api, reportFactory } = setUp());
     });
 
     it('returns expected results', function () {
       const mockQuery = sinon.stub(api, 'query');
       mockQuery.returns(
         iterator(
-          ...[...Array.from({length: 5}).keys()].map((x) => ({
+          ...[...Array.from({ length: 5 }).keys()].map((x) => ({
             customer: {
               resourceName: 'customers/1',
               id: '1',
               descriptiveName: 'Customer 1',
             },
-            campaign: {resourceName: 'customers/1/campaigns/c1', id: 'c1'},
-            adGroup: {resourceName: 'customers/c1/adGroups/ag1', id: 'ag1'},
+            campaign: { resourceName: 'customers/1/campaigns/c1', id: 'c1' },
+            adGroup: { resourceName: 'customers/c1/adGroups/ag1', id: 'ag1' },
             adGroupCriterion: {
               resourceName: `customers/1/adGroupCriteria/ag1~agc${x}`,
               criterionId: `agc${x}`,
-              ageRange: {type: `AGE_RANGE_${x}`},
+              ageRange: { type: `AGE_RANGE_${x}` },
             },
           })),
         ),
@@ -453,27 +453,27 @@ describe('The API', function () {
     let reportFactory: ReportFactory;
 
     beforeEach(function () {
-      ({api, reportFactory} = setUp());
+      ({ api, reportFactory } = setUp());
     });
 
     it('returns expected results', function () {
       const mockQuery = sinon.stub(api, 'query');
       mockQuery.returns(
         iterator(
-          ...[...Array.from({length: 5}).keys()].map((x) => ({
+          ...[...Array.from({ length: 5 }).keys()].map((x) => ({
             customer: {
               resourceName: 'customers/1',
               id: '1',
               descriptiveName: 'Customer 1',
             },
-            campaign: {resourceName: 'customers/1/campaigns/c1', id: 'c1'},
-            adGroup: {resourceName: 'customers/c1/adGroups/ag1', id: 'ag1'},
+            campaign: { resourceName: 'customers/1/campaigns/c1', id: 'c1' },
+            adGroup: { resourceName: 'customers/c1/adGroups/ag1', id: 'ag1' },
             adGroupCriterion: {
               resourceName: `customers/1/adGroupCriteria/agc${x}`,
               criterionId: `agc${x}`,
-              gender: {type: `Gender Type ${x}`},
+              gender: { type: `Gender Type ${x}` },
             },
-            genderView: {resourceName: 'customers/1/genderViews/1~${x}'},
+            genderView: { resourceName: 'customers/1/genderViews/1~${x}' },
           })),
         ),
       );
@@ -528,7 +528,7 @@ describe('The API', function () {
     let reportFactory: ReportFactory;
 
     beforeEach(function () {
-      ({api, reportFactory} = setUp());
+      ({ api, reportFactory } = setUp());
     });
 
     it('returns expected results', function () {
@@ -536,17 +536,17 @@ describe('The API', function () {
       mockQuery.callsFake((customerId, query) => {
         if (query === CAMPAIGN_USER_LIST_REPORT.query) {
           return iterator(
-            ...[...Array.from({length: 5}).keys()].map((x) => ({
+            ...[...Array.from({ length: 5 }).keys()].map((x) => ({
               customer: {
                 resourceName: 'customers/1',
                 id: '1',
                 descriptiveName: 'Customer 1',
               },
-              campaign: {resourceName: 'customers/1/campaigns/c1', id: 'c1'},
+              campaign: { resourceName: 'customers/1/campaigns/c1', id: 'c1' },
               campaignCriterion: {
                 resourceName: `customers/1/campaignCriteria/209618821~c${x}`,
                 type: 'USER_LIST',
-                userList: {userList: `customers/1/userLists/ul${x}`},
+                userList: { userList: `customers/1/userLists/ul${x}` },
                 criterionId: `ul${x}`,
               },
               campaignAudienceView: {
@@ -556,7 +556,7 @@ describe('The API', function () {
           );
         } else {
           return iterator(
-            ...[...Array.from({length: 5}).keys()].map((x) => ({
+            ...[...Array.from({ length: 5 }).keys()].map((x) => ({
               userList: {
                 resourceName: `customers/1/userLists/ul${x}`,
                 type: 'RULE_BASED',
@@ -614,7 +614,7 @@ describe('The API', function () {
     let reportFactory: ReportFactory;
 
     beforeEach(function () {
-      ({api, reportFactory} = setUp());
+      ({ api, reportFactory } = setUp());
     });
 
     it('returns expected results', function () {
@@ -622,18 +622,18 @@ describe('The API', function () {
       mockQuery.callsFake((customerId, query) => {
         if (query === AD_GROUP_USER_LIST_REPORT.query) {
           return iterator(
-            ...[...Array.from({length: 5}).keys()].map((x) => ({
+            ...[...Array.from({ length: 5 }).keys()].map((x) => ({
               customer: {
                 resourceName: 'customers/1',
                 id: '1',
                 descriptiveName: 'Customer 1',
               },
-              campaign: {resourceName: 'customers/1/campaigns/c1', id: 'c1'},
-              adGroup: {id: 'ag1'},
+              campaign: { resourceName: 'customers/1/campaigns/c1', id: 'c1' },
+              adGroup: { id: 'ag1' },
               adGroupCriterion: {
                 resourceName: `customers/1/campaignCriteria/209618821~c${x}`,
                 type: 'USER_LIST',
-                userList: {userList: `customers/1/userLists/ul${x}`},
+                userList: { userList: `customers/1/userLists/ul${x}` },
                 criterionId: `ul${x}`,
               },
               campaignAudienceView: {
@@ -643,7 +643,7 @@ describe('The API', function () {
           );
         } else {
           return iterator(
-            ...[...Array.from({length: 5}).keys()].map((x) => ({
+            ...[...Array.from({ length: 5 }).keys()].map((x) => ({
               userList: {
                 resourceName: `customers/1/userLists/ul${x}`,
                 type: 'RULE_BASED',
@@ -740,5 +740,5 @@ function setUp() {
   });
   sinon.stub(reportFactory, 'leafAccounts').returns(['2']);
 
-  return {apiFactory, api, reportFactory};
+  return { apiFactory, api, reportFactory };
 }

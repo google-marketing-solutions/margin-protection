@@ -22,7 +22,7 @@
  * libraries (e.g. 'DisplayVideo.Advertisers.list()').
  */
 
-import {BaseApiClient} from './base';
+import { BaseApiClient } from './base';
 import {
   Advertiser,
   AssignedTargetingOption,
@@ -33,10 +33,10 @@ import {
   LineItem,
   TargetingOption,
 } from './dv360_resources';
-import {TargetingType, TARGETING_TYPE} from './dv360_types';
-import {ObjectUtil, UriUtil} from './utils';
-import {FilterExpression, ListParams, Rule, RuleOperator} from './utils';
-import {STATUS} from './dv360_types';
+import { TargetingType, TARGETING_TYPE } from './dv360_types';
+import { ObjectUtil, UriUtil } from './utils';
+import { FilterExpression, ListParams, Rule, RuleOperator } from './utils';
+import { STATUS } from './dv360_types';
 const API_SCOPE: string = 'displayvideo';
 
 const API_VERSION: string = 'v3';
@@ -69,7 +69,7 @@ export abstract class DisplayVideoApiClient extends BaseApiClient {
     requestUri: string,
     requestCallback: (p1: T[]) => void,
     maxPages: number = -1,
-    requestParams: {[key: string]: string} = {method: 'get'},
+    requestParams: { [key: string]: string } = { method: 'get' },
   ) {
     this.executePagedApiRequest(
       requestUri,
@@ -113,7 +113,7 @@ export abstract class DisplayVideoApiClient extends BaseApiClient {
     return this.asDisplayVideoResource(
       this.executeApiRequest(
         requestUri,
-        /* requestParams= */ {method: 'get'},
+        /* requestParams= */ { method: 'get' },
         /* retryOnFailure= */ true,
       ),
     );
@@ -204,7 +204,7 @@ export abstract class DisplayVideoApiClient extends BaseApiClient {
   deleteResource(requestUri: string) {
     this.executeApiRequest(
       requestUri,
-      /* requestParams= */ {method: 'delete'},
+      /* requestParams= */ { method: 'delete' },
       /* retryOnFailure= */ true,
     );
   }
@@ -261,7 +261,7 @@ export class Advertisers extends DisplayVideoApiClient {
     super.listResources(
       `advertisers?partnerId=${this.getPartnerId()}${buildParamString(params, {
         prependStr: '&',
-        defaults: {filter: activeEntityFilter()},
+        defaults: { filter: activeEntityFilter() },
       })}`,
       callback,
       maxPages,
@@ -277,7 +277,7 @@ export class Advertisers extends DisplayVideoApiClient {
    * @throws {!Error} If the API resource object did not contain the expected
    *     properties
    */
-  asDisplayVideoResource(resource: {[key: string]: unknown}): Advertiser {
+  asDisplayVideoResource(resource: { [key: string]: unknown }): Advertiser {
     return Advertiser.fromApiResource(resource);
   }
 
@@ -377,7 +377,7 @@ export class Campaigns extends DisplayVideoApiClient {
     super.listResources(
       `advertisers/${this.getAdvertiserId()}/campaigns${buildParamString(
         params,
-        {defaults: {filter: activeEntityFilter()}},
+        { defaults: { filter: activeEntityFilter() } },
       )}`,
       callback,
       maxPages,
@@ -393,7 +393,7 @@ export class Campaigns extends DisplayVideoApiClient {
    * @throws {!Error} If the API resource object did not contain the expected
    *     properties
    */
-  asDisplayVideoResource(resource: {[key: string]: unknown}): Campaign {
+  asDisplayVideoResource(resource: { [key: string]: unknown }): Campaign {
     return Campaign.fromApiResource(resource);
   }
 
@@ -501,7 +501,7 @@ export class InsertionOrders extends DisplayVideoApiClient {
     super.listResources(
       `advertisers/${this.getAdvertiserId()}/` +
         `insertionOrders${buildParamString(params, {
-          defaults: {filter: activeEntityFilter()},
+          defaults: { filter: activeEntityFilter() },
         })}`,
       callback,
       maxPages,
@@ -517,7 +517,7 @@ export class InsertionOrders extends DisplayVideoApiClient {
    * @throws {!Error} If the API resource object did not contain the expected
    *     properties
    */
-  asDisplayVideoResource(resource: {[key: string]: unknown}): InsertionOrder {
+  asDisplayVideoResource(resource: { [key: string]: unknown }): InsertionOrder {
     return InsertionOrder.fromApiResource(resource);
   }
 
@@ -629,7 +629,7 @@ export class LineItems extends DisplayVideoApiClient {
     super.listResources(
       `advertisers/${this.getAdvertiserId()}/lineItems${buildParamString(
         params,
-        {defaults: {filter: activeEntityFilter()}},
+        { defaults: { filter: activeEntityFilter() } },
       )}`,
       callback,
       maxPages,
@@ -645,7 +645,7 @@ export class LineItems extends DisplayVideoApiClient {
    * @throws {!Error} If the API resource object did not contain the expected
    *     properties
    */
-  asDisplayVideoResource(resource: {[key: string]: unknown}): LineItem {
+  asDisplayVideoResource(resource: { [key: string]: unknown }): LineItem {
     return LineItem.fromApiResource(resource);
   }
 
@@ -763,7 +763,7 @@ export class InventorySources extends DisplayVideoApiClient {
     super.listResources(
       `inventorySources?${key}=${value}${buildParamString(params, {
         prependStr: '&',
-        defaults: {filter: activeEntityFilter()},
+        defaults: { filter: activeEntityFilter() },
       })}`,
       callback,
       maxPages,
@@ -779,7 +779,9 @@ export class InventorySources extends DisplayVideoApiClient {
    * @throws {!Error} If the API resource object did not contain the expected
    *     properties
    */
-  asDisplayVideoResource(resource: {[key: string]: unknown}): InventorySource {
+  asDisplayVideoResource(resource: {
+    [key: string]: unknown;
+  }): InventorySource {
     return InventorySource.fromApiResource(resource);
   }
 
@@ -927,9 +929,9 @@ export class TargetingOptions extends DisplayVideoApiClient {
       encodeURIComponent('targetingOptions:search');
     const payload = {
       advertiserId: this.getAdvertiserId(),
-      geoRegionSearchTerms: {geoRegionQuery: query},
+      geoRegionSearchTerms: { geoRegionQuery: query },
     };
-    const params = {method: 'post', payload: JSON.stringify(payload)};
+    const params = { method: 'post', payload: JSON.stringify(payload) };
     super.listResources(url, callback, maxPages, params);
   }
 
@@ -942,7 +944,9 @@ export class TargetingOptions extends DisplayVideoApiClient {
    * @throws {!Error} If the API resource object did not contain the expected
    *     properties
    */
-  asDisplayVideoResource(resource: {[key: string]: unknown}): TargetingOption {
+  asDisplayVideoResource(resource: {
+    [key: string]: unknown;
+  }): TargetingOption {
     return TargetingOption.fromApiResource(resource);
   }
 
@@ -1034,17 +1038,17 @@ export class AssignedTargetingOptions extends DisplayVideoApiClient {
   constructor(
     targetingType: TargetingType,
     advertiserId: string,
-    assignedTargetingOption: {campaignId: string},
+    assignedTargetingOption: { campaignId: string },
   );
   constructor(
     targetingType: TargetingType,
     advertiserId: string,
-    assignedTargetingOption: {lineItemId: string},
+    assignedTargetingOption: { lineItemId: string },
   );
   constructor(
     targetingType: TargetingType,
     advertiserId: string,
-    assignedTargetingOption: {insertionOrderId: string},
+    assignedTargetingOption: { insertionOrderId: string },
   );
   constructor(targetingType: TargetingType, advertiserId: string);
 
@@ -1111,7 +1115,7 @@ export class AssignedTargetingOptions extends DisplayVideoApiClient {
   ) {
     super.listResources(
       this.getBaseUrl() +
-        buildParamString(params, {defaults: {pageSize: 5000}}),
+        buildParamString(params, { defaults: { pageSize: 5000 } }),
       callback,
       maxPages,
     );
@@ -1283,7 +1287,7 @@ export function buildParamString(
   {
     prependStr = '?',
     defaults = {},
-  }: {prependStr?: '?' | '&'; defaults?: Partial<ListParams>} = {
+  }: { prependStr?: '?' | '&'; defaults?: Partial<ListParams> } = {
     prependStr: '?',
   },
 ) {

@@ -15,13 +15,13 @@
  * limitations under the License.
  */
 
-import {mockAppsScript} from 'common/test_helpers/mock_apps_script';
+import { mockAppsScript } from 'common/test_helpers/mock_apps_script';
 
-import {BudgetReport, ImpressionReport} from '../api';
-import {IDType} from '../types';
+import { BudgetReport, ImpressionReport } from '../api';
+import { IDType } from '../types';
 
-import {BudgetMatchTable, ImpressionMatchTable} from './dbm_test_helpers';
-import {expect} from 'chai';
+import { BudgetMatchTable, ImpressionMatchTable } from './dbm_test_helpers';
+import { expect } from 'chai';
 
 class FakeScriptApp {
   getOAuthToken() {
@@ -30,7 +30,7 @@ class FakeScriptApp {
 }
 
 // tslint:disable-next-line:enforce-name-casing This is to mock existing variables.
-(globalThis as unknown as {ScriptApp: FakeScriptApp}).ScriptApp =
+(globalThis as unknown as { ScriptApp: FakeScriptApp }).ScriptApp =
   new FakeScriptApp();
 
 describe('BudgetReport#getSpendForInsertionOrder', function () {
@@ -75,13 +75,13 @@ describe('BudgetReport#getSpendForInsertionOrder', function () {
       startDate.getTime(),
       endDate.getTime(),
     );
-    const hits1 = {...router.getHits()};
+    const hits1 = { ...router.getHits() };
     const result2 = budgetReport.getSpendForInsertionOrder(
       'IO3',
       startDate.getTime(),
       endDate.getTime(),
     );
-    const hits2 = {...router.getHits()};
+    const hits2 = { ...router.getHits() };
 
     expect(hits1).to.eql({
       queryPostHits: 1,
@@ -214,7 +214,7 @@ describe('BudgetReport#fetchQueryId()', function () {
       endDate: new Date(1, 1, 2),
     });
     budgetReport1.fetchQueryId();
-    const hits1 = {...router.getHits()};
+    const hits1 = { ...router.getHits() };
     const budgetReport2 = new BudgetReport({
       id: '1',
       idType: IDType.ADVERTISER,
@@ -222,7 +222,7 @@ describe('BudgetReport#fetchQueryId()', function () {
       endDate: new Date(1, 1, 2),
     });
     budgetReport2.fetchQueryId();
-    const hits2 = {...router.getHits()};
+    const hits2 = { ...router.getHits() };
 
     expect(budgetReport1.fetchQueryId()).to.eql('query1');
     expect(budgetReport2.fetchQueryId()).to.eql('query1');

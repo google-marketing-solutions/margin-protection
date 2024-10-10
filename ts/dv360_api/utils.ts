@@ -218,7 +218,7 @@ export const ObjectUtil = {
     extension: E,
   ): T & E {
     if (original == null) {
-      return {...extension} as T & E;
+      return { ...extension } as T & E;
     }
     for (const key in extension) {
       if (extension.hasOwnProperty(key)) {
@@ -272,7 +272,7 @@ export const ObjectUtil = {
     },
   ): boolean {
     const keys = ObjectUtil.isObject(obj)
-      ? Object.keys(obj as {[key: string]: unknown})
+      ? Object.keys(obj as { [key: string]: unknown })
       : [];
     const result =
       keys.length > 0 &&

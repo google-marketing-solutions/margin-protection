@@ -2,19 +2,19 @@ import {
   FakePropertyStore,
   mockAppsScript,
 } from 'common/test_helpers/mock_apps_script';
-import {SearchAdsFrontend} from 'sa360/src/frontend';
-import {ClientInterface, ReportClass, ReportInterface} from '../types';
-import {PropertyStore, RecordInfo} from 'common/types';
-import {Client, RuleRange} from '../client';
-import {ageTargetRule, geoTargetRule} from '../rules';
+import { SearchAdsFrontend } from 'sa360/src/frontend';
+import { ClientInterface, ReportClass, ReportInterface } from '../types';
+import { PropertyStore, RecordInfo } from 'common/types';
+import { Client, RuleRange } from '../client';
+import { ageTargetRule, geoTargetRule } from '../rules';
 import {
   CredentialManager,
   GoogleAdsApiFactory,
   ReportFactory,
   SA360_API_ENDPOINT,
 } from 'common/ads_api';
-import {Query, QueryBuilder} from 'common/ads_api_types';
-import {expect} from 'chai';
+import { Query, QueryBuilder } from 'common/ads_api_types';
+import { expect } from 'chai';
 import * as sinon from 'sinon';
 
 describe('End-to-end SA360 tests', function () {
@@ -237,14 +237,14 @@ function fn(o: string, rowNumber: number) {
 
 function testData(
   client: ClientInterface,
-  {numberOfCampaigns = 2, numberOfAdGroups = 2, reportResult = fn} = {
+  { numberOfCampaigns = 2, numberOfAdGroups = 2, reportResult = fn } = {
     numberOfCampaigns: 2,
     numberOfAdGroups: 2,
     reportResult: fn,
   },
 ) {
-  const campaignArr = Array.from({length: numberOfCampaigns});
-  const adGroupArr = Array.from({length: numberOfAdGroups});
+  const campaignArr = Array.from({ length: numberOfCampaigns });
+  const adGroupArr = Array.from({ length: numberOfAdGroups });
   client.getAllCampaigns = async () => {
     return campaignArr.map((_, i) => ({
       advertiserId: '1',

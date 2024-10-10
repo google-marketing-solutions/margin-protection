@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-import {ObjectUtil, UriUtil} from './utils';
+import { ObjectUtil, UriUtil } from './utils';
 
 /**
  * DV360 API resources contain page tokens.
@@ -62,8 +62,8 @@ export class BaseApiClient {
    */
   executePagedApiRequest(
     requestUri: string,
-    requestParams: {[key: string]: string} | null,
-    requestCallback: (p1: {[key: string]: unknown}) => void,
+    requestParams: { [key: string]: string } | null,
+    requestCallback: (p1: { [key: string]: unknown }) => void,
     maxPages: number = -1,
   ) {
     let url = this.buildApiUrl(requestUri);
@@ -111,7 +111,7 @@ export class BaseApiClient {
     requestParams: Params | null,
     retryOnFailure: boolean,
     operationCount: number = 0,
-  ): {nextPageToken?: string} {
+  ): { nextPageToken?: string } {
     const url = this.buildApiUrl(requestUri);
     const params = this.buildApiParams(requestParams);
     const maxRetries = 3;
@@ -173,7 +173,7 @@ export class BaseApiClient {
     const token = ScriptApp.getOAuthToken();
     const baseParams: Params = {
       contentType: 'application/json',
-      headers: {Authorization: `Bearer ${token}`, Accept: 'application/json'},
+      headers: { Authorization: `Bearer ${token}`, Accept: 'application/json' },
     };
     return ObjectUtil.extend(baseParams, requestParams || {});
   }

@@ -15,10 +15,10 @@
  * limitations under the License.
  */
 
-import {ApiDate} from 'dv360_api/dv360_types';
-import {AppsScriptPropertyStore} from 'common/sheet_helpers';
-import {mockAppsScript} from 'common/test_helpers/mock_apps_script';
-import {budgetPacingPercentageRule, impressionsByGeoTarget} from '../rules';
+import { ApiDate } from 'dv360_api/dv360_types';
+import { AppsScriptPropertyStore } from 'common/sheet_helpers';
+import { mockAppsScript } from 'common/test_helpers/mock_apps_script';
+import { budgetPacingPercentageRule, impressionsByGeoTarget } from '../rules';
 import {
   dailyBudgetRuleTestData,
   generateGeoTestData,
@@ -30,7 +30,7 @@ import {
   generateLineItemReport,
   generateInsertionOrderReportWithDateValues,
 } from './rules_test_helpers';
-import {expect} from 'chai';
+import { expect } from 'chai';
 import * as sinon from 'sinon';
 
 describe('Geo targeting Rule', function () {
@@ -50,7 +50,7 @@ describe('Geo targeting Rule', function () {
       advertiserId: '123',
       geoTargets: ['United States (Country)'],
     });
-    expect(values['c1']).to.include({anomalous: false});
+    expect(values['c1']).to.include({ anomalous: false });
   });
 
   it('triggers an error when a non-US geo is found', async function () {
@@ -178,7 +178,7 @@ describe('Percentage Budget Pacing Rule (Insertion Order)', function () {
 
   it(`doesn't fail when pacing is equal to threshold`, async function () {
     const values = await insertionOrderPacingRuleTestData(50);
-    expect(values['io1']).to.include({anomalous: false, value: 'Pace OK'});
+    expect(values['io1']).to.include({ anomalous: false, value: 'Pace OK' });
   });
 
   it('has the correct fields and values', async function () {
@@ -269,7 +269,7 @@ describe('Percentage Budget Pacing Rule (Line Item)', function () {
 
   it(`doesn't fail when pacing is equal to threshold`, async function () {
     const values = await lineItemPacingRuleTestData(50);
-    expect(values['li1']).to.include({anomalous: false, value: 'Pace OK'});
+    expect(values['li1']).to.include({ anomalous: false, value: 'Pace OK' });
   });
 
   it('has the correct fields and values', async function () {
@@ -337,7 +337,7 @@ describe('Daily Budgets Rule', function () {
 
   it(`doesn't fail when daily budgets is equal to range`, async function () {
     const values = await dailyBudgetRuleTestData(50);
-    expect(values['io1']).to.include({value: '5', anomalous: false});
+    expect(values['io1']).to.include({ value: '5', anomalous: false });
   });
 
   const values: Array<[startDate: number, endDate: number]> = [

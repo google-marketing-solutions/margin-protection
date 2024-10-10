@@ -25,9 +25,9 @@ import {
   ReportFactory,
   SA360_API_ENDPOINT,
 } from 'common/ads_api';
-import {AppsScriptPropertyStore} from 'common/sheet_helpers';
-import {PropertyStore} from 'common/types';
-import {Client, RuleRange} from 'sa360/src/client';
+import { AppsScriptPropertyStore } from 'common/sheet_helpers';
+import { PropertyStore } from 'common/types';
+import { Client, RuleRange } from 'sa360/src/client';
 import {
   budgetPacingRule,
   campaignStatusRule,
@@ -39,7 +39,7 @@ import {
   campaignAudienceTargetRule,
 } from 'sa360/src/rules';
 
-import {migrations, SearchAdsFrontend} from './frontend';
+import { migrations, SearchAdsFrontend } from './frontend';
 
 /**
  * The sheet version the app currently has.

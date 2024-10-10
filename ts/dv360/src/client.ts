@@ -32,9 +32,9 @@ import {
   InsertionOrder,
   LineItem,
 } from 'dv360_api/dv360_resources';
-import {newRuleBuilder} from 'common/client_helpers';
+import { newRuleBuilder } from 'common/client_helpers';
 
-import {AbstractRuleRange} from 'common/sheet_helpers';
+import { AbstractRuleRange } from 'common/sheet_helpers';
 import {
   DefinedParameters,
   ExecutorResult,
@@ -46,8 +46,8 @@ import {
   Settings,
 } from 'common/types';
 
-import {RawApiDate} from 'dv360_api/dv360_types';
-import {BudgetReport, ImpressionReport, LineItemBudgetReport} from './api';
+import { RawApiDate } from 'dv360_api/dv360_types';
+import { BudgetReport, ImpressionReport, LineItemBudgetReport } from './api';
 import {
   Accessors,
   BudgetReportInterface,
@@ -127,11 +127,11 @@ export class Client implements ClientInterface {
   }
 
   constructor(
-    args: Omit<ClientArgs, 'idType' | 'id'> & {advertiserId: string},
+    args: Omit<ClientArgs, 'idType' | 'id'> & { advertiserId: string },
     properties: PropertyStore,
   );
   constructor(
-    args: Omit<ClientArgs, 'idType' | 'id'> & {partnerId: string},
+    args: Omit<ClientArgs, 'idType' | 'id'> & { partnerId: string },
     properties: PropertyStore,
     dao?: DataAccessObject,
   );
@@ -184,7 +184,7 @@ export class Client implements ClientInterface {
     const results: Record<string, ExecutorResult> = {};
     for (const [rule, thresholdCallable] of thresholds) {
       if (!rule.enabled) {
-        results[rule.name] = {values: {}};
+        results[rule.name] = { values: {} };
         rules[rule.name] = rule;
       } else {
         results[rule.name] = await thresholdCallable();
@@ -192,7 +192,7 @@ export class Client implements ClientInterface {
       }
     }
 
-    return {rules, results};
+    return { rules, results };
   }
 
   getAllLineItems(): LineItem[] {
@@ -201,7 +201,7 @@ export class Client implements ClientInterface {
         this.args.idType === IDType.ADVERTISER
           ? this.getAllLineItemsForAdvertiser(this.args.id)
           : this.getAllAdvertisersForPartner().reduce(
-              (arr, {advertiserId}) =>
+              (arr, { advertiserId }) =>
                 arr.concat(this.getAllLineItemsForAdvertiser(advertiserId)),
               [] as LineItem[],
             );
@@ -214,7 +214,7 @@ export class Client implements ClientInterface {
         this.args.idType === IDType.ADVERTISER
           ? this.getAllInsertionOrdersForAdvertiser(this.args.id)
           : this.getAllAdvertisersForPartner().reduce(
-              (arr, {advertiserId}) =>
+              (arr, { advertiserId }) =>
                 arr.concat(
                   this.getAllInsertionOrdersForAdvertiser(advertiserId),
                 ),
@@ -240,7 +240,7 @@ export class Client implements ClientInterface {
               campaignsWithSegments.has(campaign.id),
             )
           : this.getAllAdvertisersForPartner().reduce(
-              (arr, {advertiserId, advertiserName}) =>
+              (arr, { advertiserId, advertiserName }) =>
                 arr.concat(
                   this.getAllCampaignsForAdvertiser(
                     advertiserId,
@@ -262,7 +262,7 @@ export class Client implements ClientInterface {
     advertiserName: string;
   }> {
     const cache = CacheService.getScriptCache();
-    const result: Array<{advertiserId: string; advertiserName: string}> = [];
+    const result: Array<{ advertiserId: string; advertiserName: string }> = [];
     const advertisers = cache.get('advertisers:2');
     if (advertisers) {
       return JSON.parse(advertisers) as Array<{
@@ -281,7 +281,7 @@ export class Client implements ClientInterface {
         if (!advertiserName) {
           throw new Error('Advertiser name is missing.');
         }
-        result.push({advertiserId, advertiserName});
+        result.push({ advertiserId, advertiserName });
       }
     });
     cache.put('advertisers:2', JSON.stringify(result), 120);
@@ -335,7 +335,7 @@ export class Client implements ClientInterface {
         }
         result.push({
           advertiserId,
-          ...(advertiserName ? {advertiserName} : {}),
+          ...(advertiserName ? { advertiserName } : {}),
           id,
           displayName: campaign.getDisplayName()!,
         });
@@ -416,7 +416,7 @@ export class RuleRange extends AbstractRuleRange<DisplayVideoClientTypes> {
   }
 
   async getRuleHeaders(): Promise<string[]> {
-    const {hasAdvertiserName} = await this.getCampaignMap();
+    const { hasAdvertiserName } = await this.getCampaignMap();
     if (!hasAdvertiserName) {
       return [];
     }
@@ -443,7 +443,7 @@ export class RuleRange extends AbstractRuleRange<DisplayVideoClientTypes> {
   }
 
   override async getRuleMetadata(granularity: RuleGranularity, id: string) {
-    const {campaignMap, hasAdvertiserName} = await this.getCampaignMap();
+    const { campaignMap, hasAdvertiserName } = await this.getCampaignMap();
     if (!hasAdvertiserName) {
       return undefined;
     }
