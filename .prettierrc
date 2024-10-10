@@ -6,5 +6,5 @@
   "bracketSpacing": true,
   "trailingComma": "all",
   "arrowParens": "always",
-  "embeddedLanguageFormatting": "off",
+  "embeddedLanguageFormatting": "off"
 }
