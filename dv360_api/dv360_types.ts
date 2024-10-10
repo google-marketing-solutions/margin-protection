@@ -22,7 +22,7 @@
  * type for an exhaustive and up-to-date list of properties.
  */
 
-import {ObjectUtil} from './utils';
+import { ObjectUtil } from './utils';
 
 /**
  * Defines the `*Mapper` contract.
@@ -534,7 +534,7 @@ interface YoutubeAndPartnersBiddingStrategy {
  * @see https://developers.google.com/display-video/api/reference/rest/v3/BiddingStrategy
  */
 export interface BiddingStrategy {
-  fixedBid?: {bidAmountMicros: string};
+  fixedBid?: { bidAmountMicros: string };
   maximizeSpendAutoBid?: MaxSpendBiddingStrategy;
   performanceGoalAutoBid?: PerformanceGoalBiddingStrategy;
   youtubeAndPartnersBid?: YoutubeAndPartnersBiddingStrategy;
@@ -715,7 +715,7 @@ export const AdvertiserAdServerConfigMapper: Mapper<AdvertiserAdServerConfig> =
 
         if (validThirdPartyOnlyConfig) {
           const thirdPartyOnlyConfigKeys = Object.keys(
-            thirdPartyOnlyConfig as {[key: string]: unknown},
+            thirdPartyOnlyConfig as { [key: string]: unknown },
           );
 
           validThirdPartyOnlyConfig =
@@ -758,7 +758,7 @@ export interface CampaignBudget {
   displayName: string;
   budgetUnit: string;
   budgetAmountMicros: string;
-  dateRange: {startDate: RawApiDate; endDate: RawApiDate};
+  dateRange: { startDate: RawApiDate; endDate: RawApiDate };
 }
 
 /**
@@ -791,7 +791,7 @@ export const CampaignBudgetMapper: MapperWithJsonOut<CampaignBudget[]> = {
     ];
 
     for (const budget of resource) {
-      if (ObjectUtil.hasOwnProperties(budget, {requiredProperties})) {
+      if (ObjectUtil.hasOwnProperties(budget, { requiredProperties })) {
         const startDateExists = ApiDate.validate(budget.dateRange.startDate);
         const endDateExists = ApiDate.validate(budget.dateRange.endDate);
 
@@ -836,7 +836,7 @@ export const CampaignBudgetMapper: MapperWithJsonOut<CampaignBudget[]> = {
  *
  */
 export interface CampaignFlight {
-  plannedDates: {startDate: RawApiDate};
+  plannedDates: { startDate: RawApiDate };
 }
 
 /**
@@ -883,7 +883,7 @@ export const CampaignFlightMapper: MapperWithJsonOut<CampaignFlight> = {
    *     `CampaignFlight`
    */
   toJson(flight) {
-    return {plannedDates: {startDate: flight.plannedDates.startDate}};
+    return { plannedDates: { startDate: flight.plannedDates.startDate } };
   },
 };
 
@@ -930,7 +930,7 @@ export const CampaignGoalMapper: Mapper<CampaignGoal> = {
  */
 export interface InsertionOrderBudgetSegment {
   budgetAmountMicros: string;
-  dateRange: {startDate: RawApiDate; endDate: RawApiDate};
+  dateRange: { startDate: RawApiDate; endDate: RawApiDate };
 }
 
 /**
@@ -1047,7 +1047,7 @@ export const InsertionOrderBudgetMapper: MapperWithJsonOut<InsertionOrderBudget>
         InsertionOrderBudgetSegmentMapper.toJson(segment),
       );
 
-      return {budgetUnit: budget.budgetUnit, budgetSegments: segments};
+      return { budgetUnit: budget.budgetUnit, budgetSegments: segments };
     },
   };
 
@@ -1058,7 +1058,7 @@ export const InsertionOrderBudgetMapper: MapperWithJsonOut<InsertionOrderBudget>
  */
 export interface LineItemFlight {
   flightDateType: LineItemFlightDateType;
-  dateRange?: {startDate: RawApiDate; endDate: RawApiDate};
+  dateRange?: { startDate: RawApiDate; endDate: RawApiDate };
 }
 
 /**
@@ -1259,7 +1259,7 @@ export const InventorySourceRateDetailsMapper: Mapper<InventorySourceRateDetails
      */
     map(resource) {
       if (
-        ObjectUtil.hasOwnProperties(resource, {requiredProperties: ['rate']})
+        ObjectUtil.hasOwnProperties(resource, { requiredProperties: ['rate'] })
       ) {
         const minimumSpend = resource.minimumSpend;
         const valid =
@@ -1380,7 +1380,7 @@ export class ApiDate implements RawApiDate {
    *     `ApiDate` instance
    */
   toJSON(): RawApiDate {
-    return {year: this.getYear(), month: this.getMonth(), day: this.getDay()};
+    return { year: this.getYear(), month: this.getMonth(), day: this.getDay() };
   }
 
   toDate(): Date {

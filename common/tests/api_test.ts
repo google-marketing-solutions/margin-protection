@@ -30,15 +30,15 @@ import {
   ReportFactory,
   SA360_API_ENDPOINT,
 } from '../ads_api';
-import {AdsSearchRequest, buildQuery} from '../ads_api_types';
+import { AdsSearchRequest, buildQuery } from '../ads_api_types';
 import {
   generateFakeHttpResponse,
   mockAppsScript,
 } from '../test_helpers/mock_apps_script';
 
-import {bootstrapGoogleAdsApi, tearDownStubs} from './helpers';
+import { bootstrapGoogleAdsApi, tearDownStubs } from './helpers';
 import * as sinon from 'sinon';
-import {expect, use} from 'chai';
+import { expect, use } from 'chai';
 import sinonChai from 'sinon-chai';
 use(sinonChai);
 
@@ -64,7 +64,7 @@ describe('Google Ads API Factory', function () {
 describe('qlifyQuery', function () {
   it('builds legible queries when there are no wheres', function () {
     const query = qlifyQuery(
-      {queryParams: ['a.one'], queryWheres: [], queryFrom: 'table'},
+      { queryParams: ['a.one'], queryWheres: [], queryFrom: 'table' },
       [],
     );
     expect(query).to.equal('SELECT a.one FROM table');
@@ -72,7 +72,7 @@ describe('qlifyQuery', function () {
 
   it('builds legible queries when there is one where', function () {
     const query = qlifyQuery(
-      {queryParams: ['a.one'], queryWheres: [], queryFrom: 'table'},
+      { queryParams: ['a.one'], queryWheres: [], queryFrom: 'table' },
       ['foo = "1"'],
     );
     expect(query).to.equal('SELECT a.one FROM table WHERE foo = "1"');
@@ -80,7 +80,7 @@ describe('qlifyQuery', function () {
 
   it('builds legible queries when there are multiple wheres', function () {
     const query = qlifyQuery(
-      {queryParams: ['a.one'], queryWheres: [], queryFrom: 'table'},
+      { queryParams: ['a.one'], queryWheres: [], queryFrom: 'table' },
       ['foo = "1"', 'bar = "2"'],
     );
     expect(query).to.equal(
@@ -97,7 +97,7 @@ describe('Google Ads API', function () {
     sinon.stub(UrlFetchApp, 'fetch').callsFake((requestUrl: string) => {
       url = requestUrl;
 
-      return generateFakeHttpResponse({contentText: '{}'});
+      return generateFakeHttpResponse({ contentText: '{}' });
     });
   });
 
@@ -163,7 +163,9 @@ describe('Google Ads API Client', function () {
 
   beforeEach(function () {
     mockAppsScript();
-    this.httpResponse = generateFakeHttpResponse({contentText: 'hello world'});
+    this.httpResponse = generateFakeHttpResponse({
+      contentText: 'hello world',
+    });
     fetch = sinon.stub(UrlFetchApp, 'fetch');
     getContentText = sinon
       .stub(this.httpResponse, 'getContentText')
@@ -221,7 +223,7 @@ describe('Google Ads API Client', function () {
   it('Has query in payload', function () {
     const client = createClient();
     sinon
-      .stub(client as unknown as {requestHeaders(): object}, 'requestHeaders')
+      .stub(client as unknown as { requestHeaders(): object }, 'requestHeaders')
       .returns({});
     client.query('1', FAKE_REPORT.query).next();
     const token = 'myBearerToken';
@@ -238,7 +240,7 @@ describe('Google Ads API Client', function () {
 
   it('Handles paginated results', function () {
     const firstHttpResponse = sinon.stub<HTTPResponse>(
-      generateFakeHttpResponse({contentText: 'foo'}),
+      generateFakeHttpResponse({ contentText: 'foo' }),
     );
     firstHttpResponse.getContentText.returns(
       '{"results": [{"customer": { "id": 456 }}], "nextPageToken": "pointer"}',
@@ -262,7 +264,10 @@ describe('Google Ads API Client', function () {
     const lastPayload = getSearchRequestPayload(1);
     expect(lastPayload.pageToken).to.equal('pointer');
 
-    expect(rows).to.deep.eq([{customer: {id: 456}}, {customer: {id: 123}}]);
+    expect(rows).to.deep.eq([
+      { customer: { id: 456 } },
+      { customer: { id: 123 } },
+    ]);
   });
 
   it('Handles empty results', function () {
@@ -294,20 +299,20 @@ describe('Report Factory', function () {
         apiEndpoint: FAKE_API_ENDPOINT,
       }).create(loginCustomerId);
       const mockQuery: sinon.SinonStub = sinon.stub(api, 'queryOne');
-      mockQuery.callsFake(({query, customerId}) => {
+      mockQuery.callsFake(({ query, customerId }) => {
         if (query === FAKE_REPORT.query) {
           return iterator({
-            a: {one: `${customerId}/one`},
-            b: {two: `${customerId}/two`},
-            c: {three: `${customerId}/three`},
+            a: { one: `${customerId}/one` },
+            b: { two: `${customerId}/two` },
+            c: { three: `${customerId}/three` },
           });
         } else {
           return iterator(
             {
-              customerClient: {id: '2'},
+              customerClient: { id: '2' },
             },
             {
-              customerClient: {id: '3'},
+              customerClient: { id: '3' },
             },
           );
         }
@@ -323,8 +328,8 @@ describe('Report Factory', function () {
   it('returns expected results from query', function () {
     const report = reportFactory.create(FAKE_REPORT);
     expect(report.fetch()).to.deep.eq({
-      '2/one': {one: '2/one', two: '2/two', three: '2/three'},
-      '3/one': {one: '3/one', two: '3/two', three: '3/three'},
+      '2/one': { one: '2/one', two: '2/two', three: '2/three' },
+      '3/one': { one: '3/one', two: '3/two', three: '3/three' },
     });
   });
 
@@ -348,8 +353,8 @@ describe('Report Factory', function () {
     const report = multiFactory.create(FAKE_REPORT);
 
     expect(report.fetch()).to.deep.eq({
-      '2/one': {one: '2/one', two: '2/two', three: '2/three'},
-      '3/one': {one: '3/one', two: '3/two', three: '3/three'},
+      '2/one': { one: '2/one', two: '2/two', three: '2/three' },
+      '3/one': { one: '3/one', two: '3/two', three: '3/three' },
     });
   });
 });
@@ -360,7 +365,7 @@ describe('Join Report', function () {
   let stubs: sinon.SinonStub[];
 
   beforeEach(function () {
-    ({reportFactory, mockQuery, stubs} = bootstrapGoogleAdsApi());
+    ({ reportFactory, mockQuery, stubs } = bootstrapGoogleAdsApi());
   });
 
   afterEach(function () {
@@ -368,24 +373,27 @@ describe('Join Report', function () {
   });
 
   it('returns expected results from query', function () {
-    mockQuery.callsFake(({query}) => {
+    mockQuery.callsFake(({ query }) => {
       if (query === JOIN_REPORT.query) {
-        return iterator({d: {one: 'one', nother: 'another'}}, {d: {one: '1'}});
+        return iterator(
+          { d: { one: 'one', nother: 'another' } },
+          { d: { one: '1' } },
+        );
       } else if (query === GET_LEAF_ACCOUNTS_REPORT.query) {
         return iterator({
-          customerClient: {id: '1'},
+          customerClient: { id: '1' },
         });
       } else {
         return iterator({
-          a: {one: 'one'},
-          b: {two: 'two'},
-          c: {another: 'three'},
+          a: { one: 'one' },
+          b: { two: 'two' },
+          c: { another: 'three' },
         });
       }
     });
     const report = reportFactory.create(JOIN_REPORT);
     expect(report.fetch()).to.deep.eq({
-      one: {one: 'one', two: 'two', another: 'another'},
+      one: { one: 'one', two: 'two', another: 'another' },
     });
   });
 });
@@ -397,7 +405,7 @@ describe('Join query handling', function () {
   const qlifyStack: string[] = [];
 
   beforeEach(function () {
-    ({reportFactory, api, stubs} = bootstrapGoogleAdsApi());
+    ({ reportFactory, api, stubs } = bootstrapGoogleAdsApi());
     const qlifyQuery = api.qlifyQuery;
     stubs.push(
       sinon.stub(api, 'qlifyQuery').callsFake((query, queryWheres) => {
@@ -417,10 +425,10 @@ describe('Join query handling', function () {
             getContentText() {
               return JSON.stringify({
                 results: [
-                  {d: {one: '1', nother: 'another'}},
-                  {d: {one: '11', nother: 'yet another'}},
+                  { d: { one: '1', nother: 'another' } },
+                  { d: { one: '11', nother: 'yet another' } },
                   // this value doesn't exist - but should still be queried.
-                  {d: {one: '111', nother: 'yet another'}},
+                  { d: { one: '111', nother: 'yet another' } },
                 ],
               });
             },
@@ -429,14 +437,14 @@ describe('Join query handling', function () {
         const joinedPayload = {
           results: [
             {
-              a: {one: '1'},
-              b: {two: '2'},
-              c: {three: '3'},
+              a: { one: '1' },
+              b: { two: '2' },
+              c: { three: '3' },
             },
             {
-              a: {one: '11'},
-              b: {two: '22'},
-              c: {three: '3'},
+              a: { one: '11' },
+              b: { two: '22' },
+              c: { three: '3' },
             },
           ],
         };
@@ -466,10 +474,10 @@ describe('Leaf expansion', function () {
   let reportFactory: ReportFactory;
   let mockQuery: sinon.SinonStub;
   let stubs: sinon.SinonStub[];
-  const mockLeafAccounts: Record<string, string[]> = {'123': ['1', '2', '3']};
+  const mockLeafAccounts: Record<string, string[]> = { '123': ['1', '2', '3'] };
 
   beforeEach(function () {
-    ({reportFactory, mockQuery, stubs} = bootstrapGoogleAdsApi({
+    ({ reportFactory, mockQuery, stubs } = bootstrapGoogleAdsApi({
       mockLeafAccounts,
       spyOnLeaf: false,
     }));
@@ -480,25 +488,25 @@ describe('Leaf expansion', function () {
   });
 
   it('checks all expanded accounts are added to the report', function () {
-    mockQuery.callsFake(({customerId, query}) => {
+    mockQuery.callsFake(({ customerId, query }) => {
       if (query === GET_LEAF_ACCOUNTS_REPORT.query) {
         return iterator(
           ...mockLeafAccounts[customerId].map((id) => ({
-            customerClient: {id, name: `customer ${id}`, status: 'ENABLED'},
+            customerClient: { id, name: `customer ${id}`, status: 'ENABLED' },
           })),
         );
       } else {
         return iterator({
           customerId,
-          a: {id: customerId},
+          a: { id: customerId },
         });
       }
     });
     const report = reportFactory.create(FAKE_REPORT_2);
     expect(report.fetch()).to.deep.include({
-      'customers/1/id/a1': {customerId: '1', id: 'a1'},
-      'customers/2/id/a2': {customerId: '2', id: 'a2'},
-      'customers/3/id/a3': {customerId: '3', id: 'a3'},
+      'customers/1/id/a1': { customerId: '1', id: 'a1' },
+      'customers/2/id/a2': { customerId: '2', id: 'a2' },
+      'customers/3/id/a3': { customerId: '3', id: 'a3' },
     });
   });
 });

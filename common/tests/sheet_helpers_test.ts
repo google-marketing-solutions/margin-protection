@@ -23,7 +23,7 @@ import {
   FakePropertyStore,
   mockAppsScript,
 } from '../test_helpers/mock_apps_script';
-import {ParamDefinition, RuleExecutorClass, RuleGetter} from '../types';
+import { ParamDefinition, RuleExecutorClass, RuleGetter } from '../types';
 
 import {
   HELPERS,
@@ -43,16 +43,16 @@ import {
   TestClientInterface,
   TestClientTypes,
 } from './helpers';
-import {equalTo} from 'common/checks';
+import { equalTo } from 'common/checks';
 import * as sinon from 'sinon';
-import {expect} from 'chai';
+import { expect } from 'chai';
 
 function setUp() {
   mockAppsScript();
   const insertRows = sinon
     .stub(HELPERS, 'insertRows')
     .callsFake((range) => range);
-  return {stubs: [insertRows]};
+  return { stubs: [insertRows] };
 }
 
 describe('Test migration order', function () {
@@ -154,7 +154,7 @@ describe('Test migration order', function () {
 
 describe('2-D array', function () {
   let array2d: string[][];
-  const params = {rule1: {label: 'Rule 1'}, rule2: {label: 'Rule 2'}};
+  const params = { rule1: { label: 'Rule 1' }, rule2: { label: 'Rule 2' } };
 
   beforeEach(function () {
     array2d = [
@@ -167,8 +167,8 @@ describe('2-D array', function () {
   it('transforms into a param', function () {
     expect(transformToParamValues(array2d, params)).to.deep.eq(
       new SettingMap([
-        ['1', {rule1: 'A', rule2: 'B'}],
-        ['2', {rule1: 'C', rule2: 'D'}],
+        ['1', { rule1: 'A', rule2: 'B' }],
+        ['2', { rule1: 'C', rule2: 'D' }],
       ]),
     );
   });
@@ -189,7 +189,7 @@ describe('Rule Settings helper functions', function () {
   let rules: RuleRange;
 
   beforeEach(function () {
-    const client = generateTestClient({id: '1'});
+    const client = generateTestClient({ id: '1' });
     rules = initializeRuleRange(client);
     for (const rule of ['', 'Category A', 'Category B', 'Category C']) {
       // getValues() expects a rule to be in the ruleStore for the helper value.
@@ -298,30 +298,30 @@ describe('Rule Settings helper functions', function () {
 describe('SettingMap#getOrDefault', function () {
   it('returns value', function () {
     const settingMap = new SettingMap([
-      ['default', {rule1: 'A'}],
-      ['1', {rule1: 'C'}],
+      ['default', { rule1: 'A' }],
+      ['1', { rule1: 'C' }],
     ]);
     expect(settingMap.getOrDefault('1').rule1).to.equal('C');
   });
 
   it('returns defaults when value is blank', function () {
     const settingMap = new SettingMap([
-      ['default', {rule1: 'A'}],
-      ['1', {rule1: ''}],
+      ['default', { rule1: 'A' }],
+      ['1', { rule1: '' }],
     ]);
     expect(settingMap.getOrDefault('1').rule1).to.equal('A');
   });
 
   it('returns value when value is 0', function () {
     const settingMap = new SettingMap([
-      ['default', {rule1: 'A'}],
-      ['1', {rule1: '0'}],
+      ['default', { rule1: 'A' }],
+      ['1', { rule1: '0' }],
     ]);
     expect(settingMap.getOrDefault('1').rule1).to.equal('0');
   });
 
   it('returns blank when default is undefined and value is blank', function () {
-    const settingMap = new SettingMap([['1', {rule1: ''}]]);
+    const settingMap = new SettingMap([['1', { rule1: '' }]]);
     expect(settingMap.getOrDefault('1').rule1).to.equal('');
   });
 });
@@ -345,7 +345,7 @@ describe('sortMigrations', function () {
 
   it('works with objects', function () {
     expect(
-      Object.entries({'0.1': 'b', '0.0.1': 'a'}).sort((e1, e2) =>
+      Object.entries({ '0.1': 'b', '0.0.1': 'a' }).sort((e1, e2) =>
         sortMigrations(e1[0], e2[0]),
       ),
     ).to.deep.eq([
@@ -366,42 +366,42 @@ describe('rule sheet', function () {
     };
     rules['ruleA'] = newRule({
       params: {},
-      valueFormat: {label: 'Some Value'},
+      valueFormat: { label: 'Some Value' },
       name: 'Rule A',
       description: 'The rule for rule A',
       granularity: Granularity.DEFAULT,
       async callback() {
-        return {values};
+        return { values };
       },
     });
     rules['ruleB'] = newRule({
       params: {},
-      valueFormat: {label: 'Some Value'},
+      valueFormat: { label: 'Some Value' },
       name: 'Rule B',
       description: 'The rule for rule B',
       granularity: Granularity.DEFAULT,
       async callback() {
-        return {values};
+        return { values };
       },
     });
     rules['ruleC'] = newRule({
       params: {},
-      valueFormat: {label: 'Some Value'},
+      valueFormat: { label: 'Some Value' },
       name: 'No HTML',
       description: 'This <strong>is too much <em>HTML</em></strong>',
       granularity: Granularity.DEFAULT,
       async callback() {
-        return {values};
+        return { values };
       },
     });
     rules['ruleD'] = newRule({
       params: {},
-      valueFormat: {label: 'Some Value'},
+      valueFormat: { label: 'Some Value' },
       name: 'Paragraphs',
       description: '<p>One line</p><p>Another line</p>',
       granularity: Granularity.DEFAULT,
       async callback() {
-        return {values};
+        return { values };
       },
     });
     mockAppsScript();
@@ -493,10 +493,10 @@ describe('rule sheet', function () {
       'Paragraphs',
     ]);
     expect(sheet.checkboxes).to.deep.eq({
-      2: {3: true},
-      3: {3: true},
-      4: {3: true},
-      5: {3: true},
+      2: { 3: true },
+      3: { 3: true },
+      4: { 3: true },
+      5: { 3: true },
     });
   });
 });
@@ -546,7 +546,7 @@ describe('Test emails', function () {
   });
 
   beforeEach(function () {
-    ({stubs} = setUp());
+    ({ stubs } = setUp());
     rules = {
       keyA: {
         name: 'Rule A',
@@ -803,7 +803,7 @@ describe('BigQuery interop', function () {
 
   it('fails with no GCP project ID set', function () {
     mockAppsScript();
-    scaffoldSheetWithNamedRanges({blanks: ['GCP_PROJECT_ID']});
+    scaffoldSheetWithNamedRanges({ blanks: ['GCP_PROJECT_ID'] });
     expect(() => HELPERS.bigQueryGet('stub')).to.throw(
       "Require a value in named range 'GCP_PROJECT_ID'",
     );
@@ -819,7 +819,7 @@ function getNewRules(rules: Record<string, RuleGetter>, keyToRemove: string) {
   return newRules;
 }
 
-function generateTestClient(params: {id?: string}): TestClientInterface {
+function generateTestClient(params: { id?: string }): TestClientInterface {
   return {
     id: params.id ?? '1',
     ruleStore: {},
@@ -834,7 +834,7 @@ function generateTestClient(params: {id?: string}): TestClientInterface {
     >(): TestClientInterface => {
       throw new Error('Not implemented.');
     },
-    args: {label: 'test'},
+    args: { label: 'test' },
     properties: new FakePropertyStore(),
   };
 }

@@ -19,8 +19,8 @@
  * @fileoverview Google Ads-specific interfaces.
  */
 
-import {AdsClientArgs} from 'common/ads_api_types';
-import {BaseClientInterface, ClientTypes} from 'common/types';
+import { AdsClientArgs } from 'common/ads_api_types';
+import { BaseClientInterface, ClientTypes } from 'common/types';
 
 export interface AdsClientTypes extends ClientTypes<AdsClientTypes> {
   client: ClientInterface;

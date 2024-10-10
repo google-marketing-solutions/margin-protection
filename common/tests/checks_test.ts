@@ -15,11 +15,11 @@
  * limitations under the License.
  */
 
-import {equalTo, inRange, lessThanOrEqualTo} from '../checks';
-import {expect} from 'chai';
+import { equalTo, inRange, lessThanOrEqualTo } from '../checks';
+import { expect } from 'chai';
 
 describe('check range logic', function () {
-  const test = {min: 1, max: 5};
+  const test = { min: 1, max: 5 };
   for (const i of [1, 2, 3, 4, 5]) {
     it(`${i} in range of ${test.min} and ${test.max}`, function () {
       expect(inRange(test, i, {}).anomalous).to.be.false;

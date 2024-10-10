@@ -62,7 +62,7 @@ import {
   TargetingType,
   TargetingTypeMapper,
 } from './dv360_types';
-import {ObjectUtil} from './utils';
+import { ObjectUtil } from './utils';
 
 /** A base class for DV360 resources that are accessible via the API. */
 export class DisplayVideoResource {
@@ -199,9 +199,9 @@ export class Advertiser extends DisplayVideoResource {
    *
    */
   constructor(
-    {id, displayName, partnerId, generalConfig}: RequiredAdvertiserParams,
+    { id, displayName, partnerId, generalConfig }: RequiredAdvertiserParams,
     {
-      adServerConfig = {thirdPartyOnlyConfig: {}},
+      adServerConfig = { thirdPartyOnlyConfig: {} },
       status = STATUS.ACTIVE,
     }: OptionalAdvertiserParams = {},
   ) {
@@ -223,7 +223,7 @@ export class Advertiser extends DisplayVideoResource {
    * @throws {!Error} If the API resource object did not contain the expected
    *     properties
    */
-  static fromApiResource(resource: {[key: string]: unknown}): Advertiser {
+  static fromApiResource(resource: { [key: string]: unknown }): Advertiser {
     const requiredProperties = [
       'advertiserId',
       'displayName',
@@ -278,7 +278,7 @@ export class Advertiser extends DisplayVideoResource {
    * @return The custom JSON representation of this
    *     `Advertiser` instance
    */
-  toJSON(): {[key: string]: unknown} {
+  toJSON(): { [key: string]: unknown } {
     return {
       advertiserId: this.getId(),
       displayName: this.getDisplayName(),
@@ -396,7 +396,7 @@ export class Campaign extends DisplayVideoResource {
     }: CampaignRequiredParameters,
     {
       campaignBudgets,
-      campaignFlight = {plannedDates: {startDate: ApiDate.now().toJSON()}},
+      campaignFlight = { plannedDates: { startDate: ApiDate.now().toJSON() } },
       status = STATUS.ACTIVE,
     }: CampaignOptionalParameters = {},
   ) {
@@ -422,7 +422,7 @@ export class Campaign extends DisplayVideoResource {
    * @throws {!Error} If the API resource object did not contain the expected
    *     properties
    */
-  static fromApiResource(resource: {[key: string]: unknown}): Campaign {
+  static fromApiResource(resource: { [key: string]: unknown }): Campaign {
     const requiredProperties = [
       'campaignId',
       'displayName',
@@ -480,7 +480,7 @@ export class Campaign extends DisplayVideoResource {
    * @return The custom JSON representation of this
    *     `Campaign` instance
    */
-  toJSON(): {[key: string]: unknown} {
+  toJSON(): { [key: string]: unknown } {
     return {
       campaignId: this.getId(),
       displayName: this.getDisplayName(),
@@ -660,7 +660,7 @@ export class InsertionOrder extends DisplayVideoResource {
    * @throws {!Error} If the API resource object did not contain the expected
    *     properties
    */
-  static fromApiResource(resource: {[key: string]: unknown}): InsertionOrder {
+  static fromApiResource(resource: { [key: string]: unknown }): InsertionOrder {
     const requiredProperties = [
       'insertionOrderId',
       'displayName',
@@ -719,7 +719,7 @@ export class InsertionOrder extends DisplayVideoResource {
    * @return The custom JSON representation of this
    *     `InsertionOrder` instance
    */
-  toJSON(): {[key: string]: unknown} {
+  toJSON(): { [key: string]: unknown } {
     return {
       insertionOrderId: this.getId(),
       displayName: this.getDisplayName(),
@@ -1032,7 +1032,7 @@ export class LineItem extends DisplayVideoResource {
    * @throws {!Error} If the API resource object did not contain the expected
    *     properties
    */
-  static fromApiResource(resource: {[key: string]: unknown}): LineItem {
+  static fromApiResource(resource: { [key: string]: unknown }): LineItem {
     const requiredProperties = [
       'lineItemId',
       'displayName',
@@ -1113,7 +1113,7 @@ export class LineItem extends DisplayVideoResource {
    * @return The custom JSON representation of this
    *     `LineItem` instance
    */
-  toJSON(): {[key: string]: unknown} {
+  toJSON(): { [key: string]: unknown } {
     return {
       lineItemId: this.getId(),
       displayName: this.getDisplayName(),
@@ -1308,7 +1308,12 @@ export class InventorySource extends DisplayVideoResource {
   private readonly exchange: string | null;
 
   constructor(
-    {id, displayName, inventorySourceType, rateDetails}: InventorySourceParams,
+    {
+      id,
+      displayName,
+      inventorySourceType,
+      rateDetails,
+    }: InventorySourceParams,
     {
       commitment = null,
       deliveryMethod = null,
@@ -1344,7 +1349,9 @@ export class InventorySource extends DisplayVideoResource {
    * @throws {!Error} If the API resource object did not contain the expected
    *     properties
    */
-  static fromApiResource(resource: {[key: string]: unknown}): InventorySource {
+  static fromApiResource(resource: {
+    [key: string]: unknown;
+  }): InventorySource {
     const requiredProperties = [
       'inventorySourceId',
       'displayName',
@@ -1358,7 +1365,7 @@ export class InventorySource extends DisplayVideoResource {
         errorOnFail: true,
       })
     ) {
-      const status = resource['status'] as {entityStatus?: RawStatus};
+      const status = resource['status'] as { entityStatus?: RawStatus };
       const rateDetails = resource['rateDetails'] as InventorySourceRateDetails;
       const mappedRateDetails =
         InventorySourceRateDetailsMapper.map(rateDetails);
@@ -1411,13 +1418,13 @@ export class InventorySource extends DisplayVideoResource {
    * @return The custom
    *     JSON representation of this `InventorySource` instance
    */
-  toJSON(): {[key: string]: unknown} {
-    const result: {[key: string]: unknown} = {
+  toJSON(): { [key: string]: unknown } {
+    const result: { [key: string]: unknown } = {
       inventorySourceId: this.getId(),
       displayName: this.getDisplayName(),
       inventorySourceType: this.getInventorySourceType(),
       rateDetails: this.getRateDetails(),
-      status: {entityStatus: String(this.getStatus())},
+      status: { entityStatus: String(this.getStatus()) },
     };
     if (this.getCommitment()) {
       result['commitment'] = this.getCommitment();
@@ -1507,7 +1514,7 @@ export class InventorySource extends DisplayVideoResource {
  * @see https://developers.google.com/display-video/api/reference/rest/v1/targetingTypes.targetingOptions
  */
 export class TargetingOption extends DisplayVideoResource {
-  private readonly targetingDetails: {[key: string]: unknown};
+  private readonly targetingDetails: { [key: string]: unknown };
   /**
    * Constructs an instance of `TargetingOption`.
    *
@@ -1525,7 +1532,7 @@ export class TargetingOption extends DisplayVideoResource {
     id: string | null,
     private readonly targetingType: TargetingType,
     private readonly targetingDetailsKey: string,
-    targetingDetails: {[key: string]: unknown},
+    targetingDetails: { [key: string]: unknown },
     private readonly idProperty: string = 'targetingOptionId',
   ) {
     super(
@@ -1554,7 +1561,7 @@ export class TargetingOption extends DisplayVideoResource {
    *     properties
    */
   static fromApiResource(
-    resource: {[key: string]: unknown},
+    resource: { [key: string]: unknown },
     additionalProperties: string[] = [],
     idProperty: string = 'targetingOptionId',
     type: string = 'TargetingOption',
@@ -1586,7 +1593,7 @@ export class TargetingOption extends DisplayVideoResource {
               resource['targetingType'] as RawTargetingType,
             )!,
             targetingDetailsKey,
-            targetingDetails as {[key: string]: unknown},
+            targetingDetails as { [key: string]: unknown },
           );
         }
       }
@@ -1605,8 +1612,8 @@ export class TargetingOption extends DisplayVideoResource {
    * @return The custom JSON representation of this
    *     `TargetingOption` instance
    */
-  toJSON(): {[key: string]: unknown} {
-    const result: {[key: string]: unknown} = {
+  toJSON(): { [key: string]: unknown } {
+    const result: { [key: string]: unknown } = {
       targetingType: this.getTargetingType(),
     };
     result[this.getTargetingDetailsKey()] = this.getTargetingDetails();
@@ -1643,7 +1650,7 @@ export class TargetingOption extends DisplayVideoResource {
    * Returns the targeting details object.
    *
    */
-  getTargetingDetails(): {[key: string]: unknown} {
+  getTargetingDetails(): { [key: string]: unknown } {
     return this.targetingDetails;
   }
 
@@ -1685,7 +1692,7 @@ export class AssignedTargetingOption extends TargetingOption {
     targetingType: TargetingType,
     private readonly inheritance: string,
     targetingDetailsKey: string,
-    targetingDetails: {[key: string]: unknown},
+    targetingDetails: { [key: string]: unknown },
   ) {
     super(
       id,
@@ -1731,7 +1738,7 @@ export class AssignedTargetingOption extends TargetingOption {
    * @return The custom JSON representation of this
    *     `AssignedTargetingOption` instance
    */
-  override toJSON(): {[key: string]: unknown} {
+  override toJSON(): { [key: string]: unknown } {
     const result = super.toJSON();
     result['inheritance'] = this.getInheritance();
 

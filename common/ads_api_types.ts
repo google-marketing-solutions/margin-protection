@@ -19,7 +19,7 @@
  * @fileoverview Ads API-specific types for SA360 and Google Ads
  */
 
-import {BaseClientArgs} from './types';
+import { BaseClientArgs } from './types';
 
 /**
  * Manages query (input) and expected output pairs for each report type.
@@ -117,10 +117,10 @@ export type DotsToObject<S extends string> = S extends ''
   : S extends `${infer First}.${infer Rest}`
     ? '' extends First
       ? object
-      : {[key in CamelCase<First>]: DotsToObject<Rest>}
+      : { [key in CamelCase<First>]: DotsToObject<Rest> }
     : '' extends S
       ? object
-      : {[key in CamelCase<S>]: unknown};
+      : { [key in CamelCase<S>]: unknown };
 
 /**
  * Converts a report format to the expected response output.
