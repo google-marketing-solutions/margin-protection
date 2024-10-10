@@ -34,13 +34,13 @@ type AssertEqual<TestType, End> = End extends TestType
 describe('Ads API Types', function () {
   it('adjusts underscores to camel cases', function () {
     const test1: AssertEqual<CamelCase<'my_underscore'>, 'myUnderscore'> = true;
-    expect(test1).not.to.be.undefined;
+    expect(test1).to.exist;
   });
 
   it('does not camel case where not necessary', function () {
     // @ts-expect-error This type should not Assert<> to true.
     const test1: AssertEqual<CamelCase<'myunderscore'>, 'myUnderscore'> = true;
-    expect(test1).not.to.be.undefined;
+    expect(test1).to.exist;
   });
 
   it('handles dot notation', function () {
@@ -50,7 +50,7 @@ describe('Ads API Types', function () {
         my: { dotNotation: { worksWell: '' } };
       }
     > = true;
-    expect(test1).not.to.be.undefined;
+    expect(test1).to.exist;
   });
 
   it('handles blanks', function () {
@@ -58,7 +58,7 @@ describe('Ads API Types', function () {
     const test1: AssertEqual<DotsToObject<any>, object> = true;
     // @ts-expect-error This type should not Assert<> to true.
     const test2: AssertEqual<DotsToObject<any>, { '': '' }> = true;
-    [test1, test2].forEach((test) => expect(test).not.to.be.undefined);
+    [test1, test2].forEach((test) => expect(test).to.exist);
     /* eslint-enable @typescript-eslint/no-explicit-any */
   });
 
@@ -103,9 +103,7 @@ describe('Ads API Types', function () {
       }
     > = false;
 
-    [test1, test2, test3, test4].forEach(
-      (test) => expect(test).not.to.be.undefined,
-    );
+    [test1, test2, test3, test4].forEach((test) => expect(test).to.exist);
   });
 
   it('infers types from buildQuery', function () {
@@ -130,9 +128,7 @@ describe('Ads API Types', function () {
       { a: undefined; b: undefined }
     > = false;
 
-    [test1, test2, test3, test4].forEach(
-      (test) => expect(test).not.to.be.undefined,
-    );
+    [test1, test2, test3, test4].forEach((test) => expect(test).to.exist);
   });
 });
 
