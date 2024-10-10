@@ -46,6 +46,7 @@ import {
   RuleExecutor,
   RuleGetter,
 } from '../types';
+import * as sinon from 'sinon';
 
 /**
  * Test granularity for use in tests.
@@ -178,7 +179,7 @@ export class FakeFrontend extends AppsScriptFrontend<TestClientTypes> {
     message: GoogleAppsScript.Mail.MailAdvancedParameters,
   ) {
     const noop: GoogleAppsScript.Mail.MailApp['sendEmail'] =
-      (() => {}) as GoogleAppsScript.Mail.MailApp['sendEmail'];
+      function () {} as GoogleAppsScript.Mail.MailApp['sendEmail'];
     super.sendEmailAlert(rules, message, noop);
 
     this.messages.push(message);
@@ -231,6 +232,7 @@ export function bootstrapGoogleAdsApi(
     spyOnLeaf: true,
   },
 ) {
+  const stubs: sinon.SinonStub[] = [];
   const apiFactory = new GoogleAdsApiFactory({
     developerToken: '',
     credentialManager: new CredentialManager(),
@@ -242,7 +244,7 @@ export function bootstrapGoogleAdsApi(
     label: 'test',
   });
   if (spyOnLeaf) {
-    spyOn(reportFactory, 'leafAccounts').and.returnValue(['1']);
+    stubs.push(sinon.stub(reportFactory, 'leafAccounts').returns(['1']));
   }
   const api = new GoogleAdsApi({
     developerToken: '',
@@ -254,9 +256,20 @@ export function bootstrapGoogleAdsApi(
     },
     apiEndpoint: FAKE_API_ENDPOINT,
   });
-  const mockQuery: jasmine.Spy = spyOn(api, 'queryOne');
-  spyOn(apiFactory, 'create').and.callFake(() => api);
-  return { api, reportFactory, mockQuery };
+  const original = api.queryOne.bind(api);
+  const mockQuery: sinon.SinonStub = sinon
+    .stub(api, 'queryOne')
+    .callsFake((...args) => original(...args));
+  stubs.push(mockQuery);
+  stubs.push(sinon.stub(apiFactory, 'create').callsFake(() => api));
+  return { api, reportFactory, mockQuery, stubs };
+}
+
+/**
+ * Restores any stubs passed to it to their original form.
+ */
+export function tearDownStubs(stubs: sinon.SinonStub[]) {
+  stubs.forEach((stub) => stub.restore());
 }
 
 /**

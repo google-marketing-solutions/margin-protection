@@ -40,8 +40,5 @@ jobs:
         if: ${{ steps.lint.outputs.error || steps.test.outputs.error || steps.build-sa360.outputs.error || steps.build-dv360.outputs.error || steps.build-dev-sa360.outputs.error }}
         run: exit 1
 
-      - name: Build
-        run: npx yarn playwright install-deps && npx yarn playwright install
-
       - name: Test everything
         run: npx yarn test

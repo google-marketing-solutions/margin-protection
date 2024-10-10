@@ -8,34 +8,33 @@
     "doc": "docs"
   },
   "scripts": {
-    "test": "wtr --config web-test-runner.mjs",
-    "test:watch": "yarn test --watch",
-    "prepare": "husky install",
-    "lint": "npx eslint"
+    "test": "mocha",
+    "lint": "eslint -c eslint.config.js",
+    "prepare": "husky"
   },
   "author": "Sean Capaloff-Jones <seancjones@google.com>",
   "license": "MIT",
   "repository": "git@github.com:google-marketing-solutions/margin-protection",
   "private": true,
   "devDependencies": {
+    "@types/eslint-config-prettier": "^6.11.3",
     "@types/google-apps-script": "^1.0.83",
-    "@types/jasmine": "^5.1.4",
-    "@web/dev-server-esbuild": "^1.0.2",
-    "@web/test-runner": "^0.18.2",
-    "@web/test-runner-playwright": "^0.11.0",
-    "common": "^0.2.5",
-    "eslint": "^9.9.0",
+    "@types/mocha": "^10.0.9",
+    "@types/sinon-chai": "^4.0.0",
+    "@types/webpack": "^5.28.5",
+    "chai": "^5.1.1",
+    "eslint": "^9.12.0",
     "eslint-config-prettier": "^9.1.0",
-    "husky": "^8.0.0",
-    "jasmine": "^5.1.0",
-    "lint-staged": "^15.2.7",
+    "eslint-plugin-chai-friendly": "^1.0.1",
+    "eslint-plugin-mocha": "^10.5.0",
+    "husky": "^9.1.6",
+    "lint-staged": "^15.2.10",
+    "mocha": "^10.7.3",
     "prettier": "^3.3.3",
-    "rollup-plugin-typescript-paths": "^1.5.0",
-    "typescript": "^5.5.3",
-    "typescript-eslint": "^8.1.0",
-    "web-test-runner-jasmine": "^0.0.6"
-  },
-  "prettier": {
-    "singleQuote": true
+    "sinon": "^19.0.2",
+    "sinon-chai": "^4.0.0",
+    "tsx": "^4.19.1",
+    "typescript": "^5.6.3",
+    "typescript-eslint": "^8.8.1"
   }
 }

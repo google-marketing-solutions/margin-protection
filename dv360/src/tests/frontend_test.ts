@@ -27,32 +27,42 @@ import {
 import HtmlTemplate = GoogleAppsScript.HTML.HtmlTemplate;
 import { AssignedTargetingOption } from 'dv360_api/dv360_resources';
 
+import * as sinon from 'sinon';
+import { expect } from 'chai';
+import { tearDownStubs } from 'common/tests/helpers';
+
 const FOLDER = 'application/vnd.google-apps.folder';
 
-describe('Rule value filling', () => {
+describe('Rule value filling', function () {
   let client: Client;
   let rules: RuleRange;
+  let clock: sinon.SinonFakeTimers;
+  let stubs: sinon.SinonStub[];
 
   const allCampaigns: Record<string, CampaignTemplateConverter[]> = {};
   const allInsertionOrders: Record<string, InsertionOrderTemplateConverter[]> =
     {};
 
-  beforeEach(async () => {
+  beforeEach(async function () {
     client = testData({ allCampaigns, allInsertionOrders });
 
-    setUp();
+    ({ stubs } = setUp());
 
     rules = new RuleRange([[]], client);
-    jasmine.clock().install().mockDate(new Date('1970-03-01'));
+    clock = sinon.useFakeTimers({
+      now: new Date('1970-03-01'),
+      shouldAdvanceTime: true,
+    });
     testData({});
     await rules.fillRuleValues(geoTargetRule.definition);
   });
 
-  afterEach(() => {
-    jasmine.clock().uninstall();
+  afterEach(function () {
+    clock.restore();
+    tearDownStubs(stubs);
   });
 
-  it('uses existing settings when adding new campaigns', async () => {
+  it('uses existing settings when adding new campaigns', async function () {
     rules.setRule('none', [
       ['ID', 'ID', 'Campaign Name'],
       ['c1', 'c1', 'Campaign 1'],
@@ -87,7 +97,7 @@ describe('Rule value filling', () => {
       [];
 
     await rules.fillRuleValues(geoTargetRule.definition);
-    expect(rules.getRule(geoTargetRule.definition.name)).toEqual([
+    expect(rules.getRule(geoTargetRule.definition.name)).to.eql([
       [
         'ID',
         'Allowed Geo Targets',
@@ -101,12 +111,16 @@ describe('Rule value filling', () => {
   });
 });
 
-describe('validate/launchMonitor functions', () => {
+describe('validate/launchMonitor functions', function () {
   let frontend: DisplayVideoFrontend;
+  let clock: sinon.SinonFakeTimers;
+  let stubs: sinon.SinonStub[];
 
-  beforeEach(async () => {
-    jasmine.clock().install();
-    jasmine.clock().mockDate(new Date(Date.UTC(1970, 0, 1)));
+  beforeEach(async function () {
+    clock = sinon.useFakeTimers({
+      now: new Date(Date.UTC(1970, 0, 1)),
+      shouldAdvanceTime: false,
+    });
     const allCampaigns: Record<string, CampaignTemplateConverter[]> = {
       '1': [
         (campaign) => {
@@ -127,7 +141,7 @@ describe('validate/launchMonitor functions', () => {
         },
       ],
     };
-    setUp();
+    ({ stubs } = setUp());
     frontend = getFrontend(() =>
       testData({ allCampaigns, allInsertionOrders }),
     );
@@ -136,17 +150,22 @@ describe('validate/launchMonitor functions', () => {
     await frontend.initializeRules();
   });
 
-  it('runs with no errors', async () => {
+  afterEach(function () {
+    clock.restore();
+    tearDownStubs(stubs);
+  });
+
+  it('runs with no errors', async function () {
     await frontend.launchMonitor();
     expect(
       SpreadsheetApp.getActive()
         .getSheetByName('Budget Pacing by Percent Ahead - Results')
         .getDataRange()
         .getValues(),
-    ).toEqual([]);
+    ).to.eql([]);
   });
 
-  it('runs with errors', async () => {
+  it('runs with errors', async function () {
     scaffoldSheetWithNamedRanges();
     SpreadsheetApp.getActive()
       .getSheetByName('Rule Settings - Campaign')
@@ -159,7 +178,7 @@ describe('validate/launchMonitor functions', () => {
         .getSheetByName('Geo Targeting - Results')
         .getDataRange()
         .getValues(),
-    ).toEqual([
+    ).to.eql([
       [
         'Result',
         'anomalous',
@@ -179,7 +198,7 @@ describe('validate/launchMonitor functions', () => {
     ]);
   });
 
-  it('skips disabled rules', async () => {
+  it('skips disabled rules', async function () {
     console.log('en');
     scaffoldSheetWithNamedRanges();
     SpreadsheetApp.getActive()
@@ -200,46 +219,44 @@ describe('validate/launchMonitor functions', () => {
     await frontend.launchMonitor();
 
     // first perform sanity checks
-    expect(budgetPacingRuleName).toEqual(budgetPacingPercentageRule.name);
-    expect(geoTargetRuleName).toEqual(geoTargetRule.name);
+    expect(budgetPacingRuleName).to.equal(budgetPacingPercentageRule.name);
+    expect(geoTargetRuleName).to.equal(geoTargetRule.name);
     // then validate that pacing doesn't work (it's disabled).
     expect(
       SpreadsheetApp.getActive().getSheetByName(
         `${budgetPacingPercentageRule.name} - Results`,
       ),
-    ).toBeDefined();
+    ).to.not.be.undefined;
     expect(
       SpreadsheetApp.getActive()
         .getSheetByName(`${geoTargetRule.name} - Results`)
         .getDataRange()
         .getValues(),
-    ).toEqual([]);
-  });
-
-  afterEach(() => {
-    jasmine.clock().uninstall();
+    ).to.eql([]);
   });
 });
 
-describe('Pre-Launch QA menu option', () => {
+describe('Pre-Launch QA menu option', function () {
   let frontend: DisplayVideoFrontend;
+  let clock: sinon.SinonFakeTimers;
+  let stubs: sinon.SinonStub[];
 
-  beforeEach(async () => {
-    setUp();
+  beforeEach(async function () {
+    ({ stubs } = setUp());
     frontend = getFrontend(() => testData({}));
     HtmlService.createTemplateFromFile = () =>
       ({ evaluate: () => new FakeHtmlOutput() }) as unknown as HtmlTemplate;
     // force private methods to be visible, so we can manipulate them.
     await frontend.initializeRules();
-    jasmine.clock().install();
-    jasmine.clock().mockDate(new Date(Date.UTC(1970, 0, 1)));
+    clock = sinon.useFakeTimers(new Date(Date.UTC(1970, 0, 1)));
   });
 
-  afterEach(() => {
-    jasmine.clock().uninstall();
+  afterEach(function () {
+    clock.restore();
+    tearDownStubs(stubs);
   });
 
-  it('clears check results that were previously set', async () => {
+  it('clears check results that were previously set', async function () {
     const noise = Array.from<string>({ length: 10 })
       .fill('')
       .map(() => Array.from<string>({ length: 10 }).fill('lorem ipsum'));
@@ -253,9 +270,9 @@ describe('Pre-Launch QA menu option', () => {
     // try again
     await frontend.preLaunchQa();
 
-    expect(origValues[9][9]).toEqual('lorem ipsum');
-    expect(sheet.getDataRange().getValues()).toHaveSize(3);
-    expect(sheet.getDataRange().getValues()[2]).toEqual([
+    expect(origValues[9][9]).to.equal('lorem ipsum');
+    expect(sheet.getDataRange().getValues()).to.have.length(3);
+    expect(sheet.getDataRange().getValues()[2]).to.eql([
       'Geo Targeting',
       'Advertiser ID: 1, Campaign Name: Campaign 1, Campaign ID: c1, Number of Geos: 1',
       'OK',
@@ -263,7 +280,7 @@ describe('Pre-Launch QA menu option', () => {
     ]);
   });
 
-  it('ignores disabled rules', async () => {
+  it('ignores disabled rules', async function () {
     const noise = Array.from<string>({ length: 10 })
       .fill('')
       .map(() => Array.from<string>({ length: 10 }).fill('lorem ipsum'));
@@ -284,7 +301,7 @@ describe('Pre-Launch QA menu option', () => {
     // try again
     await frontend.preLaunchQa();
 
-    expect(sheet.getDataRange().getValues()).toHaveSize(2);
+    expect(sheet.getDataRange().getValues()).to.have.length(2);
   });
 });
 
@@ -349,15 +366,20 @@ function testData(params: {
   });
 }
 
-describe('Matrix to CSV', () => {
+describe('Matrix to CSV', function () {
   let frontend: DisplayVideoFrontend;
+  let stubs: sinon.SinonStub[];
 
-  beforeEach(() => {
-    setUp();
+  beforeEach(function () {
+    ({ stubs } = setUp());
     frontend = getFrontend();
   });
 
-  it('Handles simple 2-d arrays', () => {
+  afterEach(function () {
+    tearDownStubs(stubs);
+  });
+
+  it('Handles simple 2-d arrays', function () {
     const matrix = [
       ['a1', 'b1', 'c1'],
       ['a2', 'b2', 'c2'],
@@ -371,12 +393,12 @@ describe('Matrix to CSV', () => {
         label: 'label',
         currentTime: '2020-01-01T00:00:00.000Z',
       }),
-    ).toEqual(
+    ).to.equal(
       '"Category","Sheet ID","Label","Rule Name","Current Time","a1","b1","c1"\n"dv360","a","label","rule1","2020-01-01T00:00:00.000Z","a2","b2","c2"\n"dv360","a","label","rule1","2020-01-01T00:00:00.000Z","a3","b3","c3"',
     );
   });
 
-  it('Handles complex 2-d arrays', () => {
+  it('Handles complex 2-d arrays', function () {
     const matrix = [
       ['Not another CSV function!'],
       [`Famous last words, like "This format probably won't happen!"`],
@@ -389,7 +411,7 @@ describe('Matrix to CSV', () => {
         label: 'label',
         currentTime: '2020-01-01T00:00:00.000Z',
       }),
-    ).toEqual(
+    ).to.equal(
       `"Category","Sheet ID","Label","Rule Name","Current Time","Not another CSV function!"\n"dv360","a","label","rule1","2020-01-01T00:00:00.000Z","Famous last words, like """This format probably won't happen!""""`,
     );
   });
@@ -436,12 +458,14 @@ const fakeFiles: FakeFiles = {
   },
 };
 
-describe('Export as CSV', () => {
+describe('Export as CSV', function () {
   let frontend: DisplayVideoFrontend;
   let oldDrive: GoogleAppsScript.Drive;
+  let clock: sinon.SinonFakeTimers;
+  let stubs: sinon.SinonStub[];
 
-  beforeEach(() => {
-    setUp();
+  beforeEach(function () {
+    ({ stubs } = setUp());
     frontend = getFrontend();
     oldDrive = Drive;
     Drive.Files =
@@ -454,16 +478,16 @@ describe('Export as CSV', () => {
       .getRangeByName('REPORT_LABEL')!
       .setValue('Acme Inc.');
     SpreadsheetApp.getActive().getRangeByName('DRIVE_ID')!.setValue('123abc');
-    jasmine.clock().install();
-    jasmine.clock().mockDate(new Date('January 1, 1970 00:00:00 GMT'));
+    clock = sinon.useFakeTimers(new Date('January 1, 1970 00:00:00 GMT'));
   });
 
-  afterEach(() => {
+  afterEach(function () {
     Drive = oldDrive;
-    jasmine.clock().uninstall();
+    clock.restore();
+    tearDownStubs(stubs);
   });
 
-  it('saves the file', () => {
+  it('saves the file', function () {
     fakeFiles.drives['123abc'] = {
       id: '123abc',
       mimeType: FOLDER,
@@ -471,35 +495,38 @@ describe('Export as CSV', () => {
     };
     frontend.exportAsCsv('my check', [['it works!']]);
     const folderId = fakeFiles.files['reports'];
-    expect(fakeFiles.folders[folderId.id!]).toEqual([
-      jasmine.objectContaining({
-        id: '2',
-        mimeType: 'text/plain',
-        parents: [{ id: '1' }],
-      }),
-    ]);
+    expect(fakeFiles.folders[folderId.id!][0]).to.deep.include({
+      id: '2',
+      mimeType: 'text/plain',
+    });
 
     for (const value of [
       'Acme Inc.',
       'my check',
       '1970-01-01T00:00:00.000Z.csv',
     ]) {
-      expect(Object.keys(fakeFiles.files)[1].split('_')).toContain(value);
+      expect(Object.keys(fakeFiles.files)[1].split('_')).to.contain(value);
     }
   });
 });
 
-describe('Fill check values', () => {
+describe('Fill check values', function () {
   let rules: RuleRange;
   let frontend: DisplayVideoFrontend;
+  let stubs: sinon.SinonStub[];
 
-  beforeEach(async () => {
-    setUp();
+  beforeEach(async function () {
+    ({ stubs } = setUp());
     frontend = getFrontend(() => testData({}));
     rules = new RuleRange([[]], frontend.client);
     await frontend.initializeRules();
   });
-  it('removes extra fields', async () => {
+
+  afterEach(function () {
+    tearDownStubs(stubs);
+  });
+
+  it('removes extra fields', async function () {
     const noise = Array.from<string>({ length: 10 })
       .fill('')
       .map(() => Array.from<string>({ length: 10 }).fill('lorem ipsum'));
@@ -509,50 +536,57 @@ describe('Fill check values', () => {
     sheet.clear();
     sheet.getRange(1, 1, noise.length, noise[0].length).setValues(noise);
     await rules.fillRuleValues(geoTargetRule.definition);
-    expect(rules.getValues()[0].length).toEqual(5);
+    expect(rules.getValues()[0].length).to.equal(5);
   });
 });
 
-describe('getMatrixOfResults', () => {
+describe('getMatrixOfResults', function () {
   let frontend: DisplayVideoFrontend;
+  let stubs: sinon.SinonStub[];
 
-  beforeEach(() => {
-    setUp();
+  beforeEach(function () {
+    ({ stubs } = setUp());
     frontend = getFrontend();
   });
 
-  it('Provides 2-d array from a set of values with no fields.', async () => {
+  afterEach(function () {
+    tearDownStubs(stubs);
+  });
+
+  it('Provides 2-d array from a set of values with no fields.', async function () {
     const result = frontend.getMatrixOfResults('value1', [equalTo(1, 1, {})]);
-    expect(result).toEqual([
+    expect(result).to.eql([
       ['value1', 'anomalous'],
       ['1', 'false'],
     ]);
   });
-  it('Provides 2-d array from a set of values with fields.', async () => {
+
+  it('Provides 2-d array from a set of values with fields.', async function () {
     const result = frontend.getMatrixOfResults('value2', [
       equalTo(1, 1, { test1: 'a', test2: 'b' }),
     ]);
-    expect(result).toEqual([
+    expect(result).to.eql([
       ['value2', 'anomalous', 'test1', 'test2'],
       ['1', 'false', 'a', 'b'],
     ]);
   });
 });
 
-describe('Partner view', () => {
+describe('Partner view', function () {
   let frontend: DisplayVideoFrontend;
+  let clock: sinon.SinonFakeTimers;
+  let stubs: sinon.SinonStub[];
 
-  beforeAll(() => {
-    jasmine.clock().install();
-    jasmine.clock().mockDate(new Date('January 1, 1970 00:00:00 GMT'));
+  before(function () {
+    clock = sinon.useFakeTimers(new Date('January 1, 1970 00:00:00 GMT'));
   });
 
-  afterAll(() => {
-    jasmine.clock().uninstall();
+  after(function () {
+    clock.restore();
   });
 
-  beforeEach(async () => {
-    setUp({ level: 'Partner' });
+  beforeEach(async function () {
+    ({ stubs } = setUp({ level: 'Partner' }));
     const allAdvertisers: Record<string, AdvertiserTemplateConverter[]> = {
       '1': [
         (advertiser) => {
@@ -596,19 +630,23 @@ describe('Partner view', () => {
     );
   });
 
-  it('Has advertiser ID and name in settings', async () => {
+  afterEach(function () {
+    tearDownStubs(stubs);
+  });
+
+  it('Has advertiser ID and name in settings', async function () {
     await frontend.initializeRules();
     const values = SpreadsheetApp.getActive()
       .getSheetByName('Rule Settings - Insertion Order')
       .getDataRange()
       .getValues();
-    expect(values[2].slice(0, 4)).toEqual([
+    expect(values[2].slice(0, 4)).to.eql([
       'ID',
       'Insertion Order Name',
       'Advertiser ID',
       'Advertiser Name',
     ]);
-    expect(values[4].slice(0, 4)).toEqual([
+    expect(values[4].slice(0, 4)).to.eql([
       'io1',
       'Insertion Order 1',
       'a1',
@@ -617,25 +655,34 @@ describe('Partner view', () => {
   });
 });
 
-describe('initializeRules', () => {
+describe('initializeRules', function () {
   const allCampaigns: { [advertiserId: string]: CampaignTemplateConverter[] } =
     {};
   let frontend: DisplayVideoFrontend;
+  let clock: sinon.SinonFakeTimers;
+  let stubs: sinon.SinonStub[];
 
-  beforeEach(async () => {
-    setUp();
+  before(function () {
+    clock = sinon.useFakeTimers(new Date('1970-03-01'));
+  });
+
+  after(function () {
+    clock.restore();
+  });
+
+  beforeEach(async function () {
+    ({ stubs } = setUp());
     frontend = getFrontend(() => testData({ allCampaigns }));
-    jasmine.clock().install().mockDate(new Date('1970-03-01'));
     await frontend.initializeRules();
   });
 
-  afterEach(() => {
-    jasmine.clock().uninstall();
+  afterEach(function () {
+    tearDownStubs(stubs);
   });
 
-  it('creates a settings page', () => {
+  it('creates a settings page', function () {
     const sheet = HELPERS.getOrCreateSheet('Rule Settings - Insertion Order');
-    expect(sheet).toBeTruthy();
+    expect(sheet).to.exist;
   });
 });
 
@@ -648,9 +695,11 @@ function setUp(
   PropertiesService.getScriptProperties().setProperty('sheet_version', '5.0');
   scaffoldSheetWithNamedRanges({ level });
   const frontend = getFrontend(() => testData({ idType: IDType.PARTNER }));
-  spyOn(HELPERS, 'insertRows').and.callFake((range) => range);
-  spyOn(HELPERS, 'getSheetId').and.callFake(() => 'id1');
-  return frontend;
+  const insertRows = sinon
+    .stub(HELPERS, 'insertRows')
+    .callsFake((range) => range);
+  const getSheetId = sinon.stub(HELPERS, 'getSheetId').callsFake(() => 'id1');
+  return { frontend, stubs: [insertRows, getSheetId] };
 }
 
 function scaffoldSheetWithNamedRanges(

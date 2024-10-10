@@ -21,6 +21,7 @@ import {
   DotsToObject,
   ReportInterface,
 } from '../ads_api_types';
+import { expect } from 'chai';
 
 type AssertSubtype<TestType, End> = End extends TestType ? true : false;
 
@@ -30,70 +31,38 @@ type AssertEqual<TestType, End> = End extends TestType
     : false
   : false;
 
-describe('Ads API Types', () => {
-  const CHILD_QUERY1 = buildQuery({
-    queryParams: ['b'],
-    queryFrom: 'test',
-  });
-  const CHILD_QUERY2 = buildQuery({
-    queryParams: ['c'],
-    queryFrom: 'test',
-  });
-  class ChildReport1 implements ReportInterface<typeof CHILD_QUERY1, 'a'> {
-    static output = ['a'];
-    static query = CHILD_QUERY1;
-    static key = 'Child1';
-    fetch() {
-      return {};
-    }
-
-    transform() {
-      return ['a', { a: 'a' }] as [string, { a: string }];
-    }
-  }
-  class ChildReport2 implements ReportInterface<typeof CHILD_QUERY2, 'b'> {
-    static output = ['b'];
-    static query = CHILD_QUERY2;
-    static key = 'Child2';
-    fetch() {
-      return {};
-    }
-
-    transform() {
-      return ['a', { b: 'b' }] as [string, { b: string }];
-    }
-  }
-  it('adjusts underscores to camel cases', () => {
+describe('Ads API Types', function () {
+  it('adjusts underscores to camel cases', function () {
     const test1: AssertEqual<CamelCase<'my_underscore'>, 'myUnderscore'> = true;
-    expect(test1).toBeDefined();
+    expect(test1).to.exist;
   });
 
-  it('does not camel case where not necessary', () => {
+  it('does not camel case where not necessary', function () {
     // @ts-expect-error This type should not Assert<> to true.
     const test1: AssertEqual<CamelCase<'myunderscore'>, 'myUnderscore'> = true;
-    expect(test1).toBeDefined();
+    expect(test1).to.exist;
   });
 
-  it('handles dot notation', () => {
+  it('handles dot notation', function () {
     const test1: AssertSubtype<
       DotsToObject<'my.dot_notation.works_well'>,
       {
         my: { dotNotation: { worksWell: '' } };
       }
     > = true;
-    expect(test1).toBeDefined();
+    expect(test1).to.exist;
   });
 
-  it('handles blanks', () => {
+  it('handles blanks', function () {
     /* eslint-disable @typescript-eslint/no-explicit-any */
     const test1: AssertEqual<DotsToObject<any>, object> = true;
     // @ts-expect-error This type should not Assert<> to true.
     const test2: AssertEqual<DotsToObject<any>, { '': '' }> = true;
-    [test1, test2].forEach((test) => expect(test).toBeDefined());
+    [test1, test2].forEach((test) => expect(test).to.exist);
     /* eslint-enable @typescript-eslint/no-explicit-any */
   });
 
-  it('infers types from Report', () => {
+  it('infers types from Report', function () {
     const _request = buildQuery({
       queryParams: ['a_b_c.def', 'b'],
       queryFrom: 'test',
@@ -134,10 +103,10 @@ describe('Ads API Types', () => {
       }
     > = false;
 
-    [test1, test2, test3, test4].forEach((test) => expect(test).toBeDefined());
+    [test1, test2, test3, test4].forEach((test) => expect(test).to.exist);
   });
 
-  it('infers types from buildQuery', () => {
+  it('infers types from buildQuery', function () {
     const _query = buildQuery({
       queryParams: ['a', 'b'],
       queryFrom: 'foo',
@@ -159,6 +128,39 @@ describe('Ads API Types', () => {
       { a: undefined; b: undefined }
     > = false;
 
-    [test1, test2, test3, test4].forEach((test) => expect(test).toBeDefined());
+    [test1, test2, test3, test4].forEach((test) => expect(test).to.exist);
   });
 });
+
+const CHILD_QUERY1 = buildQuery({
+  queryParams: ['b'],
+  queryFrom: 'test',
+});
+const CHILD_QUERY2 = buildQuery({
+  queryParams: ['c'],
+  queryFrom: 'test',
+});
+class ChildReport1 implements ReportInterface<typeof CHILD_QUERY1, 'a'> {
+  static output = ['a'];
+  static query = CHILD_QUERY1;
+  static key = 'Child1';
+  fetch() {
+    return {};
+  }
+
+  transform() {
+    return ['a', { a: 'a' }] as [string, { a: string }];
+  }
+}
+class ChildReport2 implements ReportInterface<typeof CHILD_QUERY2, 'b'> {
+  static output = ['b'];
+  static query = CHILD_QUERY2;
+  static key = 'Child2';
+  fetch() {
+    return {};
+  }
+
+  transform() {
+    return ['a', { b: 'b' }] as [string, { b: string }];
+  }
+}
