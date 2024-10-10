@@ -23,19 +23,19 @@ const __dirname = path.dirname(new URL(import.meta.url).pathname);
 export default {
   context: __dirname,
   entry: './src/api.ts',
-  output: { path: __dirname, filename: 'Code.js' },
-  plugins: [new GasPlugin({ autoGlobalExportsFiles: ['**/*.ts'] })],
+  output: {path: __dirname, filename: 'Code.js'},
+  plugins: [new GasPlugin({autoGlobalExportsFiles: ['**/*.ts']})],
   module: {
     rules: [
       {
         test: /\.tsx?$/,
-        use: 'ts-loader',
+        use: 'ts-loader'
         exclude: /node_modules/,
       },
     ],
   },
   resolve: {
     extensions: ['.tsx', '.ts'],
-    plugins: [new TsConfigPathsPlugin({ configFile: './tsconfig.json' })],
+    plugins: [new TsConfigPathsPlugin({configFile: './tsconfig.json'})],
   },
 };
