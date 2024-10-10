@@ -27,12 +27,12 @@ const rules = {
 };
 
 export default [
-  {files: ['**/*.{js,mjs,cjs,ts}']},
-  {languageOptions: {globals: globals.browser}},
-  {ignores},
+  { files: ['**/*.{js,mjs,cjs,ts}'] },
+  { languageOptions: { globals: globals.browser } },
+  { ignores },
   ...tseslint.configs.recommended,
   eslintConfigPrettier,
   eslintMocha.configs.flat.recommended,
   eslintChaiFriendly.configs.recommendedFlat,
-  {rules},
+  { rules },
 ];
