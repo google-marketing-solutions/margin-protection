@@ -7,3 +7,5 @@ yarn-error.log
 dist
 .vscode
 .clasp*
+package-lock.json
+docs

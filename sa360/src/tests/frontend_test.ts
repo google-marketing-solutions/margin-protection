@@ -14,161 +14,150 @@ import {
   SA360_API_ENDPOINT,
 } from 'common/ads_api';
 import {Query, QueryBuilder} from 'common/ads_api_types';
-import {expect} from 'chai';
-import * as sinon from 'sinon';
 
-describe('End-to-end SA360 tests', function () {
-  describe('initializeSheets', function () {
-    let frontend: SearchAdsFrontend;
-    let timer: sinon.SinonFakeTimers;
+describe('initializeSheets', () => {
+  let frontend: SearchAdsFrontend;
 
-    beforeEach(async function () {
-      setUp();
-      timer = sinon.useFakeTimers(new Date(Date.UTC(1970, 0, 1)));
-      frontend = getFrontend((client) => testData(client));
-      await frontend.initializeRules();
-    });
-
-    afterEach(function () {
-      timer.restore();
-    });
-
-    it('loads blank values', function () {
-      const values = SpreadsheetApp.getActive()
-        .getSheetByName('Rule Settings - Campaign')
-        .getRange(5, 1, 2, 3)
-        .getValues();
-      expect(values).to.eql([
-        ['c1', 'Campaign 1', ''],
-        ['c2', 'Campaign 2', ''],
-      ]);
-    });
+  beforeEach(async () => {
+    setUp();
+    jasmine.clock().install();
+    jasmine.clock().mockDate(new Date(Date.UTC(1970, 0, 1)));
+    frontend = getFrontend((client) => testData(client));
+    await frontend.initializeRules();
   });
 
-  describe('validate/launchMonitor functions', function () {
-    let frontend: SearchAdsFrontend;
-    let timer: sinon.SinonFakeTimers;
+  afterEach(() => {
+    jasmine.clock().uninstall();
+  });
 
-    beforeEach(async function () {
-      setUp();
-      timer = sinon.useFakeTimers(new Date(Date.UTC(1970, 0, 1)));
-      frontend = getFrontend((client) => testData(client));
+  it('loads blank values', () => {
+    const values = SpreadsheetApp.getActive()
+      .getSheetByName('Rule Settings - Campaign')
+      .getRange(5, 1, 2, 3)
+      .getValues();
+    expect(values).toEqual([
+      ['c1', 'Campaign 1', ''],
+      ['c2', 'Campaign 2', ''],
+    ]);
+  });
+});
+
+describe('validate/launchMonitor functions', () => {
+  let frontend: SearchAdsFrontend;
+
+  beforeEach(async () => {
+    setUp();
+    jasmine.clock().install();
+    jasmine.clock().mockDate(new Date(Date.UTC(1970, 0, 1)));
+    frontend = getFrontend((client) => testData(client));
+    await frontend.initializeRules();
+  });
+
+  it('runs with no errors when entity first found', async () => {
+    await frontend.launchMonitor();
+    expect(
+      SpreadsheetApp.getActive()
+        .getSheetByName('Age Target Change - Results')
+        .getDataRange()
+        .getValues(),
+    ).toEqual([]);
+  });
+  it('runs with no errors', async () => {
+    const range = SpreadsheetApp.getActive().getSheetByName(
+      'Rule Settings - Ad Group',
+    );
+    const values = range.getDataRange().getValues();
+    values[4][2] = '1';
+    range.getDataRange().setValues(values);
+    await frontend.launchMonitor();
+    expect(
+      SpreadsheetApp.getActive()
+        .getSheetByName('Age Target Change - Results')
+        .getDataRange()
+        .getValues(),
+    ).toEqual([]);
+  });
+
+  describe('error run', () => {
+    beforeEach(async () => {
       await frontend.initializeRules();
-    });
-
-    it('runs with no errors when entity first found', async function () {
-      await frontend.launchMonitor();
-      expect(
-        SpreadsheetApp.getActive()
-          .getSheetByName('Age Target Change - Results')
-          .getDataRange()
-          .getValues(),
-      ).to.eql([]);
-    });
-
-    it('runs with no errors', async function () {
-      const range = SpreadsheetApp.getActive().getSheetByName(
-        'Rule Settings - Ad Group',
-      );
-      const values = range.getDataRange().getValues();
-      values[4][2] = '1';
-      range.getDataRange().setValues(values);
-      await frontend.launchMonitor();
-      expect(
-        SpreadsheetApp.getActive()
-          .getSheetByName('Age Target Change - Results')
-          .getDataRange()
-          .getValues(),
-      ).to.eql([]);
-    });
-
-    describe('error run', function () {
-      beforeEach(async function () {
-        await frontend.initializeRules();
-        SpreadsheetApp.getActive()
-          .getSheetByName('Rule Settings - Campaign')
-          .getRange(4, 2)
-          .setValue('Nowhere');
-        await frontend.launchMonitor();
-      });
-
-      afterEach(function () {
-        SpreadsheetApp.getActive()
-          .getSheetByName('Rule Settings - Campaign')
-          .clear();
-      });
-
-      it('runs with errors', function () {
-        expect(
-          SpreadsheetApp.getActive()
-            .getSheetByName('Geo Target Change - Results')
-            .getDataRange()
-            .getValues(),
-        ).to.eql([
-          [
-            'Change',
-            'anomalous',
-            'Customer ID',
-            'Customer Name',
-            'Campaign ID',
-          ],
-          ['Nowhere DELETED, 1 ADDED', 'true', '1', '1', 'c1'],
-        ]);
-      });
-
-      it('has blank set safely', function () {
-        expect(
-          SpreadsheetApp.getActive()
-            .getSheetByName('Rule Settings - Campaign')
-            .getRange(3, 1, 4, 3)
-            .getValues(),
-        ).to.eql([
-          ['ID', 'Campaign Name', 'Criteria IDs'],
-          ['default', '', ''],
-          ['c1', 'Campaign 1', 'Nowhere'],
-          ['c2', 'Campaign 2', '-'],
-        ]);
-      });
-    });
-
-    it('skips disabled rules', async function () {
       SpreadsheetApp.getActive()
         .getSheetByName('Rule Settings - Campaign')
         .getRange(4, 2)
         .setValue('Nowhere');
-      await frontend.initializeRules();
-      const range = SpreadsheetApp.getActive()
-        .getSheetByName('Enable/Disable Rules')
-        .getDataRange();
-      const currentSettings = range.getValues();
-      const geoTargetRuleName = currentSettings[1][0];
-      const budgetPacingRuleName = currentSettings[2][0];
-
-      currentSettings[1][2] = false; // geotargets
-      currentSettings[2][2] = true; // pacing
-      range.setValues(currentSettings);
       await frontend.launchMonitor();
+    });
 
-      // first perform sanity checks
-      expect(budgetPacingRuleName).to.equal(ageTargetRule.name);
-      expect(geoTargetRuleName).to.equal(geoTargetRule.name);
-      // then validate that pacing doesn't work (it's disabled).
-      expect(
-        SpreadsheetApp.getActive().getSheetByName(
-          `${ageTargetRule.name} - Results`,
-        ),
-      ).not.to.be.undefined;
+    afterEach(() => {
+      SpreadsheetApp.getActive()
+        .getSheetByName('Rule Settings - Campaign')
+        .clear();
+    });
+
+    it('runs with errors', () => {
       expect(
         SpreadsheetApp.getActive()
-          .getSheetByName(`${geoTargetRule.name} - Results`)
+          .getSheetByName('Geo Target Change - Results')
           .getDataRange()
           .getValues(),
-      ).to.deep.eq([]);
+      ).toEqual([
+        ['Change', 'anomalous', 'Customer ID', 'Customer Name', 'Campaign ID'],
+        ['Nowhere DELETED, 1 ADDED', 'true', '1', '1', 'c1'],
+      ]);
     });
 
-    afterEach(function () {
-      timer.restore();
+    it('has blank set safely', () => {
+      expect(
+        SpreadsheetApp.getActive()
+          .getSheetByName('Rule Settings - Campaign')
+          .getRange(3, 1, 4, 3)
+          .getValues(),
+      ).toEqual([
+        ['ID', 'Campaign Name', 'Criteria IDs'],
+        ['default', '', ''],
+        ['c1', 'Campaign 1', 'Nowhere'],
+        ['c2', 'Campaign 2', '-'],
+      ]);
     });
+  });
+
+  it('skips disabled rules', async () => {
+    SpreadsheetApp.getActive()
+      .getSheetByName('Rule Settings - Campaign')
+      .getRange(4, 2)
+      .setValue('Nowhere');
+    await frontend.initializeRules();
+    const range = SpreadsheetApp.getActive()
+      .getSheetByName('Enable/Disable Rules')
+      .getDataRange();
+    const currentSettings = range.getValues();
+    const geoTargetRuleName = currentSettings[1][0];
+    const budgetPacingRuleName = currentSettings[2][0];
+
+    currentSettings[1][2] = false; // geotargets
+    currentSettings[2][2] = true; // pacing
+    range.setValues(currentSettings);
+    await frontend.launchMonitor();
+
+    // first perform sanity checks
+    expect(budgetPacingRuleName).toEqual(ageTargetRule.name);
+    expect(geoTargetRuleName).toEqual(geoTargetRule.name);
+    // then validate that pacing doesn't work (it's disabled).
+    expect(
+      SpreadsheetApp.getActive().getSheetByName(
+        `${ageTargetRule.name} - Results`,
+      ),
+    ).toBeDefined();
+    expect(
+      SpreadsheetApp.getActive()
+        .getSheetByName(`${geoTargetRule.name} - Results`)
+        .getDataRange()
+        .getValues(),
+    ).toEqual([]);
+  });
+
+  afterEach(() => {
+    jasmine.clock().uninstall();
   });
 });
 
@@ -204,7 +193,7 @@ function getFrontend(
     apiEndpoint: SA360_API_ENDPOINT,
   });
   const api = apiFactory.create('');
-  sinon.stub(apiFactory, 'create').returns(api);
+  spyOn(apiFactory, 'create').and.returnValue(api);
   const reportFactory = new ReportFactory(apiFactory, {
     customerIds: '1',
     label: 'test',

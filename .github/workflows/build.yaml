@@ -31,7 +31,7 @@ jobs:
         run: npx yarn lint-staged
 
       - name: Prettier check
-        run: npx yarn prettier -c dv360/src/**/*.ts sa360/src/**/*.ts cm360/**/*.js googleads/old/src/**/*.ts
+        run: npx yarn prettier -c ts/**/src/**/*.ts cm360/**/*.js googleads/**/*.js
 
       - name: Print errors
         run: find . -name "*.warn" -type f -exec cat {} \;

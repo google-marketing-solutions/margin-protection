@@ -21,7 +21,6 @@ import {BudgetReport, ImpressionReport} from '../api';
 import {IDType} from '../types';
 
 import {BudgetMatchTable, ImpressionMatchTable} from './dbm_test_helpers';
-import {expect} from 'chai';
 
 class FakeScriptApp {
   getOAuthToken() {
@@ -33,10 +32,9 @@ class FakeScriptApp {
 (globalThis as unknown as {ScriptApp: FakeScriptApp}).ScriptApp =
   new FakeScriptApp();
 
-describe('BudgetReport#getSpendForInsertionOrder', function () {
+describe('BudgetReport#getSpendForInsertionOrder', () => {
   let router: BudgetMatchTable;
-
-  beforeEach(function () {
+  beforeEach(() => {
     mockAppsScript();
     // tslint:disable-next-line:no-unused-expression
     router = new BudgetMatchTable();
@@ -44,7 +42,7 @@ describe('BudgetReport#getSpendForInsertionOrder', function () {
   // assuming that the API request/responses are sane (these are tested separately)
   // we want to make sure that we get a result from the series of API calls
   // made.
-  it('passes integration.', function () {
+  it('passes integration.', () => {
     const advertiserId = '1';
     // note - these aren't testing anything right now.
     const startDate = new Date('2022/12/17');
@@ -56,10 +54,10 @@ describe('BudgetReport#getSpendForInsertionOrder', function () {
       startDate,
       endDate,
     }).getSpendForInsertionOrder('IO2', startDate.getTime(), endDate.getTime());
-    expect(result).to.eql(0.02002);
+    expect(result).toEqual(0.02002);
   });
 
-  it('only pulls report once.', function () {
+  it('only pulls report once.', () => {
     const advertiserId = '1';
     // note - these aren't testing anything right now.
     const startDate = new Date('2022/12/17');
@@ -83,19 +81,19 @@ describe('BudgetReport#getSpendForInsertionOrder', function () {
     );
     const hits2 = {...router.getHits()};
 
-    expect(hits1).to.eql({
+    expect(hits1).toEqual({
       queryPostHits: 1,
       queryGetHits: 1,
       runPostHits: 1,
       reportGetHits: 1,
     });
-    expect(hits2).to.eql(hits1);
-    expect(result2).to.eql(0.03003);
+    expect(hits2).toEqual(hits1);
+    expect(result2).toEqual(0.03003);
   });
 });
 
-describe('ImpressionReport#getImpressionPercentOutsideOfGeos', function () {
-  beforeEach(function () {
+describe('ImpressionReport#getImpressionPercentOutsideOfGeos', () => {
+  beforeEach(() => {
     mockAppsScript();
     // tslint:disable-next-line:no-unused-expression
     new ImpressionMatchTable();
@@ -103,7 +101,7 @@ describe('ImpressionReport#getImpressionPercentOutsideOfGeos', function () {
   // assuming that the API request/responses are sane (these are tested separately)
   // we want to make sure that we get a result from the series of API calls
   // made.
-  it('passes integration.', function () {
+  it('passes integration.', () => {
     const advertiserId = '1';
     // note - these aren't testing anything right now.
     const startDate = new Date('2022/12/17');
@@ -115,10 +113,10 @@ describe('ImpressionReport#getImpressionPercentOutsideOfGeos', function () {
       startDate,
       endDate,
     }).getImpressionPercentOutsideOfGeos('1', ['US', 'UK']);
-    expect(result).to.eql(12 / 14);
+    expect(result).toEqual(12 / 14);
   });
 
-  it('handles empty results', function () {
+  it('handles empty results', () => {
     const advertiserId = '1';
     // note - these aren't testing anything right now.
     const startDate = new Date('2022/12/17');
@@ -130,31 +128,30 @@ describe('ImpressionReport#getImpressionPercentOutsideOfGeos', function () {
       startDate,
       endDate,
     }).getImpressionPercentOutsideOfGeos('1', ['US', 'UK', 'IT', 'CN']);
-    expect(result).to.eql(0);
+    expect(result).toEqual(0);
   });
 });
 
 // Contains branching logic. Testing this separately from integration test.
-describe('BudgetReport#fetchQueryId()', function () {
+describe('BudgetReport#fetchQueryId()', () => {
   let router: BudgetMatchTable;
-
-  beforeEach(function () {
+  beforeEach(() => {
     mockAppsScript();
     router = new BudgetMatchTable();
   });
 
-  it('returns a query ID from creation', function () {
+  it('returns a query ID from creation', () => {
     const budgetReport = new BudgetReport({
       id: '1',
       idType: IDType.ADVERTISER,
       startDate: new Date(1, 0, 1),
       endDate: new Date(1, 1, 2),
     });
-    expect(budgetReport.fetchQueryId()).to.eql('query1');
-    expect(router.getHits().queryPostHits).to.eql(1);
+    expect(budgetReport.fetchQueryId()).toEqual('query1');
+    expect(router.getHits().queryPostHits).toEqual(1);
   });
 
-  it('returns a query ID from cache', function () {
+  it('returns a query ID from cache', () => {
     const budgetReport = new BudgetReport({
       id: '1',
       idType: IDType.ADVERTISER,
@@ -167,15 +164,15 @@ describe('BudgetReport#fetchQueryId()', function () {
     const queryResult2 = budgetReport.fetchQueryId();
     const hits2 = router.getHits();
 
-    expect(queryResult1).to.eql('query1');
-    expect(queryResult2).to.eql('query1');
-    expect(hits1).to.eql({
+    expect(queryResult1).toEqual('query1');
+    expect(queryResult2).toEqual('query1');
+    expect(hits1).toEqual({
       queryPostHits: 1,
       queryGetHits: 1,
       runPostHits: 1,
       reportGetHits: 1,
     });
-    expect(hits2).to.eql({
+    expect(hits2).toEqual({
       queryPostHits: 1,
       queryGetHits: 1,
       runPostHits: 1,
@@ -183,7 +180,7 @@ describe('BudgetReport#fetchQueryId()', function () {
     });
   });
 
-  it('returns a query ID from list, matched by title', function () {
+  it('returns a query ID from list, matched by title', () => {
     const budgetReport = new BudgetReport({
       id: '1',
       idType: IDType.ADVERTISER,
@@ -197,8 +194,8 @@ describe('BudgetReport#fetchQueryId()', function () {
       },
     });
 
-    expect(budgetReport.fetchQueryId()).to.eql('query1');
-    expect(router.getHits()).to.eql({
+    expect(budgetReport.fetchQueryId()).toEqual('query1');
+    expect(router.getHits()).toEqual({
       queryPostHits: 1,
       queryGetHits: 1,
       runPostHits: 1,
@@ -206,7 +203,7 @@ describe('BudgetReport#fetchQueryId()', function () {
     });
   });
 
-  it('correctly skips cache on new query', function () {
+  it('correctly skips cache on new query', () => {
     const budgetReport1 = new BudgetReport({
       id: '1',
       idType: IDType.ADVERTISER,
@@ -224,15 +221,15 @@ describe('BudgetReport#fetchQueryId()', function () {
     budgetReport2.fetchQueryId();
     const hits2 = {...router.getHits()};
 
-    expect(budgetReport1.fetchQueryId()).to.eql('query1');
-    expect(budgetReport2.fetchQueryId()).to.eql('query1');
-    expect(hits1).to.eql({
+    expect(budgetReport1.fetchQueryId()).toEqual('query1');
+    expect(budgetReport2.fetchQueryId()).toEqual('query1');
+    expect(hits1).toEqual({
       queryPostHits: 1,
       queryGetHits: 1,
       runPostHits: 1,
       reportGetHits: 1,
     });
-    expect(hits2).to.eql({
+    expect(hits2).toEqual({
       queryPostHits: 1,
       queryGetHits: 1,
       runPostHits: 1,
