@@ -259,7 +259,7 @@ export const ObjectUtil = {
    * @return True if the object contains all properties, false
    *     otherwise
    */
-  hasOwnProperties<T>(
+  hasOwnProperties(
     obj: unknown,
     {
       requiredProperties = [],

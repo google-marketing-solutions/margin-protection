@@ -53,8 +53,6 @@ import {
   LineItemPartnerRevenueModelMapper,
   Pacing,
   PacingMapper,
-  PerformanceGoal,
-  PerformanceGoalMapper,
   RawApiDate,
   RawStatus,
   RawTargetingType,
@@ -1439,7 +1437,7 @@ export class InventorySource extends DisplayVideoResource {
     return result;
   }
 
-  override getChangedProperties(other: DisplayVideoResource | null): string[] {
+  override getChangedProperties(): string[] {
     return [];
   }
 
@@ -1617,7 +1615,7 @@ export class TargetingOption extends DisplayVideoResource {
     return result;
   }
 
-  override getChangedProperties(other: DisplayVideoResource | null): string[] {
+  override getChangedProperties(): string[] {
     return [];
   }
 
