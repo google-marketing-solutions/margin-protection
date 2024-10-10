@@ -8,13 +8,15 @@ import { Client, RuleRange } from '../client';
 import { scaffoldSheetWithNamedRanges } from 'common/tests/helpers';
 import { geoTargetRule } from '../rules';
 import { ClientInterface } from '../types';
+import { expect } from 'chai';
 
-describe('Migrations: upgrades', () => {
-  beforeEach(() => {
+describe('Migrations: upgrades', function () {
+  beforeEach(function () {
     mockAppsScript();
     scaffoldSheetWithNamedRanges();
   });
-  it('to v3.0', async () => {
+
+  it('to v3.0', async function () {
     const sheet = SpreadsheetApp.getActive().insertSheet(
       'Rule Settings - Campaign',
     );
@@ -29,13 +31,13 @@ describe('Migrations: upgrades', () => {
     frontend.migrate();
 
     const header: string[] = sheet.getRange(3, 1, 1, 4).getValues()[0];
-    expect(header.findIndex((c) => c === 'Geo Targets')).toEqual(-1);
+    expect(header.findIndex((c) => c === 'Geo Targets')).to.eql(-1);
     expect(
       header.findIndex((c) => c === 'Allowed Geo Targets'),
-    ).toBeGreaterThanOrEqual(0);
+    ).to.be.greaterThanOrEqual(0);
     expect(
       header.findIndex((c) => c === 'Excluded Geo Targets'),
-    ).toBeGreaterThanOrEqual(0);
+    ).to.be.greaterThanOrEqual(0);
   });
 });
 

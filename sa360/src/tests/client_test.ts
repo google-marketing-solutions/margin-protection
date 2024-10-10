@@ -21,8 +21,9 @@ import { bootstrapGoogleAdsApi } from 'common/tests/helpers';
 import { mockAppsScript } from 'common/test_helpers/mock_apps_script';
 import { Client, newRule } from 'sa360/src/client';
 import { RuleGranularity } from 'sa360/src/types';
+import { expect } from 'chai';
 
-describe('Client rules are validated', () => {
+describe('Client rules are validated', function () {
   let output: string[] = [];
   let client: Client;
   const test = 42;
@@ -31,7 +32,7 @@ describe('Client rules are validated', () => {
     ['default', '1', '2'],
   ];
 
-  beforeEach(() => {
+  beforeEach(function () {
     mockAppsScript();
     client = generateTestClient({ loginCustomerId: '123' });
 
@@ -67,24 +68,24 @@ describe('Client rules are validated', () => {
     );
   });
 
-  afterEach(() => {
+  afterEach(function () {
     output = [];
   });
 
-  it('should not run rules until validate() is run', () => {
-    expect(output).toEqual([]);
+  it('should not run rules until validate() is run', function () {
+    expect(output).to.eql([]);
   });
 
-  it('should run rules when validate() is run', async () => {
+  it('should run rules when validate() is run', async function () {
     await client.validate();
-    expect(output).toEqual(['ruleA', 'ruleB']);
+    expect(output).to.deep.eq(['ruleA', 'ruleB']);
   });
 
-  it('should have check results after validate() is run', async () => {
+  it('should have check results after validate() is run', async function () {
     const { results } = await client.validate();
     expect(
       Object.values(results['ruleA'].values).map((value) => value.anomalous),
-    ).toEqual([true, false]);
+    ).to.eql([true, false]);
   });
 });
 

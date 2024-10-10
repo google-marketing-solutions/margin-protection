@@ -21,7 +21,10 @@ jobs:
         with:
           node-version: 22.x
 
-      - name: Install dependencies
+      - name: Install parent dependencies
+        run: npx yarn
+
+      - name: Install sa360 dependencies
         run: npx yarn --cwd ./sa360
 
       - name: Build sa360 prod

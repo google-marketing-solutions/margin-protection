@@ -23,8 +23,9 @@ import { Client, newRule } from '../client';
 import { RuleGranularity } from '../types';
 
 import { generateTestClient } from './client_helpers';
+import { expect } from 'chai';
 
-describe('Client rules are validated', () => {
+describe('Client rules are validated', function () {
   let output: string[] = [];
   const test = 42;
   let client: Client;
@@ -33,7 +34,7 @@ describe('Client rules are validated', () => {
     ['default', '1', '2'],
   ];
 
-  beforeEach(() => {
+  beforeEach(function () {
     mockAppsScript();
     client = generateTestClient({ id: '123' });
 
@@ -71,22 +72,22 @@ describe('Client rules are validated', () => {
     );
   });
 
-  afterEach(() => {
+  afterEach(function () {
     output = [];
   });
 
-  it('should not run rules until validate() is run', () => {
-    expect(output).toEqual([]);
+  it('should not run rules until validate() is run', function () {
+    expect(output).to.eql([]);
   });
 
-  it('should run rules when validate() is run', async () => {
+  it('should run rules when validate() is run', async function () {
     await client.validate();
-    expect(output).toEqual(['ruleA', 'ruleB']);
+    expect(output).to.eql(['ruleA', 'ruleB']);
   });
 
-  it('should have check results after validate() is run', async () => {
+  it('should have check results after validate() is run', async function () {
     const { results } = await client.validate();
     const ruleValues: Value[] = Object.values(results['ruleA'].values);
-    expect(ruleValues.map((value) => value.anomalous)).toEqual([true, false]);
+    expect(ruleValues.map((value) => value.anomalous)).to.eql([true, false]);
   });
 });

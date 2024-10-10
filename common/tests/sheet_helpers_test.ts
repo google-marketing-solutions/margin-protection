@@ -39,17 +39,23 @@ import {
   newRule,
   RuleRange,
   scaffoldSheetWithNamedRanges,
+  tearDownStubs,
   TestClientInterface,
   TestClientTypes,
 } from './helpers';
 import { equalTo } from 'common/checks';
+import * as sinon from 'sinon';
+import { expect } from 'chai';
 
 function setUp() {
   mockAppsScript();
-  spyOn(HELPERS, 'insertRows').and.callFake((range) => range);
+  const insertRows = sinon
+    .stub(HELPERS, 'insertRows')
+    .callsFake((range) => range);
+  return { stubs: [insertRows] };
 }
 
-describe('Test migration order', () => {
+describe('Test migration order', function () {
   const list: string[] = [];
   const CURRENT_SHEET_VERSION = '2.2.0';
   const migrations = {
@@ -81,47 +87,47 @@ describe('Test migration order', () => {
     });
   }
 
-  beforeEach(() => {
+  beforeEach(function () {
     mockAppsScript();
   });
 
-  afterEach(() => {
+  afterEach(function () {
     list.splice(0, list.length);
   });
 
-  it('migrates all', () => {
+  it('migrates all', function () {
     const frontend = setFrontend({
       expectedVersion: '5.0',
       currentVersion: '1.0',
     });
     frontend.migrate();
-    expect(list).toEqual(['2.0', '2.1.0', '2.1.4', '2.2.0', '3.0']);
+    expect(list).to.deep.eq(['2.0', '2.1.0', '2.1.4', '2.2.0', '3.0']);
   });
 
-  it('partially migrates', () => {
+  it('partially migrates', function () {
     const frontend = setFrontend({
       expectedVersion: '5.0',
       currentVersion: '2.1.0',
     });
     frontend.migrate();
-    expect(list).toEqual(['2.1.4', '2.2.0', '3.0']);
+    expect(list).to.deep.eq(['2.1.4', '2.2.0', '3.0']);
   });
 
-  it('runs when initializeSheets runs', async () => {
+  it('runs when initializeSheets runs', async function () {
     const frontend = setFrontend({
       expectedVersion: CURRENT_SHEET_VERSION,
       currentVersion: '1.0',
     });
     mockAppsScript();
-    spyOn(HtmlService, 'createTemplateFromFile').and.stub();
+    sinon.stub(HtmlService, 'createTemplateFromFile');
     PropertiesService.getScriptProperties().setProperty('sheet_version', '0.1');
     await frontend.initializeSheets();
     expect(
       PropertiesService.getScriptProperties().getProperty('sheet_version'),
-    ).toEqual(String(CURRENT_SHEET_VERSION));
+    ).to.equal(String(CURRENT_SHEET_VERSION));
   });
 
-  it('does not run migrations if version is up-to-date', () => {
+  it('does not run migrations if version is up-to-date', function () {
     const frontend = setFrontend({
       expectedVersion: CURRENT_SHEET_VERSION,
       currentVersion: '1.0',
@@ -132,25 +138,25 @@ describe('Test migration order', () => {
       String(CURRENT_SHEET_VERSION),
     );
     const numberRun = frontend.migrate();
-    expect(numberRun).toEqual(0);
+    expect(numberRun).to.equal(0);
   });
 
-  it('migrates only to specified version cap', () => {
+  it('migrates only to specified version cap', function () {
     const frontend = setFrontend({
       expectedVersion: '2.1.0',
       currentVersion: '2.1.0',
     });
     const numberOfMigrations = frontend.migrate();
-    expect(list).toEqual([]);
-    expect(numberOfMigrations).toEqual(0);
+    expect(list).to.deep.eq([]);
+    expect(numberOfMigrations).to.equal(0);
   });
 });
 
-describe('2-D array', () => {
+describe('2-D array', function () {
   let array2d: string[][];
   const params = { rule1: { label: 'Rule 1' }, rule2: { label: 'Rule 2' } };
 
-  beforeEach(() => {
+  beforeEach(function () {
     array2d = [
       ['', 'Rule 1', 'Rule 2'],
       ['1', 'A', 'B'],
@@ -158,8 +164,8 @@ describe('2-D array', () => {
     ];
   });
 
-  it('transforms into a param', () => {
-    expect(transformToParamValues(array2d, params)).toEqual(
+  it('transforms into a param', function () {
+    expect(transformToParamValues(array2d, params)).to.deep.eq(
       new SettingMap([
         ['1', { rule1: 'A', rule2: 'B' }],
         ['2', { rule1: 'C', rule2: 'D' }],
@@ -167,21 +173,23 @@ describe('2-D array', () => {
     );
   });
 
-  it('triggers an error if empty', () => {
+  it('triggers an error if empty', function () {
     const error = new Error(
       'Expected a grid with row and column headers of at least size 2',
     );
-    expect(() => transformToParamValues([], params)).toThrow(error);
-    expect(() => transformToParamValues([[]], params)).toThrow(error);
-    expect(() => transformToParamValues([['']], params)).toThrow(error);
+    expect(() => transformToParamValues([], params)).to.throw(error.message);
+    expect(() => transformToParamValues([[]], params)).to.throw(error.message);
+    expect(() => transformToParamValues([['']], params)).to.throw(
+      error.message,
+    );
   });
 });
 
-describe('Rule Settings helper functions', () => {
+describe('Rule Settings helper functions', function () {
   let rules: RuleRange;
 
-  const client = generateTestClient({ id: '1' });
-  beforeEach(() => {
+  beforeEach(function () {
+    const client = generateTestClient({ id: '1' });
     rules = initializeRuleRange(client);
     for (const rule of ['', 'Category A', 'Category B', 'Category C']) {
       // getValues() expects a rule to be in the ruleStore for the helper value.
@@ -192,14 +200,14 @@ describe('Rule Settings helper functions', () => {
     }
   });
 
-  it('break down a settings sheet into the correct categories', () => {
+  it('break down a settings sheet into the correct categories', function () {
     expect(
       (
         rules as unknown as {
           rules: Record<string, Array<string[] | undefined>>;
         }
       ).rules,
-    ).toEqual({
+    ).to.deep.eq({
       none: [['id', 'name'], undefined, ['1', 'one']],
       'Category A': [['Header 1', 'Header 2'], undefined, ['Col 1', 'Col 2']],
       'Category B': [
@@ -211,14 +219,14 @@ describe('Rule Settings helper functions', () => {
     });
   });
 
-  it('combines categories back into a settings sheet', () => {
-    expect(rules.getRule('Category A')).toEqual([
+  it('combines categories back into a settings sheet', function () {
+    expect(rules.getRule('Category A')).to.deep.eq([
       ['id', 'Header 1', 'Header 2'],
       ['1', 'Col 1', 'Col 2'],
     ]);
   });
 
-  it('writes back to the spreadsheet - base case', () => {
+  it('writes back to the spreadsheet - base case', function () {
     mockAppsScript();
     rules.writeBack(Granularity.DEFAULT);
     const expected = [
@@ -242,10 +250,10 @@ describe('Rule Settings helper functions', () => {
       expected.length,
       expected[0].length,
     );
-    expect(range.getValues()).toEqual(expected);
+    expect(range.getValues()).to.deep.equal(expected);
   });
 
-  it('writes back to the spreadsheet - cares about changes', () => {
+  it('writes back to the spreadsheet - cares about changes', function () {
     mockAppsScript();
     const sheet = HELPERS.getOrCreateSheet('Rule Settings - default');
     rules.writeBack(Granularity.DEFAULT);
@@ -269,7 +277,7 @@ describe('Rule Settings helper functions', () => {
     range.setValues(expected);
     rules.writeBack(Granularity.DEFAULT);
 
-    expect(range.getValues()).toEqual([
+    expect(range.getValues()).to.deep.eq([
       ['', '', 'Category A', '', 'Category B', '', '', 'Category C'],
       ['', '', '', '', '', '', '', ''],
       [
@@ -287,71 +295,71 @@ describe('Rule Settings helper functions', () => {
   });
 });
 
-describe('SettingMap#getOrDefault', () => {
-  it('returns value', () => {
+describe('SettingMap#getOrDefault', function () {
+  it('returns value', function () {
     const settingMap = new SettingMap([
       ['default', { rule1: 'A' }],
       ['1', { rule1: 'C' }],
     ]);
-    expect(settingMap.getOrDefault('1').rule1).toEqual('C');
+    expect(settingMap.getOrDefault('1').rule1).to.equal('C');
   });
 
-  it('returns defaults when value is blank', () => {
+  it('returns defaults when value is blank', function () {
     const settingMap = new SettingMap([
       ['default', { rule1: 'A' }],
       ['1', { rule1: '' }],
     ]);
-    expect(settingMap.getOrDefault('1').rule1).toEqual('A');
+    expect(settingMap.getOrDefault('1').rule1).to.equal('A');
   });
 
-  it('returns value when value is 0', () => {
+  it('returns value when value is 0', function () {
     const settingMap = new SettingMap([
       ['default', { rule1: 'A' }],
       ['1', { rule1: '0' }],
     ]);
-    expect(settingMap.getOrDefault('1').rule1).toEqual('0');
+    expect(settingMap.getOrDefault('1').rule1).to.equal('0');
   });
 
-  it('returns blank when default is undefined and value is blank', () => {
+  it('returns blank when default is undefined and value is blank', function () {
     const settingMap = new SettingMap([['1', { rule1: '' }]]);
-    expect(settingMap.getOrDefault('1').rule1).toEqual('');
+    expect(settingMap.getOrDefault('1').rule1).to.equal('');
   });
 });
 
-describe('sortMigrations', () => {
-  it('sorts migrations as expected', () => {
-    expect(['0.6', '1.2', '1.0'].sort(sortMigrations)).toEqual([
+describe('sortMigrations', function () {
+  it('sorts migrations as expected', function () {
+    expect(['0.6', '1.2', '1.0'].sort(sortMigrations)).to.deep.eq([
       '0.6',
       '1.0',
       '1.2',
     ]);
   });
 
-  it('manages incremental versions', () => {
-    expect(['0.6.1', '0.6', '1.0'].sort(sortMigrations)).toEqual([
+  it('manages incremental versions', function () {
+    expect(['0.6.1', '0.6', '1.0'].sort(sortMigrations)).to.deep.eq([
       '0.6',
       '0.6.1',
       '1.0',
     ]);
   });
 
-  it('works with objects', () => {
+  it('works with objects', function () {
     expect(
       Object.entries({ '0.1': 'b', '0.0.1': 'a' }).sort((e1, e2) =>
         sortMigrations(e1[0], e2[0]),
       ),
-    ).toEqual([
+    ).to.deep.eq([
       ['0.0.1', 'a'],
       ['0.1', 'b'],
     ]);
   });
 });
 
-describe('rule sheet', () => {
+describe('rule sheet', function () {
   let frontend: FakeFrontend;
   const rules: Record<string, RuleExecutorClass<TestClientTypes>> = {};
 
-  beforeEach(() => {
+  beforeEach(function () {
     const values = {
       '1': equalTo(42, 1, {}),
       '42': equalTo(42, 42, {}),
@@ -407,41 +415,41 @@ describe('rule sheet', () => {
     });
   });
 
-  it('loads rules fresh when empty', async () => {
+  it('loads rules fresh when empty', async function () {
     await frontend.initializeRules();
     const sheet = SpreadsheetApp.getActive().getSheetByName(
       'Enable/Disable Rules',
     );
     const values = sheet.getRange(1, 1, 3, 3).getValues();
 
-    expect(values).toEqual([
+    expect(values).to.deep.eq([
       ['Rule Name', 'Description', 'Enabled'],
       ['Rule A', 'The rule for rule A', true],
       ['Rule B', 'The rule for rule B', true],
     ]);
   });
 
-  it('strips non-paragraph HTML tags from descriptions', async () => {
+  it('strips non-paragraph HTML tags from descriptions', async function () {
     await frontend.initializeRules();
     const sheet = SpreadsheetApp.getActive().getSheetByName(
       'Enable/Disable Rules',
     );
     const values = sheet.getRange(4, 2, 1, 1).getValues();
 
-    expect(values).toEqual([['This is too much HTML']]);
+    expect(values).to.deep.eq([['This is too much HTML']]);
   });
 
-  it('converts paragraph HTML tags to newlines', async () => {
+  it('converts paragraph HTML tags to newlines', async function () {
     await frontend.initializeRules();
     const sheet = SpreadsheetApp.getActive().getSheetByName(
       'Enable/Disable Rules',
     );
     const values = sheet.getRange(5, 2, 1, 1).getValues();
 
-    expect(values).toEqual([['One line\n\nAnother line']]);
+    expect(values).to.deep.eq([['One line\n\nAnother line']]);
   });
 
-  it('returns an object of enabled / disabled rules', async () => {
+  it('returns an object of enabled / disabled rules', async function () {
     for (const rule of Object.values(rules)) {
       frontend.client.addRule(rule, [[''], ['']]);
     }
@@ -459,7 +467,7 @@ describe('rule sheet', () => {
 
     const mapObject = frontend.setUpRuleSheet();
 
-    expect(Object.fromEntries(mapObject)).toEqual({
+    expect(Object.fromEntries(mapObject)).to.deep.eq({
       'Rule A': true,
       'Rule B': false,
       'No HTML': true,
@@ -467,7 +475,7 @@ describe('rule sheet', () => {
     });
   });
 
-  it('has checkboxes in the correct rows', async () => {
+  it('has checkboxes in the correct rows', async function () {
     type Checkboxes = GoogleAppsScript.Spreadsheet.Spreadsheet & {
       checkboxes: Record<number, Record<number, boolean>>;
     };
@@ -477,14 +485,14 @@ describe('rule sheet', () => {
       'Enable/Disable Rules',
     ) as unknown as Checkboxes;
 
-    expect(sheet.getRange('A1:A5').getValues().flat(1)).toEqual([
+    expect(sheet.getRange('A1:A5').getValues().flat(1)).to.deep.eq([
       'Rule Name',
       'Rule A',
       'Rule B',
       'No HTML',
       'Paragraphs',
     ]);
-    expect(sheet.checkboxes).toEqual({
+    expect(sheet.checkboxes).to.deep.eq({
       2: { 3: true },
       3: { 3: true },
       4: { 3: true },
@@ -493,31 +501,32 @@ describe('rule sheet', () => {
   });
 });
 
-describe('test HELPERS', () => {
-  beforeEach(() => {
+describe('test HELPERS', function () {
+  beforeEach(function () {
     mockAppsScript();
   });
 
-  it('saveLastReportPull', () => {
+  it('saveLastReportPull', function () {
     HELPERS.saveLastReportPull(1);
-    expect(CacheService.getScriptCache().get('scriptPull')).toEqual('1');
+    expect(CacheService.getScriptCache().get('scriptPull')).to.equal('1');
     const expirationInSeconds = (
       CacheService.getScriptCache() as unknown as {
         expirationInSeconds: number | undefined;
       }
     ).expirationInSeconds;
-    expect(expirationInSeconds).toBeUndefined();
+    expect(expirationInSeconds).to.be.undefined;
   });
 
-  it('getLastReportPull', () => {
+  it('getLastReportPull', function () {
     CacheService.getScriptCache().put('scriptPull', '10');
-    expect(HELPERS.getLastReportPull()).toEqual(10);
+    expect(HELPERS.getLastReportPull()).to.equal(10);
   });
 });
 
-describe('Test emails', () => {
+describe('Test emails', function () {
   let frontend: FakeFrontend;
   let rules: Record<string, RuleGetter>;
+  let stubs: sinon.SinonStub[];
 
   const email = (to: string) => ({
     to,
@@ -536,8 +545,8 @@ describe('Test emails', () => {
           - v5`.replace(/  +/g, ''),
   });
 
-  beforeEach(() => {
-    setUp();
+  beforeEach(function () {
+    ({ stubs } = setUp());
     rules = {
       keyA: {
         name: 'Rule A',
@@ -600,7 +609,11 @@ describe('Test emails', () => {
     });
   });
 
-  it('sends anomalies to a user whenever they are new', () => {
+  afterEach(function () {
+    tearDownStubs(stubs);
+  });
+
+  it('sends anomalies to a user whenever they are new', function () {
     SpreadsheetApp.getActive()
       .getRangeByName('EMAIL_LIST')!
       .setValue('user@example.com');
@@ -628,17 +641,17 @@ describe('Test emails', () => {
       - v5`.replace(/  +/g, '');
 
     // Assert
-    expect(messageExists).toEqual([true, false, true]);
-    expect(messages).toEqual([newEmail]);
+    expect(messageExists).to.deep.eq([true, false, true]);
+    expect(messages).to.deep.eq([newEmail]);
   });
 });
 
-describe('BigQuery interop', () => {
-  beforeEach(() => {
+describe('BigQuery interop', function () {
+  beforeEach(function () {
     mockAppsScript();
   });
 
-  it('converts a BigQuery object into the desired output', () => {
+  it('converts a BigQuery object into the desired output', function () {
     scaffoldSheetWithNamedRanges();
     globalThis.BigQuery.Jobs.query = () => ({
       kind: 'bigquery#queryResponse',
@@ -775,7 +788,7 @@ describe('BigQuery interop', () => {
 
     const result = HELPERS.bigQueryGet('stub');
 
-    expect(result).toEqual(
+    expect(result).to.deep.eq(
       [1, 2, 3].map((i) => ({
         criteria_id: `ID ${i}`,
         en_name: `English Name ${i}`,
@@ -788,10 +801,10 @@ describe('BigQuery interop', () => {
     );
   });
 
-  it('fails with no GCP project ID set', () => {
+  it('fails with no GCP project ID set', function () {
     mockAppsScript();
     scaffoldSheetWithNamedRanges({ blanks: ['GCP_PROJECT_ID'] });
-    expect(() => HELPERS.bigQueryGet('stub')).toThrowError(
+    expect(() => HELPERS.bigQueryGet('stub')).to.throw(
       "Require a value in named range 'GCP_PROJECT_ID'",
     );
   });
