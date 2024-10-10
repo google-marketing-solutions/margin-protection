@@ -1,4 +1,4 @@
 yarn
 yarn lint-staged
 yarn test
-npx tsc -p .
+npx tsc -p ./ts
