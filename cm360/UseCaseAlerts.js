@@ -62,7 +62,7 @@ function getGhostPlacementsAlerts(config, data) {
       row.push('');
     }
   });
-  return { issues: issues };
+  return {issues: issues};
 }
 
 /**
@@ -164,7 +164,7 @@ function getDefaultAdsRateAlerts(config, data) {
       row.push('');
     }
   });
-  return { issues: issues };
+  return {issues: issues};
 }
 
 /**
@@ -306,7 +306,7 @@ function getFloodlightTrendsAlerts(config, data) {
     // Only add data from last week and the week before last week
     newData.push(row);
   });
-  return { issues: issues, data: newData };
+  return {issues: issues, data: newData};
 }
 
 /**
@@ -428,7 +428,7 @@ function getOutOfFlightPlacementsAlerts(config, data) {
       row.push('');
     }
   });
-  return { issues: issues };
+  return {issues: issues};
 }
 
 /**
@@ -478,7 +478,7 @@ function getTrackingAdsAlerts(config, data) {
       row.push('');
     }
   });
-  return { issues: issues };
+  return {issues: issues};
 }
 
 /**
@@ -514,7 +514,7 @@ function getDefaultLandingPageAlerts(config, data) {
     }
   });
 
-  return { issues: issues };
+  return {issues: issues};
 }
 
 /**
@@ -543,7 +543,7 @@ function getUseCasesConfiguration() {
       useCaseName,
       useCaseThreshold,
     );
-    useCasesMap[useCaseName] = { ...otherConfigs };
+    useCasesMap[useCaseName] = {...otherConfigs};
   });
   return useCasesMap;
 }
@@ -585,8 +585,8 @@ function getOtherConfigsByUseCase(useCase, useCaseThreshold) {
       rangeToSort: 'A2:M',
       rangeToFilter: 'A1:M',
       sortByColumns: [
-        { column: GP_PLACEMENT_ID_COLUMN, ascending: true },
-        { column: GP_DATE_COLUMN, ascending: true },
+        {column: GP_PLACEMENT_ID_COLUMN, ascending: true},
+        {column: GP_DATE_COLUMN, ascending: true},
       ],
       columnToResize: 13,
       numColsToResize: 1,
@@ -605,8 +605,8 @@ function getOtherConfigsByUseCase(useCase, useCaseThreshold) {
       rangeToSort: 'A2:O',
       rangeToFilter: 'A1:O',
       sortByColumns: [
-        { column: DA_PLACEMENT_ID_COLUMN, ascending: true },
-        { column: DA_DATE_COLUMN, ascending: true },
+        {column: DA_PLACEMENT_ID_COLUMN, ascending: true},
+        {column: DA_DATE_COLUMN, ascending: true},
       ],
       columnToResize: 15,
       numColsToResize: 1,
@@ -627,8 +627,8 @@ function getOtherConfigsByUseCase(useCase, useCaseThreshold) {
       rangeToSort: 'A2:H',
       rangeToFilter: 'A1:H',
       sortByColumns: [
-        { column: FT_WEEK_COLUMN, ascending: false },
-        { column: FT_ACTIVITY_ID_COLUMN, ascending: true },
+        {column: FT_WEEK_COLUMN, ascending: false},
+        {column: FT_ACTIVITY_ID_COLUMN, ascending: true},
       ],
       columnToResize: 8,
       numColsToResize: 1,
@@ -649,8 +649,8 @@ function getOtherConfigsByUseCase(useCase, useCaseThreshold) {
       rangeToSort: 'A2:N',
       rangeToFilter: 'A1:N',
       sortByColumns: [
-        { column: OFP_PLACEMENT_ID_COLUMN, ascending: true },
-        { column: OFP_DATE_COLUMN, ascending: true },
+        {column: OFP_PLACEMENT_ID_COLUMN, ascending: true},
+        {column: OFP_DATE_COLUMN, ascending: true},
       ],
       columnToResize: 14,
       numColsToResize: 1,
@@ -683,8 +683,8 @@ function getOtherConfigsByUseCase(useCase, useCaseThreshold) {
       rangeToSort: 'A2:L',
       rangeToFilter: 'A1:L',
       sortByColumns: [
-        { column: TA_PLACEMENT_ID_COLUMN, ascending: true },
-        { column: TA_DATE_COLUMN, ascending: true },
+        {column: TA_PLACEMENT_ID_COLUMN, ascending: true},
+        {column: TA_DATE_COLUMN, ascending: true},
       ],
       columnToResize: 12,
       numColsToResize: 1,
@@ -704,7 +704,7 @@ function getOtherConfigsByUseCase(useCase, useCaseThreshold) {
       flagColumnRange: 'J2:J',
       rangeToSort: 'A2:K',
       rangeToFilter: 'A1:K',
-      sortByColumns: [{ column: DLP_DATE_COLUMN, ascending: true }],
+      sortByColumns: [{column: DLP_DATE_COLUMN, ascending: true}],
       columnToResize: 11,
       numColsToResize: 1,
     },

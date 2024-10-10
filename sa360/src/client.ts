@@ -19,10 +19,10 @@
  * @fileoverview Client for SA360.
  */
 
-import { ReportFactory } from 'common/ads_api';
-import { Query, QueryBuilder } from 'common/ads_api_types';
-import { newRuleBuilder } from 'common/client_helpers';
-import { AbstractRuleRange } from 'common/sheet_helpers';
+import {ReportFactory} from 'common/ads_api';
+import {Query, QueryBuilder} from 'common/ads_api_types';
+import {newRuleBuilder} from 'common/client_helpers';
+import {AbstractRuleRange} from 'common/sheet_helpers';
 import {
   ExecutorResult,
   ParamDefinition,
@@ -41,7 +41,7 @@ import {
   SearchAdsClientTypes,
 } from 'sa360/src/types';
 
-import { AD_GROUP_REPORT, CAMPAIGN_REPORT } from './api';
+import {AD_GROUP_REPORT, CAMPAIGN_REPORT} from './api';
 
 /**
  * Creates a new rule for the new SA360.
@@ -117,7 +117,7 @@ export class Client implements ClientInterface {
     const results: Record<string, ExecutorResult> = {};
     for (const [rule, thresholdCallable] of thresholds) {
       if (!rule.enabled) {
-        results[rule.name] = { values: {} };
+        results[rule.name] = {values: {}};
         rules[rule.name] = rule;
       } else {
         results[rule.name] = await thresholdCallable();
@@ -125,7 +125,7 @@ export class Client implements ClientInterface {
       }
     }
 
-    return { rules, results };
+    return {rules, results};
   }
 
   /**

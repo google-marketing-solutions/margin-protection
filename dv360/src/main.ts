@@ -19,10 +19,10 @@
  * @fileoverview Apps Script handlers.
  */
 
-import { PropertyStore } from 'common/types';
+import {PropertyStore} from 'common/types';
 
-import { Client, RuleRange } from './client';
-import { DisplayVideoFrontend, migrations } from './frontend';
+import {Client, RuleRange} from './client';
+import {DisplayVideoFrontend, migrations} from './frontend';
 import {
   budgetPacingRuleLineItem,
   budgetPacingPercentageRule,
@@ -30,7 +30,7 @@ import {
   impressionsByGeoTarget,
   dailyBudgetRule,
 } from './rules';
-import { AppsScriptPropertyStore } from 'common/sheet_helpers';
+import {AppsScriptPropertyStore} from 'common/sheet_helpers';
 
 /**
  * The sheet version the app currently has.

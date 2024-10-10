@@ -31,10 +31,10 @@ const rules = {
 };
 
 export default [
-  { files: ['**/*.{js,mjs,cjs,ts}'] },
-  { languageOptions: { globals: globals.browser } },
-  { rules },
-  { ignores },
+  {files: ['**/*.{js,mjs,cjs,ts}']},
+  {languageOptions: {globals: globals.browser}},
+  {rules},
+  {ignores},
   ...tseslint.configs.recommended,
   eslintConfigPrettier,
 ];

@@ -47,7 +47,7 @@ export type Callback<Params extends Record<keyof Params, ParamDefinition>> =
  * set.
  */
 export interface SettingMapInterface<
-  P extends { [Property in keyof P]: P[keyof P] },
+  P extends {[Property in keyof P]: P[keyof P]},
 > {
   getOrDefault(id: string): P;
 
@@ -152,10 +152,10 @@ export interface RuleDefinition<
 > extends RuleInfo {
   callback: Callback<P>;
   granularity: T['ruleGranularity'];
-  params: { [Property in keyof P]: ParamDefinition };
+  params: {[Property in keyof P]: ParamDefinition};
   helper?: string;
   /** The name of the "value" column in the anomaly detector, for reporting. */
-  valueFormat: { label: string; numberFormat?: string };
+  valueFormat: {label: string; numberFormat?: string};
 }
 
 /**
@@ -342,7 +342,7 @@ export interface Value {
   value: Readonly<string>;
   anomalous: Readonly<boolean>;
   alertedAt?: Readonly<number>;
-  fields: Readonly<{ [key: string]: string }>;
+  fields: Readonly<{[key: string]: string}>;
 }
 
 /**
@@ -355,7 +355,7 @@ export type Check = (
   // Keeping this value flexible. Child functions will implement type.
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   value: any,
-  fields: { [key: string]: string },
+  fields: {[key: string]: string},
 ) => Value;
 
 /**

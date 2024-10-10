@@ -2,7 +2,7 @@ const spreadsheetId = ''; // Replace with your sheet's ID
 
 const fetchOnlyActiveCampaignsCell = 'B7';
 
-const languageConfigSheetName = 'Language config'
+const languageConfigSheetName = 'Language config';
 const geoTargetingConfigSheetName = 'Geo Targeting config';
 const budgetConfigSheetName = 'Budget config';
 const setupSheetName = 'Setup';
@@ -84,7 +84,7 @@ function setUpConfigSheets() {
     'Customer name',
     'Campaign ID',
     'Campaign name',
-    'Desired languages'
+    'Desired languages',
   ]);
   languageConfigSheet.insertRowBefore(2);
   range = languageConfigSheet.getRange('A3:E3');

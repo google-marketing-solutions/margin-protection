@@ -19,7 +19,7 @@
  * @fileoverview Mocked classes for Apps Script to help with unit tests.
  */
 
-import { PropertyStore } from 'common/types';
+import {PropertyStore} from 'common/types';
 
 import BigQuery = GoogleAppsScript.BigQuery;
 import Properties = GoogleAppsScript.Properties;
@@ -38,13 +38,13 @@ function a1NotationToRowColumn(a1Notation: string, start = true) {
   const row: number = parts[2]
     ? Number.parseInt(parts[2], 10)
     : start
-      ? 1
-      : 100_000;
+    ? 1
+    : 100_000;
   for (i = 0; i < letters.length; i++) {
     column += letters.charCodeAt(i) - a + 1;
   }
 
-  return { row, column };
+  return {row, column};
 }
 
 class FakeRange {
@@ -74,11 +74,8 @@ class FakeRange {
   }
   static byA1Notation(sheet: FakeSheet, a1Notation: string) {
     const parts = a1Notation.split(':');
-    const { row: row1, column: column1 } = a1NotationToRowColumn(
-      parts[0],
-      true,
-    );
-    const { row: row2, column: column2 } = a1NotationToRowColumn(
+    const {row: row1, column: column1} = a1NotationToRowColumn(parts[0], true);
+    const {row: row2, column: column2} = a1NotationToRowColumn(
       parts[1] || parts[0],
       false,
     );
@@ -180,8 +177,8 @@ class FakeRange {
 }
 
 class FakeSheet {
-  readonly cells: string[][] = Array.from({ length: 100 }).map(() =>
-    Array.from({ length: 30 }),
+  readonly cells: string[][] = Array.from({length: 100}).map(() =>
+    Array.from({length: 30}),
   );
   readonly checkboxes: Record<number, Record<number, boolean>> = {};
   private readonly bandings: FakeBandings[] = [];
@@ -356,7 +353,7 @@ class FakeUrlFetchApp {
 /**
  * A return value for a FakeUrlFetchApp
  */
-export function generateFakeHttpResponse(args: { contentText: string }) {
+export function generateFakeHttpResponse(args: {contentText: string}) {
   return {
     getContentText() {
       return args.contentText;
@@ -390,13 +387,13 @@ class FakeMailApp {
 }
 
 class PropertyStub implements Properties.Properties {
-  private storage: { [key: string]: string } = {};
+  private storage: {[key: string]: string} = {};
 
   getProperties() {
     return this.storage;
   }
 
-  setProperties(properties: { [key: string]: string }) {
+  setProperties(properties: {[key: string]: string}) {
     this.storage = properties;
     return this;
   }

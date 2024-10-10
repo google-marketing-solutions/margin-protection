@@ -19,7 +19,7 @@
  * @fileoverview Ads API-specific types for SA360 and Google Ads
  */
 
-import { BaseClientArgs } from './types';
+import {BaseClientArgs} from './types';
 
 /**
  * Manages query (input) and expected output pairs for each report type.
@@ -91,10 +91,10 @@ export type CamelCase<S extends string> =
   S extends `_${infer NextLetter}${infer Rest}`
     ? `${Uppercase<NextLetter>}${CamelCase<Rest>}`
     : S extends ''
-      ? ''
-      : S extends `${infer NextLetter extends string}${infer Rest}`
-        ? `${NextLetter}${CamelCase<Rest>}`
-        : '';
+    ? ''
+    : S extends `${infer NextLetter extends string}${infer Rest}`
+    ? `${NextLetter}${CamelCase<Rest>}`
+    : '';
 
 /**
  * A raw type literal that effectively forces objects to be const.
@@ -115,12 +115,12 @@ export type StringLiteral<S extends string> = TypeLiteral<S, string>;
 export type DotsToObject<S extends string> = S extends ''
   ? never
   : S extends `${infer First}.${infer Rest}`
-    ? '' extends First
-      ? object
-      : { [key in CamelCase<First>]: DotsToObject<Rest> }
-    : '' extends S
-      ? object
-      : { [key in CamelCase<S>]: unknown };
+  ? '' extends First
+    ? object
+    : {[key in CamelCase<First>]: DotsToObject<Rest>}
+  : '' extends S
+  ? object
+  : {[key in CamelCase<S>]: unknown};
 
 /**
  * Converts a report format to the expected response output.

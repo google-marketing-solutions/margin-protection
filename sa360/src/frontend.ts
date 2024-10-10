@@ -24,8 +24,8 @@ import {
   getTemplateSetting,
   HELPERS,
 } from 'common/sheet_helpers';
-import { FrontendArgs, ParamDefinition, RuleExecutor } from 'common/types';
-import { SearchAdsClientTypes } from 'sa360/src/types';
+import {FrontendArgs, ParamDefinition, RuleExecutor} from 'common/types';
+import {SearchAdsClientTypes} from 'sa360/src/types';
 
 /**
  * The name of the general settings sheet.

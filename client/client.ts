@@ -25,9 +25,9 @@ declare global {
   const LaunchMonitor: Exported;
 }
 
-import { PropertyStore } from 'common/types';
+import {PropertyStore} from 'common/types';
 
-import { AppsScriptPropertyStore } from 'common/sheet_helpers';
+import {AppsScriptPropertyStore} from 'common/sheet_helpers';
 
 interface Exported {
   onOpen(properties: PropertyStore): void;

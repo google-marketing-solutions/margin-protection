@@ -23,8 +23,8 @@ const __dirname = path.dirname(new URL(import.meta.url).pathname);
 export default {
   context: __dirname,
   entry: './client.ts',
-  output: { path: __dirname, filename: 'Code.js' },
-  plugins: [new GasPlugin({ autoGlobalExportsFiles: ['**/*.ts'] })],
+  output: {path: __dirname, filename: 'Code.js'},
+  plugins: [new GasPlugin({autoGlobalExportsFiles: ['**/*.ts']})],
   module: {
     rules: [
       {

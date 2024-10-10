@@ -154,7 +154,7 @@ export class GoogleAdsApi implements AdTypes.GoogleAdsApiInterface {
     queryWheres: string[] = [],
   ): IterableIterator<AdTypes.ReportResponse<Q>> {
     for (const customerId of splitCids(customerIds)) {
-      yield* this.queryOne({ query, customerId, queryWheres });
+      yield* this.queryOne({query, customerId, queryWheres});
     }
   }
 
@@ -185,7 +185,7 @@ export class GoogleAdsApi implements AdTypes.GoogleAdsApiInterface {
         method: 'post',
         headers: this.requestHeaders(),
         contentType: 'application/json',
-        payload: JSON.stringify({ ...params, pageToken }),
+        payload: JSON.stringify({...params, pageToken}),
       };
       try {
         const res = JSON.parse(
@@ -357,20 +357,20 @@ export abstract class Report<
     joins: Q['joins'] extends undefined
       ? never
       : Q['joins'][keyof Q['joins']] extends AdTypes.UnknownReportClass
-        ? Record<
-            keyof Q['joins'],
+      ? Record<
+          keyof Q['joins'],
+          Record<
+            string,
             Record<
-              string,
-              Record<
-                Extract<
-                  Q['joins'][keyof Q['joins']],
-                  AdTypes.UnknownReportClass
-                >['output'][number],
-                string
-              >
+              Extract<
+                Q['joins'][keyof Q['joins']],
+                AdTypes.UnknownReportClass
+              >['output'][number],
+              string
             >
           >
-        : undefined,
+        >
+      : undefined,
   ): readonly [
     key: string,
     record: Record<AdTypes.ArrayToUnion<Output[]>, string>,
