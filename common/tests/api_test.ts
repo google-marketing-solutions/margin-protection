@@ -30,18 +30,22 @@ import {
   ReportFactory,
   SA360_API_ENDPOINT,
 } from '../ads_api';
-import { AdsSearchRequest, buildQuery } from '../ads_api_types';
+import {AdsSearchRequest, buildQuery} from '../ads_api_types';
 import {
   generateFakeHttpResponse,
   mockAppsScript,
 } from '../test_helpers/mock_apps_script';
 
-import { bootstrapGoogleAdsApi } from './helpers';
+import {bootstrapGoogleAdsApi, tearDownStubs} from './helpers';
+import * as sinon from 'sinon';
+import {expect, use} from 'chai';
+import sinonChai from 'sinon-chai';
+use(sinonChai);
 
 import HTTPResponse = GoogleAppsScript.URL_Fetch.HTTPResponse;
 
-describe('Google Ads API Factory', () => {
-  it('caches API objects per login ID', () => {
+describe('Google Ads API Factory', function () {
+  it('caches API objects per login ID', function () {
     const factory = new GoogleAdsApiFactory({
       developerToken: '',
       credentialManager: new CredentialManager(),
@@ -52,52 +56,52 @@ describe('Google Ads API Factory', () => {
     const secondClient = factory.create('456');
     const shouldBeCached = factory.create('123');
 
-    expect(shouldBeCached).not.toBe(secondClient);
-    expect(shouldBeCached).toBe(firstClient);
+    expect(shouldBeCached).not.to.equal(secondClient);
+    expect(shouldBeCached).to.equal(firstClient);
   });
 });
 
-describe('qlifyQuery', () => {
-  it('builds legible queries when there are no wheres', () => {
+describe('qlifyQuery', function () {
+  it('builds legible queries when there are no wheres', function () {
     const query = qlifyQuery(
-      { queryParams: ['a.one'], queryWheres: [], queryFrom: 'table' },
+      {queryParams: ['a.one'], queryWheres: [], queryFrom: 'table'},
       [],
     );
-    expect(query).toEqual('SELECT a.one FROM table');
+    expect(query).to.equal('SELECT a.one FROM table');
   });
 
-  it('builds legible queries when there is one where', () => {
+  it('builds legible queries when there is one where', function () {
     const query = qlifyQuery(
-      { queryParams: ['a.one'], queryWheres: [], queryFrom: 'table' },
+      {queryParams: ['a.one'], queryWheres: [], queryFrom: 'table'},
       ['foo = "1"'],
     );
-    expect(query).toEqual('SELECT a.one FROM table WHERE foo = "1"');
+    expect(query).to.equal('SELECT a.one FROM table WHERE foo = "1"');
   });
 
-  it('builds legible queries when there are multiple wheres', () => {
+  it('builds legible queries when there are multiple wheres', function () {
     const query = qlifyQuery(
-      { queryParams: ['a.one'], queryWheres: [], queryFrom: 'table' },
+      {queryParams: ['a.one'], queryWheres: [], queryFrom: 'table'},
       ['foo = "1"', 'bar = "2"'],
     );
-    expect(query).toEqual(
+    expect(query).to.equal(
       'SELECT a.one FROM table WHERE foo = "1" AND bar = "2"',
     );
   });
 });
 
-describe('Google Ads API', () => {
+describe('Google Ads API', function () {
   let url = '';
 
-  beforeEach(() => {
+  beforeEach(function () {
     mockAppsScript();
-    spyOn(UrlFetchApp, 'fetch').and.callFake((requestUrl: string) => {
+    sinon.stub(UrlFetchApp, 'fetch').callsFake((requestUrl: string) => {
       url = requestUrl;
 
-      return generateFakeHttpResponse({ contentText: '{}' });
+      return generateFakeHttpResponse({contentText: '{}'});
     });
   });
 
-  it('has a well-formed URL for GOOGLEADS_API_ENDPOINT', () => {
+  it('has a well-formed URL for GOOGLEADS_API_ENDPOINT', function () {
     const factory = new GoogleAdsApiFactory({
       developerToken: '',
       credentialManager: new CredentialManager(),
@@ -106,12 +110,12 @@ describe('Google Ads API', () => {
     const api = factory.create('123');
     api.query('1', FAKE_REPORT.query).next();
 
-    expect(url).toEqual(
+    expect(url).to.equal(
       'https://googleads.googleapis.com/v11/customers/1/googleAds:search',
     );
   });
 
-  it('has a well-formed URL for SA360_API_ENDPOINT', () => {
+  it('has a well-formed URL for SA360_API_ENDPOINT', function () {
     const factory = new GoogleAdsApiFactory({
       developerToken: '',
       credentialManager: new CredentialManager(),
@@ -120,190 +124,190 @@ describe('Google Ads API', () => {
     const api = factory.create('123');
     api.query('1', FAKE_REPORT.query).next();
 
-    expect(url).toEqual(
+    expect(url).to.equal(
       'https://searchads360.googleapis.com/v0/customers/1/searchAds360:search',
     );
   });
 });
 
-describe('Credential Manager', () => {
-  let scriptApp: jasmine.SpyObj<typeof ScriptApp>;
-
-  beforeEach(() => {
-    scriptApp = globalThis.ScriptApp = jasmine.createSpyObj<typeof ScriptApp>([
-      'getOAuthToken',
-    ]);
+describe('Credential Manager', function () {
+  beforeEach(function () {
+    this.token = 'myBearerToken';
+    this.stub = sinon.stub(ScriptApp, 'getOAuthToken').returns(this.token);
   });
 
-  it('caches credential token', () => {
-    const token = 'myBearerToken';
-    scriptApp.getOAuthToken.and.returnValue(token);
-
+  it('caches credential token', function () {
     const manager = new CredentialManager();
     const firstToken = manager.getToken();
     const secondToken = manager.getToken();
 
-    expect(scriptApp.getOAuthToken).toHaveBeenCalledTimes(1);
-    expect(firstToken).toEqual(token);
-    expect(secondToken).toEqual(token);
+    expect(ScriptApp.getOAuthToken).to.have.been.calledOnce;
+    expect(firstToken).to.equal(this.token);
+    expect(secondToken).to.equal(this.token);
+  });
+
+  afterEach(function () {
+    this.stub.restore();
   });
 });
 
-describe('Google Ads API Client', () => {
-  let fetchApp: jasmine.SpyObj<typeof UrlFetchApp>;
-  let httpResponse: jasmine.SpyObj<HTTPResponse>;
+describe('Google Ads API Client', function () {
+  let fetch: sinon.SinonStub;
+  let getContentText: sinon.SinonStub;
 
   function getSearchRequestPayload(idx = 0): AdsSearchRequest {
     return JSON.parse(
-      fetchApp.fetch.calls.all()[idx].args[1].payload! as string,
+      fetch.getCalls()[idx].args[1].payload! as string,
     ) as AdsSearchRequest;
   }
 
-  beforeEach(() => {
+  beforeEach(function () {
     mockAppsScript();
-    fetchApp = globalThis.UrlFetchApp = jasmine.createSpyObj<
-      typeof UrlFetchApp
-    >(['fetch']);
-    httpResponse = jasmine.createSpyObj<HTTPResponse>(['getContentText']);
-    httpResponse.getContentText.and.returnValue(
-      '{"results": [{"customer": { "id": 123 }}]}',
-    );
-    fetchApp.fetch.and.returnValue(httpResponse);
+    this.httpResponse = generateFakeHttpResponse({contentText: 'hello world'});
+    fetch = sinon.stub(UrlFetchApp, 'fetch');
+    getContentText = sinon
+      .stub(this.httpResponse, 'getContentText')
+      .returns('{"results": [{"customer": { "id": 123 }}]}');
+    fetch.returns(this.httpResponse);
   });
 
-  it('Passes developer-token header', () => {
+  afterEach(function () {
+    tearDownStubs([getContentText]);
+  });
+
+  it('Passes developer-token header', function () {
     const developerToken = 'myDevToken';
 
     const client = createClient(developerToken);
     client.query('1', FAKE_REPORT['query']).next();
 
-    const actualToken =
-      fetchApp.fetch.calls.mostRecent().args[1].headers!['developer-token'];
-    expect(actualToken).toEqual(developerToken);
+    const actualToken = fetch.lastCall.args[1].headers!['developer-token'];
+    expect(actualToken).to.equal(developerToken);
   });
 
-  it('Passes login-customer-id header', () => {
+  it('Passes login-customer-id header', function () {
     const loginCustomerId = '1234567890';
 
     const client = createClient('', loginCustomerId);
     client.query('1', FAKE_REPORT.query).next();
-
     const actualLoginCustomerId =
-      fetchApp.fetch.calls.mostRecent().args[1].headers!['login-customer-id'];
-    expect(actualLoginCustomerId).toEqual(loginCustomerId);
+      fetch.lastCall.args[1].headers!['login-customer-id'];
+    expect(actualLoginCustomerId).to.equal(loginCustomerId);
   });
 
-  it('Passes Authorization header', () => {
+  it('Passes Authorization header', function () {
     const token = 'myBearerToken';
     const credentialManager = new CredentialManager();
-    const getTokenSpy = spyOn(credentialManager, 'getToken').and.returnValue(
-      token,
-    );
+    const getTokenSpy = sinon
+      .stub(credentialManager, 'getToken')
+      .returns(token);
 
     const client = createClient('', '', credentialManager);
     client.query('1', FAKE_REPORT.query).next();
 
-    expect(getTokenSpy).toHaveBeenCalledTimes(1);
-    const actualToken =
-      fetchApp.fetch.calls.mostRecent().args[1].headers!['Authorization'];
-    expect(actualToken).toEqual(`Bearer ${token}`);
+    expect(getTokenSpy).to.have.been.calledOnce;
+    const actualToken = fetch.lastCall.args[1].headers!['Authorization'];
+    expect(actualToken).to.equal(`Bearer ${token}`);
   });
 
-  it('Has customer ID in payload', () => {
+  it('Has customer ID in payload', function () {
     const client = createClient();
     client.query('1', FAKE_REPORT.query).next();
 
     const payload = getSearchRequestPayload();
-    expect(payload.customerId).toEqual('1');
+    expect(payload.customerId).to.equal('1');
   });
 
-  it('Has query in payload', () => {
+  it('Has query in payload', function () {
     const client = createClient();
-    spyOn(
-      client as unknown as { requestHeaders(): object },
-      'requestHeaders',
-    ).and.returnValue({});
+    sinon
+      .stub(client as unknown as {requestHeaders(): object}, 'requestHeaders')
+      .returns({});
     client.query('1', FAKE_REPORT.query).next();
     const token = 'myBearerToken';
     const credentialManager = new CredentialManager();
-    spyOn(credentialManager, 'getToken').and.returnValue(token);
+    sinon.stub(credentialManager, 'getToken').returns(token);
 
     const payload = getSearchRequestPayload();
-    expect(payload.query).toEqual(
+    expect(payload.query).to.equal(
       `SELECT ${FAKE_REPORT.query.queryParams.join(', ')} FROM ${
         FAKE_REPORT.query.queryFrom
       }`,
     );
   });
 
-  it('Handles paginated results', () => {
-    const firstHttpResponse = jasmine.createSpyObj<HTTPResponse>([
-      'getContentText',
-    ]);
-    firstHttpResponse.getContentText.and.returnValue(
+  it('Handles paginated results', function () {
+    const firstHttpResponse = sinon.stub<HTTPResponse>(
+      generateFakeHttpResponse({contentText: 'foo'}),
+    );
+    firstHttpResponse.getContentText.returns(
       '{"results": [{"customer": { "id": 456 }}], "nextPageToken": "pointer"}',
     );
-    fetchApp.fetch.and.returnValues(firstHttpResponse, httpResponse);
+    const urls = new Set<string>();
+    fetch.callsFake((_, req) => {
+      if (JSON.parse(req.payload)['pageToken'] === 'pointer') {
+        return this.httpResponse;
+      }
+      return firstHttpResponse;
+    });
 
     const client = createClient();
     const rows = [...client.query('1', CUSTOMER_QUERY)];
+    console.log([...urls]);
 
-    expect(fetchApp.fetch).toHaveBeenCalledTimes(2);
+    expect(fetch).to.have.been.calledTwice;
 
     const firstPayload = getSearchRequestPayload(0);
-    expect(firstPayload.pageToken).not.toBeDefined();
+    expect(firstPayload.pageToken).to.be.undefined;
     const lastPayload = getSearchRequestPayload(1);
-    expect(lastPayload.pageToken).toEqual('pointer');
+    expect(lastPayload.pageToken).to.equal('pointer');
 
-    expect(rows).toEqual([
-      { customer: { id: 456 } },
-      { customer: { id: 123 } },
-    ]);
+    expect(rows).to.deep.eq([{customer: {id: 456}}, {customer: {id: 123}}]);
   });
 
-  it('Handles empty results', () => {
-    httpResponse.getContentText.and.returnValue('{"results": []}');
+  it('Handles empty results', function () {
+    getContentText.returns('{"results": []}');
 
     const client = createClient();
     const rows = [...client.query('1', FAKE_REPORT.query)];
 
-    expect(fetchApp.fetch).toHaveBeenCalledTimes(1);
+    expect(fetch).to.have.been.calledOnce;
 
-    expect(rows).toEqual([]);
+    expect(rows).to.deep.eq([]);
   });
 });
 
-describe('Report Factory', () => {
+describe('Report Factory', function () {
   let apiFactory: GoogleAdsApiFactory;
   let reportFactory: ReportFactory;
 
-  beforeEach(() => {
+  beforeEach(function () {
     apiFactory = new GoogleAdsApiFactory({
       developerToken: '',
       credentialManager: new CredentialManager(),
       apiEndpoint: FAKE_API_ENDPOINT,
     });
-    spyOn(apiFactory, 'create').and.callFake((loginCustomerId: string) => {
+    sinon.stub(apiFactory, 'create').callsFake((loginCustomerId: string) => {
       const api = new GoogleAdsApiFactory({
         developerToken: '',
         credentialManager: new CredentialManager(),
         apiEndpoint: FAKE_API_ENDPOINT,
       }).create(loginCustomerId);
-      const mockQuery: jasmine.Spy = spyOn(api, 'queryOne');
-      mockQuery.and.callFake(({ query, customerId }) => {
+      const mockQuery: sinon.SinonStub = sinon.stub(api, 'queryOne');
+      mockQuery.callsFake(({query, customerId}) => {
         if (query === FAKE_REPORT.query) {
           return iterator({
-            a: { one: `${customerId}/one` },
-            b: { two: `${customerId}/two` },
-            c: { three: `${customerId}/three` },
+            a: {one: `${customerId}/one`},
+            b: {two: `${customerId}/two`},
+            c: {three: `${customerId}/three`},
           });
         } else {
           return iterator(
             {
-              customerClient: { id: '2' },
+              customerClient: {id: '2'},
             },
             {
-              customerClient: { id: '3' },
+              customerClient: {id: '3'},
             },
           );
         }
@@ -316,26 +320,26 @@ describe('Report Factory', () => {
     });
   });
 
-  it('returns expected results from query', () => {
+  it('returns expected results from query', function () {
     const report = reportFactory.create(FAKE_REPORT);
-    expect(report.fetch()).toEqual({
-      '2/one': { one: '2/one', two: '2/two', three: '2/three' },
-      '3/one': { one: '3/one', two: '3/two', three: '3/three' },
+    expect(report.fetch()).to.deep.eq({
+      '2/one': {one: '2/one', two: '2/two', three: '2/three'},
+      '3/one': {one: '3/one', two: '3/two', three: '3/three'},
     });
   });
 
-  it('Errors when multiple CIDs are set with no login customer ID', () => {
+  it('Errors when multiple CIDs are set with no login customer ID', function () {
     const multiFactory = new ReportFactory(apiFactory, {
       customerIds: '1,2,3,4,5',
       label: 'test',
     });
 
-    expect(() => multiFactory.create(FAKE_REPORT)).toThrowError(
+    expect(() => multiFactory.create(FAKE_REPORT)).to.throw(
       'Please provide a single login customer ID for multiple CIDs.',
     );
   });
 
-  it('Infers all login customer IDs when none is set', () => {
+  it('Infers all login customer IDs when none is set', function () {
     const multiFactory = new ReportFactory(apiFactory, {
       loginCustomerId: '1',
       customerIds: '2,3',
@@ -343,145 +347,158 @@ describe('Report Factory', () => {
     });
     const report = multiFactory.create(FAKE_REPORT);
 
-    expect(report.fetch()).toEqual({
-      '2/one': { one: '2/one', two: '2/two', three: '2/three' },
-      '3/one': { one: '3/one', two: '3/two', three: '3/three' },
+    expect(report.fetch()).to.deep.eq({
+      '2/one': {one: '2/one', two: '2/two', three: '2/three'},
+      '3/one': {one: '3/one', two: '3/two', three: '3/three'},
     });
   });
 });
 
-describe('Join Report', () => {
+describe('Join Report', function () {
   let reportFactory: ReportFactory;
-  let mockQuery: jasmine.Spy;
+  let mockQuery: sinon.SinonStub;
+  let stubs: sinon.SinonStub[];
 
-  beforeEach(() => {
-    ({ reportFactory, mockQuery } = bootstrapGoogleAdsApi());
+  beforeEach(function () {
+    ({reportFactory, mockQuery, stubs} = bootstrapGoogleAdsApi());
   });
 
-  it('returns expected results from query', () => {
-    mockQuery.and.callFake(({ query }) => {
+  afterEach(function () {
+    tearDownStubs(stubs);
+  });
+
+  it('returns expected results from query', function () {
+    mockQuery.callsFake(({query}) => {
       if (query === JOIN_REPORT.query) {
-        return iterator(
-          { d: { one: 'one', nother: 'another' } },
-          { d: { one: '1' } },
-        );
+        return iterator({d: {one: 'one', nother: 'another'}}, {d: {one: '1'}});
       } else if (query === GET_LEAF_ACCOUNTS_REPORT.query) {
         return iterator({
-          customerClient: { id: '1' },
+          customerClient: {id: '1'},
         });
       } else {
         return iterator({
-          a: { one: 'one' },
-          b: { two: 'two' },
-          c: { another: 'three' },
+          a: {one: 'one'},
+          b: {two: 'two'},
+          c: {another: 'three'},
         });
       }
     });
     const report = reportFactory.create(JOIN_REPORT);
-    expect(report.fetch()).toEqual({
-      one: { one: 'one', two: 'two', another: 'another' },
+    expect(report.fetch()).to.deep.eq({
+      one: {one: 'one', two: 'two', another: 'another'},
     });
   });
 });
 
-describe('Join query handling', () => {
+describe('Join query handling', function () {
   let reportFactory: ReportFactory;
-  let mockQuery: jasmine.Spy;
   let api: GoogleAdsApi;
+  let stubs: sinon.SinonStub[];
   const qlifyStack: string[] = [];
 
-  beforeEach(() => {
-    ({ reportFactory, mockQuery, api } = bootstrapGoogleAdsApi());
+  beforeEach(function () {
+    ({reportFactory, api, stubs} = bootstrapGoogleAdsApi());
     const qlifyQuery = api.qlifyQuery;
-    mockQuery.and.callThrough();
-    spyOn(api, 'qlifyQuery').and.callFake((query, queryWheres) => {
-      const aql = qlifyQuery(query, queryWheres);
-      qlifyStack.push(aql);
-      return aql;
-    });
+    stubs.push(
+      sinon.stub(api, 'qlifyQuery').callsFake((query, queryWheres) => {
+        const aql = qlifyQuery(query, queryWheres);
+        qlifyStack.push(aql);
+        return aql;
+      }),
+    );
     mockAppsScript();
-    spyOn(UrlFetchApp, 'fetch').and.callFake((...args: unknown[]) => {
-      const request = args[1] as GoogleAppsScript.URL_Fetch.URLFetchRequest;
-      const payload = JSON.parse(request.payload as string) as {
-        query: string;
-      };
-      if (payload.query === 'SELECT d.one, d.nother FROM the_main_table') {
+    stubs.push(
+      sinon.stub(UrlFetchApp, 'fetch').callsFake((_, request) => {
+        const payload = JSON.parse(request.payload as string) as {
+          query: string;
+        };
+        if (payload.query === 'SELECT d.one, d.nother FROM the_main_table') {
+          return {
+            getContentText() {
+              return JSON.stringify({
+                results: [
+                  {d: {one: '1', nother: 'another'}},
+                  {d: {one: '11', nother: 'yet another'}},
+                  // this value doesn't exist - but should still be queried.
+                  {d: {one: '111', nother: 'yet another'}},
+                ],
+              });
+            },
+          } as HTTPResponse;
+        }
+        const joinedPayload = {
+          results: [
+            {
+              a: {one: '1'},
+              b: {two: '2'},
+              c: {three: '3'},
+            },
+            {
+              a: {one: '11'},
+              b: {two: '22'},
+              c: {three: '3'},
+            },
+          ],
+        };
         return {
           getContentText() {
-            return JSON.stringify({
-              results: [
-                { d: { one: '1', nother: 'another' } },
-                { d: { one: '11', nother: 'yet another' } },
-                // this value doesn't exist - but should still be queried.
-                { d: { one: '111', nother: 'yet another' } },
-              ],
-            });
+            return JSON.stringify(joinedPayload);
           },
         } as HTTPResponse;
-      }
-      const joinedPayload = {
-        results: [
-          {
-            a: { one: '1' },
-            b: { two: '2' },
-            c: { three: '3' },
-          },
-          {
-            a: { one: '11' },
-            b: { two: '22' },
-            c: { three: '3' },
-          },
-        ],
-      };
-      return {
-        getContentText() {
-          return JSON.stringify(joinedPayload);
-        },
-      } as HTTPResponse;
-    });
+      }),
+    );
   });
 
-  it('joins on IDs that exist', () => {
+  afterEach(function () {
+    tearDownStubs(stubs);
+  });
+
+  it('joins on IDs that exist', function () {
     const report = reportFactory.create(JOIN_REPORT);
     report.fetch();
-    expect(qlifyStack.pop()).toEqual(
+    expect(qlifyStack.pop()).to.equal(
       'SELECT a.one, b.two, c.three FROM something WHERE something.id IN (1,11,111)',
     );
   });
 });
 
-describe('Leaf expansion', () => {
+describe('Leaf expansion', function () {
   let reportFactory: ReportFactory;
-  let mockQuery: jasmine.Spy;
-  const mockLeafAccounts: Record<string, string[]> = { '123': ['1', '2', '3'] };
+  let mockQuery: sinon.SinonStub;
+  let stubs: sinon.SinonStub[];
+  const mockLeafAccounts: Record<string, string[]> = {'123': ['1', '2', '3']};
 
-  beforeEach(() => {
-    ({ reportFactory, mockQuery } = bootstrapGoogleAdsApi({
+  beforeEach(function () {
+    ({reportFactory, mockQuery, stubs} = bootstrapGoogleAdsApi({
       mockLeafAccounts,
       spyOnLeaf: false,
     }));
   });
 
-  it('checks all expanded accounts are added to the report', () => {
-    mockQuery.and.callFake(({ customerId, query }) => {
+  afterEach(function () {
+    tearDownStubs(stubs);
+  });
+
+  it('checks all expanded accounts are added to the report', function () {
+    mockQuery.callsFake(({customerId, query}) => {
       if (query === GET_LEAF_ACCOUNTS_REPORT.query) {
         return iterator(
           ...mockLeafAccounts[customerId].map((id) => ({
-            customerClient: { id, name: `customer ${id}`, status: 'ENABLED' },
+            customerClient: {id, name: `customer ${id}`, status: 'ENABLED'},
           })),
         );
       } else {
         return iterator({
           customerId,
-          a: { id: customerId },
+          a: {id: customerId},
         });
       }
     });
     const report = reportFactory.create(FAKE_REPORT_2);
-    expect(report.fetch()).toEqual({
-      'customers/1/id/a1': { customerId: '1', id: 'a1' },
-      'customers/2/id/a2': { customerId: '2', id: 'a2' },
-      'customers/3/id/a3': { customerId: '3', id: 'a3' },
+    expect(report.fetch()).to.deep.include({
+      'customers/1/id/a1': {customerId: '1', id: 'a1'},
+      'customers/2/id/a2': {customerId: '2', id: 'a2'},
+      'customers/3/id/a3': {customerId: '3', id: 'a3'},
     });
   });
 });

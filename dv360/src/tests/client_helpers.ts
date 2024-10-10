@@ -44,12 +44,12 @@ import {
   Pacing,
   PacingType,
 } from 'dv360_api/dv360_types';
-import { FilterExpression } from 'dv360_api/utils';
-import { FakePropertyStore } from 'common/test_helpers/mock_apps_script';
+import {FilterExpression} from 'dv360_api/utils';
+import {FakePropertyStore} from 'common/test_helpers/mock_apps_script';
 
-import { BudgetReport, ImpressionReport, LineItemBudgetReport } from '../api';
-import { Client, DataAccessObject } from '../client';
-import { Accessors, ClientArgs, IDType } from '../types';
+import {BudgetReport, ImpressionReport, LineItemBudgetReport} from '../api';
+import {Client, DataAccessObject} from '../client';
+import {Accessors, ClientArgs, IDType} from '../types';
 
 type Callable<T> = (
   advertisers: T[],
@@ -137,8 +137,8 @@ export interface LineItemTemplate {
   lineItemType: LineItemType;
   flight: LineItemFlight;
   frequencyCap: FrequencyCap;
-  partnerRevenueModel: { markupType: string; markupAmount: string };
-  bidStrategy: { fixedBid: { bidAmountMicros: string } };
+  partnerRevenueModel: {markupType: string; markupAmount: string};
+  bidStrategy: {fixedBid: {bidAmountMicros: string}};
 }
 
 /**
@@ -249,7 +249,7 @@ class TestClient {
       markupAmount: '1',
     },
     bidStrategy: {
-      fixedBid: { bidAmountMicros: String(1_000_000) },
+      fixedBid: {bidAmountMicros: String(1_000_000)},
     },
   };
   private readonly campaignTemplate: CampaignTemplate = {
@@ -423,7 +423,7 @@ function fakeInsertionOrdersClass(
     override list(callback: Callable<InsertionOrder>) {
       callback(
         params.allInsertionOrders![params.id].map(
-          (c) => new InsertionOrder(c({ ...insertionOrderTemplate })),
+          (c) => new InsertionOrder(c({...insertionOrderTemplate})),
         ),
       );
     }
@@ -438,7 +438,7 @@ function fakeLineItemsClass(
     override list(callback: Callable<LineItem>) {
       callback(
         params.allLineItems![params.id].map(
-          (c) => new LineItem(c({ ...lineItemTemplate })),
+          (c) => new LineItem(c({...lineItemTemplate})),
         ),
       );
     }
@@ -478,7 +478,7 @@ function fakeCampaignsClass(
     override list(callback: Callable<Campaign>) {
       callback(
         params.allCampaigns![params.id].map(
-          (c) => new Campaign(c({ ...campaignTemplate })),
+          (c) => new Campaign(c({...campaignTemplate})),
         ),
       );
     }
@@ -493,7 +493,7 @@ function fakeAdvertisersClass(
     override list(callback: Callable<Advertiser>) {
       callback(
         (Object.values(params.allAdvertisers).flat(1) || []).map(
-          (a) => new Advertiser(a({ ...advertiserTemplate })),
+          (a) => new Advertiser(a({...advertiserTemplate})),
         ),
       );
     }

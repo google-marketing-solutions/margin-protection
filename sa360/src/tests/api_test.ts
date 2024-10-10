@@ -27,7 +27,7 @@ import {
   ReportFactory,
   SA360_API_ENDPOINT,
 } from 'common/ads_api';
-import { ReportResponse, buildQuery } from 'common/ads_api_types';
+import {ReportResponse, buildQuery} from 'common/ads_api_types';
 import {
   AD_GROUP_REPORT,
   AD_GROUP_USER_LIST_REPORT,
@@ -37,44 +37,47 @@ import {
   CAMPAIGN_USER_LIST_REPORT,
   GENDER_TARGET_REPORT,
 } from 'sa360/src/api';
+import {expect} from 'chai';
+import * as sinon from 'sinon';
 
-describe('API Queries', () => {
-  let mockQuery: jasmine.Spy;
+describe('API Queries', function () {
+  let mockQuery: sinon.SinonStub;
   let api: GoogleAdsApi;
   let reportFactory: ReportFactory;
 
-  beforeEach(() => {
-    ({ api, reportFactory } = setUp());
+  beforeEach(function () {
+    ({api, reportFactory} = setUp());
   });
 
-  it('returns expected results from query', () => {
-    mockQuery = spyOn(api, 'query');
-    mockQuery.and.returnValue(
+  it('returns expected results from query', function () {
+    mockQuery = sinon.stub(api, 'query');
+    mockQuery.returns(
       iterator({
-        some: { one: 'one' },
-        other: { two: 'two' },
-        final: { three: 'three' },
+        some: {one: 'one'},
+        other: {two: 'two'},
+        final: {three: 'three'},
       }),
     );
     const report = reportFactory.create(FakeReport);
-    expect(report.fetch()).toEqual({
-      one: { one: 'one', two: 'two', three: 'three' },
+    expect(report.fetch()).to.deep.include({
+      one: {one: 'one', two: 'two', three: 'three'},
     });
   });
 });
 
-describe('Campaign report', () => {
+describe('Campaign report', function () {
   let api: GoogleAdsApi;
   let reportFactory: ReportFactory;
 
-  beforeEach(() => {
-    ({ api, reportFactory } = setUp());
+  beforeEach(function () {
+    ({api, reportFactory} = setUp());
   });
-  it('returns expected results', () => {
-    const mockQuery: jasmine.Spy = spyOn(api, 'query');
-    mockQuery.and.returnValue(
+
+  it('returns expected results', function () {
+    const mockQuery = sinon.stub(api, 'query');
+    mockQuery.returns(
       iterator(
-        ...[...Array.from({ length: 5 }).keys()].map((x: number) => ({
+        ...[...Array.from({length: 5}).keys()].map((x: number) => ({
           customer: {
             resourceName: 'customers/1',
             id: '1',
@@ -91,7 +94,7 @@ describe('Campaign report', () => {
       ),
     );
     const report = reportFactory.create(CAMPAIGN_REPORT);
-    expect(report.fetch()).toEqual({
+    expect(report.fetch()).to.deep.include({
       c0: {
         customerId: '1',
         customerName: 'customers/1',
@@ -131,19 +134,19 @@ describe('Campaign report', () => {
   });
 });
 
-describe('Ad Group report', () => {
+describe('Ad Group report', function () {
   let api: GoogleAdsApi;
   let reportFactory: ReportFactory;
 
-  beforeEach(() => {
-    ({ api, reportFactory } = setUp());
+  beforeEach(function () {
+    ({api, reportFactory} = setUp());
   });
 
-  it('returns expected results', () => {
-    const mockQuery: jasmine.Spy = spyOn(api, 'query');
-    mockQuery.and.returnValue(
+  it('returns expected results', function () {
+    const mockQuery = sinon.stub(api, 'query');
+    mockQuery.returns(
       iterator(
-        ...[...Array.from({ length: 5 }).keys()].map((x) => ({
+        ...[...Array.from({length: 5}).keys()].map((x) => ({
           customer: {
             resourceName: 'customers/1',
             id: '1',
@@ -163,7 +166,7 @@ describe('Ad Group report', () => {
       ),
     );
     const report = reportFactory.create(AD_GROUP_REPORT);
-    expect(report.fetch()).toEqual({
+    expect(report.fetch()).to.deep.include({
       ag0: {
         customerId: '1',
         customerName: 'customers/1',
@@ -208,20 +211,20 @@ describe('Ad Group report', () => {
   });
 });
 
-describe('Geo target report', () => {
+describe('Geo target report', function () {
   let api: GoogleAdsApi;
   let reportFactory: ReportFactory;
 
-  beforeEach(() => {
-    ({ api, reportFactory } = setUp());
+  beforeEach(function () {
+    ({api, reportFactory} = setUp());
   });
 
-  it('returns expected results', () => {
-    const mockQuery: jasmine.Spy = spyOn(api, 'query');
-    mockQuery.and.callFake((customerId, query) => {
+  it('returns expected results', function () {
+    const mockQuery = sinon.stub(api, 'query');
+    mockQuery.callsFake((customerId, query) => {
       if (query === CAMPAIGN_TARGET_REPORT.query) {
         return iterator(
-          ...[...Array.from({ length: 5 }).keys()].map((x) => ({
+          ...[...Array.from({length: 5}).keys()].map((x) => ({
             campaignCriterion: {
               resourceName: `customers/1/campaignCriteria/c1~gtc${x}`,
               type: 'LOCATION',
@@ -243,7 +246,7 @@ describe('Geo target report', () => {
         );
       } else {
         return iterator(
-          ...[...Array.from({ length: 5 }).fill('').keys()].map((x) => ({
+          ...[...Array.from({length: 5}).fill('').keys()].map((x) => ({
             geoTargetConstant: {
               resourceName: `geoTargetConstants/gtc${x}`,
               id: `gtc${x}`,
@@ -256,7 +259,7 @@ describe('Geo target report', () => {
       }
     });
     const report = reportFactory.create(CAMPAIGN_TARGET_REPORT);
-    expect(report.fetch()).toEqual({
+    expect(report.fetch()).to.deep.include({
       gtc0: {
         criterionId: 'gtc0',
         customerId: '1',
@@ -296,36 +299,36 @@ describe('Geo target report', () => {
   });
 });
 
-describe('Age target report', () => {
+describe('Age target report', function () {
   let api: GoogleAdsApi;
   let reportFactory: ReportFactory;
 
-  beforeEach(() => {
-    ({ api, reportFactory } = setUp());
+  beforeEach(function () {
+    ({api, reportFactory} = setUp());
   });
 
-  it('returns expected results', () => {
-    const mockQuery: jasmine.Spy = spyOn(api, 'query');
-    mockQuery.and.returnValue(
+  it('returns expected results', function () {
+    const mockQuery = sinon.stub(api, 'query');
+    mockQuery.returns(
       iterator(
-        ...[...Array.from({ length: 5 }).keys()].map((x) => ({
+        ...[...Array.from({length: 5}).keys()].map((x) => ({
           customer: {
             resourceName: 'customers/1',
             id: '1',
             descriptiveName: 'Customer 1',
           },
-          campaign: { resourceName: 'customers/1/campaigns/c1', id: 'c1' },
-          adGroup: { resourceName: 'customers/1/adGroups/ag1', id: 'ag1' },
+          campaign: {resourceName: 'customers/1/campaigns/c1', id: 'c1'},
+          adGroup: {resourceName: 'customers/1/adGroups/ag1', id: 'ag1'},
           adGroupCriterion: {
             resourceName: `customers/1/adGroupCriteria/ag1~agc${x}`,
             criterionId: `agc${x}`,
-            ageRange: { type: `AGE_RANGE_${x}` },
+            ageRange: {type: `AGE_RANGE_${x}`},
           },
         })),
       ),
     );
     const report = reportFactory.create(AGE_TARGET_REPORT);
-    expect(report.fetch()).toEqual({
+    expect(report.fetch()).to.deep.include({
       agc0: {
         criterionId: 'agc0',
         customerId: '1',
@@ -370,36 +373,36 @@ describe('Age target report', () => {
   });
 });
 
-describe('Age range target report', () => {
+describe('Age range target report', function () {
   let api: GoogleAdsApi;
   let reportFactory: ReportFactory;
 
-  beforeEach(() => {
-    ({ api, reportFactory } = setUp());
+  beforeEach(function () {
+    ({api, reportFactory} = setUp());
   });
 
-  it('returns expected results', () => {
-    const mockQuery: jasmine.Spy = spyOn(api, 'query');
-    mockQuery.and.returnValue(
+  it('returns expected results', function () {
+    const mockQuery = sinon.stub(api, 'query');
+    mockQuery.returns(
       iterator(
-        ...[...Array.from({ length: 5 }).keys()].map((x) => ({
+        ...[...Array.from({length: 5}).keys()].map((x) => ({
           customer: {
             resourceName: 'customers/1',
             id: '1',
             descriptiveName: 'Customer 1',
           },
-          campaign: { resourceName: 'customers/1/campaigns/c1', id: 'c1' },
-          adGroup: { resourceName: 'customers/c1/adGroups/ag1', id: 'ag1' },
+          campaign: {resourceName: 'customers/1/campaigns/c1', id: 'c1'},
+          adGroup: {resourceName: 'customers/c1/adGroups/ag1', id: 'ag1'},
           adGroupCriterion: {
             resourceName: `customers/1/adGroupCriteria/ag1~agc${x}`,
             criterionId: `agc${x}`,
-            ageRange: { type: `AGE_RANGE_${x}` },
+            ageRange: {type: `AGE_RANGE_${x}`},
           },
         })),
       ),
     );
     const report = reportFactory.create(AGE_TARGET_REPORT);
-    expect(report.fetch()).toEqual({
+    expect(report.fetch()).to.deep.include({
       agc0: {
         criterionId: 'agc0',
         customerId: '1',
@@ -444,37 +447,37 @@ describe('Age range target report', () => {
   });
 });
 
-describe('Gender type target report', () => {
+describe('Gender type target report', function () {
   let api: GoogleAdsApi;
   let reportFactory: ReportFactory;
 
-  beforeEach(() => {
-    ({ api, reportFactory } = setUp());
+  beforeEach(function () {
+    ({api, reportFactory} = setUp());
   });
 
-  it('returns expected results', () => {
-    const mockQuery: jasmine.Spy = spyOn(api, 'query');
-    mockQuery.and.returnValue(
+  it('returns expected results', function () {
+    const mockQuery = sinon.stub(api, 'query');
+    mockQuery.returns(
       iterator(
-        ...[...Array.from({ length: 5 }).keys()].map((x) => ({
+        ...[...Array.from({length: 5}).keys()].map((x) => ({
           customer: {
             resourceName: 'customers/1',
             id: '1',
             descriptiveName: 'Customer 1',
           },
-          campaign: { resourceName: 'customers/1/campaigns/c1', id: 'c1' },
-          adGroup: { resourceName: 'customers/c1/adGroups/ag1', id: 'ag1' },
+          campaign: {resourceName: 'customers/1/campaigns/c1', id: 'c1'},
+          adGroup: {resourceName: 'customers/c1/adGroups/ag1', id: 'ag1'},
           adGroupCriterion: {
             resourceName: `customers/1/adGroupCriteria/agc${x}`,
             criterionId: `agc${x}`,
-            gender: { type: `Gender Type ${x}` },
+            gender: {type: `Gender Type ${x}`},
           },
-          genderView: { resourceName: 'customers/1/genderViews/1~${x}' },
+          genderView: {resourceName: 'customers/1/genderViews/1~${x}'},
         })),
       ),
     );
     const report = reportFactory.create(GENDER_TARGET_REPORT);
-    expect(report.fetch()).toEqual({
+    expect(report.fetch()).to.deep.include({
       agc0: {
         criterionId: 'agc0',
         customerId: '1',
@@ -519,30 +522,30 @@ describe('Gender type target report', () => {
   });
 });
 
-describe('Campaign user list report', () => {
+describe('Campaign user list report', function () {
   let api: GoogleAdsApi;
   let reportFactory: ReportFactory;
 
-  beforeEach(() => {
-    ({ api, reportFactory } = setUp());
+  beforeEach(function () {
+    ({api, reportFactory} = setUp());
   });
 
-  it('returns expected results', () => {
-    const mockQuery: jasmine.Spy = spyOn(api, 'query');
-    mockQuery.and.callFake((customerId, query) => {
+  it('returns expected results', function () {
+    const mockQuery = sinon.stub(api, 'query');
+    mockQuery.callsFake((customerId, query) => {
       if (query === CAMPAIGN_USER_LIST_REPORT.query) {
         return iterator(
-          ...[...Array.from({ length: 5 }).keys()].map((x) => ({
+          ...[...Array.from({length: 5}).keys()].map((x) => ({
             customer: {
               resourceName: 'customers/1',
               id: '1',
               descriptiveName: 'Customer 1',
             },
-            campaign: { resourceName: 'customers/1/campaigns/c1', id: 'c1' },
+            campaign: {resourceName: 'customers/1/campaigns/c1', id: 'c1'},
             campaignCriterion: {
               resourceName: `customers/1/campaignCriteria/209618821~c${x}`,
               type: 'USER_LIST',
-              userList: { userList: `customers/1/userLists/ul${x}` },
+              userList: {userList: `customers/1/userLists/ul${x}`},
               criterionId: `ul${x}`,
             },
             campaignAudienceView: {
@@ -552,7 +555,7 @@ describe('Campaign user list report', () => {
         );
       } else {
         return iterator(
-          ...[...Array.from({ length: 5 }).keys()].map((x) => ({
+          ...[...Array.from({length: 5}).keys()].map((x) => ({
             userList: {
               resourceName: `customers/1/userLists/ul${x}`,
               type: 'RULE_BASED',
@@ -565,7 +568,7 @@ describe('Campaign user list report', () => {
     });
 
     const report = reportFactory.create(CAMPAIGN_USER_LIST_REPORT);
-    expect(report.fetch()).toEqual({
+    expect(report.fetch()).to.deep.include({
       ul0: {
         criterionId: 'ul0',
         customerId: '1',
@@ -605,31 +608,31 @@ describe('Campaign user list report', () => {
   });
 });
 
-describe('Ad group user list report', () => {
+describe('Ad group user list report', function () {
   let api: GoogleAdsApi;
   let reportFactory: ReportFactory;
 
-  beforeEach(() => {
-    ({ api, reportFactory } = setUp());
+  beforeEach(function () {
+    ({api, reportFactory} = setUp());
   });
 
-  it('returns expected results', () => {
-    const mockQuery: jasmine.Spy = spyOn(api, 'query');
-    mockQuery.and.callFake((customerId, query) => {
+  it('returns expected results', function () {
+    const mockQuery = sinon.stub(api, 'query');
+    mockQuery.callsFake((customerId, query) => {
       if (query === AD_GROUP_USER_LIST_REPORT.query) {
         return iterator(
-          ...[...Array.from({ length: 5 }).keys()].map((x) => ({
+          ...[...Array.from({length: 5}).keys()].map((x) => ({
             customer: {
               resourceName: 'customers/1',
               id: '1',
               descriptiveName: 'Customer 1',
             },
-            campaign: { resourceName: 'customers/1/campaigns/c1', id: 'c1' },
-            adGroup: { id: 'ag1' },
+            campaign: {resourceName: 'customers/1/campaigns/c1', id: 'c1'},
+            adGroup: {id: 'ag1'},
             adGroupCriterion: {
               resourceName: `customers/1/campaignCriteria/209618821~c${x}`,
               type: 'USER_LIST',
-              userList: { userList: `customers/1/userLists/ul${x}` },
+              userList: {userList: `customers/1/userLists/ul${x}`},
               criterionId: `ul${x}`,
             },
             campaignAudienceView: {
@@ -639,7 +642,7 @@ describe('Ad group user list report', () => {
         );
       } else {
         return iterator(
-          ...[...Array.from({ length: 5 }).keys()].map((x) => ({
+          ...[...Array.from({length: 5}).keys()].map((x) => ({
             userList: {
               resourceName: `customers/1/userLists/ul${x}`,
               type: 'RULE_BASED',
@@ -652,7 +655,7 @@ describe('Ad group user list report', () => {
     });
 
     const report = reportFactory.create(AD_GROUP_USER_LIST_REPORT);
-    expect(report.fetch()).toEqual({
+    expect(report.fetch()).to.deep.include({
       ul0: {
         criterionId: 'ul0',
         customerId: '1',
@@ -721,13 +724,6 @@ function iterator<T>(...a: T[]): IterableIterator<T> {
   return a[Symbol.iterator]();
 }
 
-/**
- * Stub for granularity
- */
-export enum Granularity {
-  DEFAULT = 'default',
-}
-
 function setUp() {
   const apiFactory = new GoogleAdsApiFactory({
     developerToken: '',
@@ -735,12 +731,12 @@ function setUp() {
     apiEndpoint: SA360_API_ENDPOINT,
   });
   const api = apiFactory.create('');
-  spyOn(apiFactory, 'create').and.returnValue(api);
+  sinon.stub(apiFactory, 'create').returns(api);
   const reportFactory = new ReportFactory(apiFactory, {
     customerIds: '1',
     label: 'test',
   });
-  spyOn(reportFactory, 'leafAccounts').and.returnValue(['2']);
+  sinon.stub(reportFactory, 'leafAccounts').returns(['2']);
 
-  return { apiFactory, api, reportFactory };
+  return {apiFactory, api, reportFactory};
 }

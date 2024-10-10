@@ -20,7 +20,7 @@
  *
  */
 
-import { DBM_API_VERSION, DBM_URL } from '../api';
+import {DBM_API_VERSION, DBM_URL} from '../api';
 
 interface Params {
   [parameter: string]: unknown;
@@ -119,7 +119,7 @@ abstract class MatchTable {
       }
     }
     // tslint:disable-next-line:enforce-name-casing This is to mock existing variables.
-    (globalThis as unknown as { UrlFetchApp: MockUrlFetchApp }).UrlFetchApp =
+    (globalThis as unknown as {UrlFetchApp: MockUrlFetchApp}).UrlFetchApp =
       new MockUrlFetchApp(Object.assign({}, this.routes));
   }
 

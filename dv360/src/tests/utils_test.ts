@@ -15,17 +15,18 @@
  * limitations under the License.
  */
 
-import { SettingMap, transformToParamValues } from 'common/sheet_helpers';
-import { RuleRange, getDate } from '../client';
+import {SettingMap, transformToParamValues} from 'common/sheet_helpers';
+import {RuleRange, getDate} from '../client';
 
-import { mockAppsScript } from 'common/test_helpers/mock_apps_script';
-import { generateTestClient } from './client_helpers';
+import {mockAppsScript} from 'common/test_helpers/mock_apps_script';
+import {generateTestClient} from './client_helpers';
+import {expect} from 'chai';
 
-describe('transformToParamValues', () => {
+describe('transformToParamValues', function () {
   let array2d: string[][];
-  const params = { rule1: { label: 'Rule 1' }, rule2: { label: 'Rule 2' } };
+  const params = {rule1: {label: 'Rule 1'}, rule2: {label: 'Rule 2'}};
 
-  beforeEach(() => {
+  beforeEach(function () {
     array2d = [
       ['', 'Rule 1', 'Rule 2'],
       ['1', 'A', 'B'],
@@ -33,63 +34,66 @@ describe('transformToParamValues', () => {
     ];
   });
 
-  it('returns expected SettingMap', () => {
-    expect(transformToParamValues(array2d, params)).toEqual(
+  it('returns expected SettingMap', function () {
+    expect(transformToParamValues(array2d, params)).to.eql(
       new SettingMap([
-        ['1', { rule1: 'A', rule2: 'B' }],
-        ['2', { rule1: 'C', rule2: 'D' }],
+        ['1', {rule1: 'A', rule2: 'B'}],
+        ['2', {rule1: 'C', rule2: 'D'}],
       ]),
     );
   });
 
-  it('triggers an error if empty', () => {
+  it('triggers an error if empty', function () {
     const error = new Error(
       'Expected a grid with row and column headers of at least size 2',
     );
-    expect(() => transformToParamValues([], params)).toThrow(error);
-    expect(() => transformToParamValues([[]], params)).toThrow(error);
-    expect(() => transformToParamValues([['']], params)).toThrow(error);
+    expect(() => transformToParamValues([], params)).to.throw(error.message);
+    expect(() => transformToParamValues([[]], params)).to.throw(error.message);
+    expect(() => transformToParamValues([['']], params)).to.throw(
+      error.message,
+    );
   });
 });
 
-describe('SettingMap#getOrDefault', () => {
-  it('returns value', () => {
+describe('SettingMap#getOrDefault', function () {
+  it('returns value', function () {
     const settingMap = new SettingMap([
-      ['default', { rule1: 'A' }],
-      ['1', { rule1: 'C' }],
+      ['default', {rule1: 'A'}],
+      ['1', {rule1: 'C'}],
     ]);
-    expect(settingMap.getOrDefault('1').rule1).toEqual('C');
+    expect(settingMap.getOrDefault('1').rule1).to.eql('C');
   });
 
-  it('returns defaults when value is blank', () => {
+  it('returns defaults when value is blank', function () {
     const settingMap = new SettingMap([
-      ['default', { rule1: 'A' }],
-      ['1', { rule1: '' }],
+      ['default', {rule1: 'A'}],
+      ['1', {rule1: ''}],
     ]);
-    expect(settingMap.getOrDefault('1').rule1).toEqual('A');
+    expect(settingMap.getOrDefault('1').rule1).to.eql('A');
   });
 
-  it('returns value when value is 0', () => {
+  it('returns value when value is 0', function () {
     const settingMap = new SettingMap([
-      ['default', { rule1: 'A' }],
-      ['1', { rule1: '0' }],
+      ['default', {rule1: 'A'}],
+      ['1', {rule1: '0'}],
     ]);
-    expect(settingMap.getOrDefault('1').rule1).toEqual('0');
+    expect(settingMap.getOrDefault('1').rule1).to.eql('0');
   });
 
-  it('returns blank when default is undefined and value is blank', () => {
-    const settingMap = new SettingMap([['1', { rule1: '' }]]);
-    expect(settingMap.getOrDefault('1').rule1).toEqual('');
+  it('returns blank when default is undefined and value is blank', function () {
+    const settingMap = new SettingMap([['1', {rule1: ''}]]);
+    expect(settingMap.getOrDefault('1').rule1).to.eql('');
   });
 });
 
-describe('Rule Settings helper functions', () => {
+describe('Rule Settings helper functions', function () {
   let rules: RuleRange;
 
   let client;
-  beforeEach(() => {
+
+  beforeEach(function () {
     mockAppsScript();
-    client = generateTestClient({ id: '1' });
+    client = generateTestClient({id: '1'});
     rules = new RuleRange(
       [
         ['', '', 'Category A', '', 'Category B', '', '', 'Category C'],
@@ -115,7 +119,7 @@ describe('Rule Settings helper functions', () => {
     }
   });
 
-  it('break down a settings sheet into the correct categories', () => {
+  it('break down a settings sheet into the correct categories', function () {
     const rule = Object.fromEntries(
       Object.entries(
         (
@@ -129,7 +133,7 @@ describe('Rule Settings helper functions', () => {
         })
         .filter((r) => r),
     );
-    expect(rule).toEqual({
+    expect(rule).to.eql({
       none: [
         ['id', 'name'],
         ['1', 'one'],
@@ -146,12 +150,12 @@ describe('Rule Settings helper functions', () => {
     });
   });
 
-  it('combines categories back into a settings sheet', () => {
+  it('combines categories back into a settings sheet', function () {
     expect(
       rules
         .getValues()
         .filter((row, i) => i < 2 || row.filter((c) => c).length > 1),
-    ).toEqual([
+    ).to.eql([
       ['', '', 'Category A', '', 'Category B', '', '', 'Category C'],
       ['', '', '', '', '', '', '', ''],
       [
@@ -169,9 +173,9 @@ describe('Rule Settings helper functions', () => {
   });
 });
 
-describe('date function', () => {
-  it('converts raw API date to real date with month correct', () => {
-    const date = getDate({ year: 2022, month: 2, day: 1 });
-    expect(date).toEqual(new Date('February 1, 2022'));
+describe('date function', function () {
+  it('converts raw API date to real date with month correct', function () {
+    const date = getDate({year: 2022, month: 2, day: 1});
+    expect(date).to.eql(new Date('February 1, 2022'));
   });
 });

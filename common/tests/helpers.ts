@@ -25,7 +25,7 @@ import {
   RuleExecutorClass,
   RuleParams,
 } from '../types';
-import { FakePropertyStore } from '../test_helpers/mock_apps_script';
+import {FakePropertyStore} from '../test_helpers/mock_apps_script';
 
 import {
   CredentialManager,
@@ -33,8 +33,8 @@ import {
   GoogleAdsApiFactory,
   ReportFactory,
 } from '../ads_api';
-import { AbstractRuleRange, AppsScriptFrontend } from '../sheet_helpers';
-import { newRuleBuilder } from 'common/client_helpers';
+import {AbstractRuleRange, AppsScriptFrontend} from '../sheet_helpers';
+import {newRuleBuilder} from 'common/client_helpers';
 import {
   AppsScriptFunctions,
   BaseClientArgs,
@@ -46,6 +46,7 @@ import {
   RuleExecutor,
   RuleGetter,
 } from '../types';
+import * as sinon from 'sinon';
 
 /**
  * Test granularity for use in tests.
@@ -88,7 +89,7 @@ export class RuleRange extends AbstractRuleRange<TestClientTypes> {
     return [];
   }
   async getRows() {
-    return [{ id: '1', displayName: 'Campaign 1', advertiserId: '1' }];
+    return [{id: '1', displayName: 'Campaign 1', advertiserId: '1'}];
   }
 }
 
@@ -97,7 +98,7 @@ export class RuleRange extends AbstractRuleRange<TestClientTypes> {
  */
 export class FakeClient implements TestClientInterface {
   id: string = 'test';
-  readonly args: ClientArgs = { label: 'test' };
+  readonly args: ClientArgs = {label: 'test'};
   readonly ruleStore: {
     [ruleName: string]: RuleExecutor<TestClientTypes>;
   } = {};
@@ -153,7 +154,7 @@ export class FakeFrontend extends AppsScriptFrontend<TestClientTypes> {
   }
 
   getIdentity(): ClientArgs {
-    return { label: 'test' };
+    return {label: 'test'};
   }
 
   override async onOpen() {
@@ -178,7 +179,7 @@ export class FakeFrontend extends AppsScriptFrontend<TestClientTypes> {
     message: GoogleAppsScript.Mail.MailAdvancedParameters,
   ) {
     const noop: GoogleAppsScript.Mail.MailApp['sendEmail'] =
-      (() => {}) as GoogleAppsScript.Mail.MailApp['sendEmail'];
+      function () {} as GoogleAppsScript.Mail.MailApp['sendEmail'];
     super.sendEmailAlert(rules, message, noop);
 
     this.messages.push(message);
@@ -194,7 +195,7 @@ export class FakeFrontend extends AppsScriptFrontend<TestClientTypes> {
  * Set up named ranges so basic things can work in frontend.
  */
 export function scaffoldSheetWithNamedRanges(
-  { blanks: blank = [] }: { blanks: string[] } = { blanks: [] },
+  {blanks: blank = []}: {blanks: string[]} = {blanks: []},
 ) {
   for (const [i, [constName, value]] of [
     ['ENTITY_ID', '1'],
@@ -224,13 +225,14 @@ const FAKE_API_ENDPOINT = {
  */
 export function bootstrapGoogleAdsApi(
   {
-    mockLeafAccounts = { '1': ['123'] },
+    mockLeafAccounts = {'1': ['123']},
     spyOnLeaf = true,
-  }: { mockLeafAccounts: Record<string, string[]>; spyOnLeaf: boolean } = {
-    mockLeafAccounts: { '1': ['123'] },
+  }: {mockLeafAccounts: Record<string, string[]>; spyOnLeaf: boolean} = {
+    mockLeafAccounts: {'1': ['123']},
     spyOnLeaf: true,
   },
 ) {
+  const stubs: sinon.SinonStub[] = [];
   const apiFactory = new GoogleAdsApiFactory({
     developerToken: '',
     credentialManager: new CredentialManager(),
@@ -242,7 +244,7 @@ export function bootstrapGoogleAdsApi(
     label: 'test',
   });
   if (spyOnLeaf) {
-    spyOn(reportFactory, 'leafAccounts').and.returnValue(['1']);
+    stubs.push(sinon.stub(reportFactory, 'leafAccounts').returns(['1']));
   }
   const api = new GoogleAdsApi({
     developerToken: '',
@@ -254,9 +256,20 @@ export function bootstrapGoogleAdsApi(
     },
     apiEndpoint: FAKE_API_ENDPOINT,
   });
-  const mockQuery: jasmine.Spy = spyOn(api, 'queryOne');
-  spyOn(apiFactory, 'create').and.callFake(() => api);
-  return { api, reportFactory, mockQuery };
+  const original = api.queryOne.bind(api);
+  const mockQuery: sinon.SinonStub = sinon
+    .stub(api, 'queryOne')
+    .callsFake((...args) => original(...args));
+  stubs.push(mockQuery);
+  stubs.push(sinon.stub(apiFactory, 'create').callsFake(() => api));
+  return {api, reportFactory, mockQuery, stubs};
+}
+
+/**
+ * Restores any stubs passed to it to their original form.
+ */
+export function tearDownStubs(stubs: sinon.SinonStub[]) {
+  stubs.forEach((stub) => stub.restore());
 }
 
 /**

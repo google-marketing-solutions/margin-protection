@@ -23,11 +23,11 @@ import {
   FakePropertyStore,
   mockAppsScript,
 } from 'common/test_helpers/mock_apps_script';
-import { bootstrapGoogleAdsApi, iterator } from 'common/tests/helpers';
-import { ParamDefinition, RuleExecutor, Values } from 'common/types';
-import { Client } from 'sa360/src/client';
-import { SearchAdsClientTypes } from 'sa360/src/types';
-import { ReportClass, ReportInterface } from 'common/ads_api_types';
+import {bootstrapGoogleAdsApi, iterator} from 'common/tests/helpers';
+import {ParamDefinition, RuleExecutor, Values} from 'common/types';
+import {Client} from 'sa360/src/client';
+import {SearchAdsClientTypes} from 'sa360/src/types';
+import {ReportClass} from 'common/ads_api_types';
 import {
   AD_GROUP_USER_LIST_REPORT,
   CAMPAIGN_TARGET_REPORT,
@@ -48,41 +48,28 @@ import {
   ageTargetRule,
   genderTargetRule,
 } from '../rules';
+import {expect, use} from 'chai';
+import * as sinon from 'sinon';
+import sinonChai from 'sinon-chai';
+use(sinonChai);
 
-type CampaignUserListReportQuery = (typeof CAMPAIGN_USER_LIST_REPORT)['query'];
-type CampaignUserListReportOutput =
-  (typeof CAMPAIGN_USER_LIST_REPORT)['output'][number];
-type CampaignTargetReportQuery = (typeof CAMPAIGN_TARGET_REPORT)['query'];
-type CampaignTargetReportOutput =
-  (typeof CAMPAIGN_TARGET_REPORT)['output'][number];
-type AdGroupUserListReportQuery = (typeof AD_GROUP_USER_LIST_REPORT)['query'];
-type AdGroupUserListReportOutput =
-  (typeof AD_GROUP_USER_LIST_REPORT)['output'][number];
-type CampaignPacingReportQuery = (typeof CAMPAIGN_PACING_REPORT)['query'];
-type CampaignPacingReportOutput =
-  (typeof CAMPAIGN_PACING_REPORT)['output'][number];
-type AdGroupReportQuery = (typeof AD_GROUP_REPORT)['query'];
-type AdGroupReportOutput = (typeof AD_GROUP_REPORT)['output'][number];
-type AgeTargetReportQuery = (typeof AGE_TARGET_REPORT)['query'];
-type AgeTargetReportOutput = (typeof AGE_TARGET_REPORT)['output'][number];
-type GenderTargetReportQuery = (typeof GENDER_TARGET_REPORT)['query'];
-type GenderTargetReportOutput = (typeof GENDER_TARGET_REPORT)['output'][number];
+describe('Campaign pacing rule', function () {
+  let timer: sinon.SinonFakeTimers;
 
-describe('Campaign pacing rule', () => {
-  beforeEach(() => {
+  beforeEach(function () {
     mockAppsScript();
-    jasmine.clock().install();
+    timer = sinon.useFakeTimers();
   });
 
-  afterEach(() => {
-    jasmine.clock().uninstall();
+  afterEach(function () {
+    timer.restore();
     FakePropertyStore.clearCache();
   });
 
-  it('shows pacing is OK when it is between min and max', async () => {
+  it('shows pacing is OK when it is between min and max', async function () {
     const costs = [
-      { budget: 100, spend: 90 },
-      { budget: 100, spend: 50 },
+      {budget: 100, spend: 90},
+      {budget: 100, spend: 50},
     ];
     const value = await generateCampaignPacingTestData(costs, [
       [
@@ -95,12 +82,12 @@ describe('Campaign pacing rule', () => {
       ['C1', '', '0.5', '1'],
       ['C2', '', '0.95', '1'],
     ]);
-    expect(value['C1'].anomalous).toBeFalse();
-    expect(value['C2'].anomalous).toBeTrue();
+    expect(value['C1'].anomalous).to.be.false;
+    expect(value['C2'].anomalous).to.be.true;
   });
 
-  it('fails to pace when there is no cost', async () => {
-    const costs = [{ budget: 100 }];
+  it('fails to pace when there is no cost', async function () {
+    const costs = [{budget: 100}];
     const value = await generateCampaignPacingTestData(costs, [
       [
         'Campaign ID',
@@ -112,7 +99,7 @@ describe('Campaign pacing rule', () => {
       ['C1', '', '0.5', '1'],
       ['C2', '', '0.95', '1'],
     ]);
-    expect(value['C1'].fields['spend']).toEqual('0');
+    expect(value['C1'].fields['spend']).to.equal('0');
   });
 });
 
@@ -120,11 +107,11 @@ describe('Campaign pacing rule', () => {
  *
  * Generates geo test data for the tests below.
  */
-export async function generateCampaignPacingTestData(
-  pacings: Array<{ budget: number; spend?: number }>,
+async function generateCampaignPacingTestData(
+  pacings: Array<{budget: number; spend?: number}>,
   columns: string[][],
 ) {
-  const { reportFactory, api } = bootstrapGoogleAdsApi();
+  const {reportFactory, api} = bootstrapGoogleAdsApi();
   const client = new Client(
     {
       customerIds: '1',
@@ -146,96 +133,26 @@ export async function generateCampaignPacingTestData(
   };
 
   let values: Values = {};
-  const mockGetReport: jasmine.Spy<
-    (
-      report: ReportClass<
-        CampaignPacingReportQuery,
-        CampaignPacingReportOutput
-      >,
-    ) => ReportInterface<CampaignPacingReportQuery, CampaignPacingReportOutput>
-  > = spyOn(client, 'getReport');
-  const mockQuery = spyOn(api, 'query');
+  const mockGetReport = sinon.stub(client, 'getReport');
+  const mockQuery = sinon.stub(api, 'query');
 
-  for (const [i, { budget, spend }] of pacings.entries()) {
+  for (const [i, {budget, spend}] of pacings.entries()) {
     obj.campaign.id = `C${i + 1}`;
     if (spend) {
-      (obj as unknown as { metrics?: { costMicros?: string } }).metrics = {
+      (obj as unknown as {metrics?: {costMicros?: string}}).metrics = {
         costMicros: `${spend * 1e6}`,
       };
     }
     obj.campaignBudget.amountMicros = `${budget * 1e6}`;
-    mockQuery.and.returnValue(iterator(obj));
-    mockGetReport.and.callFake((reportClass) => {
+    mockQuery.returns(iterator(obj));
+    mockGetReport.callsFake((reportClass) => {
       queryEquals(reportClass, CAMPAIGN_PACING_REPORT);
       const report = client.reportFactory.create(reportClass);
       return report;
     });
-    const { results, rules } = await client.validate();
+    const {results, rules} = await client.validate();
     writeBackToColumns(rules, columns);
-    values = { ...values, ...(results['Budget Pacing']?.values || {}) };
-  }
-  return values;
-}
-/**
- *
- * Generates geo test data for the tests below.
- */
-export async function generateUserListTestData(
-  pacings: Array<{ budget: number; spend?: number }>,
-  columns: string[][],
-) {
-  const { reportFactory, api } = bootstrapGoogleAdsApi();
-  const client = new Client(
-    {
-      customerIds: '1',
-      label: 'test',
-    },
-    new FakePropertyStore(),
-    reportFactory,
-  );
-  client.addRule(budgetPacingRule, columns);
-  const obj = {
-    campaign: {
-      id: 'C1',
-      name: 'Campaign 1',
-      status: 'ACTIVE',
-    },
-    campaignBudget: {
-      amountMicros: '1000000', // 1.00 USD
-    },
-  };
-
-  let values: Values = {};
-  const mockGetReport: jasmine.Spy<
-    (
-      report: ReportClass<
-        AdGroupUserListReportQuery,
-        AdGroupUserListReportOutput
-      >,
-    ) => ReportInterface<
-      AdGroupUserListReportQuery,
-      AdGroupUserListReportOutput
-    >
-  > = spyOn(client, 'getReport');
-  const mockQuery = spyOn(api, 'query');
-
-  for (const [i, { budget, spend }] of pacings.entries()) {
-    obj.campaign.id = `C${i + 1}`;
-    if (spend) {
-      (obj as unknown as { metrics?: { costMicros?: string } }).metrics = {
-        costMicros: `${spend * 1e6}`,
-      };
-    }
-    obj.campaignBudget.amountMicros = `${budget * 1e6}`;
-    mockQuery.and.returnValue(iterator(obj));
-    mockGetReport.and.callFake((reportClass) => {
-      queryEquals(reportClass, AD_GROUP_USER_LIST_REPORT);
-      const report = client.reportFactory.create(reportClass);
-      return report;
-    });
-    const { results, rules } = await client.validate();
-    writeBackToColumns(rules, columns);
-    values = { ...values, ...(results['Budget Pacing']?.values || {}) };
+    values = {...values, ...(results['Budget Pacing']?.values || {})};
   }
   return values;
 }
@@ -261,13 +178,16 @@ function writeBackToColumns(
   }
 }
 
-describe('Campaign Status rule', () => {
-  beforeEach(() => {
+describe('Campaign Status rule', function () {
+  let timer: sinon.SinonFakeTimers;
+
+  beforeEach(function () {
     mockAppsScript();
-    jasmine.clock().install();
+    timer = sinon.useFakeTimers();
   });
-  afterEach(() => {
-    jasmine.clock().uninstall();
+
+  afterEach(function () {
+    timer.restore();
     FakePropertyStore.clearCache();
   });
   for (const statuses of [
@@ -277,15 +197,16 @@ describe('Campaign Status rule', () => {
     // back to paused - no longer anomalous
     ['Active', 'Paused', 'Paused', 'Active', 'Paused'],
   ]) {
-    it(`is not anomalous because ${statuses} is not anomalous`, async () => {
+    it(`is not anomalous because ${statuses} is not anomalous`, async function () {
       const value = await generateCampaignStatusTestData(
-        statuses.map((campaignStatus: string) => ({ campaignStatus })),
+        timer,
+        statuses.map((campaignStatus: string) => ({campaignStatus})),
         [
           ['Campaign ID', 'Campaign', 'Max. Days Inactive before Active'],
           ['default', '', '1'],
         ],
       );
-      expect(value['C1'].anomalous).toBeFalse();
+      expect(value['C1'].anomalous).to.be.false;
     });
   }
   for (const statuses of [
@@ -304,9 +225,10 @@ describe('Campaign Status rule', () => {
   ]) {
     it(`is anomalous because ${statuses.join(
       ',',
-    )} is over the threshold.`, async () => {
+    )} is over the threshold.`, async function () {
       const value = await generateCampaignStatusTestData(
-        statuses.map((campaignStatus: string) => ({ campaignStatus })),
+        timer,
+        statuses.map((campaignStatus: string) => ({campaignStatus})),
         [
           [
             'Campaign ID',
@@ -318,93 +240,108 @@ describe('Campaign Status rule', () => {
           ['C1', '', '', ''],
         ],
       );
-      expect(value['C1'].anomalous).toBeTrue();
+      expect(value['C1'].anomalous).to.be.true;
     });
   }
 });
 
-describe('Ad Group status rule', () => {
-  beforeEach(() => {
+describe('Ad Group status rule', function () {
+  let timer: sinon.SinonFakeTimers;
+
+  beforeEach(function () {
     mockAppsScript();
+    timer = sinon.useFakeTimers();
   });
-  afterEach(() => {
-    jasmine.clock().uninstall();
+
+  afterEach(function () {
+    timer.restore();
     FakePropertyStore.clearCache();
   });
-  it('Status "Removed" is anomalous', async () => {
+
+  it('Status "Removed" is anomalous', async function () {
     const value = await generateAdGroupStatusTestData(
-      [{ adGroupStatus: 'Removed' }],
+      timer,
+      [{adGroupStatus: 'Removed'}],
       [
         ['Campaign ID', 'Campaign'],
         ['default', ''],
       ],
     );
-    expect(value['AG1'].anomalous).toBeTrue();
+    expect(value['AG1'].anomalous).to.be.true;
   });
-  it('Status "Paused" is not anomalous if it has never been active', async () => {
+
+  it('Status "Paused" is not anomalous if it has never been active', async function () {
     const value = await generateAdGroupStatusTestData(
-      [{ adGroupStatus: 'Paused' }],
+      timer,
+      [{adGroupStatus: 'Paused'}],
       [
         ['Campaign ID', 'Campaign'],
         ['default', ''],
       ],
     );
-    expect(value['AG1'].anomalous).toBeFalse();
+    expect(value['AG1'].anomalous).to.be.false;
   });
-  it('Status "Active" is not anomalous', async () => {
+
+  it('Status "Active" is not anomalous', async function () {
     const value = await generateAdGroupStatusTestData(
-      [{ adGroupStatus: 'Active' }],
+      timer,
+      [{adGroupStatus: 'Active'}],
       [
         ['Campaign ID', 'Campaign'],
         ['default', ''],
       ],
     );
-    expect(value['AG1'].anomalous).toBeFalse();
+    expect(value['AG1'].anomalous).to.be.false;
   });
-  it('Status "Paused" is anomalous if it follows an "Active" state', async () => {
+
+  it('Status "Paused" is anomalous if it follows an "Active" state', async function () {
     const value = await generateAdGroupStatusTestData(
-      [{ adGroupStatus: 'Active' }, { adGroupStatus: 'Paused' }],
+      timer,
+      [{adGroupStatus: 'Active'}, {adGroupStatus: 'Paused'}],
       [
         ['Campaign ID', 'Campaign'],
         ['default', ''],
       ],
     );
-    expect(value['AG1'].anomalous).toBeTrue();
+    expect(value['AG1'].anomalous).to.be.true;
   });
 });
 
-describe('Ad Group target rule', () => {
-  beforeEach(() => {
+describe('Ad Group target rule', function () {
+  beforeEach(function () {
     mockAppsScript();
   });
-  afterEach(() => {
+
+  afterEach(function () {
     SpreadsheetApp.getActive()
       .getActiveSheet()
       .getRange('A1:D4')
       .setValues(
-        Array.from<string[]>({ length: 4 }).fill(
-          Array.from<string>({ length: 4 }).fill(''),
+        Array.from<string[]>({length: 4}).fill(
+          Array.from<string>({length: 4}).fill(''),
         ),
       );
   });
-  it('target unchanged is OK', async () => {
+
+  it('target unchanged is OK', async function () {
     const value = await generateAdGroupAudienceTestData(
       [
-        { userLists: 'User List 1,User List 2' },
-        { userLists: 'User List 1,User List 2' },
+        {userLists: 'User List 1,User List 2'},
+        {userLists: 'User List 1,User List 2'},
       ],
       [
         ['Ad Group ID', 'Ad Group'],
         ['default', ''],
       ],
     );
-    expect(value['AG1'].anomalous).toBeFalse();
+    expect(value['AG1'].anomalous).to.be.false;
   });
-  it('has a legible value change value', async () => {
+
+  it('has a legible value change value', async function () {
     const value = await generateAdGroupAudienceTestData(
       [
-        { userLists: 'User List 1,User List 2,User List 3' },
-        { userLists: 'User List 3,User List 4' },
+        {userLists: 'User List 1,User List 2,User List 3'},
+        {userLists: 'User List 3,User List 4'},
       ],
       [
         ['Ad Group ID', 'User Lists'],
@@ -412,15 +349,16 @@ describe('Ad Group target rule', () => {
         ['AG1', '', '', '', ''],
       ],
     );
-    expect(value['AG1'].value).toEqual(
+    expect(value['AG1'].value).to.equal(
       'User List 1 DELETED, User List 2 DELETED, User List 4 ADDED',
     );
   });
-  it('respects what is written in the sheet', async () => {
+
+  it('respects what is written in the sheet', async function () {
     const value = await generateAdGroupAudienceTestData(
       [
-        { userLists: 'User List 1,User List 2,User List 3' },
-        { userLists: 'User List 3,User List 4' },
+        {userLists: 'User List 1,User List 2,User List 3'},
+        {userLists: 'User List 3,User List 4'},
       ],
       [
         ['Ad Group ID', 'User Lists'],
@@ -429,24 +367,24 @@ describe('Ad Group target rule', () => {
       ],
     );
 
-    expect(value['AG1'].value).toEqual('User List 3 ADDED');
+    expect(value['AG1'].value).to.equal('User List 3 ADDED');
   });
 });
 
-describe('Campaign user list', () => {
-  beforeEach(() => {
+describe('Campaign user list', function () {
+  beforeEach(function () {
     mockAppsScript();
   });
 
-  afterEach(() => {
+  afterEach(function () {
     FakePropertyStore.clearCache();
   });
 
-  it('target unchanged is OK', async () => {
+  it('target unchanged is OK', async function () {
     const value = await generateCampaignAudienceTestData(
       [
-        { userLists: 'User List 1,User List 2' },
-        { userLists: 'User List 1,User List 2' },
+        {userLists: 'User List 1,User List 2'},
+        {userLists: 'User List 1,User List 2'},
       ],
       [
         ['Campaign ID', 'Ad Group'],
@@ -454,14 +392,14 @@ describe('Campaign user list', () => {
       ],
     );
 
-    expect(value['C1'].anomalous).toBeFalse();
+    expect(value['C1'].anomalous).to.be.false;
   });
 
-  it('has a legible value change value', async () => {
+  it('has a legible value change value', async function () {
     const value = await generateCampaignAudienceTestData(
       [
-        { userLists: 'User List 1,User List 2,User List 3' },
-        { userLists: 'User List 3,User List 4' },
+        {userLists: 'User List 1,User List 2,User List 3'},
+        {userLists: 'User List 3,User List 4'},
       ],
       [
         ['Campaign ID', 'User Lists'],
@@ -470,27 +408,27 @@ describe('Campaign user list', () => {
       ],
     );
 
-    expect(value['C1'].value).toEqual(
+    expect(value['C1'].value).to.equal(
       'User List 1 DELETED, User List 2 DELETED, User List 4 ADDED',
     );
   });
 });
 
-describe('Geo target change', () => {
-  beforeEach(() => {
+describe('Geo target change', function () {
+  beforeEach(function () {
     mockAppsScript();
   });
 
-  afterEach(() => {
+  afterEach(function () {
     FakePropertyStore.clearCache();
   });
 
-  it('target unchanged is OK', async () => {
+  it('target unchanged is OK', async function () {
     const value = await generateGeoTargetTestData(
       [
-        { criterionId: 'criterion/1' },
-        { criterionId: 'criterion/2' },
-        { criterionId: 'criterion/1' },
+        {criterionId: 'criterion/1'},
+        {criterionId: 'criterion/2'},
+        {criterionId: 'criterion/1'},
       ],
       [
         ['Campaign ID', 'Criteria IDs'],
@@ -498,37 +436,39 @@ describe('Geo target change', () => {
       ],
     );
 
-    expect(value['C1'].anomalous).toBeFalse();
+    expect(value['C1'].anomalous).to.be.false;
   });
 
-  it('has a legible value change value', async () => {
+  it('has a legible value change value', async function () {
     const value = await generateGeoTargetTestData(
-      [{ criterionId: 'criterion/1' }, { criterionId: 'criterion/2' }],
+      [{criterionId: 'criterion/1'}, {criterionId: 'criterion/2'}],
       [
         ['Campaign ID', 'Criteria IDs'],
         ['default', ''],
       ],
     );
 
-    expect(value['C1'].value).toEqual('criterion/1 DELETED, criterion/2 ADDED');
+    expect(value['C1'].value).to.equal(
+      'criterion/1 DELETED, criterion/2 ADDED',
+    );
   });
 });
 
-describe('Ad group status change', () => {
-  beforeEach(() => {
+describe('Ad group status change', function () {
+  beforeEach(function () {
     mockAppsScript();
   });
 
-  afterEach(() => {
+  afterEach(function () {
     FakePropertyStore.clearCache();
   });
 
-  it('target unchanged is OK', async () => {
+  it('target unchanged is OK', async function () {
     const value = await generateAdGroupStatusReportTestData(
       [
-        { adGroupStatus: 'Active' },
-        { adGroupStatus: 'Paused' },
-        { adGroupStatus: 'Active' },
+        {adGroupStatus: 'Active'},
+        {adGroupStatus: 'Paused'},
+        {adGroupStatus: 'Active'},
       ],
       [
         ['Ad Group ID', 'Ad Group Active'],
@@ -536,45 +476,45 @@ describe('Ad group status change', () => {
       ],
     );
 
-    expect(value['AG1'].anomalous).toBeFalse();
+    expect(value['AG1'].anomalous).to.be.false;
   });
 
-  it('has a legible value change value', async () => {
+  it('has a legible value change value', async function () {
     const value = await generateAdGroupStatusReportTestData(
-      [{ adGroupStatus: 'Active' }, { adGroupStatus: 'Paused' }],
+      [{adGroupStatus: 'Active'}, {adGroupStatus: 'Paused'}],
       [
         ['Ad Group ID', 'Ad Group Active'],
         ['default', ''],
       ],
     );
 
-    expect(value['AG1'].value).toEqual('0');
-    expect(value['AG1'].anomalous).toEqual(true);
+    expect(value['AG1'].value).to.equal('0');
+    expect(value['AG1'].anomalous).to.equal(true);
   });
 });
 
-describe('Age target rule', () => {
-  beforeEach(() => {
+describe('Age target rule', function () {
+  beforeEach(function () {
     mockAppsScript();
   });
 
-  afterEach(() => {
+  afterEach(function () {
     SpreadsheetApp.getActive()
       .getActiveSheet()
       .getRange('A1:D4')
       .setValues(
-        Array.from<string[]>({ length: 4 }).fill(
-          Array.from<string>({ length: 4 }).fill(''),
+        Array.from<string[]>({length: 4}).fill(
+          Array.from<string>({length: 4}).fill(''),
         ),
       );
   });
 
-  it('target unchanged is OK', async () => {
+  it('target unchanged is OK', async function () {
     const value = await generateAgeTargetTestData(
       [
-        { ageRange: '18-24,25-34' },
-        { ageRange: '35-44' },
-        { ageRange: '18-24,25-34' },
+        {ageRange: '18-24,25-34'},
+        {ageRange: '35-44'},
+        {ageRange: '18-24,25-34'},
       ],
       [
         ['Ad Group ID', 'Age Range'],
@@ -582,26 +522,26 @@ describe('Age target rule', () => {
         ['AG1', ''],
       ],
     );
-    expect(value['AG1'].anomalous).toBeFalse();
+    expect(value['AG1'].anomalous).to.be.false;
   });
 
-  it('has a legible value change value', async () => {
+  it('has a legible value change value', async function () {
     const value = await generateAgeTargetTestData(
-      [{ ageRange: '18-24,35-44' }, { ageRange: '25-34,45-54' }],
+      [{ageRange: '18-24,35-44'}, {ageRange: '25-34,45-54'}],
       [
         ['Ad Group ID', 'Age Range'],
         ['default', '', '', '', ''],
         ['AG1', '', '', '', ''],
       ],
     );
-    expect(value['AG1'].value).toEqual(
+    expect(value['AG1'].value).to.equal(
       '18-24 DELETED, 35-44 DELETED, 25-34 ADDED, 45-54 ADDED',
     );
   });
 
-  it('respects what is written in the sheet', async () => {
+  it('respects what is written in the sheet', async function () {
     const value = await generateAgeTargetTestData(
-      [{ ageRange: '18-24,25-34,35-44' }, { ageRange: '25-34,45-54' }],
+      [{ageRange: '18-24,25-34,35-44'}, {ageRange: '25-34,45-54'}],
       [
         ['Ad Group ID', 'Age Range'],
         ['default', ''],
@@ -609,58 +549,54 @@ describe('Age target rule', () => {
       ],
     );
 
-    expect(value['AG1'].value).toEqual('25-34 ADDED');
+    expect(value['AG1'].value).to.equal('25-34 ADDED');
   });
 });
 
-describe('Gender target rule', () => {
-  beforeEach(() => {
+describe('Gender target rule', function () {
+  beforeEach(function () {
     mockAppsScript();
   });
 
-  afterEach(() => {
+  afterEach(function () {
     SpreadsheetApp.getActive()
       .getActiveSheet()
       .getRange('A1:D4')
       .setValues(
-        Array.from<string[]>({ length: 4 }).fill(
-          Array.from<string>({ length: 4 }).fill(''),
+        Array.from<string[]>({length: 4}).fill(
+          Array.from<string>({length: 4}).fill(''),
         ),
       );
   });
 
-  it('target unchanged is OK', async () => {
+  it('target unchanged is OK', async function () {
     const value = await generateGenderTargetTestData(
-      [
-        { gender: 'MALE,FEMALE' },
-        { gender: 'UNKNOWN' },
-        { gender: 'MALE,FEMALE' },
-      ],
+      [{gender: 'MALE,FEMALE'}, {gender: 'UNKNOWN'}, {gender: 'MALE,FEMALE'}],
       [
         ['Ad Group ID', 'Gender Type'],
         ['default', ''],
       ],
     );
-    expect(value['AG1'].anomalous).toBeFalse();
+    expect(value['AG1'].anomalous).to.be.false;
   });
 
-  it('has a legible value change value', async () => {
+  it('has a legible value change value', async function () {
     const value = await generateGenderTargetTestData(
-      [{ gender: 'MALE,UNKNOWN' }, { gender: 'FEMALE' }],
+      [{gender: 'MALE,UNKNOWN'}, {gender: 'FEMALE'}],
       [
         ['Ad Group ID', 'Gender Type'],
         ['default', '', '', '', ''],
         ['AG1', '', '', '', ''],
       ],
     );
-    expect(value['AG1'].value).toEqual(
+    expect(value['AG1'].value).to.equal(
       'MALE DELETED, UNKNOWN DELETED, FEMALE ADDED',
     );
   });
 
-  it('respects what is written in the sheet', async () => {
+  it('respects what is written in the sheet', async function () {
     const value = await generateGenderTargetTestData(
-      [{ gender: 'MALE,FEMALE,UNKNOWN' }, { gender: 'FEMALE,UNKNOWN' }],
+      [{gender: 'MALE,FEMALE,UNKNOWN'}, {gender: 'FEMALE,UNKNOWN'}],
       [
         ['Ad Group ID', 'Gender Type'],
         ['default', ''],
@@ -668,7 +604,7 @@ describe('Gender target rule', () => {
       ],
     );
 
-    expect(value['AG1'].value).toEqual('FEMALE ADDED');
+    expect(value['AG1'].value).to.equal('FEMALE ADDED');
   });
 });
 
@@ -676,10 +612,11 @@ describe('Gender target rule', () => {
  * Generates geo test data for the tests below.
  */
 async function generateCampaignStatusTestData(
-  pacings: Array<{ campaignStatus: string }>,
+  timer: sinon.SinonFakeTimers,
+  pacings: Array<{campaignStatus: string}>,
   columns: string[][],
 ) {
-  const { reportFactory, api } = bootstrapGoogleAdsApi();
+  const {reportFactory, api} = bootstrapGoogleAdsApi();
   const client = new Client(
     {
       customerIds: '1',
@@ -702,12 +639,12 @@ async function generateCampaignStatusTestData(
   };
 
   let values: Values = {};
-  const mockQuery = spyOn(api, 'query');
-  for (const [i, { campaignStatus }] of pacings.entries()) {
-    jasmine.clock().mockDate(new Date(60 * 60 * 24 * 1000 * i));
+  const mockQuery = sinon.stub(api, 'query');
+  for (const [i, {campaignStatus}] of pacings.entries()) {
+    timer.setSystemTime(new Date(60 * 60 * 24 * 1000 * i));
     obj.campaign.status = campaignStatus;
-    mockQuery.and.returnValue(iterator(obj));
-    const { results, rules } = await client.validate();
+    mockQuery.returns(iterator(obj));
+    const {results, rules} = await client.validate();
     writeBackToColumns(rules, columns);
     values = {
       ...values,
@@ -719,10 +656,11 @@ async function generateCampaignStatusTestData(
 }
 
 async function generateAdGroupStatusTestData(
-  pacings: Array<{ adGroupStatus: string }>,
+  timer: sinon.SinonFakeTimers,
+  pacings: Array<{adGroupStatus: string}>,
   columns: string[][],
 ) {
-  const { reportFactory, api } = bootstrapGoogleAdsApi();
+  const {reportFactory, api} = bootstrapGoogleAdsApi();
   const client = new Client(
     {
       customerIds: '1',
@@ -746,18 +684,18 @@ async function generateAdGroupStatusTestData(
     },
   };
   let values: Values = {};
-  const mockQuery = spyOn(api, 'query');
-  const mockGetReport = spyOn(client, 'getReport');
-  for (const [i, { adGroupStatus }] of pacings.entries()) {
-    jasmine.clock().mockDate(new Date(60 * 60 * 24 * 1000 * i));
+  const mockQuery = sinon.stub(api, 'query');
+  const mockGetReport = sinon.stub(client, 'getReport');
+  for (const [i, {adGroupStatus}] of pacings.entries()) {
+    timer.setSystemTime(new Date(60 * 60 * 24 * 1000 * i));
     obj.adGroup.status = adGroupStatus;
-    mockQuery.and.returnValue(iterator(obj));
-    mockGetReport.and.callFake((reportClass) => {
+    mockQuery.returns(iterator(obj));
+    mockGetReport.callsFake((reportClass) => {
       queryEquals(reportClass, AD_GROUP_REPORT);
       const report = client.reportFactory.create(reportClass);
       return report;
     });
-    const { results, rules } = await client.validate();
+    const {results, rules} = await client.validate();
     writeBackToColumns(rules, columns);
     values = {
       ...values,
@@ -770,11 +708,11 @@ async function generateAdGroupStatusTestData(
 /**
  * Generates ad group data for the tests below.
  */
-export async function generateAdGroupAudienceTestData(
+async function generateAdGroupAudienceTestData(
   overrides: Array<Record<string, string | undefined>>,
   columns: string[][],
 ): Promise<Values> {
-  const { reportFactory } = bootstrapGoogleAdsApi();
+  const {reportFactory} = bootstrapGoogleAdsApi();
   const client = new Client(
     {
       customerIds: 'C1',
@@ -784,17 +722,7 @@ export async function generateAdGroupAudienceTestData(
     reportFactory,
   );
   client.addRule(adGroupAudienceTargetRule, columns);
-  const mockGetReport: jasmine.Spy<
-    (
-      report: ReportClass<
-        AdGroupUserListReportQuery,
-        AdGroupUserListReportOutput
-      >,
-    ) => ReportInterface<
-      AdGroupUserListReportQuery,
-      AdGroupUserListReportOutput
-    >
-  > = spyOn(client, 'getReport');
+  const mockGetReport = sinon.stub(client, 'getReport');
   let values: Values = {};
   const obj = {
     criterionId: 'cr1',
@@ -805,16 +733,16 @@ export async function generateAdGroupAudienceTestData(
     adGroupName: 'Ad Group 1',
     userListName: '',
   };
-  for (const { userLists } of overrides.values()) {
-    mockGetReport.and.callFake((reportClass) => {
+  for (const {userLists} of overrides.values()) {
+    mockGetReport.callsFake((reportClass) => {
       queryEquals(reportClass, AD_GROUP_USER_LIST_REPORT);
       const report = client.reportFactory.create(reportClass);
-      const reportGetter = spyOn(report, 'fetch');
+      const reportGetter = sinon.stub(report, 'fetch');
       obj.userListName = userLists as string;
-      reportGetter.and.returnValue({ AG1: obj });
+      reportGetter.returns({AG1: obj});
       return report;
     });
-    const { results, rules } = await client.validate();
+    const {results, rules} = await client.validate();
     writeBackToColumns(rules, columns);
     values = results['Ad Group Audience Target Change']?.values || {};
   }
@@ -824,11 +752,11 @@ export async function generateAdGroupAudienceTestData(
 /**
  * Generates campaign user list data for the tests below.
  */
-export async function generateCampaignAudienceTestData(
+async function generateCampaignAudienceTestData(
   overrides: Array<Record<string, string | undefined>>,
   columns: string[][],
 ): Promise<Values> {
-  const { reportFactory } = bootstrapGoogleAdsApi();
+  const {reportFactory} = bootstrapGoogleAdsApi();
   const client = new Client(
     {
       customerIds: 'C1',
@@ -839,17 +767,7 @@ export async function generateCampaignAudienceTestData(
   );
   client.addRule(campaignAudienceTargetRule, columns);
 
-  const mockGetReport: jasmine.Spy<
-    (
-      report: ReportClass<
-        CampaignUserListReportQuery,
-        CampaignUserListReportOutput
-      >,
-    ) => ReportInterface<
-      CampaignUserListReportQuery,
-      CampaignUserListReportOutput
-    >
-  > = spyOn(client, 'getReport');
+  const mockGetReport = sinon.stub(client, 'getReport');
   let values: Values = {};
 
   const obj = {
@@ -861,31 +779,31 @@ export async function generateCampaignAudienceTestData(
     userListName: '',
     userListType: 'USER_LIST',
   };
-  for (const { userLists } of overrides.values()) {
-    mockGetReport.and.callFake((reportClass) => {
+  for (const {userLists} of overrides.values()) {
+    mockGetReport.callsFake((reportClass) => {
       queryEquals(reportClass, CAMPAIGN_USER_LIST_REPORT);
       const report = client.reportFactory.create(reportClass);
-      const reportGetter = spyOn(report, 'fetch');
+      const reportGetter = sinon.stub(report, 'fetch');
       obj.userListName = userLists as string;
-      reportGetter.and.returnValue({ C1: obj });
+      reportGetter.returns({C1: obj});
       return report;
     });
-    const { results, rules } = await client.validate();
+    const {results, rules} = await client.validate();
     writeBackToColumns(rules, columns);
     values = results['Campaign Audience Target Change']?.values || {};
   }
-  expect(mockGetReport).toHaveBeenCalled();
+  expect(mockGetReport).to.have.been.called;
   return values;
 }
 
 /**
  * Generates geo target data for the tests below.
  */
-export async function generateGeoTargetTestData(
+async function generateGeoTargetTestData(
   overrides: Array<Record<string, string | undefined>>,
   columns: string[][],
 ): Promise<Values> {
-  const { reportFactory } = bootstrapGoogleAdsApi();
+  const {reportFactory} = bootstrapGoogleAdsApi();
   const client = new Client(
     {
       customerIds: 'C1',
@@ -896,14 +814,7 @@ export async function generateGeoTargetTestData(
   );
   client.addRule(geoTargetRule, columns);
 
-  const mockGetReport: jasmine.Spy<
-    (
-      report: ReportClass<
-        CampaignTargetReportQuery,
-        CampaignTargetReportOutput
-      >,
-    ) => ReportInterface<CampaignTargetReportQuery, CampaignTargetReportOutput>
-  > = spyOn(client, 'getReport');
+  const mockGetReport = sinon.stub(client, 'getReport');
 
   let values: Values = {};
 
@@ -915,28 +826,28 @@ export async function generateGeoTargetTestData(
     campaignId: 'C1',
     campaignName: 'Campaign 1',
   };
-  for (const { criterionId } of overrides.values()) {
-    mockGetReport.and.callFake((reportClass) => {
+  for (const {criterionId} of overrides.values()) {
+    mockGetReport.callsFake((reportClass) => {
       queryEquals(reportClass, CAMPAIGN_TARGET_REPORT);
       const report = client.reportFactory.create(reportClass);
-      const reportGetter = spyOn(report, 'fetch');
+      const reportGetter = sinon.stub(report, 'fetch');
       obj.criterionId = criterionId!;
-      reportGetter.and.returnValue({ geo1: obj });
+      reportGetter.returns({geo1: obj});
       return report;
     });
-    const { results, rules } = await client.validate();
+    const {results, rules} = await client.validate();
     writeBackToColumns(rules, columns);
     values = results['Geo Target Change']?.values || {};
-    expect(mockGetReport).toHaveBeenCalled();
+    expect(mockGetReport).to.have.been.called;
   }
   return values;
 }
 
-export async function generateAdGroupStatusReportTestData(
+async function generateAdGroupStatusReportTestData(
   overrides: Array<Record<string, string | undefined>>,
   columns: string[][],
 ) {
-  const { reportFactory } = bootstrapGoogleAdsApi();
+  const {reportFactory} = bootstrapGoogleAdsApi();
   const client = new Client(
     {
       customerIds: 'C1',
@@ -947,11 +858,7 @@ export async function generateAdGroupStatusReportTestData(
   );
   client.addRule(adGroupStatusRule, columns);
 
-  const mockGetReport: jasmine.Spy<
-    (
-      report: ReportClass<AdGroupReportQuery, AdGroupReportOutput>,
-    ) => ReportInterface<AdGroupReportQuery, AdGroupReportOutput>
-  > = spyOn(client, 'getReport');
+  const mockGetReport = sinon.stub(client, 'getReport');
 
   let values: Values = {};
 
@@ -965,19 +872,19 @@ export async function generateAdGroupStatusReportTestData(
     adGroupStatus: 'ACTIVE',
   };
 
-  for (const { adGroupStatus } of overrides.values()) {
-    mockGetReport.and.callFake((reportClass) => {
+  for (const {adGroupStatus} of overrides.values()) {
+    mockGetReport.callsFake((reportClass) => {
       queryEquals(reportClass, AD_GROUP_REPORT);
       const report = client.reportFactory.create(reportClass);
-      const reportGetter = spyOn(report, 'fetch');
+      const reportGetter = sinon.stub(report, 'fetch');
       obj.adGroupStatus = adGroupStatus!;
-      reportGetter.and.returnValue({ AG1: obj });
+      reportGetter.returns({AG1: obj});
       return report;
     });
-    const { results, rules } = await client.validate();
+    const {results, rules} = await client.validate();
     writeBackToColumns(rules, columns);
     values = results['Ad Group Status Change']?.values || {};
-    expect(mockGetReport).toHaveBeenCalled();
+    expect(mockGetReport).to.have.been.called;
   }
   return values;
 }
@@ -986,7 +893,7 @@ async function generateAgeTargetTestData(
   overrides: Array<Record<string, string | undefined>>,
   columns: string[][],
 ) {
-  const { reportFactory } = bootstrapGoogleAdsApi();
+  const {reportFactory} = bootstrapGoogleAdsApi();
   const client = new Client(
     {
       customerIds: 'C1',
@@ -998,11 +905,7 @@ async function generateAgeTargetTestData(
 
   client.addRule(ageTargetRule, columns);
 
-  const mockGetReport: jasmine.Spy<
-    (
-      report: ReportClass<AgeTargetReportQuery, AgeTargetReportOutput>,
-    ) => ReportInterface<AgeTargetReportQuery, AgeTargetReportOutput>
-  > = spyOn(client, 'getReport');
+  const mockGetReport = sinon.stub(client, 'getReport');
 
   let values: Values = {};
 
@@ -1015,19 +918,19 @@ async function generateAgeTargetTestData(
     ageRange: '18-24',
   };
 
-  for (const { ageRange } of overrides.values()) {
-    mockGetReport.and.callFake((reportClass) => {
+  for (const {ageRange} of overrides.values()) {
+    mockGetReport.callsFake((reportClass) => {
       queryEquals(reportClass, AGE_TARGET_REPORT);
       const report = client.reportFactory.create(reportClass);
-      const reportGetter = spyOn(report, 'fetch');
+      const reportGetter = sinon.stub(report, 'fetch');
       obj.ageRange = ageRange!;
-      reportGetter.and.returnValue({ age1: obj });
+      reportGetter.returns({age1: obj});
       return report;
     });
-    const { results, rules } = await client.validate();
+    const {results, rules} = await client.validate();
     writeBackToColumns(rules, columns);
     values = results['Age Target Change']?.values || {};
-    expect(mockGetReport).toHaveBeenCalled();
+    expect(mockGetReport).to.have.been.called;
   }
   return values;
 }
@@ -1036,7 +939,7 @@ async function generateGenderTargetTestData(
   overrides: Array<Record<string, string | undefined>>,
   columns: string[][],
 ) {
-  const { reportFactory } = bootstrapGoogleAdsApi();
+  const {reportFactory} = bootstrapGoogleAdsApi();
   const client = new Client(
     {
       customerIds: 'C1',
@@ -1048,11 +951,7 @@ async function generateGenderTargetTestData(
 
   client.addRule(genderTargetRule, columns);
 
-  const mockGetReport: jasmine.Spy<
-    (
-      report: ReportClass<GenderTargetReportQuery, GenderTargetReportOutput>,
-    ) => ReportInterface<GenderTargetReportQuery, GenderTargetReportOutput>
-  > = spyOn(client, 'getReport');
+  const mockGetReport = sinon.stub(client, 'getReport');
 
   let values: Values = {};
 
@@ -1065,19 +964,19 @@ async function generateGenderTargetTestData(
     gender: 'MALE',
   };
 
-  for (const { gender } of overrides.values()) {
-    mockGetReport.and.callFake((reportClass) => {
+  for (const {gender} of overrides.values()) {
+    mockGetReport.callsFake((reportClass) => {
       queryEquals(reportClass, GENDER_TARGET_REPORT);
       const report = client.reportFactory.create(reportClass);
-      const mockReportFetch = spyOn(report, 'fetch');
+      const mockReportFetch = sinon.stub(report, 'fetch');
       obj.gender = gender;
-      mockReportFetch.and.returnValue({ AG1: obj });
+      mockReportFetch.returns({AG1: obj});
       return report;
     });
-    const { results, rules } = await client.validate();
+    const {results, rules} = await client.validate();
     writeBackToColumns(rules, columns);
     values = results['Gender Target Change']?.values || {};
-    expect(mockGetReport).toHaveBeenCalled();
+    expect(mockGetReport).to.have.been.called;
   }
   return values;
 }
@@ -1088,6 +987,6 @@ function queryEquals(
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   query2: ReportClass<any, any>,
 ) {
-  expect(query1.query.queryParams).toEqual(query2.query.queryParams);
-  expect(query1.query.queryFrom).toEqual(query2.query.queryFrom);
+  expect(query1.query.queryParams).to.equal(query2.query.queryParams);
+  expect(query1.query.queryFrom).to.equal(query2.query.queryFrom);
 }

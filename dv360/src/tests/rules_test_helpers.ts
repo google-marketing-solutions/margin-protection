@@ -1,4 +1,4 @@
-import { AssignedTargetingOption } from 'dv360_api/dv360_resources';
+import {AssignedTargetingOption} from 'dv360_api/dv360_resources';
 import {
   CampaignTemplate,
   generateTestClient,
@@ -8,7 +8,7 @@ import {
   LineItemTemplate,
   LineItemTestDataParams,
 } from './client_helpers';
-import { ApiDate, PACING_TYPE, TARGETING_TYPE } from 'dv360_api/dv360_types';
+import {ApiDate, PACING_TYPE, TARGETING_TYPE} from 'dv360_api/dv360_types';
 import {
   budgetPacingPercentageRule,
   budgetPacingRuleLineItem,
@@ -16,9 +16,9 @@ import {
   geoTargetRule,
   impressionsByGeoTarget,
 } from '../rules';
-import { RuleExecutorClass } from 'common/types';
-import { DisplayVideoClientTypes } from '../types';
-import { Client } from '../client';
+import {RuleExecutorClass} from 'common/types';
+import {DisplayVideoClientTypes} from '../types';
+import {Client} from '../client';
 
 /**
  *
@@ -58,7 +58,7 @@ export async function generateGeoTestData({
               TARGETING_TYPE.GEO_REGION,
               '',
               '',
-              { displayName: geoTarget },
+              {displayName: geoTarget},
             ),
         ),
         ...excludes.map(
@@ -68,14 +68,14 @@ export async function generateGeoTestData({
               TARGETING_TYPE.GEO_REGION,
               '',
               '',
-              { displayName: geoTarget, negative: true },
+              {displayName: geoTarget, negative: true},
             ),
         ),
       ],
     },
   };
 
-  const { results } = await generateTestClient({
+  const {results} = await generateTestClient({
     id: advertiserId,
     allCampaigns,
     allInsertionOrders,
@@ -109,7 +109,7 @@ export async function generateLineItemTestData<
         template.id = LINE_ITEM_ID;
         template.advertiserId = advertiserId;
         template.pacing.pacingType = pacingType;
-        template.flight.dateRange = { startDate, endDate };
+        template.flight.dateRange = {startDate, endDate};
         template.budget.maxAmount = budget;
         return template;
       },
@@ -127,10 +127,7 @@ export async function generateLineItemTestData<
     rule: any,
     paramMap: string[][],
   ) => Client;
-  const { results } = await addRule(
-    budgetPacingRuleLineItem,
-    columns,
-  ).validate();
+  const {results} = await addRule(budgetPacingRuleLineItem, columns).validate();
   return Object.values(results)[0].values;
 }
 
@@ -172,7 +169,7 @@ export async function generateInsertionOrderTestData<
     rule: any,
     paramMap: string[][],
   ) => Client;
-  const { results } = await addRule(rule, params).validate();
+  const {results} = await addRule(rule, params).validate();
   return Object.values(results)[0].values;
 }
 
@@ -206,7 +203,7 @@ export async function generateImpressionReport(
     ['', 'Allowed Countries (Comma Separated)', 'Max. Percent Outside Geos'],
     ['default', 'US', '0.01'],
   ];
-  const { results } = await generateTestClient({
+  const {results} = await generateTestClient({
     id: '123',
     allCampaigns,
     allInsertionOrders,

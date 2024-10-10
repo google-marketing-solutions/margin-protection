@@ -15,10 +15,10 @@
  * limitations under the License.
  */
 
-import { ApiDate } from 'dv360_api/dv360_types';
-import { AppsScriptPropertyStore } from 'common/sheet_helpers';
-import { mockAppsScript } from 'common/test_helpers/mock_apps_script';
-import { budgetPacingPercentageRule, impressionsByGeoTarget } from '../rules';
+import {ApiDate} from 'dv360_api/dv360_types';
+import {AppsScriptPropertyStore} from 'common/sheet_helpers';
+import {mockAppsScript} from 'common/test_helpers/mock_apps_script';
+import {budgetPacingPercentageRule, impressionsByGeoTarget} from '../rules';
 import {
   dailyBudgetRuleTestData,
   generateGeoTestData,
@@ -30,41 +30,41 @@ import {
   generateLineItemReport,
   generateInsertionOrderReportWithDateValues,
 } from './rules_test_helpers';
+import {expect} from 'chai';
+import * as sinon from 'sinon';
 
-describe('Geo targeting Rule', () => {
-  beforeEach(() => {
+describe('Geo targeting Rule', function () {
+  let timer: sinon.SinonFakeTimers;
+
+  beforeEach(function () {
     mockAppsScript();
-    jasmine.clock().install().mockDate(new Date('1970-01-01'));
+    timer = sinon.useFakeTimers(new Date('1970-01-01'));
   });
 
-  afterEach(() => {
-    jasmine.clock().uninstall();
+  afterEach(function () {
+    timer.restore();
   });
 
-  it('passes when geo is in the US', async () => {
+  it('passes when geo is in the US', async function () {
     const values = await generateGeoTestData({
       advertiserId: '123',
       geoTargets: ['United States (Country)'],
     });
-    expect(values['c1']).toEqual(
-      jasmine.objectContaining({ anomalous: false }),
-    );
+    expect(values['c1']).to.include({anomalous: false});
   });
 
-  it('triggers an error when a non-US geo is found', async () => {
+  it('triggers an error when a non-US geo is found', async function () {
     const values = await generateGeoTestData({
       advertiserId: '456',
       geoTargets: ['United States (Country)', 'Portugal (Country)'],
     });
-    expect(values['c1']).toEqual(
-      jasmine.objectContaining({
-        value: '"Portugal (Country)" not an allowed target',
-        anomalous: true,
-      }),
-    );
+    expect(values['c1']).to.include({
+      value: '"Portugal (Country)" not an allowed target',
+      anomalous: true,
+    });
   });
 
-  it('triggers an error when a negative match is found', async () => {
+  it('triggers an error when a negative match is found', async function () {
     const values = await generateGeoTestData({
       advertiserId: '456',
       excludes: ['United States (Country)'],
@@ -78,15 +78,13 @@ describe('Geo targeting Rule', () => {
         ['c1', 'United States', '', ''],
       ],
     });
-    expect(values['c1']).toEqual(
-      jasmine.objectContaining({
-        value: '"United States (Country)" found and is an excluded target',
-        anomalous: true,
-      }),
-    );
+    expect(values['c1']).to.include({
+      value: '"United States (Country)" found and is an excluded target',
+      anomalous: true,
+    });
   });
 
-  it('triggers an error when a required geo is not found', async () => {
+  it('triggers an error when a required geo is not found', async function () {
     const values = await generateGeoTestData({
       advertiserId: '456',
       excludes: ['United States (Country)'],
@@ -100,15 +98,13 @@ describe('Geo targeting Rule', () => {
         ['c1', 'United Kingdom', '', ''],
       ],
     });
-    expect(values['c1']).toEqual(
-      jasmine.objectContaining({
-        value: '"United Kingdom" was required but not targeted',
-        anomalous: true,
-      }),
-    );
+    expect(values['c1']).to.include({
+      value: '"United Kingdom" was required but not targeted',
+      anomalous: true,
+    });
   });
 
-  it('triggers an error when an excluded geo is set but there is no targeting', async () => {
+  it('triggers an error when an excluded geo is set but there is no targeting', async function () {
     const values = await generateGeoTestData({
       advertiserId: '456',
       columns: [
@@ -121,12 +117,13 @@ describe('Geo targeting Rule', () => {
         ['c1', '', '', 'United States'],
       ],
     });
-    expect(values['c1']).toEqual(
-      jasmine.objectContaining({ value: 'No targeting set', anomalous: true }),
-    );
+    expect(values['c1']).to.include({
+      value: 'No targeting set',
+      anomalous: true,
+    });
   });
 
-  it('triggers an error when an allowed geo is set but there is no targeting', async () => {
+  it('triggers an error when an allowed geo is set but there is no targeting', async function () {
     const values = await generateGeoTestData({
       advertiserId: '456',
       columns: [
@@ -139,21 +136,22 @@ describe('Geo targeting Rule', () => {
         ['c1', '', 'United States', ''],
       ],
     });
-    expect(values['c1']).toEqual(
-      jasmine.objectContaining({ value: 'No targeting set', anomalous: true }),
-    );
+    expect(values['c1']).to.include({
+      value: 'No targeting set',
+      anomalous: true,
+    });
   });
 });
 
-describe('Percentage Budget Pacing Rule (Insertion Order)', () => {
-  beforeEach(() => {
-    jasmine.clock().install();
-    jasmine.clock().mockDate(new Date(1970, 0, 3));
-    mockAppsScript();
+describe('Percentage Budget Pacing Rule (Insertion Order)', function () {
+  let timer: sinon.SinonFakeTimers;
+
+  beforeEach(function () {
+    timer = sinon.useFakeTimers(new Date(1970, 0, 3));
   });
 
-  afterEach(() => {
-    jasmine.clock().uninstall();
+  afterEach(function () {
+    timer.restore();
     (
       AppsScriptPropertyStore as unknown as {
         cache: Record<string, string>;
@@ -169,24 +167,21 @@ describe('Percentage Budget Pacing Rule (Insertion Order)', () => {
   ];
 
   for (const [operator, fakeSpendAmount, value] of tests) {
-    it(`fails when pacing ${operator} threshold`, async () => {
+    it(`fails when pacing ${operator} threshold`, async function () {
       const values = await insertionOrderPacingRuleTestData(fakeSpendAmount);
-      expect(values['io1']).toEqual(
-        jasmine.objectContaining({
-          value,
-          anomalous: true,
-        }),
-      );
+      expect(values['io1']).to.include({
+        value,
+        anomalous: true,
+      });
     });
   }
-  it(`doesn't fail when pacing is equal to threshold`, async () => {
+
+  it(`doesn't fail when pacing is equal to threshold`, async function () {
     const values = await insertionOrderPacingRuleTestData(50);
-    expect(values['io1']).toEqual(
-      jasmine.objectContaining({ anomalous: false, value: 'Pace OK' }),
-    );
+    expect(values['io1']).to.include({anomalous: false, value: 'Pace OK'});
   });
 
-  it('has the correct fields and values', async () => {
+  it('has the correct fields and values', async function () {
     const values = await generateInsertionOrderTestData(
       budgetPacingPercentageRule,
       {
@@ -208,29 +203,28 @@ describe('Percentage Budget Pacing Rule (Insertion Order)', () => {
       ],
     );
 
-    expect(values['io1'].fields).toEqual(
-      jasmine.objectContaining({
-        'Insertion Order ID': 'io1',
-        'Display Name': 'Insertion Order 1',
-        Budget: '$100',
-        Spend: '$50',
-        Pacing: '100%',
-        'Days Elapsed': '2',
-        'Flight Duration': '4',
-      }),
-    );
+    expect(values['io1'].fields).to.include({
+      'Insertion Order ID': 'io1',
+      'Display Name': 'Insertion Order 1',
+      Budget: '$100',
+      Spend: '$50',
+      Pacing: '100%',
+      'Days Elapsed': '2',
+      'Flight Duration': '4',
+    });
   });
 });
 
-describe('Percentage Budget Pacing Rule (Line Item)', () => {
-  beforeEach(() => {
-    jasmine.clock().install();
-    jasmine.clock().mockDate(new Date(1970, 0, 3));
+describe('Percentage Budget Pacing Rule (Line Item)', function () {
+  let timer: sinon.SinonFakeTimers;
+
+  beforeEach(function () {
+    timer = sinon.useFakeTimers(new Date(1970, 0, 3));
     mockAppsScript();
   });
 
-  afterEach(() => {
-    jasmine.clock().uninstall();
+  afterEach(function () {
+    timer.restore();
     (
       AppsScriptPropertyStore as unknown as {
         cache: Record<string, string>;
@@ -243,18 +237,16 @@ describe('Percentage Budget Pacing Rule (Line Item)', () => {
     [5, 6],
   ];
   for (const [startDate, endDate] of parameters) {
-    it(`skips rule when out of date range (${startDate} < 4 < ${endDate})`, async () => {
+    it(`skips rule when out of date range (${startDate} < 4 < ${endDate})`, async function () {
       const values = await generateLineItemReport(startDate, endDate);
-      expect(values).toEqual({});
+      expect(values).to.eql({});
     });
   }
 
-  it('checks rules when in date range', async () => {
+  it('checks rules when in date range', async function () {
     const values = await generateLineItemReport(1, 6);
-    expect(values).toEqual({
-      li1: jasmine.objectContaining({
-        anomalous: true,
-      }),
+    expect(values['li1']).to.include({
+      anomalous: true,
     });
   });
 
@@ -266,25 +258,21 @@ describe('Percentage Budget Pacing Rule (Line Item)', () => {
   ];
 
   for (const [operator, fakeSpendAmount, value] of tests) {
-    it(`fails when pacing ${operator} threshold`, async () => {
+    it(`fails when pacing ${operator} threshold`, async function () {
       const values = await lineItemPacingRuleTestData(fakeSpendAmount);
-      expect(values['li1']).toEqual(
-        jasmine.objectContaining({
-          value,
-          anomalous: true,
-        }),
-      );
+      expect(values['li1']).to.include({
+        value,
+        anomalous: true,
+      });
     });
   }
 
-  it(`doesn't fail when pacing is equal to threshold`, async () => {
+  it(`doesn't fail when pacing is equal to threshold`, async function () {
     const values = await lineItemPacingRuleTestData(50);
-    expect(values['li1']).toEqual(
-      jasmine.objectContaining({ anomalous: false, value: 'Pace OK' }),
-    );
+    expect(values['li1']).to.include({anomalous: false, value: 'Pace OK'});
   });
 
-  it('has the correct fields and values', async () => {
+  it('has the correct fields and values', async function () {
     const values = await generateLineItemTestData({
       advertiserId: '123',
       startDate: new ApiDate(1970, 1, 1),
@@ -302,30 +290,28 @@ describe('Percentage Budget Pacing Rule (Line Item)', () => {
       ],
     });
 
-    expect(values['li1'].fields).toEqual(
-      jasmine.objectContaining({
-        'Line Item ID': 'li1',
-        'Display Name': 'Line Item 1',
-        Budget: '$100',
-        Spend: '$50',
-        Pacing: '100%',
-        'Days Elapsed': '2',
-        'Flight Duration': '4',
-      }),
-    );
+    expect(values['li1'].fields).to.include({
+      'Line Item ID': 'li1',
+      'Display Name': 'Line Item 1',
+      Budget: '$100',
+      Spend: '$50',
+      Pacing: '100%',
+      'Days Elapsed': '2',
+      'Flight Duration': '4',
+    });
   });
 });
 
-describe('Daily Budgets Rule', () => {
-  beforeEach(() => {
-    jasmine.clock().install();
-    jasmine.clock().mockDate(new Date(1970, 0, 2));
-    mockAppsScript();
+describe('Daily Budgets Rule', function () {
+  let timer: sinon.SinonFakeTimers;
+
+  beforeEach(function () {
+    timer = sinon.useFakeTimers(new Date(1970, 0, 2));
   });
 
-  afterEach(() => {
+  afterEach(function () {
+    timer.restore();
     PropertiesService.getScriptProperties().deleteAllProperties();
-    jasmine.clock().uninstall();
   });
 
   const tests: Array<
@@ -337,72 +323,62 @@ describe('Daily Budgets Rule', () => {
     ]
   > = [
     ['is below', 20, '2', true],
-    ['is equal to', 50, '5', false],
     ['is above', 120, '12', true],
   ];
   for (const [operator, fakeTotalBudget, value, anomalous] of tests) {
-    if (anomalous) {
-      it(`fails when daily budgets ${operator} range`, async () => {
-        const values = await dailyBudgetRuleTestData(fakeTotalBudget);
-        expect(values['io1']).toEqual(
-          jasmine.objectContaining({
-            value,
-            anomalous,
-          }),
-        );
+    it(`fails when daily budgets ${operator} range`, async function () {
+      const values = await dailyBudgetRuleTestData(fakeTotalBudget);
+      expect(values['io1']).to.include({
+        value,
+        anomalous,
       });
-    } else {
-      it(`doesn't fail when daily budgets ${operator} range`, async () => {
-        const values = await dailyBudgetRuleTestData(fakeTotalBudget);
-        expect(values['io1']).toEqual(
-          jasmine.objectContaining({ anomalous: false }),
-        );
-      });
-    }
-
-    const values: Array<[startDate: number, endDate: number]> = [
-      [1, 30],
-      [1, 6],
-    ];
-    for (const [startDate, endDate] of values) {
-      it(`checks rules when in date range (${startDate}-${endDate})`, async () => {
-        const values = await generateInsertionOrderReportWithDateValues(
-          startDate,
-          endDate,
-        );
-        expect(values).toEqual({
-          io1: jasmine.objectContaining({
-            anomalous: true,
-          }),
-        });
-      });
-    }
-
-    it('skips rules when out of date range', async () => {
-      jasmine.clock().mockDate(new Date('3000-01-01'));
-      const values = await generateInsertionOrderReportWithDateValues(1, 1);
-      expect(values).toEqual({});
     });
   }
+
+  it(`doesn't fail when daily budgets is equal to range`, async function () {
+    const values = await dailyBudgetRuleTestData(50);
+    expect(values['io1']).to.include({value: '5', anomalous: false});
+  });
+
+  const values: Array<[startDate: number, endDate: number]> = [
+    [1, 30],
+    [1, 6],
+  ];
+  for (const [startDate, endDate] of values) {
+    it(`checks rules when in date range (${startDate}-${endDate})`, async function () {
+      const values = await generateInsertionOrderReportWithDateValues(
+        startDate,
+        endDate,
+      );
+      expect(values['io1']).to.include({
+        anomalous: true,
+      });
+    });
+  }
+
+  it('skips rules when out of date range', async function () {
+    timer.setSystemTime(new Date('3000-01-01'));
+    const values = await generateInsertionOrderReportWithDateValues(1, 1);
+    expect(values).to.eql({});
+  });
 });
 
-describe('impressionsByGeoTarget', () => {
-  beforeEach(() => {
-    jasmine.clock().install();
-    jasmine.clock().mockDate(new Date(1970, 0, 2));
+describe('impressionsByGeoTarget', function () {
+  let timer: sinon.SinonFakeTimers;
+
+  beforeEach(function () {
+    timer = sinon.useFakeTimers(new Date(1970, 0, 2));
     mockAppsScript();
   });
 
-  afterEach(() => {
-    jasmine.clock().uninstall();
+  afterEach(function () {
+    timer.restore();
   });
 
-  it('checks rules when in date range', async () => {
+  it('checks rules when in date range', async function () {
     const values = await generateImpressionReport(impressionsByGeoTarget, 1);
-    expect(values).toEqual({
-      io1: jasmine.objectContaining({
-        anomalous: true,
-      }),
+    expect(values['io1']).to.include({
+      anomalous: true,
     });
   });
 });
