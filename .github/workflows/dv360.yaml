@@ -25,10 +25,10 @@ jobs:
         run: npm -g install yarn
 
       - name: Install parent dependencies
-        run: npx yarn
+        run: npx yarn --cwd ts
 
       - name: Install DV360 dependencies
-        run: npx yarn --cwd ./dv360
+        run: npx yarn --cwd ./ts/dv360
 
       - name: Build dv360 prod
         run: npx yarn --cwd ./ts/dv360 build:prod

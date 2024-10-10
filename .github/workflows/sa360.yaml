@@ -22,10 +22,10 @@ jobs:
           node-version: 22.x
 
       - name: Install parent dependencies
-        run: npx yarn
+        run: npx yarn --cwd ts
 
       - name: Install sa360 dependencies
-        run: npx yarn --cwd ./sa360
+        run: npx yarn --cwd ./ts/sa360
 
       - name: Build sa360 prod
         run: npx yarn --cwd ./ts/sa360 build:prod

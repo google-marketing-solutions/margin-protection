@@ -25,7 +25,7 @@ jobs:
         run: npm -g install yarn
 
       - name: Install dependencies
-        run: npx yarn
+        run: npx yarn && npx yarn --cwd ./ts
 
       - name: Lint
         run: npx yarn lint-staged
