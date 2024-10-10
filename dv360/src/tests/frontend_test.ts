@@ -682,7 +682,7 @@ describe('initializeRules', function () {
 
   it('creates a settings page', function () {
     const sheet = HELPERS.getOrCreateSheet('Rule Settings - Insertion Order');
-    expect(sheet).not.to.be.undefined;
+    expect(sheet).to.exist;
   });
 });
 
