@@ -25,16 +25,16 @@ jobs:
         run: npm -g install yarn
 
       - name: Install dependencies
-        run: npx yarn --cwd ./dv360
+        run: npx yarn --cwd ./ts/dv360
 
       - name: Build dv360 prod
-        run: npx yarn --cwd ./dv360 build:prod
+        run: npx yarn --cwd ./ts/ts/dv360 build:prod
 
       - name: Build dv360 dev
-        run: npx yarn --cwd ./dv360 build:dev
+        run: npx yarn --cwd ./ts/ts/dv360 build:dev
 
       - name: Ensure clasp is installed (for yarn push)
-        run: npx yarn --cwd ./dv360 clasp --help
+        run: npx yarn --cwd ./ts/dv360 clasp --help
 
       - name: Print errors
         run: find . -name "*.warn" -type f -exec cat {} \;
