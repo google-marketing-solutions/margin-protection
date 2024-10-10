@@ -23,11 +23,11 @@ import {
   FakePropertyStore,
   mockAppsScript,
 } from 'common/test_helpers/mock_apps_script';
-import {bootstrapGoogleAdsApi, iterator} from 'common/tests/helpers';
-import {ParamDefinition, RuleExecutor, Values} from 'common/types';
-import {Client} from 'sa360/src/client';
-import {SearchAdsClientTypes} from 'sa360/src/types';
-import {ReportClass} from 'common/ads_api_types';
+import { bootstrapGoogleAdsApi, iterator } from 'common/tests/helpers';
+import { ParamDefinition, RuleExecutor, Values } from 'common/types';
+import { Client } from 'sa360/src/client';
+import { SearchAdsClientTypes } from 'sa360/src/types';
+import { ReportClass } from 'common/ads_api_types';
 import {
   AD_GROUP_USER_LIST_REPORT,
   CAMPAIGN_TARGET_REPORT,
@@ -48,7 +48,7 @@ import {
   ageTargetRule,
   genderTargetRule,
 } from '../rules';
-import {expect, use} from 'chai';
+import { expect, use } from 'chai';
 import * as sinon from 'sinon';
 import sinonChai from 'sinon-chai';
 use(sinonChai);
@@ -68,8 +68,8 @@ describe('Campaign pacing rule', function () {
 
   it('shows pacing is OK when it is between min and max', async function () {
     const costs = [
-      {budget: 100, spend: 90},
-      {budget: 100, spend: 50},
+      { budget: 100, spend: 90 },
+      { budget: 100, spend: 50 },
     ];
     const value = await generateCampaignPacingTestData(costs, [
       [
@@ -87,7 +87,7 @@ describe('Campaign pacing rule', function () {
   });
 
   it('fails to pace when there is no cost', async function () {
-    const costs = [{budget: 100}];
+    const costs = [{ budget: 100 }];
     const value = await generateCampaignPacingTestData(costs, [
       [
         'Campaign ID',
@@ -108,10 +108,10 @@ describe('Campaign pacing rule', function () {
  * Generates geo test data for the tests below.
  */
 async function generateCampaignPacingTestData(
-  pacings: Array<{budget: number; spend?: number}>,
+  pacings: Array<{ budget: number; spend?: number }>,
   columns: string[][],
 ) {
-  const {reportFactory, api} = bootstrapGoogleAdsApi();
+  const { reportFactory, api } = bootstrapGoogleAdsApi();
   const client = new Client(
     {
       customerIds: '1',
@@ -136,10 +136,10 @@ async function generateCampaignPacingTestData(
   const mockGetReport = sinon.stub(client, 'getReport');
   const mockQuery = sinon.stub(api, 'query');
 
-  for (const [i, {budget, spend}] of pacings.entries()) {
+  for (const [i, { budget, spend }] of pacings.entries()) {
     obj.campaign.id = `C${i + 1}`;
     if (spend) {
-      (obj as unknown as {metrics?: {costMicros?: string}}).metrics = {
+      (obj as unknown as { metrics?: { costMicros?: string } }).metrics = {
         costMicros: `${spend * 1e6}`,
       };
     }
@@ -150,9 +150,9 @@ async function generateCampaignPacingTestData(
       const report = client.reportFactory.create(reportClass);
       return report;
     });
-    const {results, rules} = await client.validate();
+    const { results, rules } = await client.validate();
     writeBackToColumns(rules, columns);
-    values = {...values, ...(results['Budget Pacing']?.values || {})};
+    values = { ...values, ...(results['Budget Pacing']?.values || {}) };
   }
   return values;
 }
@@ -200,7 +200,7 @@ describe('Campaign Status rule', function () {
     it(`is not anomalous because ${statuses} is not anomalous`, async function () {
       const value = await generateCampaignStatusTestData(
         timer,
-        statuses.map((campaignStatus: string) => ({campaignStatus})),
+        statuses.map((campaignStatus: string) => ({ campaignStatus })),
         [
           ['Campaign ID', 'Campaign', 'Max. Days Inactive before Active'],
           ['default', '', '1'],
@@ -228,7 +228,7 @@ describe('Campaign Status rule', function () {
     )} is over the threshold.`, async function () {
       const value = await generateCampaignStatusTestData(
         timer,
-        statuses.map((campaignStatus: string) => ({campaignStatus})),
+        statuses.map((campaignStatus: string) => ({ campaignStatus })),
         [
           [
             'Campaign ID',
@@ -261,7 +261,7 @@ describe('Ad Group status rule', function () {
   it('Status "Removed" is anomalous', async function () {
     const value = await generateAdGroupStatusTestData(
       timer,
-      [{adGroupStatus: 'Removed'}],
+      [{ adGroupStatus: 'Removed' }],
       [
         ['Campaign ID', 'Campaign'],
         ['default', ''],
@@ -273,7 +273,7 @@ describe('Ad Group status rule', function () {
   it('Status "Paused" is not anomalous if it has never been active', async function () {
     const value = await generateAdGroupStatusTestData(
       timer,
-      [{adGroupStatus: 'Paused'}],
+      [{ adGroupStatus: 'Paused' }],
       [
         ['Campaign ID', 'Campaign'],
         ['default', ''],
@@ -285,7 +285,7 @@ describe('Ad Group status rule', function () {
   it('Status "Active" is not anomalous', async function () {
     const value = await generateAdGroupStatusTestData(
       timer,
-      [{adGroupStatus: 'Active'}],
+      [{ adGroupStatus: 'Active' }],
       [
         ['Campaign ID', 'Campaign'],
         ['default', ''],
@@ -297,7 +297,7 @@ describe('Ad Group status rule', function () {
   it('Status "Paused" is anomalous if it follows an "Active" state', async function () {
     const value = await generateAdGroupStatusTestData(
       timer,
-      [{adGroupStatus: 'Active'}, {adGroupStatus: 'Paused'}],
+      [{ adGroupStatus: 'Active' }, { adGroupStatus: 'Paused' }],
       [
         ['Campaign ID', 'Campaign'],
         ['default', ''],
@@ -317,8 +317,8 @@ describe('Ad Group target rule', function () {
       .getActiveSheet()
       .getRange('A1:D4')
       .setValues(
-        Array.from<string[]>({length: 4}).fill(
-          Array.from<string>({length: 4}).fill(''),
+        Array.from<string[]>({ length: 4 }).fill(
+          Array.from<string>({ length: 4 }).fill(''),
         ),
       );
   });
@@ -326,8 +326,8 @@ describe('Ad Group target rule', function () {
   it('target unchanged is OK', async function () {
     const value = await generateAdGroupAudienceTestData(
       [
-        {userLists: 'User List 1,User List 2'},
-        {userLists: 'User List 1,User List 2'},
+        { userLists: 'User List 1,User List 2' },
+        { userLists: 'User List 1,User List 2' },
       ],
       [
         ['Ad Group ID', 'Ad Group'],
@@ -340,8 +340,8 @@ describe('Ad Group target rule', function () {
   it('has a legible value change value', async function () {
     const value = await generateAdGroupAudienceTestData(
       [
-        {userLists: 'User List 1,User List 2,User List 3'},
-        {userLists: 'User List 3,User List 4'},
+        { userLists: 'User List 1,User List 2,User List 3' },
+        { userLists: 'User List 3,User List 4' },
       ],
       [
         ['Ad Group ID', 'User Lists'],
@@ -357,8 +357,8 @@ describe('Ad Group target rule', function () {
   it('respects what is written in the sheet', async function () {
     const value = await generateAdGroupAudienceTestData(
       [
-        {userLists: 'User List 1,User List 2,User List 3'},
-        {userLists: 'User List 3,User List 4'},
+        { userLists: 'User List 1,User List 2,User List 3' },
+        { userLists: 'User List 3,User List 4' },
       ],
       [
         ['Ad Group ID', 'User Lists'],
@@ -383,8 +383,8 @@ describe('Campaign user list', function () {
   it('target unchanged is OK', async function () {
     const value = await generateCampaignAudienceTestData(
       [
-        {userLists: 'User List 1,User List 2'},
-        {userLists: 'User List 1,User List 2'},
+        { userLists: 'User List 1,User List 2' },
+        { userLists: 'User List 1,User List 2' },
       ],
       [
         ['Campaign ID', 'Ad Group'],
@@ -398,8 +398,8 @@ describe('Campaign user list', function () {
   it('has a legible value change value', async function () {
     const value = await generateCampaignAudienceTestData(
       [
-        {userLists: 'User List 1,User List 2,User List 3'},
-        {userLists: 'User List 3,User List 4'},
+        { userLists: 'User List 1,User List 2,User List 3' },
+        { userLists: 'User List 3,User List 4' },
       ],
       [
         ['Campaign ID', 'User Lists'],
@@ -426,9 +426,9 @@ describe('Geo target change', function () {
   it('target unchanged is OK', async function () {
     const value = await generateGeoTargetTestData(
       [
-        {criterionId: 'criterion/1'},
-        {criterionId: 'criterion/2'},
-        {criterionId: 'criterion/1'},
+        { criterionId: 'criterion/1' },
+        { criterionId: 'criterion/2' },
+        { criterionId: 'criterion/1' },
       ],
       [
         ['Campaign ID', 'Criteria IDs'],
@@ -441,7 +441,7 @@ describe('Geo target change', function () {
 
   it('has a legible value change value', async function () {
     const value = await generateGeoTargetTestData(
-      [{criterionId: 'criterion/1'}, {criterionId: 'criterion/2'}],
+      [{ criterionId: 'criterion/1' }, { criterionId: 'criterion/2' }],
       [
         ['Campaign ID', 'Criteria IDs'],
         ['default', ''],
@@ -466,9 +466,9 @@ describe('Ad group status change', function () {
   it('target unchanged is OK', async function () {
     const value = await generateAdGroupStatusReportTestData(
       [
-        {adGroupStatus: 'Active'},
-        {adGroupStatus: 'Paused'},
-        {adGroupStatus: 'Active'},
+        { adGroupStatus: 'Active' },
+        { adGroupStatus: 'Paused' },
+        { adGroupStatus: 'Active' },
       ],
       [
         ['Ad Group ID', 'Ad Group Active'],
@@ -481,7 +481,7 @@ describe('Ad group status change', function () {
 
   it('has a legible value change value', async function () {
     const value = await generateAdGroupStatusReportTestData(
-      [{adGroupStatus: 'Active'}, {adGroupStatus: 'Paused'}],
+      [{ adGroupStatus: 'Active' }, { adGroupStatus: 'Paused' }],
       [
         ['Ad Group ID', 'Ad Group Active'],
         ['default', ''],
@@ -503,8 +503,8 @@ describe('Age target rule', function () {
       .getActiveSheet()
       .getRange('A1:D4')
       .setValues(
-        Array.from<string[]>({length: 4}).fill(
-          Array.from<string>({length: 4}).fill(''),
+        Array.from<string[]>({ length: 4 }).fill(
+          Array.from<string>({ length: 4 }).fill(''),
         ),
       );
   });
@@ -512,9 +512,9 @@ describe('Age target rule', function () {
   it('target unchanged is OK', async function () {
     const value = await generateAgeTargetTestData(
       [
-        {ageRange: '18-24,25-34'},
-        {ageRange: '35-44'},
-        {ageRange: '18-24,25-34'},
+        { ageRange: '18-24,25-34' },
+        { ageRange: '35-44' },
+        { ageRange: '18-24,25-34' },
       ],
       [
         ['Ad Group ID', 'Age Range'],
@@ -527,7 +527,7 @@ describe('Age target rule', function () {
 
   it('has a legible value change value', async function () {
     const value = await generateAgeTargetTestData(
-      [{ageRange: '18-24,35-44'}, {ageRange: '25-34,45-54'}],
+      [{ ageRange: '18-24,35-44' }, { ageRange: '25-34,45-54' }],
       [
         ['Ad Group ID', 'Age Range'],
         ['default', '', '', '', ''],
@@ -541,7 +541,7 @@ describe('Age target rule', function () {
 
   it('respects what is written in the sheet', async function () {
     const value = await generateAgeTargetTestData(
-      [{ageRange: '18-24,25-34,35-44'}, {ageRange: '25-34,45-54'}],
+      [{ ageRange: '18-24,25-34,35-44' }, { ageRange: '25-34,45-54' }],
       [
         ['Ad Group ID', 'Age Range'],
         ['default', ''],
@@ -563,15 +563,19 @@ describe('Gender target rule', function () {
       .getActiveSheet()
       .getRange('A1:D4')
       .setValues(
-        Array.from<string[]>({length: 4}).fill(
-          Array.from<string>({length: 4}).fill(''),
+        Array.from<string[]>({ length: 4 }).fill(
+          Array.from<string>({ length: 4 }).fill(''),
         ),
       );
   });
 
   it('target unchanged is OK', async function () {
     const value = await generateGenderTargetTestData(
-      [{gender: 'MALE,FEMALE'}, {gender: 'UNKNOWN'}, {gender: 'MALE,FEMALE'}],
+      [
+        { gender: 'MALE,FEMALE' },
+        { gender: 'UNKNOWN' },
+        { gender: 'MALE,FEMALE' },
+      ],
       [
         ['Ad Group ID', 'Gender Type'],
         ['default', ''],
@@ -582,7 +586,7 @@ describe('Gender target rule', function () {
 
   it('has a legible value change value', async function () {
     const value = await generateGenderTargetTestData(
-      [{gender: 'MALE,UNKNOWN'}, {gender: 'FEMALE'}],
+      [{ gender: 'MALE,UNKNOWN' }, { gender: 'FEMALE' }],
       [
         ['Ad Group ID', 'Gender Type'],
         ['default', '', '', '', ''],
@@ -596,7 +600,7 @@ describe('Gender target rule', function () {
 
   it('respects what is written in the sheet', async function () {
     const value = await generateGenderTargetTestData(
-      [{gender: 'MALE,FEMALE,UNKNOWN'}, {gender: 'FEMALE,UNKNOWN'}],
+      [{ gender: 'MALE,FEMALE,UNKNOWN' }, { gender: 'FEMALE,UNKNOWN' }],
       [
         ['Ad Group ID', 'Gender Type'],
         ['default', ''],
@@ -613,10 +617,10 @@ describe('Gender target rule', function () {
  */
 async function generateCampaignStatusTestData(
   timer: sinon.SinonFakeTimers,
-  pacings: Array<{campaignStatus: string}>,
+  pacings: Array<{ campaignStatus: string }>,
   columns: string[][],
 ) {
-  const {reportFactory, api} = bootstrapGoogleAdsApi();
+  const { reportFactory, api } = bootstrapGoogleAdsApi();
   const client = new Client(
     {
       customerIds: '1',
@@ -640,11 +644,11 @@ async function generateCampaignStatusTestData(
 
   let values: Values = {};
   const mockQuery = sinon.stub(api, 'query');
-  for (const [i, {campaignStatus}] of pacings.entries()) {
+  for (const [i, { campaignStatus }] of pacings.entries()) {
     timer.setSystemTime(new Date(60 * 60 * 24 * 1000 * i));
     obj.campaign.status = campaignStatus;
     mockQuery.returns(iterator(obj));
-    const {results, rules} = await client.validate();
+    const { results, rules } = await client.validate();
     writeBackToColumns(rules, columns);
     values = {
       ...values,
@@ -657,10 +661,10 @@ async function generateCampaignStatusTestData(
 
 async function generateAdGroupStatusTestData(
   timer: sinon.SinonFakeTimers,
-  pacings: Array<{adGroupStatus: string}>,
+  pacings: Array<{ adGroupStatus: string }>,
   columns: string[][],
 ) {
-  const {reportFactory, api} = bootstrapGoogleAdsApi();
+  const { reportFactory, api } = bootstrapGoogleAdsApi();
   const client = new Client(
     {
       customerIds: '1',
@@ -686,7 +690,7 @@ async function generateAdGroupStatusTestData(
   let values: Values = {};
   const mockQuery = sinon.stub(api, 'query');
   const mockGetReport = sinon.stub(client, 'getReport');
-  for (const [i, {adGroupStatus}] of pacings.entries()) {
+  for (const [i, { adGroupStatus }] of pacings.entries()) {
     timer.setSystemTime(new Date(60 * 60 * 24 * 1000 * i));
     obj.adGroup.status = adGroupStatus;
     mockQuery.returns(iterator(obj));
@@ -695,7 +699,7 @@ async function generateAdGroupStatusTestData(
       const report = client.reportFactory.create(reportClass);
       return report;
     });
-    const {results, rules} = await client.validate();
+    const { results, rules } = await client.validate();
     writeBackToColumns(rules, columns);
     values = {
       ...values,
@@ -712,7 +716,7 @@ async function generateAdGroupAudienceTestData(
   overrides: Array<Record<string, string | undefined>>,
   columns: string[][],
 ): Promise<Values> {
-  const {reportFactory} = bootstrapGoogleAdsApi();
+  const { reportFactory } = bootstrapGoogleAdsApi();
   const client = new Client(
     {
       customerIds: 'C1',
@@ -733,16 +737,16 @@ async function generateAdGroupAudienceTestData(
     adGroupName: 'Ad Group 1',
     userListName: '',
   };
-  for (const {userLists} of overrides.values()) {
+  for (const { userLists } of overrides.values()) {
     mockGetReport.callsFake((reportClass) => {
       queryEquals(reportClass, AD_GROUP_USER_LIST_REPORT);
       const report = client.reportFactory.create(reportClass);
       const reportGetter = sinon.stub(report, 'fetch');
       obj.userListName = userLists as string;
-      reportGetter.returns({AG1: obj});
+      reportGetter.returns({ AG1: obj });
       return report;
     });
-    const {results, rules} = await client.validate();
+    const { results, rules } = await client.validate();
     writeBackToColumns(rules, columns);
     values = results['Ad Group Audience Target Change']?.values || {};
   }
@@ -756,7 +760,7 @@ async function generateCampaignAudienceTestData(
   overrides: Array<Record<string, string | undefined>>,
   columns: string[][],
 ): Promise<Values> {
-  const {reportFactory} = bootstrapGoogleAdsApi();
+  const { reportFactory } = bootstrapGoogleAdsApi();
   const client = new Client(
     {
       customerIds: 'C1',
@@ -779,16 +783,16 @@ async function generateCampaignAudienceTestData(
     userListName: '',
     userListType: 'USER_LIST',
   };
-  for (const {userLists} of overrides.values()) {
+  for (const { userLists } of overrides.values()) {
     mockGetReport.callsFake((reportClass) => {
       queryEquals(reportClass, CAMPAIGN_USER_LIST_REPORT);
       const report = client.reportFactory.create(reportClass);
       const reportGetter = sinon.stub(report, 'fetch');
       obj.userListName = userLists as string;
-      reportGetter.returns({C1: obj});
+      reportGetter.returns({ C1: obj });
       return report;
     });
-    const {results, rules} = await client.validate();
+    const { results, rules } = await client.validate();
     writeBackToColumns(rules, columns);
     values = results['Campaign Audience Target Change']?.values || {};
   }
@@ -803,7 +807,7 @@ async function generateGeoTargetTestData(
   overrides: Array<Record<string, string | undefined>>,
   columns: string[][],
 ): Promise<Values> {
-  const {reportFactory} = bootstrapGoogleAdsApi();
+  const { reportFactory } = bootstrapGoogleAdsApi();
   const client = new Client(
     {
       customerIds: 'C1',
@@ -826,16 +830,16 @@ async function generateGeoTargetTestData(
     campaignId: 'C1',
     campaignName: 'Campaign 1',
   };
-  for (const {criterionId} of overrides.values()) {
+  for (const { criterionId } of overrides.values()) {
     mockGetReport.callsFake((reportClass) => {
       queryEquals(reportClass, CAMPAIGN_TARGET_REPORT);
       const report = client.reportFactory.create(reportClass);
       const reportGetter = sinon.stub(report, 'fetch');
       obj.criterionId = criterionId!;
-      reportGetter.returns({geo1: obj});
+      reportGetter.returns({ geo1: obj });
       return report;
     });
-    const {results, rules} = await client.validate();
+    const { results, rules } = await client.validate();
     writeBackToColumns(rules, columns);
     values = results['Geo Target Change']?.values || {};
     expect(mockGetReport).to.have.been.called;
@@ -847,7 +851,7 @@ async function generateAdGroupStatusReportTestData(
   overrides: Array<Record<string, string | undefined>>,
   columns: string[][],
 ) {
-  const {reportFactory} = bootstrapGoogleAdsApi();
+  const { reportFactory } = bootstrapGoogleAdsApi();
   const client = new Client(
     {
       customerIds: 'C1',
@@ -872,16 +876,16 @@ async function generateAdGroupStatusReportTestData(
     adGroupStatus: 'ACTIVE',
   };
 
-  for (const {adGroupStatus} of overrides.values()) {
+  for (const { adGroupStatus } of overrides.values()) {
     mockGetReport.callsFake((reportClass) => {
       queryEquals(reportClass, AD_GROUP_REPORT);
       const report = client.reportFactory.create(reportClass);
       const reportGetter = sinon.stub(report, 'fetch');
       obj.adGroupStatus = adGroupStatus!;
-      reportGetter.returns({AG1: obj});
+      reportGetter.returns({ AG1: obj });
       return report;
     });
-    const {results, rules} = await client.validate();
+    const { results, rules } = await client.validate();
     writeBackToColumns(rules, columns);
     values = results['Ad Group Status Change']?.values || {};
     expect(mockGetReport).to.have.been.called;
@@ -893,7 +897,7 @@ async function generateAgeTargetTestData(
   overrides: Array<Record<string, string | undefined>>,
   columns: string[][],
 ) {
-  const {reportFactory} = bootstrapGoogleAdsApi();
+  const { reportFactory } = bootstrapGoogleAdsApi();
   const client = new Client(
     {
       customerIds: 'C1',
@@ -918,16 +922,16 @@ async function generateAgeTargetTestData(
     ageRange: '18-24',
   };
 
-  for (const {ageRange} of overrides.values()) {
+  for (const { ageRange } of overrides.values()) {
     mockGetReport.callsFake((reportClass) => {
       queryEquals(reportClass, AGE_TARGET_REPORT);
       const report = client.reportFactory.create(reportClass);
       const reportGetter = sinon.stub(report, 'fetch');
       obj.ageRange = ageRange!;
-      reportGetter.returns({age1: obj});
+      reportGetter.returns({ age1: obj });
       return report;
     });
-    const {results, rules} = await client.validate();
+    const { results, rules } = await client.validate();
     writeBackToColumns(rules, columns);
     values = results['Age Target Change']?.values || {};
     expect(mockGetReport).to.have.been.called;
@@ -939,7 +943,7 @@ async function generateGenderTargetTestData(
   overrides: Array<Record<string, string | undefined>>,
   columns: string[][],
 ) {
-  const {reportFactory} = bootstrapGoogleAdsApi();
+  const { reportFactory } = bootstrapGoogleAdsApi();
   const client = new Client(
     {
       customerIds: 'C1',
@@ -964,16 +968,16 @@ async function generateGenderTargetTestData(
     gender: 'MALE',
   };
 
-  for (const {gender} of overrides.values()) {
+  for (const { gender } of overrides.values()) {
     mockGetReport.callsFake((reportClass) => {
       queryEquals(reportClass, GENDER_TARGET_REPORT);
       const report = client.reportFactory.create(reportClass);
       const mockReportFetch = sinon.stub(report, 'fetch');
       obj.gender = gender;
-      mockReportFetch.returns({AG1: obj});
+      mockReportFetch.returns({ AG1: obj });
       return report;
     });
-    const {results, rules} = await client.validate();
+    const { results, rules } = await client.validate();
     writeBackToColumns(rules, columns);
     values = results['Gender Target Change']?.values || {};
     expect(mockGetReport).to.have.been.called;

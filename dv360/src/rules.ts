@@ -30,12 +30,12 @@ import {
   PacingType,
   TARGETING_TYPE,
 } from 'dv360_api/dv360_types';
-import {equalTo, inRange, lessThanOrEqualTo} from 'common/checks';
-import {Settings, Values} from 'common/types';
+import { equalTo, inRange, lessThanOrEqualTo } from 'common/checks';
+import { Settings, Values } from 'common/types';
 
-import {getDate, newRule} from './client';
-import {ClientInterface, RuleGranularity} from './types';
-import {DailyBudget} from './rule_types';
+import { getDate, newRule } from './client';
+import { ClientInterface, RuleGranularity } from './types';
+import { DailyBudget } from './rule_types';
 
 const DAY_DENOMINATOR = 1000 * 24 * 60 * 60;
 
@@ -109,7 +109,7 @@ export const geoTargetRule = newRule({
         new this.client.dao.accessors.assignedTargetingOptions!(
           TARGETING_TYPE.GEO_REGION,
           advertiserId,
-          {campaignId: id},
+          { campaignId: id },
         );
       const campaignSettings = this.settings.getOrDefault(id);
 
@@ -196,7 +196,7 @@ export const geoTargetRule = newRule({
       });
     }
 
-    return {values};
+    return { values };
   },
 });
 
@@ -238,13 +238,13 @@ export const budgetPacingPercentageRule = newRule({
 
     type SettingsObj =
       typeof this.settings extends Settings<infer I> ? I : never;
-    const {results, dateRange} =
+    const { results, dateRange } =
       getInsertionOrderBudgetPacingResult<SettingsObj>(
         this.settings,
         this.client.getAllInsertionOrders(),
       );
     if (!dateRange.earliestStartDate || !dateRange.latestEndDate) {
-      return {values};
+      return { values };
     }
     const budgetReport = this.client.getBudgetReport({
       startDate: dateRange.earliestStartDate,
@@ -302,7 +302,7 @@ export const budgetPacingPercentageRule = newRule({
         },
       );
     }
-    return {values};
+    return { values };
   },
 });
 
@@ -345,12 +345,12 @@ export const budgetPacingRuleLineItem = newRule({
     type SettingsObj =
       typeof this.settings extends Settings<infer I> ? I : never;
     const values: Values = {};
-    const {results, dateRange} = getLineItemBudgetPacingResult<SettingsObj>(
+    const { results, dateRange } = getLineItemBudgetPacingResult<SettingsObj>(
       this.settings,
       this.client.getAllLineItems(),
     );
     if (!dateRange.earliestStartDate || !dateRange.latestEndDate) {
-      return {values};
+      return { values };
     }
     const budgetReport = this.client.getLineItemBudgetReport({
       startDate: dateRange.earliestStartDate,
@@ -395,7 +395,7 @@ export const budgetPacingRuleLineItem = newRule({
         'Flight Duration': (flightDuration / DAY_DENOMINATOR).toString(),
       });
     }
-    return {values};
+    return { values };
   },
 });
 
@@ -453,7 +453,7 @@ export const dailyBudgetRule = newRule({
         );
       }
     }
-    return {values};
+    return { values };
   },
 });
 
@@ -495,7 +495,7 @@ function checkPlannedDailyBudget(
 }
 
 function calculateOuterBounds(
-  range: {startDate: Date | undefined; endDate: Date | undefined},
+  range: { startDate: Date | undefined; endDate: Date | undefined },
   budgetSegment: InsertionOrderBudgetSegment,
   todayDate: Date,
 ) {
@@ -544,7 +544,7 @@ export const impressionsByGeoTarget = newRule({
   async callback() {
     const values: Values = {};
 
-    const range: {startDate: Date | undefined; endDate: Date | undefined} = {
+    const range: { startDate: Date | undefined; endDate: Date | undefined } = {
       startDate: undefined,
       endDate: undefined,
     };
@@ -552,7 +552,7 @@ export const impressionsByGeoTarget = newRule({
     const today = Date.now();
     const todayDate = new Date(today);
     const result: {
-      [insertionOrderId: string]: {campaignId: string; displayName: string};
+      [insertionOrderId: string]: { campaignId: string; displayName: string };
     } = {};
 
     for (const insertionOrder of this.client.getAllInsertionOrders()) {
@@ -566,7 +566,7 @@ export const impressionsByGeoTarget = newRule({
     }
 
     if (!range.startDate || !range.endDate) {
-      return {values};
+      return { values };
     }
     const impressionReport = new this.client.dao.accessors.impressionReport!({
       idType: this.client.args.idType,
@@ -577,9 +577,10 @@ export const impressionsByGeoTarget = newRule({
       }),
     });
 
-    for (const [insertionOrderId, {campaignId, displayName}] of Object.entries(
-      result,
-    )) {
+    for (const [
+      insertionOrderId,
+      { campaignId, displayName },
+    ] of Object.entries(result)) {
       const campaignSettings = this.settings.getOrDefault(insertionOrderId);
       const impressions = impressionReport.getImpressionPercentOutsideOfGeos(
         insertionOrderId,
@@ -597,12 +598,12 @@ export const impressionsByGeoTarget = newRule({
         },
       );
     }
-    return {values};
+    return { values };
   },
 });
 
 function expandDateRanges(
-  dateRange: {earliestStartDate?: Date; latestEndDate?: Date},
+  dateRange: { earliestStartDate?: Date; latestEndDate?: Date },
   startDate: Date,
   endDate: Date,
 ) {
@@ -615,7 +616,7 @@ function expandDateRanges(
 }
 
 function humanReadableError(
-  settings: {min: string; max: string; pacingType: string},
+  settings: { min: string; max: string; pacingType: string },
   pacingType: PacingType,
   percent: number,
   fields: Record<string, string>,
@@ -684,7 +685,7 @@ function getLineItemBudgetPacingResult<SettingsObj>(
     pacingType: PacingType;
     setting: SettingsObj;
   }> = [];
-  const dateRange: {earliestStartDate?: Date; latestEndDate?: Date} = {};
+  const dateRange: { earliestStartDate?: Date; latestEndDate?: Date } = {};
   const today = Date.now();
   const todayDate = new Date(today);
   for (const lineItem of lineItems) {
@@ -716,14 +717,14 @@ function getLineItemBudgetPacingResult<SettingsObj>(
     });
   }
 
-  return {results, dateRange};
+  return { results, dateRange };
 }
 
 function getInsertionOrderBudgetPacingResult<SettingsObj>(
   settings: Settings<SettingsObj>,
   insertionOrders: InsertionOrder[],
 ) {
-  const dateRange: {earliestStartDate?: Date; latestEndDate?: Date} = {};
+  const dateRange: { earliestStartDate?: Date; latestEndDate?: Date } = {};
   const results: Array<{
     budget: number;
     campaignId: string;
@@ -765,5 +766,5 @@ function getInsertionOrderBudgetPacingResult<SettingsObj>(
       });
     }
   }
-  return {results, dateRange};
+  return { results, dateRange };
 }

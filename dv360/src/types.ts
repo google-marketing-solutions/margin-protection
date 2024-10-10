@@ -26,7 +26,7 @@ import {
   InsertionOrders,
   LineItems,
 } from 'dv360_api/dv360';
-import {LineItem, InsertionOrder} from 'dv360_api/dv360_resources';
+import { LineItem, InsertionOrder } from 'dv360_api/dv360_resources';
 import {
   BaseClientArgs,
   BaseClientInterface,
@@ -104,7 +104,7 @@ export interface DateRange {
  */
 export interface ClientInterface
   extends BaseClientInterface<DisplayVideoClientTypes> {
-  dao: {accessors: Accessors};
+  dao: { accessors: Accessors };
   getAllInsertionOrders(): InsertionOrder[];
   getAllLineItems(): LineItem[];
   getBudgetReport(args: DateRange): BudgetReportInterface;

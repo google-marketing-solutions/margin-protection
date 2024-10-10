@@ -2,13 +2,13 @@ import {
   FakePropertyStore,
   mockAppsScript,
 } from 'common/test_helpers/mock_apps_script';
-import {DisplayVideoFrontend, migrations} from '../frontend';
-import {PropertyStore} from 'common/types';
-import {Client, RuleRange} from '../client';
-import {scaffoldSheetWithNamedRanges} from 'common/tests/helpers';
-import {geoTargetRule} from '../rules';
-import {ClientInterface} from '../types';
-import {expect} from 'chai';
+import { DisplayVideoFrontend, migrations } from '../frontend';
+import { PropertyStore } from 'common/types';
+import { Client, RuleRange } from '../client';
+import { scaffoldSheetWithNamedRanges } from 'common/tests/helpers';
+import { geoTargetRule } from '../rules';
+import { ClientInterface } from '../types';
+import { expect } from 'chai';
 
 describe('Migrations: upgrades', function () {
   beforeEach(function () {
