@@ -582,7 +582,7 @@ export function qlifyQuery<
 }
 
 function splitCids(customerIdsStr: string) {
-  const customerIds = customerIdsStr.replace(/- /, '').split(',');
+  const customerIds = customerIdsStr.replace(/- /, '').split(/[,;]/);
   if (customerIds.some((cid) => !cid.match(/^\d+$/))) {
     throw new Error(
       `Invalid customer ids. Expected only numbers, got ${customerIds.filter(
