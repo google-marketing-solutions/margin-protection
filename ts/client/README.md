@@ -12,7 +12,7 @@ you test changes on.
 ## Client Installation
 1. Copy the spreadsheet template provided by your Google Representative
 2. Add the correct libraryID replacing the brackets in [appsscript.json](appsscript.json).
-3. Run `clasp create --parentId=[parentId]` where [parentId] is the ID of the copied spreadsheet.
+3. Run `clasp clone [scriptId]` where [scriptId] is the ID of the Apps Script (See [How to get the Script ID for Clasp](/docs/updating-launch-monitor.md#how-to-get-the-script-id-for-clasp)).
 4. Run `yarn && yarn push` to get your code pushed to the sheet.
 5. Follow the instructions on the Launch Monitor tool to complete installation by adding triggers and a Project Number.
 6. Give people access to your script in read only and share the link with them (replacing **edit/** with **copy/** in the URL).
