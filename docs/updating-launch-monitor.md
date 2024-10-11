@@ -32,28 +32,6 @@ Clasp is a developer tool. It is useful for local developing, and it's how our c
 
 You do not need to be highly technical to use clasp, but access to a terminal is required. You can use anything with access to Linux or Unix, including Cloud Shell or Colab for all commands except `clasp login` which requires access to a browser on the same computer.
 
-### How to get the Script ID for clasp
-
-1. [Navigate to Apps Script from your spreadsheet](#how-to-navigate-to-apps-script-from-your-spreadsheet)
-
-2. Within Apps Script, locate the script ID in the URL bar. It is all of the information between **projects/** and **/edit**
-
-   ![URL bar ID location](resources/appsscript-id.png)
-
-3. Click in the highlighted section twice and it should select the entire ID. If any of the ID is not highlighted, manually drag from just after **projects/** until just before **/edit**. Copy with Ctrl+C (Cmd+C on Mac).
-
-4. You have your script ID in your clipboard. You can paste it wherever you need it to go with Ctrl+V (Cmd+V on Mac).
-
-### How to get the Parent ID for clasp
-
-1. In your spreadsheet, look at the URL bar. Manually select everything between **d/** and **/edit**.
-
-   ![URL bar ID location](resources/sheet-id.png)
-
-2. Copy with Ctrl+C (Cmd+C on Mac).
-
-3. You have your parent ID in your clipboard. YOu can paste it wherever you need it to go with Ctrl+V (Cmd+V on Mac).
-
 ### Initializing Clasp
 
 This is a one-time setup per project.
@@ -67,12 +45,18 @@ npx @google/clasp login
 
 2. Navigate to the tool you want to use (e.g. [CM360](/cm360/)).
 3. Use your copy of the template found in the README of the folder.
-4. Run the following commands, replacing `[parentId]` with [your parent ID](#how-to-get-the-parent-id-for-clasp) and `[scriptId]` with [your script ID](#how-to-get-the-script-id-for-clasp):
+4. Run the following commands, replacing `[scriptId]` with [your script ID](#how-to-get-the-script-id-for-clasp)
 
 ```
-npx @google/clasp create --parentId [parentId]
-npx @google/clasp settings scriptId [scriptId]
+npx @google/clasp clone [scriptId]
 ```
+
+### Updating Clasp
+Once `clasp` is initialized, updating is simple.
+
+1. Find the path of the launch monitor you want to use (i.e. any from the [main README](/README.md#launch-monitors)), 
+2. Navigate to that directory.
+3. Run `yarn push`.
 
 ## More Guides
 
@@ -81,3 +65,25 @@ npx @google/clasp settings scriptId [scriptId]
 In your spreadsheet, go to **Extensions > Apps Script**
 
 ![Apps Script menu](resources/appsscript-menu.png)
+
+### How to get the Parent ID for clasp
+
+1. In your spreadsheet, look at the URL bar. Manually select everything between **d/** and **/edit**.
+
+   ![URL bar ID location](resources/sheet-id.png)
+
+2. Copy with Ctrl+C (Cmd+C on Mac).
+
+3. You have your parent ID in your clipboard. YOu can paste it wherever you need it to go with Ctrl+V (Cmd+V on Mac).
+
+### How to get the Script ID for clasp
+
+1. [Navigate to Apps Script from your spreadsheet](#how-to-navigate-to-apps-script-from-your-spreadsheet)
+
+2. Within Apps Script, locate the script ID in the URL bar. It is all of the information between **projects/** and **/edit**
+
+   ![URL bar ID location](resources/appsscript-id.png)
+
+3. Click in the highlighted section twice and it should select the entire ID. If any of the ID is not highlighted, manually drag from just after **projects/** until just before **/edit**. Copy with Ctrl+C (Cmd+C on Mac).
+
+4. You have your script ID in your clipboard. You can paste it wherever you need it to go with Ctrl+V (Cmd+V on Mac).
