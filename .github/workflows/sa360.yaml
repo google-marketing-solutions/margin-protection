@@ -22,19 +22,19 @@ jobs:
           node-version: 22.x
 
       - name: Install parent dependencies
-        run: npx yarn
+        run: npx yarn --cwd ts
 
       - name: Install sa360 dependencies
-        run: npx yarn --cwd ./sa360
+        run: npx yarn --cwd ./ts/sa360
 
       - name: Build sa360 prod
-        run: npx yarn --cwd ./sa360 build:prod
+        run: npx yarn --cwd ./ts/sa360 build:prod
 
       - name: Build sa360 dev
-        run: npx yarn --cwd ./sa360 build:dev
+        run: npx yarn --cwd ./ts/sa360 build:dev
 
       - name: Ensure clasp is installed (for yarn push)
-        run: npx yarn --cwd ./sa360 clasp --help
+        run: npx yarn --cwd ./ts/sa360 clasp --help
 
       - name: Print errors
         run: find . -name "*.warn" -type f -exec cat {} \;
