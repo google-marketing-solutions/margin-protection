@@ -1,4 +1,4 @@
-# Launch Monitor - Enterprise
+# Launch Monitor - TypeScript
 
 This is the home to TypeScript-built code in Launch Monitor.
 
@@ -33,10 +33,5 @@ not.
 ### Alternative Installation (standalone)
 
 Note that any updates to your script will need to be manually shared with other users.
-If you're just testing the script, this is an easier installation path.
-
-1. Copy the spreadsheet template provided by your Google Representative
-2. [Get the script ID](../docs/get-appsscript-id.md) from the copied spreadsheet.
-3. Run `clasp clone [scriptId]` where [scriptId] is the ID of the copied spreadsheet.
-4. Run `yarn && yarn push` to get your code pushed to the sheet.
-5. Follow the instructions on the Launch Monitor tool to complete installation by adding triggers and a Project Number.
+If you're just testing the script, use the [Updating Launch Monitor
+Guide](/docs/updating-launch-monitor.md#clasp---the-technical-way).
