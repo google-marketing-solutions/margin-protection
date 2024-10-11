@@ -10,7 +10,7 @@ const ignores = [
   'googleads/**/*',
   'cm360/**/*',
   'ts/dv360_api/**/*',
-  'dist/**/*',
+  '**/dist/**/*',
 ];
 
 const rules = {
