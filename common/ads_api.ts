@@ -187,16 +187,12 @@ export class GoogleAdsApi implements AdTypes.GoogleAdsApiInterface {
         contentType: 'application/json',
         payload: JSON.stringify({ ...params, pageToken }),
       };
-      try {
-        const res = JSON.parse(
-          UrlFetchApp.fetch(url, req).getContentText(),
-        ) as AdTypes.AdsSearchResponse<AdTypes.ReportResponse<Q>>;
-        pageToken = res.nextPageToken;
-        for (const row of res.results || []) {
-          yield row;
-        }
-      } catch {
-        throw new Error('bad');
+      const res = JSON.parse(
+        UrlFetchApp.fetch(url, req).getContentText(),
+      ) as AdTypes.AdsSearchResponse<AdTypes.ReportResponse<Q>>;
+      pageToken = res.nextPageToken;
+      for (const row of res.results || []) {
+        yield row;
       }
     } while (pageToken);
   }
