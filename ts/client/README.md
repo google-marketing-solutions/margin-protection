@@ -10,7 +10,6 @@ by the clients. As a result, you should probably have a separate library/script
 you test changes on.
 
 ## Client Installation
-
 1. Copy the spreadsheet template provided by your Google Representative
 2. Add the correct libraryID replacing the brackets in [appsscript.json](appsscript.json).
 3. Run `clasp create --parentId=[parentId]` where [parentId] is the ID of the copied spreadsheet.
