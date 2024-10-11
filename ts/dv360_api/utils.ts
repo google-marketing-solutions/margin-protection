@@ -288,7 +288,9 @@ export const ObjectUtil = {
       }
       if (requiredProperties.length && missingRequiredProperties.length) {
         throw ObjectUtil.error(
-          `Missing required properties: ${missingRequiredProperties.join(', ')}`,
+          `Missing required properties: ${missingRequiredProperties.join(
+            ', ',
+          )}`,
         );
       }
       const missingOneOf = oneOf.filter((key) => !keys.includes(key));
