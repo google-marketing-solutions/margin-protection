@@ -34,7 +34,7 @@ jobs:
         run: npx yarn --cwd ./ts/sa360 build:dev
 
       - name: Ensure clasp is installed (for yarn push)
-        run: npx yarn --cwd ./ts/sa360 clasp --help
+        run: npx yarn check-deps
 
       - name: Print errors
         run: find . -name "*.warn" -type f -exec cat {} \;

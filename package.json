@@ -10,13 +10,15 @@
   "scripts": {
     "test": "yarn --cwd ./ts test",
     "lint": "eslint -c eslint.config.js",
-    "prepare": "husky"
+    "prepare": "husky",
+    "check-deps": "(yarn clasp --help && yarn mocha --help && yarn eslint --help && yarn prettier --help && yarn lint-staged --help) > /dev/null"
   },
   "author": "Sean Capaloff-Jones <seancjones@google.com>",
   "license": "MIT",
   "repository": "git@github.com:google-marketing-solutions/margin-protection",
   "private": true,
   "devDependencies": {
+    "@google/clasp": "^2.4.2",
     "@types/eslint-config-prettier": "^6.11.3",
     "chai": "^5.1.1",
     "eslint": "^9.12.0",
