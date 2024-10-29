@@ -9,7 +9,7 @@ const ignores = [
   '**/Code.js',
   'googleads/**/*',
   'cm360/**/*',
-  'ts/dv360_api/**/*',
+  'dv360_api/**/*',
   '**/dist/**/*',
 ];
 
