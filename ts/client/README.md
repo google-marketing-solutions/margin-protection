@@ -10,6 +10,7 @@ by the clients. As a result, you should probably have a separate library/script
 you test changes on.
 
 ## Client Installation
+
 1. Copy the spreadsheet template provided by your Google Representative
 2. Add the correct libraryID replacing the brackets in [appsscript.json](appsscript.json).
 3. Run `clasp clone [scriptId]` where [scriptId] is the ID of the Apps Script (See [How to get the Script ID for Clasp](/docs/updating-launch-monitor.md#how-to-get-the-script-id-for-clasp)).

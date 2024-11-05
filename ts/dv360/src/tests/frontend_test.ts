@@ -588,7 +588,7 @@ describe('Partner view', function () {
   beforeEach(async function () {
     ({ stubs } = setUp({ level: 'Partner' }));
     const allAdvertisers: Record<string, AdvertiserTemplateConverter[]> = {
-      '1': [
+      a1: [
         (advertiser) => {
           advertiser.id = 'a1';
           advertiser.displayName = 'Advertiser 1';
@@ -596,12 +596,47 @@ describe('Partner view', function () {
           return advertiser;
         },
       ],
+      a2: [
+        (advertiser) => {
+          advertiser.id = 'a2';
+          advertiser.displayName = 'Advertiser 2';
+
+          return advertiser;
+        },
+      ],
+      a3: [
+        (advertiser) => {
+          advertiser.id = 'a3';
+          advertiser.displayName = 'Advertiser 3';
+
+          return advertiser;
+        },
+      ],
     };
     const allCampaigns: Record<string, CampaignTemplateConverter[]> = {
-      '1': [
+      a1: [
+        (campaignTemplate) => {
+          campaignTemplate.id = 'c1';
+          campaignTemplate.displayName = 'Campaign 1';
+          campaignTemplate.advertiserId = 'a1';
+
+          return campaignTemplate;
+        },
+      ],
+      a2: [
         (campaignTemplate) => {
           campaignTemplate.id = 'c2';
           campaignTemplate.displayName = 'Campaign 2';
+          campaignTemplate.advertiserId = 'a2';
+
+          return campaignTemplate;
+        },
+      ],
+      a3: [
+        (campaignTemplate) => {
+          campaignTemplate.id = 'c3';
+          campaignTemplate.displayName = 'Campaign 3';
+          campaignTemplate.advertiserId = 'a2';
 
           return campaignTemplate;
         },
@@ -611,11 +646,21 @@ describe('Partner view', function () {
       string,
       InsertionOrderTemplateConverter[]
     > = {
-      c2: [
+      a1: [
+        (insertionOrderTemplate) => {
+          insertionOrderTemplate.id = 'io1';
+          insertionOrderTemplate.displayName = 'Insertion Order 1';
+          insertionOrderTemplate.campaignId = 'c1';
+          insertionOrderTemplate.advertiserId = 'a1';
+          return insertionOrderTemplate;
+        },
+      ],
+      a2: [
         (insertionOrderTemplate) => {
           insertionOrderTemplate.id = 'io2';
-          insertionOrderTemplate.displayName = 'IO 2';
+          insertionOrderTemplate.displayName = 'Insertion Order 2';
           insertionOrderTemplate.campaignId = 'c2';
+          insertionOrderTemplate.advertiserId = 'a2';
           return insertionOrderTemplate;
         },
       ],
@@ -646,11 +691,9 @@ describe('Partner view', function () {
       'Advertiser ID',
       'Advertiser Name',
     ]);
-    expect(values[4].slice(0, 4)).to.eql([
-      'io1',
-      'Insertion Order 1',
-      'a1',
-      'Advertiser 1',
+    expect(values.slice(4, 6).map((r) => r.slice(0, 4))).to.eql([
+      ['io1', 'Insertion Order 1', 'a1', 'Advertiser 1'],
+      ['io2', 'Insertion Order 2', 'a2', 'Advertiser 2'],
     ]);
   });
 });

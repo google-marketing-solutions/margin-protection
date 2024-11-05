@@ -55,6 +55,8 @@ import {
   ClientInterface,
   DisplayVideoClientTypes,
   IDType,
+  InsertionOrderMap,
+  InsertionOrderTuple,
   LineItemBudgetReportInterface,
   RuleGranularity,
   RuleParams,
@@ -244,16 +246,30 @@ export class Client implements ClientInterface {
 
   async getAllCampaigns(): Promise<RecordInfo[]> {
     if (!this.storedCampaigns.length) {
+      const campaignsWithSegments = Object.values(
+        this.getAllInsertionOrders(),
+      ).reduce((prev, io) => {
+        prev.add(io.getCampaignId());
+        return prev;
+      }, new Set<string>());
+
       let campaigns: RecordInfo[] = [];
       if (this.args.idType === IDType.ADVERTISER) {
-        campaigns = this.getAllCampaignsForAdvertiser(this.args.id);
+        campaigns = this.getAllCampaignsForAdvertiser(this.args.id).filter(
+          (campaign) => campaignsWithSegments.has(campaign.id),
+        );
       } else {
         for (const {
           advertiserId,
           advertiserName,
         } of this.getAllAdvertisersForPartner()) {
           campaigns = campaigns.concat(
-            this.getAllCampaignsForAdvertiser(advertiserId, advertiserName),
+            this.getAllCampaignsForAdvertiser(
+              advertiserId,
+              advertiserName,
+            ).filter((campaign) => {
+              return campaignsWithSegments.has(campaign.id);
+            }),
           );
         }
       }
