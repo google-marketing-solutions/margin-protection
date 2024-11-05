@@ -406,11 +406,17 @@ export class RuleRange extends AbstractRuleRange<DisplayVideoClientTypes> {
   async getRows(ruleGranularity: RuleGranularity) {
     if (ruleGranularity === RuleGranularity.CAMPAIGN) {
       return this.client.getAllCampaigns();
-    } else {
+    } else if (ruleGranularity === RuleGranularity.INSERTION_ORDER) {
       return Object.values(this.client.getAllInsertionOrders()).map((io) => ({
         advertiserId: io.getAdvertiserId(),
         id: io.getId()!,
         displayName: io.getDisplayName()!,
+      }));
+    } else {
+      return Object.values(this.client.getAllLineItems()).map((li) => ({
+        advertiserId: li.getAdvertiserId(),
+        id: li.getId()!,
+        displayName: li.getDisplayName()!,
       }));
     }
   }
