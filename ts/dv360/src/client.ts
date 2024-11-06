@@ -54,6 +54,8 @@ import {
   ClientArgs,
   ClientInterface,
   DisplayVideoClientTypes,
+  EntityEntry,
+  EntityMap,
   IDType,
   LineItemBudgetReportInterface,
   RuleGranularity,
@@ -107,8 +109,8 @@ export interface RuleStoreEntry<
  * requests, like {@link getAllInsertionOrders}.
  */
 export class Client implements ClientInterface {
-  private storedInsertionOrders: InsertionOrder[] = [];
-  private storedLineItems: LineItem[] = [];
+  private storedInsertionOrders: EntityMap<InsertionOrder> = {};
+  private storedLineItems: EntityMap<LineItem> = {};
   private storedCampaigns: RecordInfo[] = [];
   private savedBudgetReport?: BudgetReportInterface;
   private savedLineItemBudgetReport?: LineItemBudgetReportInterface;
@@ -195,44 +197,60 @@ export class Client implements ClientInterface {
     return { rules, results };
   }
 
-  getAllLineItems(): LineItem[] {
-    if (!this.storedLineItems.length) {
-      this.storedLineItems =
-        this.args.idType === IDType.ADVERTISER
-          ? this.getAllLineItemsForAdvertiser(this.args.id)
-          : this.getAllAdvertisersForPartner().reduce(
-              (arr, { advertiserId }) =>
-                arr.concat(this.getAllLineItemsForAdvertiser(advertiserId)),
-              [] as LineItem[],
-            );
+  getAllLineItems(): EntityMap<LineItem> {
+    function entries(io: LineItem): EntityEntry<LineItem> {
+      return [io.getId(), io];
+    }
+    if (!Object.keys(this.storedLineItems).length) {
+      let lineItems: Array<EntityEntry<LineItem>> = [];
+      if (this.args.idType === IDType.ADVERTISER) {
+        lineItems = this.getAllLineItemsForAdvertiser(this.args.id).map(
+          entries,
+        );
+      } else {
+        for (const { advertiserId } of this.getAllAdvertisersForPartner()) {
+          for (const io of this.getAllLineItemsForAdvertiser(advertiserId)) {
+            lineItems.push([io.getId(), io]);
+          }
+        }
+      }
+      this.storedLineItems = Object.fromEntries(lineItems);
     }
     return this.storedLineItems;
   }
-  getAllInsertionOrders(): InsertionOrder[] {
-    if (!this.storedInsertionOrders.length) {
-      this.storedInsertionOrders =
-        this.args.idType === IDType.ADVERTISER
-          ? this.getAllInsertionOrdersForAdvertiser(this.args.id)
-          : this.getAllAdvertisersForPartner().reduce(
-              (arr, { advertiserId }) =>
-                arr.concat(
-                  this.getAllInsertionOrdersForAdvertiser(advertiserId),
-                ),
-              [] as InsertionOrder[],
-            );
+
+  getAllInsertionOrders(): EntityMap<InsertionOrder> {
+    function entries(io: InsertionOrder): EntityEntry<InsertionOrder> {
+      return [io.getId(), io];
+    }
+    if (!Object.keys(this.storedInsertionOrders).length) {
+      let insertionOrders: Array<EntityEntry<InsertionOrder>> = [];
+      if (this.args.idType === IDType.ADVERTISER) {
+        insertionOrders = this.getAllInsertionOrdersForAdvertiser(
+          this.args.id,
+        ).map(entries);
+      } else {
+        for (const { advertiserId } of this.getAllAdvertisersForPartner()) {
+          for (const io of this.getAllInsertionOrdersForAdvertiser(
+            advertiserId,
+          )) {
+            insertionOrders.push([io.getId(), io]);
+          }
+        }
+      }
+      this.storedInsertionOrders = Object.fromEntries(insertionOrders);
     }
     return this.storedInsertionOrders;
   }
 
   async getAllCampaigns(): Promise<RecordInfo[]> {
     if (!this.storedCampaigns.length) {
-      const campaignsWithSegments = this.getAllInsertionOrders().reduce(
-        (prev, io) => {
-          prev.add(io.getCampaignId());
-          return prev;
-        },
-        new Set<string>(),
-      );
+      const campaignsWithSegments = Object.values(
+        this.getAllInsertionOrders(),
+      ).reduce((prev, io) => {
+        prev.add(io.getCampaignId());
+        return prev;
+      }, new Set<string>());
 
       const result =
         this.args.idType === IDType.ADVERTISER
@@ -454,11 +472,23 @@ export class RuleRange extends AbstractRuleRange<DisplayVideoClientTypes> {
       return undefined;
     }
     let campaignId: string;
-    if (granularity === RuleGranularity.CAMPAIGN) {
-      campaignId = id;
-    } else {
-      const insertionOrders = this.client.getAllInsertionOrders();
-      campaignId = insertionOrders[0] && insertionOrders[0].getCampaignId();
+    switch (granularity) {
+      case RuleGranularity.CAMPAIGN:
+        campaignId = id;
+        break;
+      case RuleGranularity.INSERTION_ORDER:
+        const insertionOrders = this.client.getAllInsertionOrders();
+        campaignId = insertionOrders[id] && insertionOrders[id].getCampaignId();
+        break;
+      case RuleGranularity.LINE_ITEM:
+        const lineItems = this.client.getAllLineItems();
+        campaignId = lineItems[id] && lineItems[id].getCampaignId();
+        break;
+      default:
+        throw new Error(`Unsupported granularity "${granularity}`);
+    }
+    if (!campaignMap[campaignId] || !campaignId) {
+      throw new Error();
     }
     return [
       campaignMap[campaignId].advertiserId,

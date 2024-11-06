@@ -241,7 +241,7 @@ export const budgetPacingPercentageRule = newRule({
     const { results, dateRange } =
       getInsertionOrderBudgetPacingResult<SettingsObj>(
         this.settings,
-        this.client.getAllInsertionOrders(),
+        Object.values(this.client.getAllInsertionOrders()),
       );
     if (!dateRange.earliestStartDate || !dateRange.latestEndDate) {
       return { values };
@@ -347,7 +347,7 @@ export const budgetPacingRuleLineItem = newRule({
     const values: Values = {};
     const { results, dateRange } = getLineItemBudgetPacingResult<SettingsObj>(
       this.settings,
-      this.client.getAllLineItems(),
+      Object.values(this.client.getAllLineItems()),
     );
     if (!dateRange.earliestStartDate || !dateRange.latestEndDate) {
       return { values };
@@ -427,7 +427,9 @@ export const dailyBudgetRule = newRule({
   async callback() {
     const values: Values = {};
 
-    for (const insertionOrder of this.client.getAllInsertionOrders()) {
+    for (const insertionOrder of Object.values(
+      this.client.getAllInsertionOrders(),
+    )) {
       const insertionOrderId = insertionOrder.getId()!;
       const campaignSettings = this.settings.getOrDefault(insertionOrderId);
       const displayName = insertionOrder.getDisplayName();
@@ -555,7 +557,9 @@ export const impressionsByGeoTarget = newRule({
       [insertionOrderId: string]: { campaignId: string; displayName: string };
     } = {};
 
-    for (const insertionOrder of this.client.getAllInsertionOrders()) {
+    for (const insertionOrder of Object.values(
+      this.client.getAllInsertionOrders(),
+    )) {
       for (const budgetSegment of insertionOrder.getInsertionOrderBudgetSegments()) {
         calculateOuterBounds(range, budgetSegment, todayDate);
       }
