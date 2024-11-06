@@ -14,7 +14,11 @@ import { PropertyStore } from 'common/types';
 
 import { Client, RuleRange } from '../client';
 import { DisplayVideoFrontend, migrations } from '../frontend';
-import { budgetPacingPercentageRule, geoTargetRule } from '../rules';
+import {
+  budgetPacingPercentageRule,
+  budgetPacingRuleLineItem,
+  geoTargetRule,
+} from '../rules';
 import { ClientArgs, ClientInterface, IDType } from '../types';
 
 import {
@@ -22,6 +26,7 @@ import {
   CampaignTemplateConverter,
   generateTestClient,
   InsertionOrderTemplateConverter,
+  LineItemTemplateConverter,
 } from './client_helpers';
 
 import HtmlTemplate = GoogleAppsScript.HTML.HtmlTemplate;
@@ -311,7 +316,11 @@ function getFrontend(
 ) {
   return new DisplayVideoFrontend({
     ruleRangeClass: RuleRange,
-    rules: [geoTargetRule, budgetPacingPercentageRule],
+    rules: [
+      geoTargetRule,
+      budgetPacingPercentageRule,
+      budgetPacingRuleLineItem,
+    ],
     version: '3.0',
     clientInitializer(clientArgs, properties) {
       const client = new Client(clientArgs, properties);
@@ -325,6 +334,7 @@ function getFrontend(
 function testData(params: {
   allAdvertisers?: Record<string, AdvertiserTemplateConverter[]>;
   allInsertionOrders?: Record<string, InsertionOrderTemplateConverter[]>;
+  allLineItems?: Record<string, LineItemTemplateConverter[]>;
   allCampaigns?: Record<string, CampaignTemplateConverter[]>;
   fakeImpressionAmount?: number;
   fakeSpendAmount?: number;
@@ -348,6 +358,7 @@ function testData(params: {
 
   (params.allCampaigns ??= {})['1'] = [(campaign) => campaign];
   (params.allInsertionOrders ??= {})['1'] = [(io) => io];
+  (params.allLineItems ??= {})['1'] = [(li) => li];
   (params.allAdvertisers ??= {})['1'] = [(advertiser) => advertiser];
 
   params.fakeSpendAmount ??= 1000000;
@@ -665,11 +676,41 @@ describe('Partner view', function () {
         },
       ],
     };
+    const allLineItems: Record<string, LineItemTemplateConverter[]> = {
+      a1: [
+        (lineItemTemplate) => {
+          lineItemTemplate.id = 'li1';
+          lineItemTemplate.displayName = 'Line Item 1';
+          lineItemTemplate.campaignId = 'c1';
+          lineItemTemplate.advertiserId = 'a1';
+          return lineItemTemplate;
+        },
+      ],
+      a2: [
+        (lineItemTemplate) => {
+          lineItemTemplate.id = 'li2';
+          lineItemTemplate.displayName = 'Line Item 2';
+          lineItemTemplate.campaignId = 'c2';
+          lineItemTemplate.advertiserId = 'a2';
+          return lineItemTemplate;
+        },
+      ],
+      a3: [
+        (insertlinOrderTemplate) => {
+          insertlinOrderTemplate.id = 'li2';
+          insertlinOrderTemplate.displayName = 'Line Item 2';
+          insertlinOrderTemplate.campaignId = 'c2';
+          insertlinOrderTemplate.advertiserId = 'a2';
+          return insertlinOrderTemplate;
+        },
+      ],
+    };
     frontend = getFrontend(() =>
       testData({
         allCampaigns,
         allAdvertisers,
         allInsertionOrders,
+        allLineItems,
         idType: IDType.PARTNER,
       }),
     );
@@ -679,23 +720,46 @@ describe('Partner view', function () {
     tearDownStubs(stubs);
   });
 
-  it('Has advertiser ID and name in settings', async function () {
-    await frontend.initializeRules();
-    const values = SpreadsheetApp.getActive()
-      .getSheetByName('Rule Settings - Insertion Order')
-      .getDataRange()
-      .getValues();
-    expect(values[2].slice(0, 4)).to.eql([
-      'ID',
-      'Insertion Order Name',
-      'Advertiser ID',
-      'Advertiser Name',
-    ]);
-    expect(values.slice(4, 6).map((r) => r.slice(0, 4))).to.eql([
-      ['io1', 'Insertion Order 1', 'a1', 'Advertiser 1'],
-      ['io2', 'Insertion Order 2', 'a2', 'Advertiser 2'],
-    ]);
-  });
+  context(
+    'initializeRules includes advertiser ID and name in settings',
+    function () {
+      it('Insertion Order', async function () {
+        await frontend.initializeRules();
+        const values = SpreadsheetApp.getActive()
+          .getSheetByName('Rule Settings - Insertion Order')
+          .getDataRange()
+          .getValues();
+        expect(values[2].slice(0, 4)).to.eql([
+          'ID',
+          'Insertion Order Name',
+          'Advertiser ID',
+          'Advertiser Name',
+        ]);
+        expect(values.slice(4, 6).map((r) => r.slice(0, 4))).to.eql([
+          ['io1', 'Insertion Order 1', 'a1', 'Advertiser 1'],
+          ['io2', 'Insertion Order 2', 'a2', 'Advertiser 2'],
+        ]);
+      });
+
+      it('Line Item', async function () {
+        await frontend.initializeRules();
+        const values = SpreadsheetApp.getActive()
+          .getSheetByName('Rule Settings - Line Item')
+          .getDataRange()
+          .getValues();
+        expect(values[2].slice(0, 4)).to.eql([
+          'ID',
+          'Line Item Name',
+          'Advertiser ID',
+          'Advertiser Name',
+        ]);
+        expect(values.slice(4, 6).map((r) => r.slice(0, 4))).to.eql([
+          ['li1', 'Line Item 1', 'a1', 'Advertiser 1'],
+          ['li2', 'Line Item 2', 'a2', 'Advertiser 2'],
+        ]);
+      });
+    },
+  );
 });
 
 describe('initializeRules', function () {
