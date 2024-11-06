@@ -55,11 +55,7 @@ import {
   ClientInterface,
   DisplayVideoClientTypes,
   IDType,
-  InsertionOrderMap,
-  InsertionOrderTuple,
   LineItemBudgetReportInterface,
-  LineItemMap,
-  LineItemTuple,
   RuleGranularity,
   RuleParams,
 } from './types';
