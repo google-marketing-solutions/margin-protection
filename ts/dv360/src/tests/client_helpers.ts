@@ -440,11 +440,11 @@ function fakeLineItemsClass(
 ) {
   return class FakeLineItems extends LineItems {
     override list(callback: Callable<LineItem>) {
-      callback(
-        params.allLineItems![this.advertiserId].map(
-          (c) => new LineItem(c({ ...lineItemTemplate })),
-        ),
-      );
+        callback(
+          params.allLineItems![this.advertiserId].map(
+            (c) => new LineItem(c({ ...lineItemTemplate })),
+          ),
+        );
     }
   };
 }
