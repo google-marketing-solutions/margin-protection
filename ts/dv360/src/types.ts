@@ -26,7 +26,11 @@ import {
   InsertionOrders,
   LineItems,
 } from 'dv360_api/dv360';
-import { LineItem, InsertionOrder } from 'dv360_api/dv360_resources';
+import {
+  LineItem,
+  InsertionOrder,
+  DisplayVideoResource,
+} from 'dv360_api/dv360_resources';
 import {
   BaseClientArgs,
   BaseClientInterface,
@@ -173,3 +177,22 @@ export interface Accessors {
   insertionOrders: typeof InsertionOrders;
   lineItems: typeof LineItems;
 }
+
+/**
+ * A map of an ID to a resource.
+ */
+export interface EntityMap<Resource extends DisplayVideoResource> {
+  [entityId: string]: Resource;
+}
+
+/**
+ * A broken down version of {@link EntityMap}.
+ *
+ * Pass this to Object.fromEntries to get an {@link EntityMap}.
+ *
+ * Likewise, pass an {@link EntityMap} to Object.entries to get this.
+ */
+export type EntityEntry<Resource extends DisplayVideoResource> = [
+  entityId: string,
+  resource: Resource,
+];

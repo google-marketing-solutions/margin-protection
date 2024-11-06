@@ -54,6 +54,8 @@ import {
   ClientArgs,
   ClientInterface,
   DisplayVideoClientTypes,
+  EntityEntry,
+  EntityMap,
   IDType,
   LineItemBudgetReportInterface,
   RuleGranularity,
