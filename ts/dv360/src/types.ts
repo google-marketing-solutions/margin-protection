@@ -109,8 +109,8 @@ export interface DateRange {
 export interface ClientInterface
   extends BaseClientInterface<DisplayVideoClientTypes> {
   dao: { accessors: Accessors };
-  getAllInsertionOrders(): EntityMap<InsertionOrder>;
-  getAllLineItems(): EntityMap<LineItem>;
+  getAllInsertionOrders(): { [id: string]: InsertionOrder };
+  getAllLineItems(): { [id: string]: LineItem };
   getBudgetReport(args: DateRange): BudgetReportInterface;
   getLineItemBudgetReport(args: DateRange): LineItemBudgetReportInterface;
 }
@@ -177,22 +177,3 @@ export interface Accessors {
   insertionOrders: typeof InsertionOrders;
   lineItems: typeof LineItems;
 }
-
-/**
- * A map of an ID to a resource.
- */
-export interface EntityMap<Resource extends DisplayVideoResource> {
-  [entityId: string]: Resource;
-}
-
-/**
- * A broken down version of {@link EntityMap}.
- *
- * Pass this to Object.fromEntries to get an {@link EntityMap}.
- *
- * Likewise, pass an {@link EntityMap} to Object.entries to get this.
- */
-export type EntityEntry<Resource extends DisplayVideoResource> = [
-  entityId: string,
-  resource: Resource,
-];

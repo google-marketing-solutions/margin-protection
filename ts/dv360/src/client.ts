@@ -54,8 +54,6 @@ import {
   ClientArgs,
   ClientInterface,
   DisplayVideoClientTypes,
-  EntityEntry,
-  EntityMap,
   IDType,
   LineItemBudgetReportInterface,
   RuleGranularity,
@@ -109,8 +107,8 @@ export interface RuleStoreEntry<
  * requests, like {@link getAllInsertionOrders}.
  */
 export class Client implements ClientInterface {
-  private storedInsertionOrders: EntityMap<InsertionOrder> = {};
-  private storedLineItems: EntityMap<LineItem> = {};
+  private storedInsertionOrders: { [id: string]: InsertionOrder } = {};
+  private storedLineItems: { [id: string]: LineItem } = {};
   private storedCampaigns: RecordInfo[] = [];
   private savedBudgetReport?: BudgetReportInterface;
   private savedLineItemBudgetReport?: LineItemBudgetReportInterface;
@@ -197,12 +195,12 @@ export class Client implements ClientInterface {
     return { rules, results };
   }
 
-  getAllLineItems(): EntityMap<LineItem> {
-    function entries(io: LineItem): EntityEntry<LineItem> {
-      return [io.getId(), io];
+  getAllLineItems(): { [id: string]: LineItem } {
+    function entries(io: LineItem) {
+      return [io.getId(), io] satisfies [id: string, resource: LineItem];
     }
     if (!Object.keys(this.storedLineItems).length) {
-      let lineItems: Array<EntityEntry<LineItem>> = [];
+      let lineItems: Array<[id: string, resource: LineItem]> = [];
       if (this.args.idType === IDType.ADVERTISER) {
         lineItems = this.getAllLineItemsForAdvertiser(this.args.id).map(
           entries,
@@ -219,12 +217,12 @@ export class Client implements ClientInterface {
     return this.storedLineItems;
   }
 
-  getAllInsertionOrders(): EntityMap<InsertionOrder> {
-    function entries(io: InsertionOrder): EntityEntry<InsertionOrder> {
-      return [io.getId(), io];
+  getAllInsertionOrders(): { [id: string]: InsertionOrder } {
+    function entries(io: InsertionOrder) {
+      return [io.getId(), io] satisfies [id: string, resource: InsertionOrder];
     }
     if (!Object.keys(this.storedInsertionOrders).length) {
-      let insertionOrders: Array<EntityEntry<InsertionOrder>> = [];
+      let insertionOrders: Array<[id: string, resource: InsertionOrder]> = [];
       if (this.args.idType === IDType.ADVERTISER) {
         insertionOrders = this.getAllInsertionOrdersForAdvertiser(
           this.args.id,
