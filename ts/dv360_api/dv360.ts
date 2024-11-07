@@ -216,10 +216,6 @@ export abstract class DisplayVideoApiClient extends BaseApiClient {
   getResourceName(): string {
     return this.resourceName;
   }
-
-  getId(): string {
-    throw ObjectUtil.error('Not Allowed.');
-  }
 }
 
 /**
@@ -316,7 +312,7 @@ export class Advertisers extends DisplayVideoApiClient {
     changedProperties: string,
   ): Advertiser {
     return super.patchResource(
-      `advertisers/${advertiserResource.getId()}?updateMask=` +
+      `advertisers/${advertiserResource.id}?updateMask=` +
         encodeURIComponent(changedProperties),
       advertiserResource,
     ) as Advertiser;
@@ -434,7 +430,7 @@ export class Campaigns extends DisplayVideoApiClient {
   ): Campaign {
     return super.patchResource(
       `advertisers/${this.getAdvertiserId()}/campaigns/` +
-        `${campaignResource.getId()}?updateMask=` +
+        `${campaignResource.id}?updateMask=` +
         encodeURIComponent(changedProperties),
       campaignResource,
     ) as Campaign;
@@ -562,7 +558,7 @@ export class InsertionOrders extends DisplayVideoApiClient {
   ): InsertionOrder {
     return super.patchResource(
       `advertisers/${this.getAdvertiserId()}/insertionOrders/` +
-        `${insertionOrderResource.getId()}?updateMask=` +
+        `${insertionOrderResource.id}?updateMask=` +
         encodeURIComponent(changedProperties),
       insertionOrderResource,
     ) as InsertionOrder;
@@ -681,7 +677,7 @@ export class LineItems extends DisplayVideoApiClient {
   ): LineItem {
     return super.patchResource(
       `advertisers/${this.getAdvertiserId()}/lineItems/` +
-        `${lineItemResource.getId()}?updateMask=` +
+        `${lineItemResource.id}?updateMask=` +
         encodeURIComponent(changedProperties),
       lineItemResource,
     ) as LineItem;

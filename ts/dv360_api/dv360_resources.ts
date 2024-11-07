@@ -76,9 +76,9 @@ export class DisplayVideoResource {
    * @param status Optional status to set
    */
   constructor(
-    private readonly id: string | null,
-    private displayName: string | null,
-    private status: Status = STATUS.UNSPECIFIED,
+    readonly id: string | null,
+    readonly displayName: string | null,
+    readonly status: Status = STATUS.UNSPECIFIED,
   ) {}
 
   /**
@@ -98,10 +98,10 @@ export class DisplayVideoResource {
     if (!other) {
       changedProperties.push(...this.getMutableProperties());
     } else {
-      if (this.getDisplayName() !== other.getDisplayName()) {
+      if (this.displayName !== other.displayName) {
         changedProperties.push('displayName');
       }
-      if (this.getStatus() !== other.getStatus()) {
+      if (this.status !== other.status) {
         changedProperties.push('entityStatus');
       }
     }
@@ -128,46 +128,6 @@ export class DisplayVideoResource {
   getMutableProperties(): string[] {
     return ['displayName', 'entityStatus'];
   }
-
-  /**
-   * Returns the API resource ID.
-   *
-   */
-  getId(): string | null {
-    return this.id;
-  }
-
-  /**
-   * Returns the API resource display name.
-   *
-   */
-  getDisplayName(): string | null {
-    return this.displayName;
-  }
-
-  /**
-   * Sets the API resource display name.
-   *
-   */
-  setDisplayName(displayName: string) {
-    this.displayName = displayName;
-  }
-
-  /**
-   * Returns the API resource status.
-   *
-   */
-  getStatus(): Status {
-    return this.status;
-  }
-
-  /**
-   * Sets the API resource status.
-   *
-   */
-  setStatus(status: Status) {
-    this.status = status;
-  }
 }
 
 interface RequiredAdvertiserParams {
@@ -188,11 +148,11 @@ interface OptionalAdvertiserParams {
  * @final
  */
 export class Advertiser extends DisplayVideoResource {
-  private readonly partnerId: string;
+  readonly partnerId: string;
 
-  private readonly generalConfig: AdvertiserGeneralConfig;
+  readonly generalConfig: AdvertiserGeneralConfig;
 
-  private readonly adServerConfig: AdvertiserAdServerConfig;
+  readonly adServerConfig: AdvertiserAdServerConfig;
 
   /**
    * Constructs an instance of `Advertiser`.
@@ -280,12 +240,12 @@ export class Advertiser extends DisplayVideoResource {
    */
   toJSON(): { [key: string]: unknown } {
     return {
-      advertiserId: this.getId(),
-      displayName: this.getDisplayName(),
-      partnerId: this.getPartnerId(),
-      entityStatus: String(this.getStatus()),
-      generalConfig: this.getGeneralConfig(),
-      adServerConfig: this.getAdServerConfig(),
+      advertiserId: this.id,
+      displayName: this.displayName,
+      partnerId: this.partnerId,
+      entityStatus: String(this.status),
+      generalConfig: this.generalConfig,
+      adServerConfig: this.adServerConfig,
     };
   }
 
@@ -304,7 +264,7 @@ export class Advertiser extends DisplayVideoResource {
 
     if (
       other instanceof Advertiser &&
-      this.getGeneralConfig().domainUrl !== other.getGeneralConfig().domainUrl
+      this.generalConfig.domainUrl !== other.generalConfig.domainUrl
     ) {
       changedProperties.push('generalConfig.domainUrl');
     }
@@ -318,38 +278,6 @@ export class Advertiser extends DisplayVideoResource {
    */
   override getMutableProperties(): string[] {
     return [...super.getMutableProperties(), 'generalConfig.domainUrl'];
-  }
-
-  /**
-   * Returns the partner ID.
-   *
-   */
-  getPartnerId(): string {
-    return this.partnerId;
-  }
-
-  /**
-   * Returns the advertiser general config.
-   *
-   */
-  getGeneralConfig(): AdvertiserGeneralConfig {
-    return this.generalConfig;
-  }
-
-  /**
-   * Sets the domain URL property of the advertiser general config.
-   *
-   */
-  setDomainUrl(domainUrl: string) {
-    this.getGeneralConfig().domainUrl = domainUrl;
-  }
-
-  /**
-   * Returns the advertiser ad server config.
-   *
-   */
-  getAdServerConfig(): AdvertiserAdServerConfig {
-    return this.adServerConfig;
   }
 }
 
@@ -373,15 +301,15 @@ interface CampaignOptionalParameters {
  * @final
  */
 export class Campaign extends DisplayVideoResource {
-  private readonly advertiserId: string;
+  readonly advertiserId: string;
 
-  private readonly campaignGoal: CampaignGoal;
+  readonly campaignGoal: CampaignGoal;
 
-  private readonly campaignFrequencyCap: FrequencyCap;
+  readonly campaignFrequencyCap: FrequencyCap;
 
-  private readonly campaignFlight: CampaignFlight;
+  readonly campaignFlight: CampaignFlight;
 
-  private readonly campaignBudgets: CampaignBudget[];
+  readonly campaignBudgets: CampaignBudget[];
   /**
    * Constructs an instance of `Campaign`.
    *
@@ -482,14 +410,14 @@ export class Campaign extends DisplayVideoResource {
    */
   toJSON(): { [key: string]: unknown } {
     return {
-      campaignId: this.getId(),
-      displayName: this.getDisplayName(),
-      advertiserId: this.getAdvertiserId(),
-      entityStatus: String(this.getStatus()),
-      campaignBudgets: CampaignBudgetMapper.toJson(this.getCampaignBudgets()),
-      campaignGoal: this.getCampaignGoal(),
-      campaignFlight: CampaignFlightMapper.toJson(this.getCampaignFlight()),
-      frequencyCap: this.getCampaignFrequencyCap(),
+      campaignId: this.id,
+      displayName: this.displayName,
+      advertiserId: this.advertiserId,
+      entityStatus: String(this.status),
+      campaignBudgets: CampaignBudgetMapper.toJson(this.campaignBudgets),
+      campaignGoal: this.campaignGoal,
+      campaignFlight: CampaignFlightMapper.toJson(this.campaignFlight),
+      frequencyCap: this.campaignFrequencyCap,
     };
   }
 
@@ -509,9 +437,9 @@ export class Campaign extends DisplayVideoResource {
     if (other instanceof Campaign) {
       changedProperties.push(
         ...ApiDate.fromApiResource(
-          this.getCampaignStartDate(),
+          this.campaignFlight.plannedDates.startDate,
         )!.getChangedProperties(
-          other.getCampaignStartDate(),
+          other.campaignFlight.plannedDates.startDate,
           /* prefix= */ 'campaignFlight.plannedDates.startDate.',
         ),
       );
@@ -529,62 +457,6 @@ export class Campaign extends DisplayVideoResource {
       ...super.getMutableProperties(),
       ...ApiDate.getMutableProperties('campaignFlight.plannedDates.startDate.'),
     ];
-  }
-
-  /**
-   * Returns the advertiser ID.
-   *
-   */
-  getAdvertiserId(): string {
-    return this.advertiserId;
-  }
-
-  /**
-   * Returns the campaign goal configuration.
-   *
-   */
-  getCampaignGoal(): CampaignGoal {
-    return this.campaignGoal;
-  }
-
-  /**
-   * Returns the campaign budget
-   *
-   */
-  getCampaignBudgets(): CampaignBudget[] {
-    return this.campaignBudgets;
-  }
-
-  /**
-   * Returns the campaign flight configuration.
-   *
-   */
-  getCampaignFlight(): CampaignFlight {
-    return this.campaignFlight;
-  }
-
-  /**
-   * Returns the campaign start date.
-   *
-   */
-  getCampaignStartDate(): RawApiDate {
-    return this.getCampaignFlight().plannedDates.startDate;
-  }
-
-  /**
-   * Sets the campaign start date.
-   *
-   */
-  setCampaignStartDate(campaignStartDate: RawApiDate) {
-    this.getCampaignFlight().plannedDates.startDate = campaignStartDate;
-  }
-
-  /**
-   * Returns the campaign frequency cap configuration.
-   *
-   */
-  getCampaignFrequencyCap(): FrequencyCap {
-    return this.campaignFrequencyCap;
   }
 }
 
@@ -606,19 +478,19 @@ interface InsertionOrderParams {
  * @final
  */
 export class InsertionOrder extends DisplayVideoResource {
-  private readonly advertiserId: string;
+  readonly advertiserId: string;
 
-  private readonly campaignId: string;
+  readonly campaignId: string;
 
   private insertionOrderType: string;
 
-  private readonly insertionOrderPacing: Pacing;
+  readonly insertionOrderPacing: Pacing;
 
-  private readonly insertionOrderFrequencyCap: FrequencyCap;
+  readonly insertionOrderFrequencyCap: FrequencyCap;
 
-  private readonly insertionOrderKpi: Kpi;
+  readonly insertionOrderKpi: Kpi;
 
-  private readonly insertionOrderBudget: InsertionOrderBudget;
+  readonly insertionOrderBudget: InsertionOrderBudget;
 
   constructor(
     {
@@ -721,16 +593,16 @@ export class InsertionOrder extends DisplayVideoResource {
    */
   toJSON(): { [key: string]: unknown } {
     return {
-      insertionOrderId: this.getId(),
-      displayName: this.getDisplayName(),
-      advertiserId: this.getAdvertiserId(),
-      campaignId: this.getCampaignId(),
-      insertionOrderType: this.getInsertionOrderType(),
-      entityStatus: String(this.getStatus()),
-      pacing: this.getInsertionOrderPacing(),
-      frequencyCap: this.getInsertionOrderFrequencyCap(),
-      kpi: this.getInsertionOrderKpi(),
-      budget: InsertionOrderBudgetMapper.toJson(this.getInsertionOrderBudget()),
+      insertionOrderId: this.id,
+      displayName: this.displayName,
+      advertiserId: this.advertiserId,
+      campaignId: this.campaignId,
+      insertionOrderType: this.insertionOrderType,
+      entityStatus: String(this.status),
+      pacing: this.insertionOrderPacing,
+      frequencyCap: this.insertionOrderFrequencyCap,
+      kpi: this.insertionOrderKpi,
+      budget: InsertionOrderBudgetMapper.toJson(this.insertionOrderBudget),
     };
   }
 
@@ -749,12 +621,12 @@ export class InsertionOrder extends DisplayVideoResource {
     const changedProperties = super.getChangedProperties(other);
 
     if (other instanceof InsertionOrder) {
-      if (this.getInsertionOrderType() !== other.getInsertionOrderType()) {
+      if (this.insertionOrderType !== other.insertionOrderType) {
         changedProperties.push('insertionOrderType');
       }
       if (
-        this.getInsertionOrderBudgetSegments() !==
-        other.getInsertionOrderBudgetSegments()
+        this.insertionOrderBudget.budgetSegments !==
+        other.insertionOrderBudget.budgetSegments
       ) {
         changedProperties.push('budget.budgetSegments');
       }
@@ -773,89 +645,6 @@ export class InsertionOrder extends DisplayVideoResource {
       'insertionOrderType',
       'budget.budgetSegments',
     ];
-  }
-
-  /**
-   * Returns the advertiser ID.
-   *
-   */
-  getAdvertiserId(): string {
-    return this.advertiserId;
-  }
-
-  /**
-   * Returns the campaign ID.
-   *
-   */
-  getCampaignId(): string {
-    return this.campaignId;
-  }
-
-  /**
-   * Returns the insertion order type.
-   *
-   */
-  getInsertionOrderType(): string {
-    return this.insertionOrderType;
-  }
-
-  /**
-   * Sets the insertion order type.
-   *
-   */
-  setInsertionOrderType(insertionOrderType: string) {
-    this.insertionOrderType = insertionOrderType;
-  }
-
-  /**
-   * Returns the insertion order pacing configuration.
-   *
-   */
-  getInsertionOrderPacing(): Pacing {
-    return this.insertionOrderPacing;
-  }
-
-  /**
-   * Returns the insertion order frequency cap configuration.
-   *
-   */
-  getInsertionOrderFrequencyCap(): FrequencyCap {
-    return this.insertionOrderFrequencyCap;
-  }
-
-  /**
-   * Returns the insertion order performance goal configuration.
-   *
-   */
-  getInsertionOrderKpi(): Kpi {
-    return this.insertionOrderKpi;
-  }
-
-  /**
-   * Returns the insertion order budget configuration.
-   *
-   */
-  getInsertionOrderBudget(): InsertionOrderBudget {
-    return this.insertionOrderBudget;
-  }
-
-  /**
-   * Returns the insertion order budget segments array.
-   *
-   */
-  getInsertionOrderBudgetSegments(): InsertionOrderBudgetSegment[] {
-    return this.getInsertionOrderBudget().budgetSegments;
-  }
-
-  /**
-   * Sets the insertion order budget segments array.
-   *
-   */
-  setInsertionOrderBudgetSegments(
-    insertionOrderBudgetSegments: InsertionOrderBudgetSegment[],
-  ) {
-    this.getInsertionOrderBudget().budgetSegments =
-      insertionOrderBudgetSegments;
   }
 }
 
@@ -963,25 +752,25 @@ export interface YoutubeAndPartnersInventorySourceConfig {
  * @final
  */
 export class LineItem extends DisplayVideoResource {
-  private readonly advertiserId: string;
+  readonly advertiserId: string;
 
-  private readonly campaignId: string;
+  readonly campaignId: string;
 
-  private readonly insertionOrderId: string;
+  readonly insertionOrderId: string;
 
-  private readonly lineItemType: string;
+  readonly lineItemType: string;
 
-  private readonly lineItemFlight: LineItemFlight;
+  readonly lineItemFlight: LineItemFlight;
 
-  private readonly lineItemBudget: LineItemBudget;
+  readonly lineItemBudget: LineItemBudget;
 
-  private readonly lineItemPacing: Pacing;
+  readonly lineItemPacing: Pacing;
 
-  private readonly lineItemFrequencyCap: FrequencyCap;
+  readonly lineItemFrequencyCap: FrequencyCap;
 
-  private readonly lineItemPartnerRevenueModel: LineItemPartnerRevenueModel;
+  readonly lineItemPartnerRevenueModel: LineItemPartnerRevenueModel;
 
-  private readonly lineItemBidStrategy: BiddingStrategy;
+  readonly lineItemBidStrategy: BiddingStrategy;
 
   constructor(
     {
@@ -1115,19 +904,19 @@ export class LineItem extends DisplayVideoResource {
    */
   toJSON(): { [key: string]: unknown } {
     return {
-      lineItemId: this.getId(),
-      displayName: this.getDisplayName(),
-      advertiserId: this.getAdvertiserId(),
-      campaignId: this.getCampaignId(),
-      insertionOrderId: this.getInsertionOrderId(),
-      lineItemType: this.getLineItemType(),
-      entityStatus: String(this.getStatus()),
-      flight: LineItemFlightMapper.toJson(this.getLineItemFlight()),
-      budget: this.getLineItemBudget(),
-      pacing: this.getLineItemPacing(),
-      frequencyCap: this.getLineItemFrequencyCap(),
-      partnerRevenueModel: this.getLineItemPartnerRevenueModel(),
-      bidStrategy: this.getLineItemBidStrategy(),
+      lineItemId: this.id,
+      displayName: this.displayName,
+      advertiserId: this.advertiserId,
+      campaignId: this.campaignId,
+      insertionOrderId: this.insertionOrderId,
+      lineItemType: this.lineItemType,
+      entityStatus: String(this.status),
+      flight: LineItemFlightMapper.toJson(this.lineItemFlight),
+      budget: this.lineItemBudget,
+      pacing: this.lineItemPacing,
+      frequencyCap: this.lineItemFrequencyCap,
+      partnerRevenueModel: this.lineItemPartnerRevenueModel,
+      bidStrategy: this.lineItemBidStrategy,
     };
   }
 
@@ -1170,104 +959,14 @@ export class LineItem extends DisplayVideoResource {
   }
 
   /**
-   * Returns the advertiser ID.
-   *
-   */
-  getAdvertiserId(): string {
-    return this.advertiserId;
-  }
-
-  /**
-   * Returns the campaign ID.
-   *
-   */
-  getCampaignId(): string {
-    return this.campaignId;
-  }
-
-  /**
-   * Returns the insertion order ID.
-   *
-   */
-  getInsertionOrderId(): string {
-    return this.insertionOrderId;
-  }
-
-  /**
-   * Returns the line item type.
-   *
-   */
-  getLineItemType(): string {
-    return this.lineItemType;
-  }
-
-  /**
-   * Returns the line item flight configuration.
-   *
-   */
-  getLineItemFlight(): LineItemFlight {
-    return this.lineItemFlight;
-  }
-
-  /**
    * Returns the line item flight end date, or null if a date object doesn't
    * exist.
    *
    */
   getLineItemFlightEndDate(): RawApiDate | null {
-    return this.getLineItemFlight().dateRange
-      ? this.getLineItemFlight().dateRange!.endDate
+    return this.lineItemFlight.dateRange
+      ? this.lineItemFlight.dateRange!.endDate
       : null;
-  }
-
-  /**
-   * Sets the line item flight end date, only if a date object exists.
-   *
-   */
-  setLineItemFlightEndDate(lineItemFlightEndDate: RawApiDate) {
-    if (this.getLineItemFlight().dateRange) {
-      this.getLineItemFlight().dateRange!.endDate = lineItemFlightEndDate;
-    }
-  }
-
-  /**
-   * Returns the line item budget configuration.
-   *
-   */
-  getLineItemBudget(): LineItemBudget {
-    return this.lineItemBudget;
-  }
-
-  /**
-   * Returns the line item pacing configuration.
-   *
-   */
-  getLineItemPacing(): Pacing {
-    return this.lineItemPacing;
-  }
-
-  /**
-   * Returns the line item frequency cap configuration.
-   *
-   */
-  getLineItemFrequencyCap(): FrequencyCap {
-    return this.lineItemFrequencyCap;
-  }
-
-  /**
-   * Returns the line item partner revenue model configuration.
-   *
-   */
-  getLineItemPartnerRevenueModel(): LineItemPartnerRevenueModel {
-    return this.lineItemPartnerRevenueModel;
-  }
-
-  /**
-   * Returns the line item bid strategy configuration.
-   *
-   */
-  getLineItemBidStrategy(): BiddingStrategy {
-    return this.lineItemBidStrategy;
   }
 }
 
@@ -1293,19 +992,19 @@ interface InventorySourceOptionalParams {
  * @final
  */
 export class InventorySource extends DisplayVideoResource {
-  private readonly inventorySourceType: string;
+  readonly inventorySourceType: string;
 
-  private readonly rateDetails: InventorySourceRateDetails;
+  readonly rateDetails: InventorySourceRateDetails;
 
-  private readonly commitment: string | null;
+  readonly commitment: string | null;
 
-  private readonly deliveryMethod: string | null;
+  readonly deliveryMethod: string | null;
 
-  private readonly dealId: string | null;
+  readonly dealId: string | null;
 
-  private readonly publisherName: string | null;
+  readonly publisherName: string | null;
 
-  private readonly exchange: string | null;
+  readonly exchange: string | null;
 
   constructor(
     {
@@ -1420,26 +1119,26 @@ export class InventorySource extends DisplayVideoResource {
    */
   toJSON(): { [key: string]: unknown } {
     const result: { [key: string]: unknown } = {
-      inventorySourceId: this.getId(),
-      displayName: this.getDisplayName(),
-      inventorySourceType: this.getInventorySourceType(),
-      rateDetails: this.getRateDetails(),
-      status: { entityStatus: String(this.getStatus()) },
+      inventorySourceId: this.id,
+      displayName: this.displayName,
+      inventorySourceType: this.inventorySourceType,
+      rateDetails: this.rateDetails,
+      status: { entityStatus: String(this.status) },
     };
-    if (this.getCommitment()) {
-      result['commitment'] = this.getCommitment();
+    if (this.commitment) {
+      result['commitment'] = this.commitment;
     }
-    if (this.getDeliveryMethod()) {
-      result['deliveryMethod'] = this.getDeliveryMethod();
+    if (this.deliveryMethod) {
+      result['deliveryMethod'] = this.deliveryMethod;
     }
-    if (this.getDealId()) {
-      result['dealId'] = this.getDealId();
+    if (this.dealId) {
+      result['dealId'] = this.dealId;
     }
-    if (this.getPublisherName()) {
-      result['publisherName'] = this.getPublisherName();
+    if (this.publisherName) {
+      result['publisherName'] = this.publisherName;
     }
-    if (this.getExchange()) {
-      result['exchange'] = this.getExchange();
+    if (this.exchange) {
+      result['exchange'] = this.exchange;
     }
     return result;
   }
@@ -1451,62 +1150,6 @@ export class InventorySource extends DisplayVideoResource {
   override getMutableProperties(): string[] {
     return [];
   }
-
-  /**
-   * Returns the inventory source type.
-   *
-   */
-  getInventorySourceType(): string {
-    return this.inventorySourceType;
-  }
-
-  /**
-   * Returns the rate details.
-   *
-   */
-  getRateDetails(): InventorySourceRateDetails {
-    return this.rateDetails;
-  }
-
-  /**
-   * Returns the commitment.
-   *
-   */
-  getCommitment(): string | null {
-    return this.commitment;
-  }
-
-  /**
-   * Returns the delivery method.
-   *
-   */
-  getDeliveryMethod(): string | null {
-    return this.deliveryMethod;
-  }
-
-  /**
-   * Returns the deal ID.
-   *
-   */
-  getDealId(): string | null {
-    return this.dealId;
-  }
-
-  /**
-   * Returns the publisher name.
-   *
-   */
-  getPublisherName(): string | null {
-    return this.publisherName;
-  }
-
-  /**
-   * Returns the exchange.
-   *
-   */
-  getExchange(): string | null {
-    return this.exchange;
-  }
 }
 
 /**
@@ -1514,7 +1157,7 @@ export class InventorySource extends DisplayVideoResource {
  * @see https://developers.google.com/display-video/api/reference/rest/v1/targetingTypes.targetingOptions
  */
 export class TargetingOption extends DisplayVideoResource {
-  private readonly targetingDetails: { [key: string]: unknown };
+  readonly targetingDetails: { [key: string]: unknown };
   /**
    * Constructs an instance of `TargetingOption`.
    *
@@ -1530,10 +1173,10 @@ export class TargetingOption extends DisplayVideoResource {
    */
   constructor(
     id: string | null,
-    private readonly targetingType: TargetingType,
-    private readonly targetingDetailsKey: string,
+    readonly targetingType: TargetingType,
+    readonly targetingDetailsKey: string,
     targetingDetails: { [key: string]: unknown },
-    private readonly idProperty: string = 'targetingOptionId',
+    readonly idProperty: string = 'targetingOptionId',
   ) {
     super(
       id /* displayName= */,
@@ -1614,10 +1257,10 @@ export class TargetingOption extends DisplayVideoResource {
    */
   toJSON(): { [key: string]: unknown } {
     const result: { [key: string]: unknown } = {
-      targetingType: this.getTargetingType(),
+      targetingType: this.targetingType,
     };
-    result[this.getTargetingDetailsKey()] = this.getTargetingDetails();
-    result[this.getIdProperty()] = this.getId();
+    result[this.targetingDetailsKey] = this.targetingDetails;
+    result[this.idProperty] = this.id;
 
     return result;
   }
@@ -1628,38 +1271,6 @@ export class TargetingOption extends DisplayVideoResource {
 
   override getMutableProperties(): string[] {
     return [];
-  }
-
-  /**
-   * Returns the targeting type.
-   *
-   */
-  getTargetingType(): TargetingType {
-    return this.targetingType;
-  }
-
-  /**
-   * Returns the targeting details key.
-   *
-   */
-  getTargetingDetailsKey(): string {
-    return this.targetingDetailsKey;
-  }
-
-  /**
-   * Returns the targeting details object.
-   *
-   */
-  getTargetingDetails(): { [key: string]: unknown } {
-    return this.targetingDetails;
-  }
-
-  /**
-   * Returns the id property.
-   *
-   */
-  getIdProperty(): string {
-    return this.idProperty;
   }
 }
 
@@ -1690,7 +1301,7 @@ export class AssignedTargetingOption extends TargetingOption {
   constructor(
     id: string | null,
     targetingType: TargetingType,
-    private readonly inheritance: string,
+    readonly inheritance: string,
     targetingDetailsKey: string,
     targetingDetails: { [key: string]: unknown },
   ) {
@@ -1722,11 +1333,11 @@ export class AssignedTargetingOption extends TargetingOption {
       /* type= */ 'AssignedTargetingOption',
     );
     return new AssignedTargetingOption(
-      targetingOption.getId() as string,
-      targetingOption.getTargetingType(),
+      targetingOption.id as string,
+      targetingOption.targetingType,
       String(resource['inheritance']),
-      targetingOption.getTargetingDetailsKey(),
-      targetingOption.getTargetingDetails(),
+      targetingOption.targetingDetailsKey,
+      targetingOption.targetingDetails,
     );
   }
 
@@ -1740,16 +1351,8 @@ export class AssignedTargetingOption extends TargetingOption {
    */
   override toJSON(): { [key: string]: unknown } {
     const result = super.toJSON();
-    result['inheritance'] = this.getInheritance();
+    result['inheritance'] = this.inheritance;
 
     return result;
-  }
-
-  /**
-   * Returns the inheritance.
-   *
-   */
-  getInheritance(): string {
-    return this.inheritance;
   }
 }

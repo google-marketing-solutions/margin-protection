@@ -16,10 +16,7 @@
  */
 
 import { equalTo } from 'common/checks';
-import {
-  generateFakeHttpResponse,
-  mockAppsScript,
-} from 'common/test_helpers/mock_apps_script';
+import { mockAppsScript } from 'common/test_helpers/mock_apps_script';
 import { Value } from 'common/types';
 
 import { Client, newRule, RuleRange } from '../client';

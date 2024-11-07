@@ -131,8 +131,8 @@ export const geoTargetRule = newRule({
           if (!targetingOption) {
             continue;
           }
-          const targetName = targetingOption.getDisplayName();
-          if (targetingOption.getTargetingDetails()['negative']) {
+          const targetName = targetingOption.displayName;
+          if (targetingOption.targetingDetails['negative']) {
             const exclude = excludedTargets.filter(
               (exc) => targetName.indexOf(exc) >= 0,
             );
@@ -430,9 +430,9 @@ export const dailyBudgetRule = newRule({
     for (const insertionOrder of Object.values(
       this.client.getAllInsertionOrders(),
     )) {
-      const insertionOrderId = insertionOrder.getId()!;
+      const insertionOrderId = insertionOrder.id!;
       const campaignSettings = this.settings.getOrDefault(insertionOrderId);
-      const displayName = insertionOrder.getDisplayName();
+      const displayName = insertionOrder.displayName;
       if (!displayName) {
         throw new Error('Missing ID or Display Name for Insertion Order.');
       }
@@ -467,10 +467,10 @@ function checkPlannedDailyBudget(
   insertionOrder: InsertionOrder,
 ): DailyBudget[] {
   const dailyBudgets: DailyBudget[] = [];
-  for (const budgetSegment of insertionOrder.getInsertionOrderBudgetSegments()) {
+  for (const budgetSegment of insertionOrder.insertionOrderBudget
+    .budgetSegments) {
     if (
-      insertionOrder.getInsertionOrderBudget().budgetUnit !==
-      'BUDGET_UNIT_CURRENCY'
+      insertionOrder.insertionOrderBudget.budgetUnit !== 'BUDGET_UNIT_CURRENCY'
     ) {
       continue;
     }
@@ -560,12 +560,13 @@ export const impressionsByGeoTarget = newRule({
     for (const insertionOrder of Object.values(
       this.client.getAllInsertionOrders(),
     )) {
-      for (const budgetSegment of insertionOrder.getInsertionOrderBudgetSegments()) {
+      for (const budgetSegment of insertionOrder.insertionOrderBudget
+        .budgetSegments) {
         calculateOuterBounds(range, budgetSegment, todayDate);
       }
-      result[insertionOrder.getId()!] = {
-        campaignId: insertionOrder.getCampaignId(),
-        displayName: insertionOrder.getDisplayName() ?? '',
+      result[insertionOrder.id!] = {
+        campaignId: insertionOrder.campaignId,
+        displayName: insertionOrder.displayName ?? '',
       };
     }
 
@@ -693,10 +694,10 @@ function getLineItemBudgetPacingResult<SettingsObj>(
   const today = Date.now();
   const todayDate = new Date(today);
   for (const lineItem of lineItems) {
-    const budget = lineItem.getLineItemBudget();
-    const flight = lineItem.getLineItemFlight().dateRange;
+    const budget = lineItem.lineItemBudget;
+    const flight = lineItem.lineItemFlight.dateRange;
     if (!dateRange) {
-      throw new Error(`Missing a date range in Line Item ${lineItem.getId()}`);
+      throw new Error(`Missing a date range in Line Item ${lineItem.id}`);
     }
     const startDate = getDate(flight.startDate);
     const endDate = getDate(flight.endDate);
@@ -707,12 +708,12 @@ function getLineItemBudgetPacingResult<SettingsObj>(
     if (budget.budgetUnit !== 'BUDGET_UNIT_CURRENCY') {
       continue;
     }
-    const pacingType = lineItem.getLineItemPacing().pacingType;
-    const setting = settings.getOrDefault(lineItem.getId()) as SettingsObj;
+    const pacingType = lineItem.lineItemPacing.pacingType;
+    const setting = settings.getOrDefault(lineItem.id) as SettingsObj;
     results.push({
-      campaignId: lineItem.getCampaignId(),
-      displayName: lineItem.getDisplayName(),
-      lineItemId: lineItem.getId(),
+      campaignId: lineItem.campaignId,
+      displayName: lineItem.displayName,
+      lineItemId: lineItem.id,
       startDate,
       endDate,
       setting,
@@ -741,25 +742,26 @@ function getInsertionOrderBudgetPacingResult<SettingsObj>(
   }> = [];
   const todayDate = new Date();
   for (const insertionOrder of Object.values(insertionOrders)) {
-    const pacingType = insertionOrder.getInsertionOrderPacing().pacingType;
-    const insertionOrderId = insertionOrder.getId()!;
-    const displayName = insertionOrder.getDisplayName();
+    const pacingType = insertionOrder.insertionOrderPacing.pacingType;
+    const insertionOrderId = insertionOrder.id!;
+    const displayName = insertionOrder.displayName;
     const setting = settings.getOrDefault(insertionOrderId) as SettingsObj;
-    for (const budgetSegment of insertionOrder.getInsertionOrderBudgetSegments()) {
+    for (const budgetSegment of insertionOrder.insertionOrderBudget
+      .budgetSegments) {
       const startDate = getDate(budgetSegment.dateRange.startDate);
       const endDate = getDate(budgetSegment.dateRange.endDate);
       if (!(startDate < todayDate && todayDate < endDate)) {
         continue;
       }
       if (
-        insertionOrder.getInsertionOrderBudget().budgetUnit !==
+        insertionOrder.insertionOrderBudget.budgetUnit !==
         'BUDGET_UNIT_CURRENCY'
       ) {
         continue;
       }
       expandDateRanges(dateRange, startDate, endDate);
       results.push({
-        campaignId: insertionOrder.getCampaignId(),
+        campaignId: insertionOrder.campaignId,
         displayName,
         insertionOrderId,
         startDate,
