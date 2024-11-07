@@ -107,6 +107,13 @@ interface TestClientParams {
 export interface CampaignTemplate {
   id: string;
   advertiserId: string;
+  campaignId: string;
+  campaignFlight: {
+    plannedDates: {
+      startDate: { year: number; month: number; day: number };
+    };
+  };
+  entityStatus: string;
   campaignGoal: {
     performanceGoal: {
       performanceGoalType: string;
@@ -174,7 +181,7 @@ export interface InsertionOrderTemplate {
  *
  * Call with {@link generateTestClient}.
  */
-class TestClient {
+export class TestClient {
   private readonly insertionOrderTemplate: InsertionOrderTemplate = {
     id: 'io1',
     advertiserId: '1',
@@ -252,7 +259,7 @@ class TestClient {
       fixedBid: { bidAmountMicros: String(1_000_000) },
     },
   };
-  private readonly campaignTemplate: CampaignTemplate = {
+  readonly campaignTemplate: CampaignTemplate = {
     id: 'c1',
     advertiserId: '1',
     campaignGoal: {
@@ -262,12 +269,19 @@ class TestClient {
         performanceGoalAmountMicros: '10',
       },
     },
+    entityStatus: 'ENTITY_STATUS_ACTIVE',
     displayName: 'Campaign 1',
     frequencyCap: {
       unlimited: false,
       timeUnit: 'TIME_UNIT_LIFETIME',
       timeUnitCount: 1,
       maxImpressions: 10,
+    },
+    campaignId: '',
+    campaignFlight: {
+      plannedDates: {
+        startDate: { year: 2000, month: 1, day: 1 },
+      },
     },
   };
 

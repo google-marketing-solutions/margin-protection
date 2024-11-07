@@ -17,12 +17,12 @@
 
 import { equalTo } from 'common/checks';
 import { mockAppsScript } from 'common/test_helpers/mock_apps_script';
-import { Value } from 'common/types';
+import { RecordInfo, Value } from 'common/types';
 
 import { Client, newRule, RuleRange } from '../client';
 import { RuleGranularity } from '../types';
 
-import { generateTestClient } from './client_helpers';
+import { generateTestClient, TestClient } from './client_helpers';
 import { expect } from 'chai';
 import {
   budgetPacingPercentageRule,
@@ -166,5 +166,37 @@ describe('RuleRange', function () {
       }
       expect(error).to.equal('Error: Unsupported granularity "Failure"');
     });
+  });
+});
+
+describe('API integrations', function () {
+  beforeEach(function () {
+    mockAppsScript();
+    const client = new TestClient({ id: '123' });
+    UrlFetchApp.fetchAll = ((requests) => {
+      return requests.map((_, i) => ({
+        getContentText() {
+          const tpl = { ...client.campaignTemplate };
+          tpl['advertiserId'] = `a${i + 1}`;
+          tpl['campaignId'] = `c${i + 1}`;
+          return JSON.stringify({ campaigns: [tpl] });
+        },
+      }));
+    }) as typeof UrlFetchApp.fetchAll;
+    this.client = client.generate();
+  });
+
+  it('grabs all records from getAllCampaignsFromAdvertisers', function () {
+    const campaigns = this.client.getAllCampaignsForAdvertisers({
+      a1: 'Advertiser 1',
+      a2: 'Advertiser 2',
+    }) as RecordInfo[];
+
+    expect(
+      campaigns.map((c) => [c.advertiserId, c.advertiserName, c.id]),
+    ).to.eql([
+      ['a1', 'Advertiser 1', 'c1'],
+      ['a2', 'Advertiser 2', 'c2'],
+    ]);
   });
 });

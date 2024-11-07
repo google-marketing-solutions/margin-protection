@@ -124,6 +124,7 @@ export class BaseApiClient {
       const responses = UrlFetchApp.fetchAll(
         urls.map((url) => ({ url, ...params })),
       );
+      console.log({ responses });
       return responses.map((response) =>
         response.getContentText()
           ? (JSON.parse(response.getContentText()) as {

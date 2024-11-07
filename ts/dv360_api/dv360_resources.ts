@@ -393,6 +393,12 @@ export class Campaign extends DisplayVideoResource {
             ),
           },
         );
+      } else {
+        console.debug({
+          mappedCampaignGoal,
+          mappedCampaignFlight,
+          mappedFrequencyCap,
+        });
       }
     }
     throw ObjectUtil.error(
