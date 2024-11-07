@@ -46,7 +46,7 @@ import {
   Settings,
 } from 'common/types';
 
-import { RawApiDate, STATUS } from 'dv360_api/dv360_types';
+import { RawApiDate } from 'dv360_api/dv360_types';
 import { BudgetReport, ImpressionReport, LineItemBudgetReport } from './api';
 import {
   Accessors,
@@ -59,7 +59,6 @@ import {
   RuleGranularity,
   RuleParams,
 } from './types';
-import { FilterExpression, Rule, RuleOperator } from 'dv360_api/utils';
 
 /**
  * A new rule in SA360.
@@ -203,14 +202,15 @@ export class Client implements ClientInterface {
     if (!Object.keys(this.storedLineItems).length) {
       let lineItems: Array<[id: string, resource: LineItem]> = [];
       if (this.args.idType === IDType.ADVERTISER) {
-        lineItems = this.getAllLineItemsForAdvertiser(this.args.id).map(
+        lineItems = this.getAllLineItemsForAdvertisers([this.args.id]).map(
           entries,
         );
       } else {
-        for (const { advertiserId } of this.getAllAdvertisersForPartner()) {
-          for (const io of this.getAllLineItemsForAdvertiser(advertiserId)) {
-            lineItems.push([io.id, io]);
-          }
+        const advertiserIds = this.getAllAdvertisersForPartner().map(
+          (advertiser) => advertiser.advertiserId,
+        );
+        for (const io of this.getAllLineItemsForAdvertisers(advertiserIds)) {
+          lineItems.push([io.id, io]);
         }
       }
       this.storedLineItems = Object.fromEntries(lineItems);
@@ -225,16 +225,17 @@ export class Client implements ClientInterface {
     if (!Object.keys(this.storedInsertionOrders).length) {
       let insertionOrders: Array<[id: string, resource: InsertionOrder]> = [];
       if (this.args.idType === IDType.ADVERTISER) {
-        insertionOrders = this.getAllInsertionOrdersForAdvertiser(
+        insertionOrders = this.getAllInsertionOrdersForAdvertisers([
           this.args.id,
-        ).map(entries);
+        ]).map(entries);
       } else {
-        for (const { advertiserId } of this.getAllAdvertisersForPartner()) {
-          for (const io of this.getAllInsertionOrdersForAdvertiser(
-            advertiserId,
-          )) {
-            insertionOrders.push([io.id, io]);
-          }
+        const advertisers = this.getAllAdvertisersForPartner().map(
+          (advertiser) => advertiser.advertiserId,
+        );
+        for (const io of this.getAllInsertionOrdersForAdvertisers(
+          advertisers,
+        )) {
+          insertionOrders.push([io.id, io]);
         }
       }
       this.storedInsertionOrders = Object.fromEntries(insertionOrders);
@@ -244,18 +245,28 @@ export class Client implements ClientInterface {
 
   async getAllCampaigns(): Promise<RecordInfo[]> {
     if (!this.storedCampaigns.length) {
+      const campaignsWithSegments = Object.values(
+        this.getAllInsertionOrders(),
+      ).reduce((prev, io) => {
+        prev.add(io.campaignId);
+        return prev;
+      }, new Set<string>());
       let campaigns: RecordInfo[] = [];
       if (this.args.idType === IDType.ADVERTISER) {
-        campaigns = this.getAllCampaignsForAdvertiser(this.args.id);
+        campaigns = this.getAllCampaignsForAdvertisers({
+          [this.args.id]: undefined,
+        }).filter((cmp) => campaignsWithSegments.has(cmp.id));
       } else {
-        for (const {
-          advertiserId,
-          advertiserName,
-        } of this.getAllAdvertisersForPartner()) {
-          campaigns = campaigns.concat(
-            this.getAllCampaignsForAdvertiser(advertiserId, advertiserName),
-          );
-        }
+        const advertisers = Object.fromEntries(
+          this.getAllAdvertisersForPartner().map((a) => {
+            return [a.advertiserId, a.advertiserName];
+          }),
+        );
+        campaigns = campaigns.concat(
+          this.getAllCampaignsForAdvertisers(advertisers).filter((cmp) =>
+            campaignsWithSegments.has(cmp.id),
+          ),
+        );
       }
       this.storedCampaigns = campaigns;
     }
@@ -295,62 +306,56 @@ export class Client implements ClientInterface {
     return result;
   }
 
-  getAllLineItemsForAdvertiser(advertiserId: string): LineItem[] {
+  getAllLineItemsForAdvertisers(advertiserIds: string[]): LineItem[] {
     let result: LineItem[] = [];
-    const lineItemApi = new this.dao.accessors.lineItems(advertiserId);
-    lineItemApi.list((lineItems: LineItem[]) => {
+    const lineItemApi = new this.dao.accessors.lineItems(advertiserIds);
+    lineItemApi.list((lineItems) => {
       result = result.concat(lineItems);
+    });
+    return result;
+  }
+
+  getAllInsertionOrdersForAdvertisers(advertisers: string[]): InsertionOrder[] {
+    let result: InsertionOrder[] = [];
+    const todayDate = new Date();
+    const insertionOrderApi = new this.dao.accessors.insertionOrders(
+      advertisers,
+    );
+    insertionOrderApi.list((ios: InsertionOrder[]) => {
+      result = result.concat(
+        ios.filter((io) => {
+          for (const budgetSegment of io.insertionOrderBudget.budgetSegments) {
+            if (getDate(budgetSegment.dateRange.endDate) > todayDate) {
+              return true;
+            }
+          }
+          return false;
+        }),
+      );
     });
 
     return result;
   }
 
-  getAllInsertionOrdersForAdvertiser(advertiserId: string): InsertionOrder[] {
-    let result: InsertionOrder[] = [];
-    const todayDate = new Date();
-    const insertionOrderApi = new this.dao.accessors.insertionOrders(
-      advertiserId,
-    );
-    insertionOrderApi.list(
-      (ios: InsertionOrder[]) => {
-        result = result.concat(
-          ios.filter((io) => {
-            for (const budgetSegment of io.insertionOrderBudget
-              .budgetSegments) {
-              if (getDate(budgetSegment.dateRange.endDate) > todayDate) {
-                return true;
-              }
-            }
-            return false;
-          }),
-        );
-      },
-      {
-        filter: new FilterExpression([
-          new Rule('entityStatus', RuleOperator.EQ, STATUS.ACTIVE),
-          new Rule('updateTime', RuleOperator.GTEQ, '2024-01-01T00:00:00Z'),
-        ]),
-      },
-    );
-
-    return result;
-  }
-
-  getAllCampaignsForAdvertiser(
-    advertiserId: string,
-    advertiserName?: string,
-  ): RecordInfo[] {
+  getAllCampaignsForAdvertisers(advertisers: {
+    [advertiserId: string]: string;
+  }): RecordInfo[] {
     const result: RecordInfo[] = [];
-    const campaignApi = new this.dao.accessors.campaigns(advertiserId);
+    const campaignApi = new this.dao.accessors.campaigns(
+      Object.keys(advertisers),
+    );
     campaignApi.list((campaigns: Campaign[]) => {
       for (const campaign of campaigns) {
+        const advertiserId = campaign.advertiserId;
         const id = campaign.id;
         if (!id) {
           throw new Error('Campaign ID is missing.');
         }
         result.push({
           advertiserId,
-          ...(advertiserName ? { advertiserName } : {}),
+          ...(advertisers[advertiserId]
+            ? { advertiserName: advertisers[advertiserId] }
+            : {}),
           id,
           displayName: campaign.displayName!,
         });

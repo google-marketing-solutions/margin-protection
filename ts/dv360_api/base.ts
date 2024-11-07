@@ -61,34 +61,35 @@ export class BaseApiClient {
    *     indicating 'fetch all'
    */
   executePagedApiRequest(
-    requestUri: string,
+    requestUris: string[],
     requestParams: { [key: string]: string } | null,
     requestCallback: (p1: { [key: string]: unknown }) => void,
     maxPages: number = -1,
   ) {
-    let url = this.buildApiUrl(requestUri);
+    let urls = requestUris.map((r) => this.buildApiUrl(r));
     let pageCount = 1;
-    let pageToken;
-
+    let pageToken: string;
     do {
-      const result = this.executeApiRequest(url, requestParams, true);
+      const results = this.executeApiRequest(urls, requestParams, true);
       console.log(`Output results page: ${pageCount}`);
-      requestCallback(result);
-
-      pageToken = result.nextPageToken;
-
-      if (pageToken) {
-        if (requestParams && requestParams['payload']) {
-          const payload = JSON.parse(
-            String(requestParams['payload']),
-          ) as PagedDisplayVideoResponse;
-          payload.pageToken = pageToken;
-          requestParams['payload'] = JSON.stringify(payload);
-        } else {
-          url = UriUtil.modifyUrlQueryString(url, 'pageToken', pageToken);
+      const newUrls = [];
+      for (const [i, result] of results.entries()) {
+        requestCallback(result);
+        pageToken = result.nextPageToken;
+        if (pageToken) {
+          if (requestParams && requestParams['payload']) {
+            const payload = JSON.parse(String(requestParams['payload']));
+            payload.pageToken = pageToken;
+            requestParams['payload'] = JSON.stringify(payload);
+          } else {
+            newUrls.push(
+              UriUtil.modifyUrlQueryString(urls[i], 'pageToken', pageToken),
+            );
+          }
         }
+        pageCount++;
       }
-      pageCount++;
+      urls = newUrls;
     } while (pageToken && (maxPages < 0 || pageCount <= maxPages));
   }
 
@@ -107,22 +108,29 @@ export class BaseApiClient {
    *     data, or an empty object for empty responses
    */
   executeApiRequest(
-    requestUri: string,
+    requestUris: string[],
     requestParams: Params | null,
     retryOnFailure: boolean,
     operationCount: number = 0,
-  ): { nextPageToken?: string } {
-    const url = this.buildApiUrl(requestUri);
+  ) {
+    const urls = requestUris.map((r) => this.buildApiUrl(r));
     const params = this.buildApiParams(requestParams);
     const maxRetries = 3;
 
     try {
-      console.log(`Fetching url=${url} with params=${JSON.stringify(params)}`);
-      const response = UrlFetchApp.fetch(url, params);
-      const result = response.getContentText()
-        ? (JSON.parse(response.getContentText()) as PagedDisplayVideoResponse)
-        : {};
-      return result;
+      console.log(
+        `Fetching ${urls.length} urls=${urls[0]}... with params=${JSON.stringify(params)}`,
+      );
+      const responses = UrlFetchApp.fetchAll(
+        urls.map((url) => ({ url, ...params })),
+      );
+      return responses.map((response) =>
+        response.getContentText()
+          ? (JSON.parse(response.getContentText()) as {
+              nextPageToken?: string;
+            })
+          : {},
+      );
     } catch (e) {
       console.error(`Operation failed with exception: ${e}`);
 
@@ -130,7 +138,7 @@ export class BaseApiClient {
         console.info(`Retrying operation for a max of ${maxRetries} times...`);
         operationCount++;
         return this.executeApiRequest(
-          url,
+          requestUris,
           params,
           retryOnFailure,
           operationCount,

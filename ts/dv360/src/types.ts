@@ -26,11 +26,7 @@ import {
   InsertionOrders,
   LineItems,
 } from 'dv360_api/dv360';
-import {
-  LineItem,
-  InsertionOrder,
-  DisplayVideoResource,
-} from 'dv360_api/dv360_resources';
+import { LineItem, InsertionOrder } from 'dv360_api/dv360_resources';
 import {
   BaseClientArgs,
   BaseClientInterface,

@@ -66,13 +66,13 @@ export abstract class DisplayVideoApiClient extends BaseApiClient {
    *     use for the request
    */
   listResources<T extends DisplayVideoResource>(
-    requestUri: string,
+    requestUris: string[],
     requestCallback: (p1: T[]) => void,
     maxPages: number = -1,
     requestParams: { [key: string]: string } = { method: 'get' },
   ) {
     this.executePagedApiRequest(
-      requestUri,
+      requestUris,
       requestParams,
       /* requestCallback= */ (apiResponse) => {
         const apiResources = apiResponse[this.getResourceName()];
@@ -109,10 +109,10 @@ export abstract class DisplayVideoApiClient extends BaseApiClient {
    * @return An object representing the retrieved API
    *     resource
    */
-  getResource(requestUri: string): DisplayVideoResource {
+  getResource(requestUris: string[]): DisplayVideoResource {
     return this.asDisplayVideoResource(
       this.executeApiRequest(
-        requestUri,
+        requestUris,
         /* requestParams= */ { method: 'get' },
         /* retryOnFailure= */ true,
       ),
@@ -128,12 +128,12 @@ export abstract class DisplayVideoApiClient extends BaseApiClient {
    * @return The created resource
    */
   createResource(
-    requestUri: string,
+    requestUris: string[],
     payload: DisplayVideoResource,
   ): DisplayVideoResource {
     return this.asDisplayVideoResource(
       this.executeApiRequest(
-        requestUri,
+        requestUris,
         /* requestParams= */ {
           method: 'post',
           payload: JSON.stringify(payload),
@@ -153,12 +153,12 @@ export abstract class DisplayVideoApiClient extends BaseApiClient {
    * @return The updated resource
    */
   patchResource(
-    requestUri: string,
+    requestUris: string[],
     payload: DisplayVideoResource,
   ): DisplayVideoResource {
     return this.asDisplayVideoResource(
       this.executeApiRequest(
-        requestUri,
+        requestUris,
         /* requestParams= */ {
           method: 'patch',
           payload: JSON.stringify(payload),
@@ -179,17 +179,19 @@ export abstract class DisplayVideoApiClient extends BaseApiClient {
    *     resource
    */
   patchResourceByComparison(
-    requestUri: string,
+    requestUris: string[],
     original: DisplayVideoResource,
     modified: DisplayVideoResource | null,
   ): DisplayVideoResource {
     const changedProperties = original.getChangedPropertiesString(modified);
 
     return this.patchResource(
-      UriUtil.modifyUrlQueryString(
-        requestUri,
-        'updateMask',
-        encodeURIComponent(changedProperties),
+      requestUris.map((requestUri) =>
+        UriUtil.modifyUrlQueryString(
+          requestUri,
+          'updateMask',
+          encodeURIComponent(changedProperties),
+        ),
       ),
       original,
     );
@@ -201,9 +203,9 @@ export abstract class DisplayVideoApiClient extends BaseApiClient {
    *
    * @param requestUri The URI of the DELETE request
    */
-  deleteResource(requestUri: string) {
+  deleteResource(requestUris: string[]) {
     this.executeApiRequest(
-      requestUri,
+      requestUris,
       /* requestParams= */ { method: 'delete' },
       /* retryOnFailure= */ true,
     );
@@ -255,7 +257,9 @@ export class Advertisers extends DisplayVideoApiClient {
     maxPages: number = -1,
   ) {
     super.listResources(
-      `advertisers?partnerId=${this.getPartnerId()}${buildParamString(params, { prependStr: '&', defaults: { filter: activeEntityFilter() } })}`,
+      [
+        `advertisers?partnerId=${this.getPartnerId()}${buildParamString(params, { prependStr: '&', defaults: { filter: activeEntityFilter() } })}`,
+      ],
       callback,
       maxPages,
     );
@@ -282,7 +286,7 @@ export class Advertisers extends DisplayVideoApiClient {
    *     resource
    */
   get(advertiserId: string): Advertiser {
-    return super.getResource(`advertisers/${advertiserId}`) as Advertiser;
+    return super.getResource([`advertisers/${advertiserId}`]) as Advertiser;
   }
 
   /**
@@ -291,7 +295,7 @@ export class Advertisers extends DisplayVideoApiClient {
    */
   create(advertiserResource: DisplayVideoResource): Advertiser {
     return super.createResource(
-      'advertisers',
+      ['advertisers'],
       advertiserResource,
     ) as Advertiser;
   }
@@ -312,8 +316,10 @@ export class Advertisers extends DisplayVideoApiClient {
     changedProperties: string,
   ): Advertiser {
     return super.patchResource(
-      `advertisers/${advertiserResource.id}?updateMask=` +
-        encodeURIComponent(changedProperties),
+      [
+        `advertisers/${advertiserResource.id}?updateMask=` +
+          encodeURIComponent(changedProperties),
+      ],
       advertiserResource,
     ) as Advertiser;
   }
@@ -324,7 +330,7 @@ export class Advertisers extends DisplayVideoApiClient {
    * @param advertiserId The ID of the advertiser to 'delete'
    */
   delete(advertiserId: string) {
-    super.deleteResource(`advertisers/${advertiserId}`);
+    super.deleteResource([`advertisers/${advertiserId}`]);
   }
 
   /**
@@ -344,9 +350,9 @@ export class Campaigns extends DisplayVideoApiClient {
   /**
    * Constructs an instance of `Campaigns`.
    *
-   * @param advertiserId The DV360 Advertiser identifier
+   * @param advertiserIds The DV360 Advertiser identifier
    */
-  constructor(protected readonly advertiserId: string) {
+  constructor(protected readonly advertiserIds: string[]) {
     super('campaigns');
   }
 
@@ -368,7 +374,10 @@ export class Campaigns extends DisplayVideoApiClient {
     maxPages: number = -1,
   ) {
     super.listResources(
-      `advertisers/${this.getAdvertiserId()}/campaigns${buildParamString(params, { defaults: { filter: activeEntityFilter() } })}`,
+      this.advertiserIds.map(
+        (advertiserId) =>
+          `advertisers/${advertiserId}/campaigns${buildParamString(params, { defaults: { filter: activeEntityFilter() } })}`,
+      ),
       callback,
       maxPages,
     );
@@ -395,7 +404,9 @@ export class Campaigns extends DisplayVideoApiClient {
    */
   get(campaignId: string): Campaign {
     return super.getResource(
-      `advertisers/${this.getAdvertiserId()}/campaigns/${campaignId}`,
+      this.advertiserIds.map(
+        (advertiserId) => `advertisers/${advertiserId}/campaigns/${campaignId}`,
+      ),
     ) as Campaign;
   }
 
@@ -409,7 +420,9 @@ export class Campaigns extends DisplayVideoApiClient {
    */
   create(campaignResource: DisplayVideoResource): Campaign {
     return super.createResource(
-      `advertisers/${this.getAdvertiserId()}/campaigns`,
+      this.advertiserIds.map(
+        (advertiserId) => `advertisers/${advertiserId}/campaigns`,
+      ),
       campaignResource,
     ) as Campaign;
   }
@@ -429,9 +442,12 @@ export class Campaigns extends DisplayVideoApiClient {
     changedProperties: string,
   ): Campaign {
     return super.patchResource(
-      `advertisers/${this.getAdvertiserId()}/campaigns/` +
-        `${campaignResource.id}?updateMask=` +
-        encodeURIComponent(changedProperties),
+      this.advertiserIds.map(
+        (advertiserId) =>
+          `advertisers/${advertiserId}/campaigns/` +
+          `${campaignResource.id}?updateMask=` +
+          encodeURIComponent(changedProperties),
+      ),
       campaignResource,
     ) as Campaign;
   }
@@ -443,16 +459,10 @@ export class Campaigns extends DisplayVideoApiClient {
    */
   delete(campaignId: string) {
     super.deleteResource(
-      `advertisers/${this.getAdvertiserId()}/campaigns/${campaignId}`,
+      this.advertiserIds.map(
+        (advertiserId) => `advertisers/${advertiserId}/campaigns/${campaignId}`,
+      ),
     );
-  }
-
-  /**
-   * Returns the DV360 Advertiser identifier.
-   *
-   */
-  getAdvertiserId(): string {
-    return this.advertiserId;
   }
 }
 
@@ -467,7 +477,7 @@ export class InsertionOrders extends DisplayVideoApiClient {
    *
    * @param advertiserId The DV360 Advertiser identifier
    */
-  constructor(protected readonly advertiserId: string) {
+  constructor(protected readonly advertiserIds: string[]) {
     super('insertionOrders');
   }
 
@@ -489,8 +499,11 @@ export class InsertionOrders extends DisplayVideoApiClient {
     maxPages: number = -1,
   ) {
     super.listResources(
-      `advertisers/${this.getAdvertiserId()}/` +
-        `insertionOrders${buildParamString(params, { defaults: { filter: activeEntityFilter() } })}`,
+      this.advertiserIds.map(
+        (a) =>
+          `advertisers/${a}/` +
+          `insertionOrders${buildParamString(params, { defaults: { filter: activeEntityFilter() } })}`,
+      ),
       callback,
       maxPages,
     );
@@ -519,8 +532,11 @@ export class InsertionOrders extends DisplayVideoApiClient {
    */
   get(insertionOrderId: string): InsertionOrder {
     return super.getResource(
-      `advertisers/${this.getAdvertiserId()}/` +
-        `insertionOrders/${insertionOrderId}`,
+      this.advertiserIds.map(
+        (advertiserId) =>
+          `advertisers/${advertiserId}/` +
+          `insertionOrders/${insertionOrderId}`,
+      ),
     ) as InsertionOrder;
   }
 
@@ -535,7 +551,9 @@ export class InsertionOrders extends DisplayVideoApiClient {
    */
   create(insertionOrderResource: DisplayVideoResource): InsertionOrder {
     return super.createResource(
-      `advertisers/${this.getAdvertiserId()}/insertionOrders`,
+      this.advertiserIds.map(
+        (advertiserId) => `advertisers/${advertiserId}/insertionOrders`,
+      ),
       insertionOrderResource,
     ) as InsertionOrder;
   }
@@ -557,9 +575,12 @@ export class InsertionOrders extends DisplayVideoApiClient {
     changedProperties: string,
   ): InsertionOrder {
     return super.patchResource(
-      `advertisers/${this.getAdvertiserId()}/insertionOrders/` +
-        `${insertionOrderResource.id}?updateMask=` +
-        encodeURIComponent(changedProperties),
+      this.advertiserIds.map(
+        (advertiserId) =>
+          `advertisers/${advertiserId}/insertionOrders/` +
+          `${insertionOrderResource.id}?updateMask=` +
+          encodeURIComponent(changedProperties),
+      ),
       insertionOrderResource,
     ) as InsertionOrder;
   }
@@ -571,17 +592,12 @@ export class InsertionOrders extends DisplayVideoApiClient {
    */
   delete(insertionOrderId: string) {
     super.deleteResource(
-      `advertisers/${this.getAdvertiserId()}/` +
-        `insertionOrders/${insertionOrderId}`,
+      this.advertiserIds.map(
+        (advertiserId) =>
+          `advertisers/${advertiserId}/` +
+          `insertionOrders/${insertionOrderId}`,
+      ),
     );
-  }
-
-  /**
-   * Returns the DV360 Advertiser identifier.
-   *
-   */
-  getAdvertiserId(): string {
-    return this.advertiserId;
   }
 }
 
@@ -595,7 +611,7 @@ export class LineItems extends DisplayVideoApiClient {
    *
    * @param advertiserId The DV360 Advertiser identifier
    */
-  constructor(protected readonly advertiserId: string) {
+  constructor(protected readonly advertiserIds: string[]) {
     super('lineItems');
   }
 
@@ -615,7 +631,10 @@ export class LineItems extends DisplayVideoApiClient {
     maxPages: number = -1,
   ) {
     super.listResources(
-      `advertisers/${this.getAdvertiserId()}/lineItems${buildParamString(params, { defaults: { filter: activeEntityFilter() } })}`,
+      this.advertiserIds.map(
+        (advertiserId) =>
+          `advertisers/${advertiserId}/lineItems${buildParamString(params, { defaults: { filter: activeEntityFilter() } })}`,
+      ),
       callback,
       maxPages,
     );
@@ -642,7 +661,9 @@ export class LineItems extends DisplayVideoApiClient {
    */
   get(lineItemId: string): LineItem {
     return super.getResource(
-      `advertisers/${this.getAdvertiserId()}/lineItems/${lineItemId}`,
+      this.advertiserIds.map(
+        (advertiserId) => `advertisers/${advertiserId}/lineItems/${lineItemId}`,
+      ),
     ) as LineItem;
   }
 
@@ -656,7 +677,9 @@ export class LineItems extends DisplayVideoApiClient {
    */
   create(lineItemResource: DisplayVideoResource): LineItem {
     return super.createResource(
-      `advertisers/${this.getAdvertiserId()}/lineItems`,
+      this.advertiserIds.map(
+        (advertiserId) => `advertisers/${advertiserId}/lineItems`,
+      ),
       lineItemResource,
     ) as LineItem;
   }
@@ -676,9 +699,12 @@ export class LineItems extends DisplayVideoApiClient {
     changedProperties: string,
   ): LineItem {
     return super.patchResource(
-      `advertisers/${this.getAdvertiserId()}/lineItems/` +
-        `${lineItemResource.id}?updateMask=` +
-        encodeURIComponent(changedProperties),
+      this.advertiserIds.map(
+        (advertiserId) =>
+          `advertisers/${advertiserId}/lineItems/` +
+          `${lineItemResource.id}?updateMask=` +
+          encodeURIComponent(changedProperties),
+      ),
       lineItemResource,
     ) as LineItem;
   }
@@ -690,16 +716,10 @@ export class LineItems extends DisplayVideoApiClient {
    */
   delete(lineItemId: string) {
     super.deleteResource(
-      `advertisers/${this.getAdvertiserId()}/lineItems/${lineItemId}`,
+      this.advertiserIds.map(
+        (advertiserId) => `advertisers/${advertiserId}/lineItems/${lineItemId}`,
+      ),
     );
-  }
-
-  /**
-   * Returns the DV360 Advertiser identifier.
-   *
-   */
-  getAdvertiserId(): string {
-    return this.advertiserId;
   }
 }
 
@@ -720,7 +740,7 @@ export class InventorySources extends DisplayVideoApiClient {
    */
   constructor(
     private readonly partnerId: string,
-    private readonly advertiserId: string | null = null,
+    private readonly advertiserIds: string[] = [],
   ) {
     super('inventorySources');
   }
@@ -742,11 +762,15 @@ export class InventorySources extends DisplayVideoApiClient {
     params?: ListParams,
     maxPages: number = -1,
   ) {
-    const [key, value] = this.getAdvertiserId()
-      ? ['advertiserId', this.getAdvertiserId()]
-      : ['partnerId', this.getPartnerId()];
+    const inventorySourceParams: Array<[key: string, value: string]> = this
+      .advertiserIds
+      ? this.advertiserIds.map((advertiserId) => ['advertiserId', advertiserId])
+      : [['partnerId', this.getPartnerId()]];
     super.listResources(
-      `inventorySources?${key}=${value}${buildParamString(params, { prependStr: '&', defaults: { filter: activeEntityFilter() } })}`,
+      inventorySourceParams.map(
+        ([key, value]) =>
+          `inventorySources?${key}=${value}${buildParamString(params, { prependStr: '&', defaults: { filter: activeEntityFilter() } })}`,
+      ),
       callback,
       maxPages,
     );
@@ -776,10 +800,10 @@ export class InventorySources extends DisplayVideoApiClient {
    *     source resource
    */
   get(inventorySourceId: string): InventorySource {
-    return super.getResource(
+    return super.getResource([
       `inventorySources/${inventorySourceId}` +
         `?partnerId=${this.getPartnerId()}`,
-    ) as InventorySource;
+    ]) as InventorySource;
   }
 
   /**
@@ -817,14 +841,6 @@ export class InventorySources extends DisplayVideoApiClient {
   getPartnerId(): string {
     return this.partnerId;
   }
-
-  /**
-   * Returns the optional DV360 Advertiser identifier.
-   *
-   */
-  getAdvertiserId(): string | null {
-    return this.advertiserId;
-  }
 }
 
 /**
@@ -843,7 +859,7 @@ export class TargetingOptions extends DisplayVideoApiClient {
    */
   constructor(
     private readonly targetingType: TargetingType,
-    private readonly advertiserId: string,
+    private readonly advertiserIds: [string],
   ) {
     super('targetingOptions');
   }
@@ -864,8 +880,11 @@ export class TargetingOptions extends DisplayVideoApiClient {
     maxPages: number = -1,
   ) {
     super.listResources(
-      `targetingTypes/${this.getTargetingType()}/targetingOptions` +
-        `?advertiserId=${this.getAdvertiserId()}${buildParamString(params, { prependStr: '&' })}`,
+      this.advertiserIds.map(
+        (advertiserId) =>
+          `targetingTypes/${this.getTargetingType()}/targetingOptions` +
+          `?advertiserId=${advertiserId}${buildParamString(params, { prependStr: '&' })}`,
+      ),
       callback,
       maxPages,
     );
@@ -901,11 +920,11 @@ export class TargetingOptions extends DisplayVideoApiClient {
       `targetingTypes/${this.getTargetingType()}/` +
       encodeURIComponent('targetingOptions:search');
     const payload = {
-      advertiserId: this.getAdvertiserId(),
+      advertiserId: this.advertiserIds[0],
       geoRegionSearchTerms: { geoRegionQuery: query },
     };
     const params = { method: 'post', payload: JSON.stringify(payload) };
-    super.listResources(url, callback, maxPages, params);
+    super.listResources([url], callback, maxPages, params);
   }
 
   /**
@@ -933,8 +952,11 @@ export class TargetingOptions extends DisplayVideoApiClient {
    */
   get(targetingOptionId: string): TargetingOption {
     return super.getResource(
-      `targetingTypes/${this.getTargetingType()}/targetingOptions/` +
-        `${targetingOptionId}?advertiserId=${this.getAdvertiserId()}`,
+      this.advertiserIds.map(
+        (advertiserId) =>
+          `targetingTypes/${this.getTargetingType()}/targetingOptions/` +
+          `${targetingOptionId}?advertiserId=${advertiserId}`,
+      ),
     ) as TargetingOption;
   }
 
@@ -973,14 +995,6 @@ export class TargetingOptions extends DisplayVideoApiClient {
   getTargetingType(): TargetingType {
     return this.targetingType;
   }
-
-  /**
-   * Returns the DV360 Advertiser identifier.
-   *
-   */
-  getAdvertiserId(): string {
-    return this.advertiserId;
-  }
 }
 
 /**
@@ -1003,27 +1017,27 @@ export class AssignedTargetingOptions extends DisplayVideoApiClient {
 
   constructor(
     targetingType: TargetingType,
-    advertiserId: string,
+    advertiserIds: string[],
     assignedTargetingOption: { campaignId: string },
   );
   constructor(
     targetingType: TargetingType,
-    advertiserId: string,
+    advertiserIds: string[],
     assignedTargetingOption: { lineItemId: string },
   );
   constructor(
     targetingType: TargetingType,
-    advertiserId: string,
+    advertiserIds: string[],
     assignedTargetingOption: { insertionOrderId: string },
   );
-  constructor(targetingType: TargetingType, advertiserId: string);
+  constructor(targetingType: TargetingType, advertiserIds: string[]);
 
   /**
    * Constructs an instance of `AssignedTargetingOptions`.
    */
   constructor(
     private readonly targetingType: TargetingType,
-    private readonly advertiserId: string,
+    private readonly advertiserIds: string[],
     assignedTargetingOption?: {
       campaignId?: string;
       lineItemId?: string;
@@ -1047,20 +1061,23 @@ export class AssignedTargetingOptions extends DisplayVideoApiClient {
    *
    * @return The base url for every API operation
    */
-  getBaseUrl(): string {
-    const prefix = `advertisers/${this.getAdvertiserId()}/`;
-    const suffix =
-      `targetingTypes/${this.getTargetingType()}/` + `assignedTargetingOptions`;
-    let extension = '';
+  getBaseUrls(): string[] {
+    return this.advertiserIds.map((advertiserId) => {
+      const prefix = `advertisers/${advertiserId}/`;
+      const suffix =
+        `targetingTypes/${this.getTargetingType()}/` +
+        `assignedTargetingOptions`;
+      let extension = '';
 
-    if (this.getCampaignId()) {
-      extension = `campaigns/${this.getCampaignId()}/`;
-    } else if (this.getInsertionOrderId()) {
-      extension = `insertionOrders/${this.getInsertionOrderId()}/`;
-    } else if (this.getLineItemId()) {
-      extension = `lineItems/${this.getLineItemId()}/`;
-    }
-    return prefix + extension + suffix;
+      if (this.getCampaignId()) {
+        extension = `campaigns/${this.getCampaignId()}/`;
+      } else if (this.getInsertionOrderId()) {
+        extension = `insertionOrders/${this.getInsertionOrderId()}/`;
+      } else if (this.getLineItemId()) {
+        extension = `lineItems/${this.getLineItemId()}/`;
+      }
+      return prefix + extension + suffix;
+    });
   }
 
   /**
@@ -1080,8 +1097,10 @@ export class AssignedTargetingOptions extends DisplayVideoApiClient {
     maxPages: number = -1,
   ) {
     super.listResources(
-      this.getBaseUrl() +
-        buildParamString(params, { defaults: { pageSize: 5000 } }),
+      this.getBaseUrls().map(
+        (baseUrl) =>
+          baseUrl + buildParamString(params, { defaults: { pageSize: 5000 } }),
+      ),
       callback,
       maxPages,
     );
@@ -1114,7 +1133,9 @@ export class AssignedTargetingOptions extends DisplayVideoApiClient {
    */
   get(assignedTargetingOptionId: string): AssignedTargetingOption {
     return super.getResource(
-      `${this.getBaseUrl()}/${assignedTargetingOptionId}`,
+      this.getBaseUrls().map(
+        (baseUrl) => `${baseUrl}/${assignedTargetingOptionId}`,
+      ),
     ) as AssignedTargetingOption;
   }
 
@@ -1132,7 +1153,7 @@ export class AssignedTargetingOptions extends DisplayVideoApiClient {
     assignedTargetingOptionResource: DisplayVideoResource,
   ): AssignedTargetingOption {
     return this.createResource(
-      this.getBaseUrl(),
+      this.getBaseUrls(),
       assignedTargetingOptionResource,
     ) as AssignedTargetingOption;
   }
@@ -1141,13 +1162,13 @@ export class AssignedTargetingOptions extends DisplayVideoApiClient {
    * @throws {!Error} If this method is not allowed for this type
    */
   override createResource(
-    requestUri: string,
+    requestUris: string[],
     payload: DisplayVideoResource,
   ): DisplayVideoResource {
     if (this.isReadOnly()) {
       throw ObjectUtil.error('405 Method Not Allowed');
     }
-    return super.createResource(requestUri, payload);
+    return super.createResource(requestUris, payload);
   }
 
   /**
@@ -1169,17 +1190,21 @@ export class AssignedTargetingOptions extends DisplayVideoApiClient {
    * 'assignedTargetingOptionId'.
    */
   delete(assignedTargetingOptionId: string) {
-    this.deleteResource(`${this.getBaseUrl()}/${assignedTargetingOptionId}`);
+    this.deleteResource(
+      this.getBaseUrls().map(
+        (baseUrl) => `${baseUrl}/${assignedTargetingOptionId}`,
+      ),
+    );
   }
 
   /**
    * @throws {!Error} If this method is not allowed for this type
    */
-  override deleteResource(requestUri: string) {
+  override deleteResource(requestUris: string[]) {
     if (this.isReadOnly()) {
       throw ObjectUtil.error('405 Method Not Allowed');
     }
-    super.deleteResource(requestUri);
+    super.deleteResource(requestUris);
   }
 
   /**
@@ -1188,14 +1213,6 @@ export class AssignedTargetingOptions extends DisplayVideoApiClient {
    */
   getTargetingType(): TargetingType {
     return this.targetingType;
-  }
-
-  /**
-   * Returns the DV360 advertiser identifier.
-   *
-   */
-  getAdvertiserId(): string {
-    return this.advertiserId;
   }
 
   /**
