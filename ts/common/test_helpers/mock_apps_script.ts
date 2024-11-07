@@ -349,7 +349,7 @@ export function mockAppsScript() {
 
 class FakeUrlFetchApp {
   fetch() {
-    throw new Error('Not implemented. Mock me.');
+    return generateFakeHttpResponse({ contentText: '' });
   }
 }
 

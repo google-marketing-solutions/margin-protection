@@ -16,14 +16,23 @@
  */
 
 import { equalTo } from 'common/checks';
-import { mockAppsScript } from 'common/test_helpers/mock_apps_script';
+import {
+  generateFakeHttpResponse,
+  mockAppsScript,
+} from 'common/test_helpers/mock_apps_script';
 import { Value } from 'common/types';
 
-import { Client, newRule } from '../client';
+import { Client, newRule, RuleRange } from '../client';
 import { RuleGranularity } from '../types';
 
 import { generateTestClient } from './client_helpers';
 import { expect } from 'chai';
+import {
+  budgetPacingPercentageRule,
+  budgetPacingRuleLineItem,
+  geoTargetRule,
+} from '../rules';
+import { scaffoldSheetWithNamedRanges } from 'common/tests/helpers';
 
 describe('Client rules are validated', function () {
   let output: string[] = [];
@@ -89,5 +98,76 @@ describe('Client rules are validated', function () {
     const { results } = await client.validate();
     const ruleValues: Value[] = Object.values(results['ruleA'].values);
     expect(ruleValues.map((value) => value.anomalous)).to.eql([true, false]);
+  });
+});
+
+describe('RuleRange', function () {
+  const rules = [
+    budgetPacingPercentageRule,
+    budgetPacingRuleLineItem,
+    geoTargetRule,
+  ];
+
+  beforeEach(function () {
+    scaffoldSheetWithNamedRanges();
+    this.client = generateTestClient({ id: '123' });
+    rules.forEach((rule) => this.client.addRule(rule, [['ID'], ['default']]));
+    this.ruleRange = new RuleRange([[]], this.client);
+    this.ruleRange.getCampaignMap = function () {
+      return { hasAdvertiserName: true, campaignMap: { '1': {} } };
+    };
+  });
+
+  it('covers all granularities [sanity check]', function () {
+    const ruleGranularities = new Set(
+      rules.map((rule) => rule.definition.granularity),
+    );
+    const systemGranularities = new Set(Object.values(RuleGranularity));
+
+    expect(ruleGranularities).to.eql(systemGranularities);
+  });
+
+  context('getRows', function () {
+    it('loads each granularity', async function () {
+      let error: string;
+      try {
+        await this.ruleRange.getRows(RuleGranularity.CAMPAIGN);
+      } catch (e) {
+        error = String(e);
+      }
+      expect(error).to.be.undefined;
+    });
+
+    it('errors on unsupported granularity', async function () {
+      let error: string;
+      try {
+        await this.ruleRange.getRows('Failure', '1');
+      } catch (e) {
+        error = String(e);
+      }
+      expect(error).to.equal('Error: Unsupported granularity "Failure"');
+    });
+  });
+
+  context('getMetadata', function () {
+    it('loads each granularity', async function () {
+      let error: string;
+      try {
+        await this.ruleRange.getRuleMetadata(RuleGranularity.CAMPAIGN, '1');
+      } catch (e) {
+        error = String(e);
+      }
+      expect(error).to.be.undefined;
+    });
+
+    it('errors on unsupported granularity', async function () {
+      let error: string;
+      try {
+        await this.ruleRange.getRuleMetadata('Failure', '1');
+      } catch (e) {
+        error = String(e);
+      }
+      expect(error).to.equal('Error: Unsupported granularity "Failure"');
+    });
   });
 });
