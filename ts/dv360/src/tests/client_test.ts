@@ -16,7 +16,10 @@
  */
 
 import { equalTo } from 'common/checks';
-import { mockAppsScript } from 'common/test_helpers/mock_apps_script';
+import {
+  generateFakeHttpResponse,
+  mockAppsScript,
+} from 'common/test_helpers/mock_apps_script';
 import { Value } from 'common/types';
 
 import { Client, newRule, RuleRange } from '../client';
@@ -110,6 +113,9 @@ describe('RuleRange', function () {
     this.client = generateTestClient({ id: '123' });
     rules.forEach((rule) => this.client.addRule(rule, [['ID'], ['default']]));
     this.ruleRange = new RuleRange([[]], this.client);
+    this.ruleRange.getCampaignMap = function () {
+      return { hasAdvertiserName: true, campaignMap: { '1': {} } };
+    };
   });
 
   it('covers all granularities [sanity check]', function () {
@@ -121,9 +127,47 @@ describe('RuleRange', function () {
     expect(ruleGranularities).to.eql(systemGranularities);
   });
 
-  it('loads each granularity', function () {
-    this.client.validate();
+  context('getRows', function () {
+    it('loads each granularity', async function () {
+      let error: string;
+      try {
+        await this.ruleRange.getRows(RuleGranularity.CAMPAIGN);
+      } catch (e) {
+        error = String(e);
+      }
+      expect(error).to.be.undefined;
+    });
 
-    expect(this.client.validate).to.not.throw();
+    it('errors on unsupported granularity', async function () {
+      let error: string;
+      try {
+        await this.ruleRange.getRows('Failure', '1');
+      } catch (e) {
+        error = String(e);
+      }
+      expect(error).to.equal('Error: Unsupported granularity "Failure"');
+    });
+  });
+
+  context('getMetadata', function () {
+    it('loads each granularity', async function () {
+      let error: string;
+      try {
+        await this.ruleRange.getRuleMetadata(RuleGranularity.CAMPAIGN, '1');
+      } catch (e) {
+        error = String(e);
+      }
+      expect(error).to.be.undefined;
+    });
+
+    it('errors on unsupported granularity', async function () {
+      let error: string;
+      try {
+        await this.ruleRange.getRuleMetadata('Failure', '1');
+      } catch (e) {
+        error = String(e);
+      }
+      expect(error).to.equal('Error: Unsupported granularity "Failure"');
+    });
   });
 });

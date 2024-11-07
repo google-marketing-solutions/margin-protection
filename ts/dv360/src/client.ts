@@ -46,7 +46,7 @@ import {
   Settings,
 } from 'common/types';
 
-import { RawApiDate } from 'dv360_api/dv360_types';
+import { RawApiDate, STATUS } from 'dv360_api/dv360_types';
 import { BudgetReport, ImpressionReport, LineItemBudgetReport } from './api';
 import {
   Accessors,
@@ -59,6 +59,7 @@ import {
   RuleGranularity,
   RuleParams,
 } from './types';
+import { FilterExpression, Rule, RuleOperator } from 'dv360_api/utils';
 
 /**
  * A new rule in SA360.
@@ -243,31 +244,20 @@ export class Client implements ClientInterface {
 
   async getAllCampaigns(): Promise<RecordInfo[]> {
     if (!this.storedCampaigns.length) {
-      const campaignsWithSegments = Object.values(
-        this.getAllInsertionOrders(),
-      ).reduce((prev, io) => {
-        prev.add(io.getCampaignId());
-        return prev;
-      }, new Set<string>());
-
-      const result =
-        this.args.idType === IDType.ADVERTISER
-          ? this.getAllCampaignsForAdvertiser(this.args.id).filter((campaign) =>
-              campaignsWithSegments.has(campaign.id),
-            )
-          : this.getAllAdvertisersForPartner().reduce(
-              (arr, { advertiserId, advertiserName }) =>
-                arr.concat(
-                  this.getAllCampaignsForAdvertiser(
-                    advertiserId,
-                    advertiserName,
-                  ).filter((campaign) =>
-                    campaignsWithSegments.has(campaign.id),
-                  ),
-                ),
-              [] as RecordInfo[],
-            );
-      this.storedCampaigns = result;
+      let campaigns: RecordInfo[] = [];
+      if (this.args.idType === IDType.ADVERTISER) {
+        campaigns = this.getAllCampaignsForAdvertiser(this.args.id);
+      } else {
+        for (const {
+          advertiserId,
+          advertiserName,
+        } of this.getAllAdvertisersForPartner()) {
+          campaigns = campaigns.concat(
+            this.getAllCampaignsForAdvertiser(advertiserId, advertiserName),
+          );
+        }
+      }
+      this.storedCampaigns = campaigns;
     }
 
     return this.storedCampaigns;
@@ -321,18 +311,26 @@ export class Client implements ClientInterface {
     const insertionOrderApi = new this.dao.accessors.insertionOrders(
       advertiserId,
     );
-    insertionOrderApi.list((ios: InsertionOrder[]) => {
-      result = result.concat(
-        ios.filter((io) => {
-          for (const budgetSegment of io.getInsertionOrderBudgetSegments()) {
-            if (getDate(budgetSegment.dateRange.endDate) > todayDate) {
-              return true;
+    insertionOrderApi.list(
+      (ios: InsertionOrder[]) => {
+        result = result.concat(
+          ios.filter((io) => {
+            for (const budgetSegment of io.getInsertionOrderBudgetSegments()) {
+              if (getDate(budgetSegment.dateRange.endDate) > todayDate) {
+                return true;
+              }
             }
-          }
-          return false;
-        }),
-      );
-    });
+            return false;
+          }),
+        );
+      },
+      {
+        filter: new FilterExpression([
+          new Rule('entityStatus', RuleOperator.EQ, STATUS.ACTIVE),
+          new Rule('updateTime', RuleOperator.GTEQ, '2024-01-01T00:00:00Z'),
+        ]),
+      },
+    );
 
     return result;
   }
@@ -420,20 +418,23 @@ export class RuleRange extends AbstractRuleRange<DisplayVideoClientTypes> {
   private readonly campaignMap: Record<string, RecordInfo> = {};
 
   async getRows(ruleGranularity: RuleGranularity) {
-    if (ruleGranularity === RuleGranularity.CAMPAIGN) {
-      return this.client.getAllCampaigns();
-    } else if (ruleGranularity === RuleGranularity.INSERTION_ORDER) {
-      return Object.values(this.client.getAllInsertionOrders()).map((io) => ({
-        advertiserId: io.getAdvertiserId(),
-        id: io.getId()!,
-        displayName: io.getDisplayName()!,
-      }));
-    } else {
-      return Object.values(this.client.getAllLineItems()).map((li) => ({
-        advertiserId: li.getAdvertiserId(),
-        id: li.getId()!,
-        displayName: li.getDisplayName()!,
-      }));
+    switch (ruleGranularity) {
+      case RuleGranularity.CAMPAIGN:
+        return this.client.getAllCampaigns();
+      case RuleGranularity.INSERTION_ORDER:
+        return Object.values(this.client.getAllInsertionOrders()).map((io) => ({
+          advertiserId: io.getAdvertiserId(),
+          id: io.getId()!,
+          displayName: io.getDisplayName()!,
+        }));
+      case RuleGranularity.LINE_ITEM:
+        return Object.values(this.client.getAllLineItems()).map((li) => ({
+          advertiserId: li.getAdvertiserId(),
+          id: li.getId()!,
+          displayName: li.getDisplayName()!,
+        }));
+      default:
+        throw new Error(`Unsupported granularity "${ruleGranularity}"`);
     }
   }
 
@@ -483,10 +484,14 @@ export class RuleRange extends AbstractRuleRange<DisplayVideoClientTypes> {
         campaignId = lineItems[id] && lineItems[id].getCampaignId();
         break;
       default:
-        throw new Error(`Unsupported granularity "${granularity}`);
+        throw new Error(`Unsupported granularity "${granularity}"`);
     }
     if (!campaignMap[campaignId] || !campaignId) {
-      throw new Error();
+      throw new Error(
+        campaignId
+          ? `Campaign ${campaignId} does not exist`
+          : `No campaign ID for granularity "${granularity}"`,
+      );
     }
     return [
       campaignMap[campaignId].advertiserId,
