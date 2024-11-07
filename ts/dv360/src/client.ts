@@ -198,7 +198,7 @@ export class Client implements ClientInterface {
 
   getAllLineItems(): { [id: string]: LineItem } {
     function entries(io: LineItem) {
-      return [io.getId(), io] satisfies [id: string, resource: LineItem];
+      return [io.id, io] satisfies [id: string, resource: LineItem];
     }
     if (!Object.keys(this.storedLineItems).length) {
       let lineItems: Array<[id: string, resource: LineItem]> = [];
@@ -209,7 +209,7 @@ export class Client implements ClientInterface {
       } else {
         for (const { advertiserId } of this.getAllAdvertisersForPartner()) {
           for (const io of this.getAllLineItemsForAdvertiser(advertiserId)) {
-            lineItems.push([io.getId(), io]);
+            lineItems.push([io.id, io]);
           }
         }
       }
@@ -220,7 +220,7 @@ export class Client implements ClientInterface {
 
   getAllInsertionOrders(): { [id: string]: InsertionOrder } {
     function entries(io: InsertionOrder) {
-      return [io.getId(), io] satisfies [id: string, resource: InsertionOrder];
+      return [io.id, io] satisfies [id: string, resource: InsertionOrder];
     }
     if (!Object.keys(this.storedInsertionOrders).length) {
       let insertionOrders: Array<[id: string, resource: InsertionOrder]> = [];
@@ -233,7 +233,7 @@ export class Client implements ClientInterface {
           for (const io of this.getAllInsertionOrdersForAdvertiser(
             advertiserId,
           )) {
-            insertionOrders.push([io.getId(), io]);
+            insertionOrders.push([io.id, io]);
           }
         }
       }
@@ -279,8 +279,8 @@ export class Client implements ClientInterface {
     const advertiserApi = new this.dao.accessors.advertisers(this.args.id);
     advertiserApi.list((advertisers: Advertiser[]) => {
       for (const advertiser of advertisers) {
-        const advertiserId = advertiser.getId();
-        const advertiserName = advertiser.getDisplayName();
+        const advertiserId = advertiser.id;
+        const advertiserName = advertiser.displayName;
         if (!advertiserId) {
           throw new Error('Advertiser ID is missing.');
         }
@@ -315,7 +315,8 @@ export class Client implements ClientInterface {
       (ios: InsertionOrder[]) => {
         result = result.concat(
           ios.filter((io) => {
-            for (const budgetSegment of io.getInsertionOrderBudgetSegments()) {
+            for (const budgetSegment of io.insertionOrderBudget
+              .budgetSegments) {
               if (getDate(budgetSegment.dateRange.endDate) > todayDate) {
                 return true;
               }
@@ -343,7 +344,7 @@ export class Client implements ClientInterface {
     const campaignApi = new this.dao.accessors.campaigns(advertiserId);
     campaignApi.list((campaigns: Campaign[]) => {
       for (const campaign of campaigns) {
-        const id = campaign.getId();
+        const id = campaign.id;
         if (!id) {
           throw new Error('Campaign ID is missing.');
         }
@@ -351,7 +352,7 @@ export class Client implements ClientInterface {
           advertiserId,
           ...(advertiserName ? { advertiserName } : {}),
           id,
-          displayName: campaign.getDisplayName()!,
+          displayName: campaign.displayName!,
         });
       }
     });
@@ -423,15 +424,15 @@ export class RuleRange extends AbstractRuleRange<DisplayVideoClientTypes> {
         return this.client.getAllCampaigns();
       case RuleGranularity.INSERTION_ORDER:
         return Object.values(this.client.getAllInsertionOrders()).map((io) => ({
-          advertiserId: io.getAdvertiserId(),
-          id: io.getId()!,
-          displayName: io.getDisplayName()!,
+          advertiserId: io.advertiserId,
+          id: io.id!,
+          displayName: io.displayName!,
         }));
       case RuleGranularity.LINE_ITEM:
         return Object.values(this.client.getAllLineItems()).map((li) => ({
-          advertiserId: li.getAdvertiserId(),
-          id: li.getId()!,
-          displayName: li.getDisplayName()!,
+          advertiserId: li.advertiserId,
+          id: li.id!,
+          displayName: li.displayName!,
         }));
       default:
         throw new Error(`Unsupported granularity "${ruleGranularity}"`);
@@ -477,11 +478,11 @@ export class RuleRange extends AbstractRuleRange<DisplayVideoClientTypes> {
         break;
       case RuleGranularity.INSERTION_ORDER:
         const insertionOrders = this.client.getAllInsertionOrders();
-        campaignId = insertionOrders[id] && insertionOrders[id].getCampaignId();
+        campaignId = insertionOrders[id] && insertionOrders[id].campaignId;
         break;
       case RuleGranularity.LINE_ITEM:
         const lineItems = this.client.getAllLineItems();
-        campaignId = lineItems[id] && lineItems[id].getCampaignId();
+        campaignId = lineItems[id] && lineItems[id].campaignId;
         break;
       default:
         throw new Error(`Unsupported granularity "${granularity}"`);

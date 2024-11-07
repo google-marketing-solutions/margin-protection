@@ -26,11 +26,7 @@ import {
   InsertionOrders,
   LineItems,
 } from 'dv360_api/dv360';
-import {
-  LineItem,
-  InsertionOrder,
-  DisplayVideoResource,
-} from 'dv360_api/dv360_resources';
+import { LineItem, InsertionOrder } from 'dv360_api/dv360_resources';
 import {
   BaseClientArgs,
   BaseClientInterface,
@@ -124,7 +120,7 @@ export interface ClientArgs extends BaseClientArgs<ClientArgs> {
 }
 
 /**
- * Used to determine which setting page a rule falls into.
+ * sed to determine which setting page a rule falls into.
  */
 export enum RuleGranularity {
   CAMPAIGN = 'Campaign',
