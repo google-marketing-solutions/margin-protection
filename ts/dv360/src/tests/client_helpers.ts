@@ -421,15 +421,17 @@ function fakeInsertionOrdersClass(
 ) {
   return class FakeInsertionOrders extends InsertionOrders {
     override list(callback: Callable<InsertionOrder>) {
-      try {
-        callback(
-          params.allInsertionOrders![this.advertiserId].map(
-            (c) => new InsertionOrder(c({ ...insertionOrderTemplate })),
-          ),
-        );
-      } catch {
-        console.debug(`Insertion Order ${this.advertiserId} Skipped`);
-      }
+      this.advertiserIds.map((advertiserId) => {
+        try {
+          callback(
+            params.allInsertionOrders![advertiserId].map(
+              (c) => new InsertionOrder(c({ ...insertionOrderTemplate })),
+            ),
+          );
+        } catch {
+          console.debug(`Insertion Order ${advertiserId} Skipped`);
+        }
+      });
     }
   };
 }
@@ -440,11 +442,13 @@ function fakeLineItemsClass(
 ) {
   return class FakeLineItems extends LineItems {
     override list(callback: Callable<LineItem>) {
-      callback(
-        params.allLineItems![this.advertiserId].map(
-          (c) => new LineItem(c({ ...lineItemTemplate })),
-        ),
-      );
+      for (const advertiserId of this.advertiserIds) {
+        callback(
+          params.allLineItems![advertiserId].map(
+            (c) => new LineItem(c({ ...lineItemTemplate })),
+          ),
+        );
+      }
     }
   };
 }
@@ -479,11 +483,13 @@ function fakeCampaignsClass(
 ) {
   return class FakeCampaigns extends Campaigns {
     override list(callback: Callable<Campaign>) {
-      callback(
-        params.allCampaigns![this.advertiserId].map(
-          (c) => new Campaign(c({ ...campaignTemplate })),
-        ),
-      );
+      for (const advertiserId of this.advertiserIds) {
+        callback(
+          params.allCampaigns![advertiserId].map(
+            (c) => new Campaign(c({ ...campaignTemplate })),
+          ),
+        );
+      }
     }
   };
 }
