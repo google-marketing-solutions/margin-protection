@@ -52,9 +52,10 @@ npx @google/clasp clone [scriptId]
 ```
 
 ### Updating Clasp
+
 Once `clasp` is initialized, updating is simple.
 
-1. Find the path of the launch monitor you want to use (i.e. any from the [main README](/README.md#launch-monitors)), 
+1. Find the path of the launch monitor you want to use (i.e. any from the [main README](/README.md#launch-monitors)),
 2. Navigate to that directory.
 3. Run `yarn push`.
 

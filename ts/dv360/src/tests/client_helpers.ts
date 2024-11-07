@@ -421,11 +421,15 @@ function fakeInsertionOrdersClass(
 ) {
   return class FakeInsertionOrders extends InsertionOrders {
     override list(callback: Callable<InsertionOrder>) {
-      callback(
-        params.allInsertionOrders![params.id].map(
-          (c) => new InsertionOrder(c({ ...insertionOrderTemplate })),
-        ),
-      );
+      try {
+        callback(
+          params.allInsertionOrders![this.advertiserId].map(
+            (c) => new InsertionOrder(c({ ...insertionOrderTemplate })),
+          ),
+        );
+      } catch {
+        console.debug(`Insertion Order ${this.advertiserId} Skipped`);
+      }
     }
   };
 }
@@ -437,7 +441,7 @@ function fakeLineItemsClass(
   return class FakeLineItems extends LineItems {
     override list(callback: Callable<LineItem>) {
       callback(
-        params.allLineItems![params.id].map(
+        params.allLineItems![this.advertiserId].map(
           (c) => new LineItem(c({ ...lineItemTemplate })),
         ),
       );
@@ -474,10 +478,9 @@ function fakeCampaignsClass(
   campaignTemplate: CampaignTemplate,
 ) {
   return class FakeCampaigns extends Campaigns {
-    readonly id: string = 'c1';
     override list(callback: Callable<Campaign>) {
       callback(
-        params.allCampaigns![params.id].map(
+        params.allCampaigns![this.advertiserId].map(
           (c) => new Campaign(c({ ...campaignTemplate })),
         ),
       );
