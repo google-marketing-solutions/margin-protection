@@ -35,6 +35,7 @@ import {
   RuleDefinition,
   RuleExecutor,
   FrontendInterface,
+  RecordInfo,
 } from 'common/types';
 
 /**
@@ -106,9 +107,13 @@ export interface ClientInterface
   extends BaseClientInterface<DisplayVideoClientTypes> {
   dao: { accessors: Accessors };
   getAllInsertionOrders(): { [id: string]: InsertionOrder };
-  getAllLineItems(): { [id: string]: LineItem };
+  getAllLineItems(): Promise<{ [id: string]: LineItem }>;
   getBudgetReport(args: DateRange): BudgetReportInterface;
   getLineItemBudgetReport(args: DateRange): LineItemBudgetReportInterface;
+  getCampaignMap(): Promise<{
+    campaignMap: Record<string, RecordInfo>;
+    hasAdvertiserName: boolean;
+  }>;
 }
 
 /**

@@ -112,6 +112,8 @@ export class Client implements ClientInterface {
   private storedCampaigns: RecordInfo[] = [];
   private savedBudgetReport?: BudgetReportInterface;
   private savedLineItemBudgetReport?: LineItemBudgetReportInterface;
+  private hasAdvertiserName: boolean;
+  private readonly campaignMap: { [campaignId: string]: RecordInfo } = {};
 
   readonly args: Required<ClientArgs>;
   readonly ruleStore: {
@@ -195,10 +197,11 @@ export class Client implements ClientInterface {
     return { rules, results };
   }
 
-  getAllLineItems(): { [id: string]: LineItem } {
+  async getAllLineItems(): Promise<{ [id: string]: LineItem }> {
     function entries(io: LineItem) {
       return [io.id, io] satisfies [id: string, resource: LineItem];
     }
+    const { campaignMap } = await this.getCampaignMap();
     if (!Object.keys(this.storedLineItems).length) {
       let lineItems: Array<[id: string, resource: LineItem]> = [];
       if (this.args.idType === IDType.ADVERTISER) {
@@ -209,8 +212,10 @@ export class Client implements ClientInterface {
         const advertiserIds = this.getAllAdvertisersForPartner().map(
           (advertiser) => advertiser.advertiserId,
         );
-        for (const io of this.getAllLineItemsForAdvertisers(advertiserIds)) {
-          lineItems.push([io.id, io]);
+        for (const li of this.getAllLineItemsForAdvertisers(advertiserIds)) {
+          if (campaignMap[li.campaignId]) {
+            lineItems.push([li.id, li]);
+          }
         }
       }
       this.storedLineItems = Object.fromEntries(lineItems);
@@ -407,6 +412,24 @@ export class Client implements ClientInterface {
       this.args.id
     }`;
   }
+
+  async getCampaignMap(): Promise<{
+    campaignMap: Record<string, RecordInfo>;
+    hasAdvertiserName: boolean;
+  }> {
+    if (this.hasAdvertiserName === undefined) {
+      const allCampaigns = (await this.getAllCampaigns()) as RecordInfo[];
+      for (const campaign of allCampaigns) {
+        this.campaignMap[campaign.id] = campaign;
+      }
+      this.hasAdvertiserName =
+        allCampaigns[0] && allCampaigns[0].advertiserName !== undefined;
+    }
+    return {
+      campaignMap: this.campaignMap,
+      hasAdvertiserName: this.hasAdvertiserName,
+    };
+  }
 }
 
 /**
@@ -445,34 +468,21 @@ export class RuleRange extends AbstractRuleRange<DisplayVideoClientTypes> {
   }
 
   async getRuleHeaders(): Promise<string[]> {
-    const { hasAdvertiserName } = await this.getCampaignMap();
+    const { hasAdvertiserName } = await this.client.getCampaignMap();
     if (!hasAdvertiserName) {
       return [];
     }
     return ['Advertiser ID', 'Advertiser Name'];
   }
 
-  private async getCampaignMap(): Promise<{
-    campaignMap: Record<string, RecordInfo>;
-    hasAdvertiserName: boolean;
-  }> {
-    if (this.hasAdvertiserName === undefined) {
-      const allCampaigns =
-        (await this.client.getAllCampaigns()) as RecordInfo[];
-      for (const campaign of allCampaigns) {
-        this.campaignMap[campaign.id] = campaign;
-      }
-      this.hasAdvertiserName =
-        allCampaigns[0] && allCampaigns[0].advertiserName !== undefined;
-    }
-    return {
-      campaignMap: this.campaignMap,
-      hasAdvertiserName: this.hasAdvertiserName,
-    };
-  }
-
+  /**
+   * Get Advertiser ID & Name for an entity.
+   * @returns The advertiser ID and name in a tuple [advertiserId, advertiserName].
+   *   blank values in the tuple mean that the campaign is inactive.
+   */
   override async getRuleMetadata(granularity: RuleGranularity, id: string) {
-    const { campaignMap, hasAdvertiserName } = await this.getCampaignMap();
+    const { campaignMap, hasAdvertiserName } =
+      await this.client.getCampaignMap();
     if (!hasAdvertiserName) {
       return undefined;
     }
@@ -486,7 +496,7 @@ export class RuleRange extends AbstractRuleRange<DisplayVideoClientTypes> {
         campaignId = insertionOrders[id] && insertionOrders[id].campaignId;
         break;
       case RuleGranularity.LINE_ITEM:
-        const lineItems = this.client.getAllLineItems();
+        const lineItems = await this.client.getAllLineItems();
         campaignId = lineItems[id] && lineItems[id].campaignId;
         break;
       default:
@@ -499,10 +509,10 @@ export class RuleRange extends AbstractRuleRange<DisplayVideoClientTypes> {
           : `No campaign ID for granularity "${granularity}"`,
       );
     }
+    // if empty, it means the campaign is paused but the entity is active
     return [
-      campaignMap[campaignId].advertiserId,
-      //checked in `hasAdvertiserName`
-      campaignMap[campaignId].advertiserName!,
+      campaignMap[campaignId]?.advertiserId || '',
+      campaignMap[campaignId]?.advertiserName || '',
     ] satisfies [string, string];
   }
 }
