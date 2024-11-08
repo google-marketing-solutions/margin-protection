@@ -2,3 +2,4 @@ yarn
 yarn lint-staged
 yarn test
 npx tsc -p ./ts
+yarn lint

@@ -158,7 +158,7 @@ describe('RuleRange', function () {
       expect(error).to.be.undefined;
     });
 
-    it.only('errors on unsupported granularity', async function () {
+    it('errors on unsupported granularity', async function () {
       let error: string;
       try {
         await this.ruleRange.getRuleMetadata('Failure', '1');
