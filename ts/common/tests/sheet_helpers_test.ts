@@ -26,6 +26,7 @@ import {
 import { ParamDefinition, RuleExecutorClass, RuleGetter } from '../types';
 
 import {
+  emailAlertBody,
   HELPERS,
   SettingMap,
   sortMigrations,
@@ -613,6 +614,31 @@ describe('Test emails', function () {
     tearDownStubs(stubs);
   });
 
+  it('sends emails in CSV format', function () {
+    const output = emailAlertBody('Rule', [
+      {
+        value: '1',
+        anomalous: true,
+        fields: { 'Column A': 'A1', 'Column B': 'B1' },
+      },
+      {
+        value: '2',
+        anomalous: true,
+        fields: { 'Column A': 'A2', 'Column B': 'B2' },
+      },
+    ]);
+
+    expect(output).to.eql(
+      `----------
+      Rule:
+      ----------
+
+      Column A,Column B,Value
+      A1,B1,1
+      A2,B2,2`.replace(/(^|\n) +/g, '$1'),
+    );
+  });
+
   it('sends anomalies to a user whenever they are new', function () {
     SpreadsheetApp.getActive()
       .getRangeByName('EMAIL_LIST')!
@@ -638,7 +664,9 @@ describe('Test emails', function () {
       ----------
       Rule B:
       ----------
-      - v5`.replace(/  +/g, '');
+
+      Value
+      v5`.replace(/(^|\n) +/g, '$1');
 
     // Assert
     expect(messageExists).to.deep.eq([true, false, true]);

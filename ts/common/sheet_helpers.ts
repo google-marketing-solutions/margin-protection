@@ -1388,10 +1388,23 @@ function extract(content: string): string {
 /**
  * Generates an email body given a list of possibly anomalous values.
  */
-function emailAlertBody(name: string, values: Value[]) {
-  const header = `----------\n${name}:\n----------\n`;
+export function emailAlertBody(name: string, values: Value[]) {
+  const rule = `----------\n${name}:\n----------\n\n`;
+  const headers = new Set<string>();
+  const body: string[][] = [];
+  for (const value of values) {
+    for (const field of Object.keys(value.fields)) {
+      // adding all headers except value which goes at the end.
+      headers.add(field);
+    }
+    body.push(Object.values(value.fields).concat([value.value]));
+  }
+  headers.add('Value');
   const anomalyList =
-    header + values.map((value) => `- ${value.value}`).join('\n');
+    rule +
+    [...headers].join(',') +
+    '\n' +
+    body.map((row) => row.join(',')).join('\n');
 
   return anomalyList;
 }
