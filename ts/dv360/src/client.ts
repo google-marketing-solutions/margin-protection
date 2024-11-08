@@ -457,7 +457,7 @@ export class RuleRange extends AbstractRuleRange<DisplayVideoClientTypes> {
           displayName: io.displayName!,
         }));
       case RuleGranularity.LINE_ITEM:
-        return Object.values(this.client.getAllLineItems()).map((li) => ({
+        return Object.values(await this.client.getAllLineItems()).map((li) => ({
           advertiserId: li.advertiserId,
           id: li.id!,
           displayName: li.displayName!,

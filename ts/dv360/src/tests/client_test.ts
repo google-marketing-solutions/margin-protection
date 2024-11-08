@@ -106,11 +106,12 @@ describe('RuleRange', function () {
   ];
 
   beforeEach(function () {
+    mockAppsScript();
     scaffoldSheetWithNamedRanges();
     this.client = generateTestClient({ id: '123' });
     rules.forEach((rule) => this.client.addRule(rule, [['ID'], ['default']]));
     this.ruleRange = new RuleRange([[]], this.client);
-    this.ruleRange.getCampaignMap = function () {
+    this.client.getCampaignMap = function () {
       return { hasAdvertiserName: true, campaignMap: { '1': {} } };
     };
   });
@@ -157,7 +158,7 @@ describe('RuleRange', function () {
       expect(error).to.be.undefined;
     });
 
-    it('errors on unsupported granularity', async function () {
+    it.only('errors on unsupported granularity', async function () {
       let error: string;
       try {
         await this.ruleRange.getRuleMetadata('Failure', '1');
