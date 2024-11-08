@@ -179,9 +179,12 @@ export interface InsertionOrderTemplate {
 /**
  * Encapsulation of a test client creator.
  *
- * Call with {@link generateTestClient}.
+ * To get a client, call with {@link generateTestClient}. Can be used
+ * directly to gain access to some test artifacts.
  */
 export class TestClient {
+  // private methods are only private because we haven't needed
+  // them yet. Modify the visibility as needed.
   private readonly insertionOrderTemplate: InsertionOrderTemplate = {
     id: 'io1',
     advertiserId: '1',
