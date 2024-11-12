@@ -208,14 +208,16 @@ function getEmailParameters(
   message,
   emails,
   reportHeader,
-  {issues},
+  { issues },
 ) {
-  const reportHeaderHtml = reportHeader.map(cell => `<th>${cell}</th>`).join('\n');
+  const reportHeaderHtml = reportHeader
+    .map((cell) => `<th>${cell}</th>`)
+    .join('\n');
   function column(cell) {
     return `<td>${cell}</td>`;
   }
   const reportRows = issues
-    .map(row => `<tr>${row.map(column).join('\n')}</tr>`)
+    .map((row) => `<tr>${row.map(column).join('\n')}</tr>`)
     .join('\n');
   const table = `
     <table>
@@ -226,11 +228,11 @@ function getEmailParameters(
   message = message
     ? message
     : `This is an automated email to let you know that ${useCase} issues have been identified for CM360 Account ${accountId}.`;
-  
-    const url = `${SpreadsheetApp.getActive().getUrl()}?gid=${SpreadsheetApp.getActive()
-      .getActiveSheet()
-      .getSheetId()}`;
-  
+
+  const url = `${SpreadsheetApp.getActive().getUrl()}?gid=${SpreadsheetApp.getActive()
+    .getActiveSheet()
+    .getSheetId()}`;
+
   return {
     subject: `[ACTION REQUIRED] CM360 ${useCase} Issues identified for account ${accountId}`,
     body: `<div style='font-size:16px;'>
