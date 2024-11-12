@@ -253,6 +253,8 @@ function main() {
             reportId,
             emailMessage,
             emails,
+            reportData[0],
+            issues,
           ),
         );
       } else {

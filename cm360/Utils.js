@@ -207,16 +207,37 @@ function getEmailParameters(
   reportId,
   message,
   emails,
+  reportHeader,
+  {issues},
 ) {
+  const reportHeaderHtml = reportHeader.map(cell => `<th>${cell}</th>`).join('\n');
+  function column(cell) {
+    return `<td>${cell}</td>`;
+  }
+  const reportRows = issues
+    .map(row => `<tr>${row.map(column).join('\n')}</tr>`)
+    .join('\n');
+  const table = `
+    <table>
+      <tr>${reportHeaderHtml}</tr>
+      ${reportRows}
+    </table>
+  `;
   message = message
     ? message
     : `This is an automated email to let you know that ${useCase} issues have been identified for CM360 Account ${accountId}.`;
+  
+    const url = `${SpreadsheetApp.getActive().getUrl()}?gid=${SpreadsheetApp.getActive()
+      .getActiveSheet()
+      .getSheetId()}`;
+  
   return {
     subject: `[ACTION REQUIRED] CM360 ${useCase} Issues identified for account ${accountId}`,
     body: `<div style='font-size:16px;'>
       <p>Hi,</p>
       <p>${message}</p>
-      <p>For more details, please review the tab '${useCase}-${profileId}-${accountId}-${reportId}' in the <a href='${spreadsheet.getUrl()}'>${useCase} Monitor</a> Google Spreadsheet.</p>
+      ${table}
+      <p>For more details, please review the tab '<a href="${url}">${useCase}-${profileId}-${accountId}-${reportId}' in the ${useCase} Monitor</a> Google Spreadsheet.</p>
     </div>`,
     emails: emails,
   };
