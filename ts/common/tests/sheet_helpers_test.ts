@@ -684,9 +684,9 @@ describe('Test emails', function () {
 
     // Assert
     expect(messageExists).to.deep.eq([true, false, true]);
-    expect(messages[0].body.replace(/(^|\n) +/g, '$1').split('\n')).to.deep.eq(
-      newEmail.body.split('\n'),
-    );
+    expect(
+      messages[0].htmlBody.replace(/(^|\n) +/g, '$1').split('\n'),
+    ).to.deep.eq(newEmail.body.split('\n'));
   });
 });
 
