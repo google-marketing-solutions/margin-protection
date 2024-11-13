@@ -1242,7 +1242,7 @@ export abstract class AppsScriptFrontend<T extends ClientTypes<T>> {
       messages.push(emailAlertBody(rule.name, anomalies));
     }
 
-    message.body = `<p>The following errors were found:</p>\n\n${messages.join('\n\n')}`;
+    message.htmlBody = `<p>The following errors were found:</p>\n\n${messages.join('\n\n')}`;
     sendEmail(message);
 
     for (const anomaly of anomalies) {
