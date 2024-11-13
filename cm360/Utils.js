@@ -238,10 +238,12 @@ function getEmailParameters(
     body: `<div style='font-size:16px;'>
       <p>Hi,</p>
       <p>${message}</p>
+      <p>For more details, please review the tab <a href="${url}">'${useCase}-${profileId}-${accountId}-${reportId}' in the ${useCase} Monitor</a> Google Spreadsheet.</p>
+      <div style='overflow-y: scroll; max-height: 70vh'>
       ${table}
-      <p>For more details, please review the tab '<a href="${url}">${useCase}-${profileId}-${accountId}-${reportId}' in the ${useCase} Monitor</a> Google Spreadsheet.</p>
+      </div>
     </div>`,
-    emails: emails,
+    emails,
   };
 }
 
