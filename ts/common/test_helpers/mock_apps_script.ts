@@ -351,6 +351,10 @@ class FakeUrlFetchApp {
   fetch() {
     return generateFakeHttpResponse({ contentText: '' });
   }
+
+  fetchAll(requests: GoogleAppsScript.URL_Fetch.URLFetchRequestOptions[]) {
+    return requests.map(() => generateFakeHttpResponse({ contentText: '' }));
+  }
 }
 
 /**

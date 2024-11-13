@@ -310,6 +310,7 @@ export class Campaign extends DisplayVideoResource {
   readonly campaignFlight: CampaignFlight;
 
   readonly campaignBudgets: CampaignBudget[];
+
   /**
    * Constructs an instance of `Campaign`.
    *
@@ -392,6 +393,12 @@ export class Campaign extends DisplayVideoResource {
             ),
           },
         );
+      } else {
+        console.debug({
+          mappedCampaignGoal,
+          mappedCampaignFlight,
+          mappedFrequencyCap,
+        });
       }
     }
     throw ObjectUtil.error(
@@ -433,13 +440,12 @@ export class Campaign extends DisplayVideoResource {
    */
   override getChangedProperties(other: DisplayVideoResource | null): string[] {
     const changedProperties = super.getChangedProperties(other);
+    const campaignStartDate = this.campaignFlight.plannedDates.startDate;
 
     if (other instanceof Campaign) {
       changedProperties.push(
-        ...ApiDate.fromApiResource(
-          this.campaignFlight.plannedDates.startDate,
-        )!.getChangedProperties(
-          other.campaignFlight.plannedDates.startDate,
+        ...ApiDate.fromApiResource(campaignStartDate)!.getChangedProperties(
+          campaignStartDate,
           /* prefix= */ 'campaignFlight.plannedDates.startDate.',
         ),
       );
@@ -482,7 +488,7 @@ export class InsertionOrder extends DisplayVideoResource {
 
   readonly campaignId: string;
 
-  private insertionOrderType: string;
+  readonly insertionOrderType: string;
 
   readonly insertionOrderPacing: Pacing;
 
@@ -933,12 +939,12 @@ export class LineItem extends DisplayVideoResource {
   override getChangedProperties(other: DisplayVideoResource | null): string[] {
     const changedProperties = super.getChangedProperties(other);
 
-    if (other instanceof LineItem && this.getLineItemFlightEndDate()) {
+    if (other instanceof LineItem && this.lineItemFlight.dateRange.endDate) {
       changedProperties.push(
         ...ApiDate.fromApiResource(
-          this.getLineItemFlightEndDate()!,
+          this.lineItemFlight.dateRange.endDate!,
         )!.getChangedProperties(
-          other.getLineItemFlightEndDate(),
+          other.lineItemFlight.dateRange.endDate,
           /* prefix= */ 'flight.dateRange.endDate.',
         ),
       );

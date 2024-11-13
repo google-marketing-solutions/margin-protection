@@ -108,7 +108,7 @@ export const geoTargetRule = newRule({
       const targetingOptionApi =
         new this.client.dao.accessors.assignedTargetingOptions!(
           TARGETING_TYPE.GEO_REGION,
-          advertiserId,
+          [advertiserId],
           { campaignId: id },
         );
       const campaignSettings = this.settings.getOrDefault(id);
@@ -347,7 +347,7 @@ export const budgetPacingRuleLineItem = newRule({
     const values: Values = {};
     const { results, dateRange } = getLineItemBudgetPacingResult<SettingsObj>(
       this.settings,
-      Object.values(this.client.getAllLineItems()),
+      Object.values(await this.client.getAllLineItems()),
     );
     if (!dateRange.earliestStartDate || !dateRange.latestEndDate) {
       return { values };

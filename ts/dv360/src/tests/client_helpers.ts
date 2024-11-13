@@ -107,6 +107,13 @@ interface TestClientParams {
 export interface CampaignTemplate {
   id: string;
   advertiserId: string;
+  campaignId: string;
+  campaignFlight: {
+    plannedDates: {
+      startDate: { year: number; month: number; day: number };
+    };
+  };
+  entityStatus: string;
   campaignGoal: {
     performanceGoal: {
       performanceGoalType: string;
@@ -172,9 +179,12 @@ export interface InsertionOrderTemplate {
 /**
  * Encapsulation of a test client creator.
  *
- * Call with {@link generateTestClient}.
+ * To get a client, call with {@link generateTestClient}. Can be used
+ * directly to gain access to some test artifacts.
  */
-class TestClient {
+export class TestClient {
+  // private methods are only private because we haven't needed
+  // them yet. Modify the visibility as needed.
   private readonly insertionOrderTemplate: InsertionOrderTemplate = {
     id: 'io1',
     advertiserId: '1',
@@ -252,7 +262,7 @@ class TestClient {
       fixedBid: { bidAmountMicros: String(1_000_000) },
     },
   };
-  private readonly campaignTemplate: CampaignTemplate = {
+  readonly campaignTemplate: CampaignTemplate = {
     id: 'c1',
     advertiserId: '1',
     campaignGoal: {
@@ -262,12 +272,19 @@ class TestClient {
         performanceGoalAmountMicros: '10',
       },
     },
+    entityStatus: 'ENTITY_STATUS_ACTIVE',
     displayName: 'Campaign 1',
     frequencyCap: {
       unlimited: false,
       timeUnit: 'TIME_UNIT_LIFETIME',
       timeUnitCount: 1,
       maxImpressions: 10,
+    },
+    campaignId: '',
+    campaignFlight: {
+      plannedDates: {
+        startDate: { year: 2000, month: 1, day: 1 },
+      },
     },
   };
 
@@ -421,15 +438,17 @@ function fakeInsertionOrdersClass(
 ) {
   return class FakeInsertionOrders extends InsertionOrders {
     override list(callback: Callable<InsertionOrder>) {
-      try {
-        callback(
-          params.allInsertionOrders![this.advertiserId].map(
-            (c) => new InsertionOrder(c({ ...insertionOrderTemplate })),
-          ),
-        );
-      } catch {
-        console.debug(`Insertion Order ${this.advertiserId} Skipped`);
-      }
+      this.advertiserIds.map((advertiserId) => {
+        try {
+          callback(
+            params.allInsertionOrders![advertiserId].map(
+              (c) => new InsertionOrder(c({ ...insertionOrderTemplate })),
+            ),
+          );
+        } catch {
+          console.debug(`Insertion Order ${advertiserId} Skipped`);
+        }
+      });
     }
   };
 }
@@ -440,11 +459,13 @@ function fakeLineItemsClass(
 ) {
   return class FakeLineItems extends LineItems {
     override list(callback: Callable<LineItem>) {
-      callback(
-        params.allLineItems![this.advertiserId].map(
-          (c) => new LineItem(c({ ...lineItemTemplate })),
-        ),
-      );
+      for (const advertiserId of this.advertiserIds) {
+        callback(
+          params.allLineItems![advertiserId].map(
+            (c) => new LineItem(c({ ...lineItemTemplate })),
+          ),
+        );
+      }
     }
   };
 }
@@ -479,11 +500,13 @@ function fakeCampaignsClass(
 ) {
   return class FakeCampaigns extends Campaigns {
     override list(callback: Callable<Campaign>) {
-      callback(
-        params.allCampaigns![this.advertiserId].map(
-          (c) => new Campaign(c({ ...campaignTemplate })),
-        ),
-      );
+      for (const advertiserId of this.advertiserIds) {
+        callback(
+          params.allCampaigns![advertiserId].map(
+            (c) => new Campaign(c({ ...campaignTemplate })),
+          ),
+        );
+      }
     }
   };
 }
