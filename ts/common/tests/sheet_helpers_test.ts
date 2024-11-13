@@ -575,12 +575,18 @@ describe('Test emails', function () {
           '1': {
             value: 'v4',
             anomalous: false,
-            fields: {},
+            fields: {
+              'Column A': 'A1',
+              'Column B': 'B1',
+            },
           },
           '2': {
             value: 'v5',
             anomalous: true,
-            fields: {},
+            fields: {
+              'Column A': 'A2',
+              'Column B': 'B2',
+            },
           },
         },
       },
@@ -628,14 +634,19 @@ describe('Test emails', function () {
       },
     ]);
 
-    expect(output).to.eql(
-      `----------
-      Rule:
-      ----------
-
-      Column A,Column B,Value
-      A1,B1,1
-      A2,B2,2`.replace(/(^|\n) +/g, '$1'),
+    expect(output.replace(/(^|\n) +/g, '$1').split('\n')).to.eql(
+      `<h2>Rule</h2>
+      <hr>
+      
+      <div style="overflow-y: scroll; max-height: 400px;">
+        <table>
+          <tr><th>Column A</th><th>Column B</th><th>Value</th></tr>
+          <tr><td>A1</td><td>B1</td><td>1</td></tr>
+          <tr><td>A2</td><td>B2</td><td>2</td></tr>
+        </table>
+      </div>`
+        .replace(/(^|\n) +/g, '$1')
+        .split('\n'),
     );
   });
 
@@ -659,18 +670,23 @@ describe('Test emails', function () {
     messageExists.push(messages.length === 1);
     // Expected output shows the old anomaly is freshly alerted.
     const newEmail = email('user@example.com');
-    newEmail.body = `The following errors were found:
+    newEmail.body = `<p>The following errors were found:</p>
 
-      ----------
-      Rule B:
-      ----------
+      <h2>Rule B</h2>
+      <hr>
 
-      Value
-      v5`.replace(/(^|\n) +/g, '$1');
+      <div style="overflow-y: scroll; max-height: 400px;">
+        <table>
+          <tr><th>Column A</th><th>Column B</th><th>Value</th></tr>
+          <tr><td>A2</td><td>B2</td><td>v5</td></tr>
+        </table>
+      </div>`.replace(/(^|\n) +/g, '$1');
 
     // Assert
     expect(messageExists).to.deep.eq([true, false, true]);
-    expect(messages).to.deep.eq([newEmail]);
+    expect(messages[0].body.replace(/(^|\n) +/g, '$1').split('\n')).to.deep.eq(
+      newEmail.body.split('\n'),
+    );
   });
 });
 

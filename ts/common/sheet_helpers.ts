@@ -1242,8 +1242,7 @@ export abstract class AppsScriptFrontend<T extends ClientTypes<T>> {
       messages.push(emailAlertBody(rule.name, anomalies));
     }
 
-    message.body =
-      'The following errors were found:\n\n' + messages.join('\n\n');
+    message.body = `<p>The following errors were found:</p>\n\n${messages.join('\n\n')}`;
     sendEmail(message);
 
     for (const anomaly of anomalies) {
@@ -1389,7 +1388,6 @@ function extract(content: string): string {
  * Generates an email body given a list of possibly anomalous values.
  */
 export function emailAlertBody(name: string, values: Value[]) {
-  const rule = `----------\n${name}:\n----------\n\n`;
   const headers = new Set<string>();
   const body: string[][] = [];
   for (const value of values) {
@@ -1400,11 +1398,28 @@ export function emailAlertBody(name: string, values: Value[]) {
     body.push(Object.values(value.fields).concat([value.value]));
   }
   headers.add('Value');
-  const anomalyList =
-    rule +
-    [...headers].join(',') +
-    '\n' +
-    body.map((row) => row.join(',')).join('\n');
+  const headerRow = Array.from(headers, (header) => `<th>${header}</th>`).join(
+    '',
+  );
+
+  function mapColumn(cell: string) {
+    return `<td>${cell}</td>`;
+  }
+
+  function mapRow(row: string[]) {
+    return `<tr>${row.map(mapColumn).join('')}</tr>`;
+  }
+  const bodyRows = body.map(mapRow).join('\n');
+
+  const anomalyList = `<h2>${name}</h2>
+    <hr>
+
+    <div style="overflow-y: scroll; max-height: 400px;">
+      <table>
+        <tr>${headerRow}</tr>
+        ${bodyRows}
+      </table>
+    </div>`;
 
   return anomalyList;
 }
