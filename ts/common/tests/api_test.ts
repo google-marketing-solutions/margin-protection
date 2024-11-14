@@ -465,7 +465,7 @@ describe('Join query handling', function () {
     const report = reportFactory.create(JOIN_REPORT);
     report.fetch();
     expect(qlifyStack.pop()).to.equal(
-      'SELECT a.one, b.two, c.three FROM something WHERE something.id IN (1,11,111)',
+      "SELECT a.one, b.two, c.three FROM something WHERE something.resource_name IN ('1','11','111')",
     );
   });
 });
