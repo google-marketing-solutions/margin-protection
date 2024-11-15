@@ -32,6 +32,7 @@ import {
 } from '../ads_api';
 import { AdsSearchRequest, buildQuery } from '../ads_api_types';
 import {
+  FakeUrlFetchApp,
   generateFakeHttpResponse,
   mockAppsScript,
 } from '../test_helpers/mock_apps_script';
@@ -90,15 +91,22 @@ describe('qlifyQuery', function () {
 });
 
 describe('Google Ads API', function () {
-  let url = '';
+  const urls: string[] = [];
 
   beforeEach(function () {
     mockAppsScript();
     sinon.stub(UrlFetchApp, 'fetch').callsFake((requestUrl: string) => {
-      url = requestUrl;
+      urls.push(requestUrl);
 
       return generateFakeHttpResponse({ contentText: '{}' });
     });
+    sinon
+      .stub(UrlFetchApp, 'fetchAll')
+      .callsFake((requests: GoogleAppsScript.URL_Fetch.URLFetchRequest[]) => {
+        urls.splice(0, 0, ...requests.map((r) => r.url));
+
+        return [generateFakeHttpResponse({ contentText: '{}' })];
+      });
   });
 
   it('has a well-formed URL for GOOGLEADS_API_ENDPOINT', function () {
@@ -108,9 +116,9 @@ describe('Google Ads API', function () {
       apiEndpoint: GOOGLEADS_API_ENDPOINT,
     });
     const api = factory.create('123');
-    api.query('1', FAKE_REPORT.query).next();
+    api.query(['1'], FAKE_REPORT.query).next();
 
-    expect(url).to.equal(
+    expect(urls[0]).to.equal(
       'https://googleads.googleapis.com/v11/customers/1/googleAds:search',
     );
   });
@@ -122,9 +130,9 @@ describe('Google Ads API', function () {
       apiEndpoint: SA360_API_ENDPOINT,
     });
     const api = factory.create('123');
-    api.query('1', FAKE_REPORT.query).next();
+    api.query(['1'], FAKE_REPORT.query).next();
 
-    expect(url).to.equal(
+    expect(urls[0]).to.equal(
       'https://searchads360.googleapis.com/v0/customers/1/searchAds360:search',
     );
   });
@@ -157,7 +165,7 @@ describe('Google Ads API Client', function () {
 
   function getSearchRequestPayload(idx = 0): AdsSearchRequest {
     return JSON.parse(
-      fetch.getCalls()[idx].args[1].payload! as string,
+      fetch.getCalls()[idx].args[0][0].payload! as string,
     ) as AdsSearchRequest;
   }
 
@@ -166,11 +174,11 @@ describe('Google Ads API Client', function () {
     this.httpResponse = generateFakeHttpResponse({
       contentText: 'hello world',
     });
-    fetch = sinon.stub(UrlFetchApp, 'fetch');
+    fetch = sinon.stub(UrlFetchApp, 'fetchAll');
     getContentText = sinon
       .stub(this.httpResponse, 'getContentText')
       .returns('{"results": [{"customer": { "id": 123 }}]}');
-    fetch.returns(this.httpResponse);
+    fetch.returns([this.httpResponse]);
   });
 
   afterEach(function () {
@@ -181,9 +189,9 @@ describe('Google Ads API Client', function () {
     const developerToken = 'myDevToken';
 
     const client = createClient(developerToken);
-    client.query('1', FAKE_REPORT['query']).next();
+    client.query(['1'], FAKE_REPORT['query']).next();
 
-    const actualToken = fetch.lastCall.args[1].headers!['developer-token'];
+    const actualToken = fetch.lastCall.args[0][0].headers!['developer-token'];
     expect(actualToken).to.equal(developerToken);
   });
 
@@ -191,9 +199,9 @@ describe('Google Ads API Client', function () {
     const loginCustomerId = '1234567890';
 
     const client = createClient('', loginCustomerId);
-    client.query('1', FAKE_REPORT.query).next();
+    client.query(['1'], FAKE_REPORT.query).next();
     const actualLoginCustomerId =
-      fetch.lastCall.args[1].headers!['login-customer-id'];
+      fetch.lastCall.args[0][0].headers!['login-customer-id'];
     expect(actualLoginCustomerId).to.equal(loginCustomerId);
   });
 
@@ -205,16 +213,16 @@ describe('Google Ads API Client', function () {
       .returns(token);
 
     const client = createClient('', '', credentialManager);
-    client.query('1', FAKE_REPORT.query).next();
+    client.query(['1'], FAKE_REPORT.query).next();
 
     expect(getTokenSpy).to.have.been.calledOnce;
-    const actualToken = fetch.lastCall.args[1].headers!['Authorization'];
+    const actualToken = fetch.lastCall.args[0][0].headers!['Authorization'];
     expect(actualToken).to.equal(`Bearer ${token}`);
   });
 
   it('Has customer ID in payload', function () {
     const client = createClient();
-    client.query('1', FAKE_REPORT.query).next();
+    client.query(['1'], FAKE_REPORT.query).next();
 
     const payload = getSearchRequestPayload();
     expect(payload.customerId).to.equal('1');
@@ -225,7 +233,7 @@ describe('Google Ads API Client', function () {
     sinon
       .stub(client as unknown as { requestHeaders(): object }, 'requestHeaders')
       .returns({});
-    client.query('1', FAKE_REPORT.query).next();
+    client.query(['1'], FAKE_REPORT.query).next();
     const token = 'myBearerToken';
     const credentialManager = new CredentialManager();
     sinon.stub(credentialManager, 'getToken').returns(token);
@@ -246,15 +254,15 @@ describe('Google Ads API Client', function () {
       '{"results": [{"customer": { "id": 456 }}], "nextPageToken": "pointer"}',
     );
     const urls = new Set<string>();
-    fetch.callsFake((_, req) => {
-      if (JSON.parse(req.payload)['pageToken'] === 'pointer') {
-        return this.httpResponse;
+    fetch.callsFake((req) => {
+      if (JSON.parse(req[0].payload)['pageToken'] === 'pointer') {
+        return [this.httpResponse];
       }
-      return firstHttpResponse;
+      return [firstHttpResponse];
     });
 
     const client = createClient();
-    const rows = [...client.query('1', CUSTOMER_QUERY)];
+    const rows = [...client.query(['1'], CUSTOMER_QUERY)];
     console.log([...urls]);
 
     expect(fetch).to.have.been.calledTwice;
@@ -274,7 +282,7 @@ describe('Google Ads API Client', function () {
     getContentText.returns('{"results": []}');
 
     const client = createClient();
-    const rows = [...client.query('1', FAKE_REPORT.query)];
+    const rows = [...client.query(['1'], FAKE_REPORT.query)];
 
     expect(fetch).to.have.been.calledOnce;
 
@@ -299,13 +307,15 @@ describe('Report Factory', function () {
         apiEndpoint: FAKE_API_ENDPOINT,
       }).create(loginCustomerId);
       const mockQuery: sinon.SinonStub = sinon.stub(api, 'queryOne');
-      mockQuery.callsFake(({ query, customerId }) => {
+      mockQuery.callsFake(({ query, customerIds }) => {
         if (query === FAKE_REPORT.query) {
-          return iterator({
-            a: { one: `${customerId}/one` },
-            b: { two: `${customerId}/two` },
-            c: { three: `${customerId}/three` },
-          });
+          return iterator(
+            ...customerIds.flatMap((customerId) => ({
+              a: { one: `${customerId}/one` },
+              b: { two: `${customerId}/two` },
+              c: { three: `${customerId}/three` },
+            })),
+          );
         } else {
           return iterator(
             {
@@ -377,6 +387,7 @@ describe('Join Report', function () {
       if (query === JOIN_REPORT.query) {
         return iterator(
           { d: { one: 'one', nother: 'another' } },
+          // this is malformed and should be skipped silently
           { d: { one: '1' } },
         );
       } else if (query === GET_LEAF_ACCOUNTS_REPORT.query) {
@@ -416,44 +427,49 @@ describe('Join query handling', function () {
     );
     mockAppsScript();
     stubs.push(
-      sinon.stub(UrlFetchApp, 'fetch').callsFake((_, request) => {
-        const payload = JSON.parse(request.payload as string) as {
-          query: string;
-        };
-        if (payload.query === 'SELECT d.one, d.nother FROM the_main_table') {
+      sinon
+        .stub(
+          UrlFetchApp as unknown as FakeUrlFetchApp,
+          'generateFakeHttpResponse',
+        )
+        .callsFake((request) => {
+          const payload = JSON.parse(request.payload as string) as {
+            query: string;
+          };
+          if (payload.query === 'SELECT d.one, d.nother FROM the_main_table') {
+            return {
+              getContentText() {
+                return JSON.stringify({
+                  results: [
+                    { d: { one: '1', nother: 'another' } },
+                    { d: { one: '11', nother: 'yet another' } },
+                    // this value doesn't exist - but should still be queried.
+                    { d: { one: '111', nother: 'yet another' } },
+                  ],
+                });
+              },
+            } as HTTPResponse;
+          }
+          const joinedPayload = {
+            results: [
+              {
+                a: { one: '1' },
+                b: { two: '2' },
+                c: { three: '3' },
+              },
+              {
+                a: { one: '11' },
+                b: { two: '22' },
+                c: { three: '3' },
+              },
+            ],
+          };
           return {
             getContentText() {
-              return JSON.stringify({
-                results: [
-                  { d: { one: '1', nother: 'another' } },
-                  { d: { one: '11', nother: 'yet another' } },
-                  // this value doesn't exist - but should still be queried.
-                  { d: { one: '111', nother: 'yet another' } },
-                ],
-              });
+              return JSON.stringify(joinedPayload);
             },
           } as HTTPResponse;
-        }
-        const joinedPayload = {
-          results: [
-            {
-              a: { one: '1' },
-              b: { two: '2' },
-              c: { three: '3' },
-            },
-            {
-              a: { one: '11' },
-              b: { two: '22' },
-              c: { three: '3' },
-            },
-          ],
-        };
-        return {
-          getContentText() {
-            return JSON.stringify(joinedPayload);
-          },
-        } as HTTPResponse;
-      }),
+        }),
     );
   });
 
@@ -488,18 +504,21 @@ describe('Leaf expansion', function () {
   });
 
   it('checks all expanded accounts are added to the report', function () {
-    mockQuery.callsFake(({ customerId, query }) => {
+    mockQuery.callsFake(({ customerIds, query }) => {
       if (query === GET_LEAF_ACCOUNTS_REPORT.query) {
-        return iterator(
-          ...mockLeafAccounts[customerId].map((id) => ({
+        const results = customerIds.flatMap((customerId) =>
+          mockLeafAccounts[customerId].map((id) => ({
             customerClient: { id, name: `customer ${id}`, status: 'ENABLED' },
           })),
         );
+        return iterator(...results);
       } else {
-        return iterator({
-          customerId,
-          a: { id: customerId },
-        });
+        return iterator(
+          ...customerIds.map((customerId) => ({
+            customerId,
+            a: { id: customerId },
+          })),
+        );
       }
     });
     const report = reportFactory.create(FAKE_REPORT_2);

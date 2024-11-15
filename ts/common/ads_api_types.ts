@@ -156,7 +156,7 @@ export declare interface GoogleAdsApiInterface {
     Q extends QueryBuilder<Query<Params>>,
     Params extends string = Q['queryParams'][number],
   >(
-    customerIds: string,
+    customerIds: string[],
     query: Q,
     queryWheres?: string[],
   ): IterableIterator<ReportResponse<Q>>;

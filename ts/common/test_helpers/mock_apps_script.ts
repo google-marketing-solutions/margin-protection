@@ -347,13 +347,22 @@ export function mockAppsScript() {
   (globalThis.BigQuery as unknown as FakeBigQuery) = new FakeBigQuery();
 }
 
-class FakeUrlFetchApp {
-  fetch() {
-    return generateFakeHttpResponse({ contentText: '' });
+/**
+ * Enables easy mocks of {@link UrlFetchApp} by exposing {@link generateFakeHttpResponse}
+ */
+export class FakeUrlFetchApp {
+  fetch(_: string, request: GoogleAppsScript.URL_Fetch.URLFetchRequestOptions) {
+    return this.generateFakeHttpResponse(request);
   }
 
   fetchAll(requests: GoogleAppsScript.URL_Fetch.URLFetchRequestOptions[]) {
-    return requests.map(() => generateFakeHttpResponse({ contentText: '' }));
+    return requests.map((request) => this.generateFakeHttpResponse(request));
+  }
+
+  generateFakeHttpResponse(
+    _request: GoogleAppsScript.URL_Fetch.URLFetchRequestOptions,
+  ) {
+    return generateFakeHttpResponse({ contentText: '{}' });
   }
 }
 
