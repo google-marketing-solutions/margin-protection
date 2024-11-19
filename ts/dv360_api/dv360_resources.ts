@@ -40,7 +40,6 @@ import {
   FrequencyCapMapper,
   InsertionOrderBudget,
   InsertionOrderBudgetMapper,
-  InsertionOrderBudgetSegment,
   InventorySourceRateDetails,
   InventorySourceRateDetailsMapper,
   Kpi,

@@ -21,8 +21,6 @@
 
 import * as AdTypes from './ads_api_types';
 
-import URLFetchRequestOptions = GoogleAppsScript.URL_Fetch.URLFetchRequestOptions;
-
 // type boilerplate - separated out for readability
 type DefinedJoin<Joins> = Exclude<Joins, undefined>;
 type JoinKey<Joins> = keyof DefinedJoin<Joins>;
@@ -149,13 +147,14 @@ export class GoogleAdsApi implements AdTypes.GoogleAdsApiInterface {
     Q extends AdTypes.QueryBuilder<AdTypes.Query<Params>>,
     Params extends string = Q['queryParams'][number],
   >(
-    customerIds: string,
+    customerIds: string[],
     query: Q,
     queryWheres: string[] = [],
   ): IterableIterator<AdTypes.ReportResponse<Q>> {
-    for (const customerId of splitCids(customerIds)) {
-      yield* this.queryOne({ query, customerId, queryWheres });
-    }
+    const cleanCustomerIds = customerIds.flatMap(splitCids);
+    //const result = [...this.queryOne({ query, customerIds: cleanCustomerIds, queryWheres })];
+    //yield* result;
+    yield* this.queryOne({ query, customerIds: cleanCustomerIds, queryWheres });
   }
 
   /**
@@ -166,35 +165,60 @@ export class GoogleAdsApi implements AdTypes.GoogleAdsApiInterface {
     Params extends string = Q['queryParams'][number],
   >({
     query,
-    customerId,
+    customerIds,
     queryWheres = [],
   }: {
     query: Q;
-    customerId: string;
+    customerIds: string[];
     queryWheres: string[];
   }): IterableIterator<AdTypes.ReportResponse<Q>> {
-    const url = `https://${this.apiInstructions.apiEndpoint.url}/${this.apiInstructions.apiEndpoint.version}/customers/${customerId}/${this.apiInstructions.apiEndpoint.call}`;
-    const params: AdTypes.AdsSearchRequest = {
-      pageSize: MAX_PAGE_SIZE,
-      query: this.qlifyQuery(query, queryWheres),
-      customerId,
-    };
-    let pageToken: string;
-    do {
-      const req: URLFetchRequestOptions = {
-        method: 'post',
-        headers: this.requestHeaders(),
-        contentType: 'application/json',
-        payload: JSON.stringify({ ...params, pageToken }),
+    const paramAndUrlArray = customerIds.map((customerId) => {
+      const url = `https://${this.apiInstructions.apiEndpoint.url}/${this.apiInstructions.apiEndpoint.version}/customers/${customerId}/${this.apiInstructions.apiEndpoint.call}`;
+
+      return {
+        url,
+        params: {
+          pageSize: MAX_PAGE_SIZE,
+          query: this.qlifyQuery(query, queryWheres),
+          customerId,
+        } satisfies AdTypes.AdsSearchRequest,
       };
-      const res = JSON.parse(
-        UrlFetchApp.fetch(url, req).getContentText(),
-      ) as AdTypes.AdsSearchResponse<AdTypes.ReportResponse<Q>>;
-      pageToken = res.nextPageToken;
-      for (const row of res.results || []) {
-        yield row;
+    });
+
+    const requests: GoogleAppsScript.URL_Fetch.URLFetchRequest[] =
+      customerIds.map((_, i) => {
+        return {
+          url: paramAndUrlArray[i].url,
+          method: 'post',
+          headers: this.requestHeaders(),
+          contentType: 'application/json',
+          payload: JSON.stringify(paramAndUrlArray[i].params),
+        };
+      });
+
+    let pendingRequests = [...requests];
+    do {
+      const responses = UrlFetchApp.fetchAll(pendingRequests).map(
+        (response) =>
+          JSON.parse(response.getContentText()) as AdTypes.AdsSearchResponse<
+            AdTypes.ReportResponse<Q>
+          >,
+      );
+      pendingRequests = [];
+      for (const [i, response] of responses.entries()) {
+        if (response.nextPageToken) {
+          const newRequest = { ...requests[i] };
+          newRequest.payload = JSON.stringify({
+            ...paramAndUrlArray[i],
+            pageToken: response.nextPageToken,
+          });
+          pendingRequests.push(newRequest);
+        }
+        if (response.results) {
+          yield* response.results;
+        }
       }
-    } while (pageToken);
+    } while (pendingRequests.length);
   }
 
   /**
@@ -231,9 +255,7 @@ export abstract class Report<
    *   of an AQL query.
    */
   private *mapIterators(queryWheres: string[] = []) {
-    for (const customerId of this.clientIds) {
-      yield* this.api.query<Q>(customerId, this.query, queryWheres);
-    }
+    yield* this.api.query<Q>(this.clientIds, this.query, queryWheres);
   }
 
   /**
@@ -246,7 +268,7 @@ export abstract class Report<
    * }
    */
   fetch(queryWheres: string[] = []): Record<string, Record<Output, string>> {
-    const results = this.mapIterators(queryWheres);
+    const results = this.api.query<Q>(this.clientIds, this.query, queryWheres);
 
     let resultsHolder:
       | IterableIterator<AdTypes.ReportResponse<Q>>
@@ -281,24 +303,39 @@ export abstract class Report<
             Record<string, Record<JoinOutputKey<Q['joins']>, string>>
           >);
     // finally - transform results and filtered join results.
-    return Object.fromEntries(
-      Array.from(resultsHolder, (result) => {
-        if (joins === undefined) {
-          return this.transform(result);
-        }
-        try {
-          return this.transform(
+    return Object.fromEntries(this.unpackResults(resultsHolder, joins));
+  }
+
+  private unpackResults(
+    resultsHolder:
+      | IterableIterator<AdTypes.ReportResponse<Q>>
+      | Array<AdTypes.ReportResponse<Q>>,
+    joins: undefined | JoinDict<Q['joins']>,
+  ): Array<readonly [key: string, record: Record<Output, string>]> {
+    const completedResults: Array<
+      readonly [key: string, record: Record<Output, string>]
+    > = [];
+    for (const result of resultsHolder) {
+      if (joins === undefined) {
+        completedResults.push(this.transform(result));
+        continue;
+      }
+      try {
+        completedResults.push(
+          this.transform(
             result,
             joins as Q['joins'] extends undefined
               ? never
               : Exclude<typeof joins, undefined>,
-          );
-        } catch {
-          return null;
-        }
-        // clean any empty values
-      }).filter((e) => e),
-    );
+          ),
+        );
+      } catch {
+        console.debug(`skipping result ${result}: not transformable`);
+        continue;
+      }
+      // clean any empty values
+    }
+    return completedResults.filter(([_, e]) => e);
   }
 
   /**
@@ -435,7 +472,7 @@ export class ReportFactory implements AdTypes.ReportFactoryInterface {
   /**
    * A list of CID leafs mapped to their parents.
    */
-  private readonly leafToRoot = new Map<string, string>();
+  private readonly leafToRoot = new Set<string>();
 
   constructor(
     protected readonly apiFactory: GoogleAdsApiFactory,
@@ -483,34 +520,37 @@ export class ReportFactory implements AdTypes.ReportFactoryInterface {
    */
   leafAccounts(): string[] {
     if (!this.leafToRoot.size) {
-      for (const customerId of this.clientArgs.customerIds.split(',')) {
-        const api = this.apiFactory.create(
-          this.clientArgs.loginCustomerId || this.clientArgs.customerIds,
+      const customerIds = this.clientArgs.customerIds.split(',');
+      if (!this.clientArgs.loginCustomerId && customerIds.length > 1) {
+        throw new Error(
+          'A login customer ID must be provided when multiple CIDs are selected.',
         );
-        const expand = (account: string): string[] => {
-          const rows = api.query(account, GET_LEAF_ACCOUNTS_REPORT.query);
-          const customerIds: string[] = [];
-          for (const row of rows) {
-            customerIds.push(String(row.customerClient!.id!));
-          }
-          return customerIds;
-        };
-
-        const traverse = (account: string): string[] => {
-          // User preference for expansion takes priority.
-          // If the user forgot to set expand and there are no children, check
-          // anyway. If this account is supposed to be a leaf, the expand query
-          // will confirm it.
-          return expand(account);
-        };
-
-        for (const leaf of traverse(customerId)) {
-          // Clobbering is fine: we only need one way to access a given leaf.
-          this.leafToRoot.set(leaf, customerId);
+      }
+      const api = this.apiFactory.create(
+        this.clientArgs.loginCustomerId || this.clientArgs.customerIds,
+      );
+      const expand = (accounts: string[]): string[] => {
+        const rows = api.query(accounts, GET_LEAF_ACCOUNTS_REPORT.query);
+        const customerIds: string[] = [];
+        for (const row of rows) {
+          customerIds.push(String(row.customerClient!.id!));
         }
+        return customerIds;
+      };
+
+      const traverse = (accounts: string[]): string[] => {
+        // User preference for expansion takes priority.
+        // If the user forgot to set expand and there are no children, check
+        // anyway. If this account is supposed to be a leaf, the expand query
+        // will confirm it.
+        return expand(accounts);
+      };
+
+      for (const leaf of traverse(customerIds)) {
+        this.leafToRoot.add(leaf);
       }
     }
-    return [...this.leafToRoot.keys()];
+    return [...this.leafToRoot];
   }
 }
 
