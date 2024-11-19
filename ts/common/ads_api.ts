@@ -311,10 +311,8 @@ export abstract class Report<
     Record<string, Record<JoinOutputKey<Q['joins']>, string>>,
   ] {
     const joinObject = this.factory.create(joinClass);
-    const dedupedJoinMatchKeys = [
-      ...new Set(joinMatchKeys.map((j: string) => `'${j}'`)),
-    ].join(',');
-    const dedupedJoinMatchQuery = `${joinClass.query.queryFrom}.resource_name IN (${dedupedJoinMatchKeys})`;
+    const dedupedJoinMatchKeys = [...new Set(joinMatchKeys)].join(',');
+    const dedupedJoinMatchQuery = `${joinClass.query.queryFrom}.id IN (${dedupedJoinMatchKeys})`;
     // Ensure we get the right type back with "satisfies".
     // Array.from has specific ideas of the data types it wants to return.
     return [joinKey, joinObject.fetch([dedupedJoinMatchQuery])] satisfies [
