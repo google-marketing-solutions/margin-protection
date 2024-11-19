@@ -19,7 +19,7 @@
     "push": "yarn build:dev && clasp push",
     "push:prod": "yarn build:prod && clasp push",
     "push:client": "yarn --cwd ../client push",
-    "test": "yarn --cwd .. test sa360/src/tests/*_test.ts",
-    "lint": "yarn --cwd .. lint sa360/src/**/*.ts"
+    "test": "yarn --cwd ./ts test",
+    "lint": "yarn --cwd .. lint dv360/src/**/*.ts"
   }
 }
