@@ -1,7 +1,5 @@
 {
-  "extensions": ["ts"],
-  "spec": ["**/tests/**/*_test.ts"],
-  "watch-files": ["**/*.ts"],
-  "$schema": "https://json.schemastore.org/mocharc.json",
-  "require": "tsx"
+  "spec": ["**/*_test.js"],
+  "watch-files": ["**/*.js"],
+  "$schema": "https://json.schemastore.org/mocharc.json"
 }

@@ -229,9 +229,7 @@ function getEmailParameters(
     ? message
     : `This is an automated email to let you know that ${useCase} issues have been identified for CM360 Account ${accountId}.`;
 
-  const url = `${SpreadsheetApp.getActive().getUrl()}?gid=${SpreadsheetApp.getActive()
-    .getActiveSheet()
-    .getSheetId()}`;
+  const url = getUrl(SpreadsheetApp.getActive().getUrl(), SpreadsheetApp.getActive().getActiveSheet().getSheetId());
 
   return {
     subject: `[ACTION REQUIRED] CM360 ${useCase} Issues identified for account ${accountId}`,
@@ -288,3 +286,15 @@ function logExecutionStatus(row, executionStatus, executionTimestamp) {
     .getRange(row + 2, REPORTS_CONFIG_LAST_EXECUTION_COLUMN)
     .setValue(executionTimestamp);
 }
+
+/**
+ * Appends gid to a URL that might have parameters.
+ */
+function getUrl(url, gid) {
+  const [urlPart, paramString] = url.split('?');
+  const params = paramString ? `${paramString}&gid=${gid}` : `gid=${gid}`;
+  return `${urlPart}?${params}`;
+}
+
+// exposed for testing
+globalThis.getUrl = getUrl;
