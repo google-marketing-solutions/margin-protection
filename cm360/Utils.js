@@ -229,7 +229,7 @@ function getEmailParameters(
     ? message
     : `This is an automated email to let you know that ${useCase} issues have been identified for CM360 Account ${accountId}.`;
 
-  const url = `${SpreadsheetApp.getActive().getUrl()}?gid=${SpreadsheetApp.getActive()
+  const url = `${SpreadsheetApp.getActive().getUrl()}&gid=${SpreadsheetApp.getActive()
     .getActiveSheet()
     .getSheetId()}`;
 
