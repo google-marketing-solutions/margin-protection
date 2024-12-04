@@ -229,14 +229,15 @@ function getEmailParameters(
     ? message
     : `This is an automated email to let you know that ${useCase} issues have been identified for CM360 Account ${accountId}.`;
 
-  const url = getUrl(SpreadsheetApp.getActive().getUrl(), SpreadsheetApp.getActive().getActiveSheet().getSheetId());
+  const sheetName = `${useCase}-${profileId}-${accountId}-${reportId}`;
+  const url = getUrl(SpreadsheetApp.getActive().getUrl(), SpreadsheetApp.getActive().getSheetByName(sheetName).getSheetId());
 
   return {
     subject: `[ACTION REQUIRED] CM360 ${useCase} Issues identified for account ${accountId}`,
     body: `<div style='font-size:16px;'>
       <p>Hi,</p>
       <p>${message}</p>
-      <p>For more details, please review the tab <a href="${url}">'${useCase}-${profileId}-${accountId}-${reportId}' in the ${useCase} Monitor</a> Google Spreadsheet.</p>
+      <p>For more details, please review the tab <a href="${url}">'${sheetName}' in the ${useCase} Monitor</a> Google Spreadsheet.</p>
       <div style='overflow-y: scroll; max-height: 70vh'>
       ${table}
       </div>
