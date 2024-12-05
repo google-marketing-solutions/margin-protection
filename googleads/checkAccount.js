@@ -1,4 +1,21 @@
-const spreadsheetId = ''; // Replace with your sheet's ID
+/**
+ * @license
+ * Copyright 2024 Google LLC.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     https://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+const spreadsheetId = '1XgOZjlH7DA55x8hY3Xlo3_a7eqNSLZ9Irs3PtOkcBfY'; // Replace with your sheet's ID
 
 const languageConfigSheetName = 'Language config';
 const geoTargetingConfigSheetName = 'Geo Targeting config';
@@ -8,12 +25,7 @@ const languageResultSheetName = 'Language results';
 const geoTargetingResultSheetName = 'Geo Targeting results';
 const budgetResultSheetName = 'Budget results';
 const setupSheetName = 'Setup';
-
-const outputModeCell = 'B3';
-const emailCell = 'B4';
-const folderIdCell = 'B5';
-const pauseCampaignsCell = 'B6';
-const fetchOnlyActiveCampaignsCell = 'B7';
+const vanityUrlSheetName = 'Vanity URLs';
 
 const spreadsheet = SpreadsheetApp.openById(spreadsheetId);
 const setupSheet = spreadsheet.getSheetByName(setupSheetName);
@@ -22,6 +34,14 @@ const geoTargetingConfigSheet = spreadsheet.getSheetByName(
   geoTargetingConfigSheetName,
 );
 const budgetConfigSheet = spreadsheet.getSheetByName(budgetConfigSheetName);
+const vanityUrlSheet = spreadsheet.getSheetByName(vanityUrlSheetName);
+
+const outputModeCell = 'B3';
+const emailCell = 'B4';
+const folderIdCell = 'B5';
+const pauseCampaignsCell = 'B6';
+const fetchOnlyActiveCampaignsCell = 'B7';
+
 
 const mode = setupSheet.getRange(outputModeCell).getValue();
 const emailAddresses = setupSheet.getRange(emailCell).getValue();
@@ -34,10 +54,12 @@ const fetchOnlyActiveCampaigns = setupSheet
 const languageResult = [];
 const geoTargetingResult = [];
 const budgetResult = [];
+const vanityUrlResult = [];
 
 var languageMisconfigured = [];
 var geoTargetingMisconfigured = [];
 var budgetMisconfigured = [];
+var vanityUrlMisconfigured = [];
 
 var campaignsWerePaused = false;
 
@@ -48,6 +70,7 @@ function main() {
   languageMisconfigured = languageResult.filter((r) => r.misconfigured);
   geoTargetingMisconfigured = geoTargetingResult.filter((r) => r.misconfigured);
   budgetMisconfigured = budgetResult.filter((r) => r.misconfigured);
+  vanityUrlMisconfigured = vanityUrlResult.filter((r) => r.misconfigured);
 
   if (pauseCampaigns) {
     pauseMisconfiguredCampaigns();
@@ -170,9 +193,12 @@ function checkCampaigns(account) {
     var videoCampaignIterator = AdsApp.videoCampaigns().get();
     var performanceMaxCampaignIterator = AdsApp.performanceMaxCampaigns().get();
   }
+  var vanityUrlIterator = AdsApp.search(
+    `SELECT campaign.id, campaign.vanity_pharma.vanity_pharma_display_url_mode, campaign.vanity_pharma.vanity_pharma_text FROM campaign`,
+  );
 
   // Standard Campaigns (Search, Display, etc.)
-  checkCampaignIterator(account, campaignIterator);
+  checkCampaignIterator(account, campaignIterator, vanityUrlIterator);
 
   // Shopping Campaigns
   checkCampaignIterator(account, shoppingCampaignIterator);
@@ -184,13 +210,18 @@ function checkCampaigns(account) {
   checkCampaignIterator(account, performanceMaxCampaignIterator);
 }
 
-function checkCampaignIterator(account, campaignIterator) {
+function checkCampaignIterator(account, campaignIterator, vanityUrlIterator) {
   while (campaignIterator.hasNext()) {
     const campaign = campaignIterator.next();
 
     checkSingleCampaignLanguage(account, campaign);
     checkSingleCampaignGeoTarget(account, campaign);
     checkSingleCampaignBudget(account, campaign);
+  }
+
+  while (vanityUrlIterator.hasNext()) {
+    const campaign = vanityUrlIterator.next();
+    checkSingleCampaignVanityUrl(account, campaign);
   }
 }
 
@@ -522,6 +553,55 @@ function getCampaignDesiredBudget(campaign) {
   }
 }
 
+function checkSingleCampaignVanityUrl(account, campaign) {
+  const { expectVanityUrl } = getExpectedVanityUrlStatus(campaign['campaign']['id']);
+  const actual = Boolean(campaign['campaign']['vanityPharma']);
+
+  const accountId = account.getCustomerId();
+  const accountName = account.getName();
+  const campaignId = campaign.getId();
+  const campaignName = campaign.getName();
+  const vanityPharmaDisplayUrlMode = campaign['campaign']['vanityPharma']
+
+  vanityUrlResult.push({
+    accountId,
+    accountName,
+    campaignId,
+    campaignName,
+    actual,
+    vanityPharmaDisplayUrlMode,
+    misconfigured: expectVanityUrl === actual,
+  });
+}
+
+function getExpectedVanityUrlStatus(campaignId) {
+  const range = vanityUrlSheet.getDataRange();
+  const values = range.getValues();
+
+  for (var i = 0; i < values.length; i++) {
+    if (values[i][2] == campaignId) {
+      // Campaign ID is in column C
+      return {
+        expectVanityUrl: maybeCoerceStringToBoolean(values[i][4]),
+      };
+    }
+  }
+}
+
+function maybeCoerceStringToBoolean(value) {
+  if (typeof value === 'boolean') {
+    return value;
+  }
+  switch (value) {
+    case 'Y' || 'YES' || 'yes' || 'true' || false:
+      return true;
+    case 'N' || 'NO' || 'no' || 'false' || false:
+      return false;
+    default:
+      return Boolean(value);
+  }
+}
+
 function convertStringToFloat(value) {
   if (typeof value === 'string') {
     // Replace commas with periods for decimal notation
@@ -554,6 +634,97 @@ function getCampaignActualBudget(campaign) {
       actualTotalBudget: -1,
     };
   }
+}
+
+function getVanityUrlActualStatus(campaign) {
+  var budget = campaign.getBudget();
+
+  if (budget) {
+    return {
+      actualDailyBudget: budget.getAmount(),
+      actualTotalBudget: budget.getTotalAmount(),
+      // TODO: FIX
+      actualPercentageOverAverageHistoricalBudget: 0,
+    };
+  } else {
+    return {
+      actualDailyBudget: -1,
+      actualTotalBudget: -1,
+    };
+  }
+}
+
+function writeResultsToSheet(resultSheetName, results, headerRow, columnWidths) {
+  const resultSheet = createOrClearSheet(resultSheetName);
+  resultSheet.appendRow(headerRow);
+
+  results.forEach((r) => {
+    const rowData = headerRow.map((header) => {  // Dynamically create row data based on the header
+      const key = header.replace(/\s/g, '').toLowerCase(); // Normalize header to match result keys
+      const value = r[key];
+      // Handle array values (join them with commas) and empty/zero values
+      if (Array.isArray(value)) {
+        return value.length !== 0 ? value.join(', ') : '-';
+      } else if (typeof value === 'number') {  // Handle numbers (display or '-')
+          return value || '-'; // Handle 0 as '-' if needed. Change to value !== 0 ? value : '-' to keep 0
+      }
+      return value || '-'; // Keep the original value in other cases
+    });
+
+    resultSheet.appendRow(rowData);
+  });
+
+  styleResultSheet(resultSheet, headerRow.length); // Apply consistent styling
+
+    // Set column widths dynamically
+    headerRow.forEach((header, index) => {
+        const width = columnWidths[index];
+        if(width){
+           resultSheet.setColumnWidth(index + 1, width);
+        }
+    });
+
+}
+
+
+function styleResultSheet(sheet, lastColumn) {
+  let range = sheet.getRange('A1:' + String.fromCharCode(64 + lastColumn) + '1');
+  range.setBackground('#D9D9D9');
+  range.setBorder(null, null, true, null, null, null, '#000000', SpreadsheetApp.BorderStyle.SOLID_THICK);
+
+  range = sheet.getRange('A2:' + String.fromCharCode(64 + lastColumn) + '999');
+  range.setBorder(null, null, null, null, true, null, '#000000', SpreadsheetApp.BorderStyle.SOLID);
+}
+
+
+
+// Example usage within writeToResultSheet function:
+function writeToResultSheet() {
+  console.log('Writing results to sheets...');
+
+  const languageHeader = [
+    'Customer ID', 'Customer name', 'Campaign ID', 'Campaign name', 'Desired languages', 'Current languages', 'MISCONFIGURED'
+  ];
+  const languageWidths = [120, 300, 120, 300, 300, 300, 120];
+  writeResultsToSheet(languageResultSheetName, languageResult, languageHeader, languageWidths);
+
+  const geoTargetingHeader = [
+    'Customer ID', 'Customer name', 'Campaign ID', 'Campaign name', 'Desired included locations', 'Current included locations', 'Desired excluded locations', 'Current excluded locations', 'MISCONFIGURED'
+  ];
+  const geoTargetingWidths = [120, 300, 120, 300, 300, 300, 300, 300, 120];
+  writeResultsToSheet(geoTargetingResultSheetName, geoTargetingResult, geoTargetingHeader, geoTargetingWidths);
+
+  const budgetHeader = [
+    'Customer ID', 'Customer name', 'Campaign ID', 'Campaign name', 'Max daily budget', 'Current daily budget', 'Max total budget', 'Current total budget', 'MISCONFIGURED'
+  ];
+  const budgetWidths = [120, 300, 120, 300, 140, 140, 140, 140, 120];
+  writeResultsToSheet(budgetResultSheetName, budgetResult, budgetHeader, budgetWidths);
+
+  const vanityUrlHeader = [
+    'Customer ID', 'Customer name', 'Campaign ID', 'Campaign name', 'Has Vanity URL', 'Vanity URL Display Mode', 'MISCONFIGURED',
+  ]
+  const vanityUrlWidths = [120, 300, 120, 300, 120, 300, 120];
+  writeResultsToSheet(vanityUrlResultSheetName, vanityUrlResult, vanityUrlHeader, vanityUrlWidths);
 }
 
 function writeToResultSheet() {

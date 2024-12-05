@@ -1,4 +1,21 @@
-const spreadsheetId = ''; // Replace with your sheet's ID
+/**
+ * @license
+ * Copyright 2024 Google LLC.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     https://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+const spreadsheetId = '1XgOZjlH7DA55x8hY3Xlo3_a7eqNSLZ9Irs3PtOkcBfY'; // Replace with your sheet's ID
 
 const fetchOnlyActiveCampaignsCell = 'B7';
 
@@ -6,6 +23,7 @@ const languageConfigSheetName = 'Language config';
 const geoTargetingConfigSheetName = 'Geo Targeting config';
 const budgetConfigSheetName = 'Budget config';
 const setupSheetName = 'Setup';
+const vanityUrlSheetName = 'Vanity URLs';
 
 const spreadsheet = SpreadsheetApp.openById(spreadsheetId);
 const setupSheet = spreadsheet.getSheetByName(setupSheetName);
@@ -16,6 +34,7 @@ const fetchOnlyActiveCampaigns = setupSheet
 var languageConfigSheet = null;
 var geoTargetingConfigSheet = null;
 var budgetConfigSheet = null;
+var vanityUrlSheet = null;
 
 function main() {
   // Start checking this account
@@ -46,14 +65,91 @@ function syncCampaigns(account) {
 }
 
 function setUpConfigSheets() {
-  languageConfigSheet = createOrClearSheet(languageConfigSheetName);
+  languageConfigSheet = createAndStyleConfigSheet(
+    languageConfigSheetName,
+    'Complete desired languages for each campaigns. If no preference for a single campaign, leave blank (empty)',
+    [
+      'Customer ID',
+      'Customer name',
+      'Campaign ID',
+      'Campaign name',
+      'Desired languages',
+    ],
+  );
+  geoTargetingConfigSheet = createAndStyleConfigSheet(
+    geoTargetingConfigSheetName,
+    'Complete desired included and excluded locations for each campaigns. If no preference for a single campaign, leave blank (empty)',
+    [
+      'Customer ID',
+      'Customer name',
+      'Campaign ID',
+      'Campaign name',
+      'Desired included locations',
+      'Desired excluded locations',
+    ],
+  );
+  budgetConfigSheet = createAndStyleConfigSheet(
+    budgetConfigSheetName,
+    'Complete desired max daily or total budgets (not both). If no preference for a single campaign, leave blank (empty)',
+    [
+      'Customer ID',
+      'Customer name',
+      'Campaign ID',
+      'Campaign name',
+      'Max daily budget',
+      'Max total budget',
+    ],
+  );
+  vanityUrlSheet = createAndStyleConfigSheet(
+    vanityUrlSheetName,
+    'Check if vanity URL is set',
+    [
+      'Customer ID',
+      'Customer name',
+      'Campaign ID',
+      'Campaign name',
+      'Expect vanity URL',
+    ],    
+  );
+}
 
-  var range = languageConfigSheet.getRange('A1:E1');
+function createAndStyleConfigSheet(sheetName, headerText, headerRow) {
+  const sheet = createOrClearSheet(sheetName);
+
+  // Header Styling
+  styleHeader(sheet, headerText, headerRow.length);
+
+  // Column Widths (Adjust as needed)
+  sheet.setColumnWidths(1, 1, 120);
+  sheet.setColumnWidths(2, 1, 300);
+  sheet.setColumnWidths(3, 1, 120);
+  sheet.setColumnWidths(
+    4,
+    headerRow.length > 4 ? headerRow.length - 4 : 1,
+    300,
+  ); // Dynamic width adjustment for longer header rows
+  if (headerRow.length > 5) {
+    sheet.setColumnWidths(5, headerRow.length - 5, 120); // handles extra columns if needed
+  }
+
+  // Append Header Row
+  sheet.appendRow(headerRow);
+  sheet.insertRowBefore(2);
+
+  // Apply border styling
+  styleBorder(sheet, headerRow.length);
+
+  return sheet;
+}
+
+function styleHeader(sheet, text, lastColumnNumber) {
+  const range = sheet.getRange(
+    'A1:' + String.fromCharCode(64 + lastColumnNumber) + '1',
+  );
   range.merge();
-  var richText = SpreadsheetApp.newRichTextValue()
-    .setText(
-      'Complete desired languages for each campaigns. If no preference for a single campaign, leave blank (empty)',
-    )
+
+  const richText = SpreadsheetApp.newRichTextValue()
+    .setText(text)
     .setTextStyle(SpreadsheetApp.newTextStyle().setBold(true).build())
     .build();
 
@@ -73,21 +169,14 @@ function setUpConfigSheets() {
     SpreadsheetApp.BorderStyle.SOLID_THICK,
   );
   range.setRichTextValue(richText);
-  languageConfigSheet.insertRows(2);
-  languageConfigSheet.setColumnWidths(1, 1, 120);
-  languageConfigSheet.setColumnWidths(2, 1, 300);
-  languageConfigSheet.setColumnWidths(3, 1, 120);
-  languageConfigSheet.setColumnWidths(4, 2, 300);
+  sheet.insertRows(2);
+}
 
-  languageConfigSheet.appendRow([
-    'Customer ID',
-    'Customer name',
-    'Campaign ID',
-    'Campaign name',
-    'Desired languages',
-  ]);
-  languageConfigSheet.insertRowBefore(2);
-  range = languageConfigSheet.getRange('A3:E3');
+function styleBorder(sheet, lastColumn) {
+  // add last column length as param
+  let range = sheet.getRange(
+    'A3:' + String.fromCharCode(64 + lastColumn) + '3',
+  );
   range.setBorder(
     null,
     null,
@@ -98,141 +187,7 @@ function setUpConfigSheets() {
     '#000000',
     SpreadsheetApp.BorderStyle.SOLID,
   );
-  range = languageConfigSheet.getRange('A3:E999');
-  range.setBorder(
-    null,
-    null,
-    null,
-    null,
-    true,
-    null,
-    '#000000',
-    SpreadsheetApp.BorderStyle.SOLID,
-  );
-
-  geoTargetingConfigSheet = createOrClearSheet(geoTargetingConfigSheetName);
-
-  var range = geoTargetingConfigSheet.getRange('A1:F1');
-  range.merge();
-  var richText = SpreadsheetApp.newRichTextValue()
-    .setText(
-      'Complete desired included and excluded locations for each campaigns. If no preference for a single campaign, leave blank (empty)',
-    )
-    .setTextStyle(SpreadsheetApp.newTextStyle().setBold(true).build())
-    .build();
-
-  range.setBackground('#ea4335');
-  range.setHorizontalAlignment('center');
-  range.setVerticalAlignment('middle');
-  range.setFontSize(12);
-  range.setFontColor('#FFFFFF');
-  range.setBorder(
-    true,
-    true,
-    true,
-    true,
-    null,
-    null,
-    '#000000',
-    SpreadsheetApp.BorderStyle.SOLID_THICK,
-  );
-  range.setRichTextValue(richText);
-  geoTargetingConfigSheet.insertRows(2);
-  geoTargetingConfigSheet.setColumnWidths(1, 1, 120);
-  geoTargetingConfigSheet.setColumnWidths(2, 1, 300);
-  geoTargetingConfigSheet.setColumnWidths(3, 1, 120);
-  geoTargetingConfigSheet.setColumnWidths(4, 3, 300);
-
-  geoTargetingConfigSheet.appendRow([
-    'Customer ID',
-    'Customer name',
-    'Campaign ID',
-    'Campaign name',
-    'Desired included locations',
-    'Desired excluded locations',
-    // "Max number of countries (blank = no limit)"
-  ]);
-  geoTargetingConfigSheet.insertRowBefore(2);
-  range = geoTargetingConfigSheet.getRange('A3:F3');
-  range.setBorder(
-    null,
-    null,
-    true,
-    null,
-    null,
-    null,
-    '#000000',
-    SpreadsheetApp.BorderStyle.SOLID,
-  );
-  range = geoTargetingConfigSheet.getRange('A3:F999');
-  range.setBorder(
-    null,
-    null,
-    null,
-    null,
-    true,
-    null,
-    '#000000',
-    SpreadsheetApp.BorderStyle.SOLID,
-  );
-
-  budgetConfigSheet = createOrClearSheet(budgetConfigSheetName);
-
-  range = budgetConfigSheet.getRange('A1:F1');
-  range.merge();
-  richText = SpreadsheetApp.newRichTextValue()
-    .setText(
-      'Complete desired max daily or total budgets (not both). If no preference for a single campaign, leave blank (empty)',
-    )
-    .setTextStyle(SpreadsheetApp.newTextStyle().setBold(true).build())
-    .build();
-
-  range.setBackground('#ea4335');
-  range.setHorizontalAlignment('center');
-  range.setVerticalAlignment('middle');
-  range.setFontSize(12);
-  range.setFontColor('#FFFFFF');
-  range.setBorder(
-    true,
-    true,
-    true,
-    true,
-    null,
-    null,
-    '#000000',
-    SpreadsheetApp.BorderStyle.SOLID_THICK,
-  );
-  range.setRichTextValue(richText);
-  budgetConfigSheet.insertRows(2);
-  budgetConfigSheet.setColumnWidths(1, 1, 120);
-  budgetConfigSheet.setColumnWidths(2, 1, 300);
-  budgetConfigSheet.setColumnWidths(3, 1, 120);
-  budgetConfigSheet.setColumnWidths(4, 1, 300);
-  budgetConfigSheet.setColumnWidths(5, 2, 120);
-
-  budgetConfigSheet.appendRow([
-    'Customer ID',
-    'Customer name',
-    'Campaign ID',
-    'Campaign name',
-    'Max daily budget',
-    'Max total budget',
-    // TODO: UNCOMMENT IF SOLVED
-    // "% Allowed over average historical budget"
-  ]);
-  budgetConfigSheet.insertRowBefore(2);
-  range = budgetConfigSheet.getRange('A3:F3');
-  range.setBorder(
-    null,
-    null,
-    true,
-    null,
-    null,
-    null,
-    '#000000',
-    SpreadsheetApp.BorderStyle.SOLID,
-  );
-  range = budgetConfigSheet.getRange('A3:F999');
+  range = sheet.getRange('A3:' + String.fromCharCode(64 + lastColumn) + '999');
   range.setBorder(
     null,
     null,
@@ -324,6 +279,13 @@ function addCampaignsToConfigSheets(account, campaignsIterator) {
     ]);
 
     budgetConfigSheet.appendRow([
+      account.getCustomerId(),
+      account.getName(),
+      campaign.getId(),
+      campaign.getName(),
+    ]);
+
+    vanityUrlSheet.appendRow([
       account.getCustomerId(),
       account.getName(),
       campaign.getId(),
