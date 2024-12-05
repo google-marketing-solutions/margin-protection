@@ -214,7 +214,7 @@ function getEmailParameters(
     .map((cell) => `<th>${cell}</th>`)
     .join('\n');
   function column(cell) {
-    return `<td>${cell}</td>`;
+    return `<td style="border: 1px solid black;">${cell}</td>`;
   }
   const reportRows = issues
     .map((row) => `<tr>${row.map(column).join('\n')}</tr>`)
