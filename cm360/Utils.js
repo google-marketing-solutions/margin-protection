@@ -211,7 +211,7 @@ function getEmailParameters(
   { issues },
 ) {
   const reportHeaderHtml = reportHeader
-    .map((cell) => `<th>${cell}</th>`)
+    .map((cell) => `<th style="border: 1px solid black; background-color: #4285f4; color: white;">${cell}</th>`)
     .join('\n');
   function column(cell) {
     return `<td style="border: 1px solid black;">${cell}</td>`;
@@ -220,9 +220,13 @@ function getEmailParameters(
     .map((row) => `<tr>${row.map(column).join('\n')}</tr>`)
     .join('\n');
   const table = `
-    <table>
-      <tr>${reportHeaderHtml}</tr>
-      ${reportRows}
+    <table style="border-collapse: collapse;">
+      <thead>
+        <tr>${reportHeaderHtml}</tr>
+      </thead>
+      <tbody>
+        ${reportRows}
+      </tbody>
     </table>
   `;
   message = message
