@@ -26,6 +26,7 @@ const geoTargetingResultSheetName = 'Geo Targeting results';
 const budgetResultSheetName = 'Budget results';
 const setupSheetName = 'Setup';
 const vanityUrlSheetName = 'Vanity URLs';
+const vanityUrlResultSheetName = 'Vanity URL results';
 
 const spreadsheet = SpreadsheetApp.openById(spreadsheetId);
 const setupSheet = spreadsheet.getSheetByName(setupSheetName);
@@ -219,9 +220,11 @@ function checkCampaignIterator(account, campaignIterator, vanityUrlIterator) {
     checkSingleCampaignBudget(account, campaign);
   }
 
-  while (vanityUrlIterator.hasNext()) {
-    const campaign = vanityUrlIterator.next();
-    checkSingleCampaignVanityUrl(account, campaign);
+  if (vanityUrlIterator) {
+    while (vanityUrlIterator.hasNext()) {
+      const campaign = vanityUrlIterator.next();
+      checkSingleCampaignVanityUrl(account, campaign);
+    }
   }
 }
 
@@ -273,30 +276,15 @@ function checkSingleCampaignLanguage(account, campaign) {
     return;
   }
 
-  // Compare and log discrepancies (if any)
-  if (!arraysHaveSameElements(desiredLanguagesNames, actualLanguagesNames)) {
-    languageResult.push({
-      accountId,
-      accountName,
-      campaignId,
-      campaignName,
-      desiredLanguagesNames,
-      actualLanguagesNames,
-      misconfigured: true,
-    });
-    console.log('Misconfigured');
-  } else {
-    languageResult.push({
-      accountId,
-      accountName,
-      campaignId,
-      campaignName,
-      desiredLanguagesNames,
-      actualLanguagesNames,
-      misconfigured: false,
-    });
-    console.log('Ok');
-  }
+  languageResult.push({
+    accountId,
+    accountname: accountName,
+    campaignid: campaignId,
+    campaignname: campaignName,
+    desiredlanguagesnames: desiredLanguagesNames,
+    actuallanguagesnames: actualLanguagesNames,
+    misconfigured: !arraysHaveSameElements(desiredLanguagesNames, actualLanguagesNames),
+  });
 }
 
 function checkSingleCampaignGeoTarget(account, campaign) {
@@ -559,8 +547,8 @@ function checkSingleCampaignVanityUrl(account, campaign) {
 
   const accountId = account.getCustomerId();
   const accountName = account.getName();
-  const campaignId = campaign.getId();
-  const campaignName = campaign.getName();
+  const campaignId = campaign['campaign']['id'];
+  const campaignName = campaign['campaign']['resourceName'];
   const vanityPharmaDisplayUrlMode = campaign['campaign']['vanityPharma']
 
   vanityUrlResult.push({
@@ -570,7 +558,7 @@ function checkSingleCampaignVanityUrl(account, campaign) {
     campaignName,
     actual,
     vanityPharmaDisplayUrlMode,
-    misconfigured: expectVanityUrl === actual,
+    misconfigured: expectVanityUrl !== actual,
   });
 }
 
@@ -659,9 +647,9 @@ function writeResultsToSheet(resultSheetName, results, headerRow, columnWidths) 
   resultSheet.appendRow(headerRow);
 
   results.forEach((r) => {
-    const rowData = headerRow.map((header) => {  // Dynamically create row data based on the header
-      const key = header.replace(/\s/g, '').toLowerCase(); // Normalize header to match result keys
-      const value = r[key];
+    const row = Object.values(r);
+    const rowData = headerRow.map((header, i) => {  // Dynamically create row data based on the header
+      const value = row[i];
       // Handle array values (join them with commas) and empty/zero values
       if (Array.isArray(value)) {
         return value.length !== 0 ? value.join(', ') : '-';
@@ -698,7 +686,6 @@ function styleResultSheet(sheet, lastColumn) {
 
 
 
-// Example usage within writeToResultSheet function:
 function writeToResultSheet() {
   console.log('Writing results to sheets...');
 
@@ -725,210 +712,6 @@ function writeToResultSheet() {
   ]
   const vanityUrlWidths = [120, 300, 120, 300, 120, 300, 120];
   writeResultsToSheet(vanityUrlResultSheetName, vanityUrlResult, vanityUrlHeader, vanityUrlWidths);
-}
-
-function writeToResultSheet() {
-  console.log('Writing results to sheets...');
-
-  const languageResultSheet = createOrClearSheet(languageResultSheetName);
-  languageResultSheet.appendRow([
-    'Customer ID',
-    'Customer name',
-    'Campaign ID',
-    'Campaign name',
-    'Desired languages',
-    'Current languages',
-    'MISCONFIGURED',
-  ]);
-  languageResult.forEach((r) => {
-    languageResultSheet.appendRow([
-      r.accountId,
-      r.accountName,
-      r.campaignId,
-      r.campaignName,
-      r.desiredLanguagesNames.length !== 0
-        ? r.desiredLanguagesNames.join(', ')
-        : '-',
-      r.actualLanguagesNames.length !== 0
-        ? r.actualLanguagesNames.join(', ')
-        : '-',
-      r.misconfigured,
-    ]);
-  });
-
-  range = languageResultSheet.getRange('A1:G1');
-
-  range.setBackground('#D9D9D9');
-  range.setBorder(
-    null,
-    null,
-    true,
-    null,
-    null,
-    null,
-    '#000000',
-    SpreadsheetApp.BorderStyle.SOLID_THICK,
-  );
-
-  range = languageResultSheet.getRange('A2:G999');
-  range.setBorder(
-    null,
-    null,
-    null,
-    null,
-    true,
-    null,
-    '#000000',
-    SpreadsheetApp.BorderStyle.SOLID,
-  );
-
-  languageResultSheet.setColumnWidths(1, 1, 120);
-  languageResultSheet.setColumnWidths(2, 1, 300);
-  languageResultSheet.setColumnWidths(3, 1, 120);
-  languageResultSheet.setColumnWidths(4, 3, 300);
-  languageResultSheet.setColumnWidths(7, 1, 120);
-
-  const geoTargetingResultSheet = createOrClearSheet(
-    geoTargetingResultSheetName,
-  );
-  geoTargetingResultSheet.appendRow([
-    'Customer ID',
-    'Customer name',
-    'Campaign ID',
-    'Campaign name',
-    'Desired included locations',
-    'Current included locations',
-    // "Current included location types",
-    'Desired excluded locations',
-    'Current excluded locations',
-    // "Current excluded location types",
-    'MISCONFIGURED',
-  ]);
-  geoTargetingResult.forEach((r) => {
-    geoTargetingResultSheet.appendRow([
-      r.accountId,
-      r.accountName,
-      r.campaignId,
-      r.campaignName,
-      r.desiredIncludedGeoTargetsNames.length !== 0
-        ? r.desiredIncludedGeoTargetsNames.join(', ')
-        : '-',
-      r.actualIncludedGeoTargetsNames.length !== 0
-        ? r.actualIncludedGeoTargetsNames.join(', ')
-        : '-',
-      // r.actualIncludedGeoTargetsTypes.length !== 0 ? r.actualIncludedGeoTargetsTypes.join(', ') : '-',
-      r.desiredExcludedGeoTargetsNames.length !== 0
-        ? r.desiredExcludedGeoTargetsNames.join(', ')
-        : '-',
-      r.actualExcludedGeoTargetsNames.length !== 0
-        ? r.actualExcludedGeoTargetsNames.join(', ')
-        : '-',
-      // r.actualExcludedGeoTargetsTypes.length !== 0 ? r.actualExcludedGeoTargetsTypes.join(', ') : '-',
-      r.misconfigured,
-    ]);
-  });
-
-  range = geoTargetingResultSheet.getRange('A1:I1');
-
-  range.setBackground('#D9D9D9');
-  range.setBorder(
-    null,
-    null,
-    true,
-    null,
-    null,
-    null,
-    '#000000',
-    SpreadsheetApp.BorderStyle.SOLID_THICK,
-  );
-
-  range = geoTargetingResultSheet.getRange('A2:I999');
-  range.setBorder(
-    null,
-    null,
-    null,
-    null,
-    true,
-    null,
-    '#000000',
-    SpreadsheetApp.BorderStyle.SOLID,
-  );
-
-  geoTargetingResultSheet.setColumnWidths(1, 1, 120);
-  geoTargetingResultSheet.setColumnWidths(2, 1, 300);
-  geoTargetingResultSheet.setColumnWidths(3, 1, 120);
-  geoTargetingResultSheet.setColumnWidths(4, 5, 300);
-  geoTargetingResultSheet.setColumnWidths(9, 1, 120);
-
-  const budgetResultSheet = createOrClearSheet(budgetResultSheetName);
-  budgetResultSheet.appendRow([
-    'Customer ID',
-    'Customer name',
-    'Campaign ID',
-    'Campaign name',
-    'Desired max daily budget',
-    'Current daily budget',
-    'Desired max total budget',
-    'Current total budget',
-    // TODO: UNCOMMENT IF SOLVED
-    // "Desired percentage over average historical budget",
-    // "Current percentage over average historical budget",
-    'MISCONFIGURED',
-  ]);
-
-  budgetResult.forEach((r) => {
-    budgetResultSheet.appendRow([
-      r.accountId,
-      r.accountName,
-      r.campaignId,
-      r.campaignName,
-      r.maxDailyBudget && r.maxDailyBudget !== 0 ? r.maxDailyBudget : '-',
-      r.actualDailyBudget && r.actualDailyBudget !== 0
-        ? r.actualDailyBudget
-        : '-',
-      r.maxTotalBudget && r.maxTotalBudget !== 0 ? r.maxTotalBudget : '-',
-      r.actualTotalBudget && r.actualTotalBudget !== 0
-        ? r.actualTotalBudget
-        : '-',
-      // TODO: UNCOMMENT IF SOLVED
-      // r.maxPercentageOverAverageHistoricalBudget && r.maxPercentageOverAverageHistoricalBudget !== 0 ? r.maxPercentageOverAverageHistoricalBudget : '-',
-      // r.actualPercentageOverAverageHistoricalBudget && r.actualPercentageOverAverageHistoricalBudget !== 0 ? r.actualPercentageOverAverageHistoricalBudget : '-',
-      r.misconfigured,
-    ]);
-  });
-
-  range = budgetResultSheet.getRange('A1:I1');
-
-  range.setBackground('#D9D9D9');
-  range.setBorder(
-    null,
-    null,
-    true,
-    null,
-    null,
-    null,
-    '#000000',
-    SpreadsheetApp.BorderStyle.SOLID_THICK,
-  );
-
-  range = budgetResultSheet.getRange('A2:I999');
-  range.setBorder(
-    null,
-    null,
-    null,
-    null,
-    true,
-    null,
-    '#000000',
-    SpreadsheetApp.BorderStyle.SOLID,
-  );
-
-  budgetResultSheet.setColumnWidths(1, 1, 120);
-  budgetResultSheet.setColumnWidths(2, 1, 300);
-  budgetResultSheet.setColumnWidths(3, 1, 120);
-  budgetResultSheet.setColumnWidths(4, 1, 300);
-  budgetResultSheet.setColumnWidths(5, 4, 140);
-  budgetResultSheet.setColumnWidths(9, 1, 120);
 }
 
 function sendEmail() {
@@ -961,6 +744,12 @@ function createEmailBody() {
     body += `
     <h2>Misconfigured budget</h2>
     ${createEmailBudgetBodyTable()}
+    `;
+  }
+  if (vanityUrlMisconfigured.length > 0) {
+    body += `
+    <h2>Misconfigured Vanity URLs</h2>
+    ${createVanityUrlHtmlTable()}
     `;
   }
   body += `
@@ -1062,6 +851,45 @@ function createEmailBudgetBodyTable() {
           <td>${c.actualDailyBudget ? c.actualDailyBudget : '-'}</td>
           <td>${c.maxTotalBudget ? c.maxTotalBudget : '-'}</td>
           <td>${c.actualTotalBudget ? c.actualTotalBudget : '-'}</td>
+        </tr>
+    `;
+  });
+
+  table += `
+      </tbody>
+    </table>
+  `;
+
+  return table;
+}
+
+function createVanityUrlHtmlTable() {
+  let table = `
+    <table border="1" cellpadding="5">
+      <thead>
+        <tr>
+          <th>Customer ID</th>
+          <th>Customer Name</th>
+          <th>Campaign ID</th>
+          <th>Campaign Name</th>
+          <th>Has Vanity URL</th>
+          <th>Vanity URL Display Mode</th>
+          <th>MISCONFIGURED</th>
+        </tr>
+      </thead>
+      <tbody>
+  `;
+
+  vanityUrlMisconfigured.forEach((c) => {
+    table += `
+        <tr>
+          <td>${c.accountId}</td>
+          <td>${c.accountName}</td>
+          <td>${c.campaignId}</td>
+          <td>${c.campaignName}</td>
+          <td>${c.actual ? 'Yes' : 'No'}</td>
+          <td>${c.vanityPharmaDisplayUrlMode}</td>
+          <td>${c.misconfigured ? 'Yes' : 'No'}</td>
         </tr>
     `;
   });
@@ -1219,5 +1047,6 @@ function createCsvData() {
   return {
     geoTargetingCsvData,
     budgetCsvData,
+    vanityUrlCsvData,
   };
 }
