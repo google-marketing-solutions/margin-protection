@@ -43,7 +43,6 @@ const folderIdCell = 'B5';
 const pauseCampaignsCell = 'B6';
 const fetchOnlyActiveCampaignsCell = 'B7';
 
-
 const mode = setupSheet.getRange(outputModeCell).getValue();
 const emailAddresses = setupSheet.getRange(emailCell).getValue();
 const folderId = setupSheet.getRange(folderIdCell).getValue();
@@ -283,7 +282,10 @@ function checkSingleCampaignLanguage(account, campaign) {
     campaignname: campaignName,
     desiredlanguagesnames: desiredLanguagesNames,
     actuallanguagesnames: actualLanguagesNames,
-    misconfigured: !arraysHaveSameElements(desiredLanguagesNames, actualLanguagesNames),
+    misconfigured: !arraysHaveSameElements(
+      desiredLanguagesNames,
+      actualLanguagesNames,
+    ),
   });
 }
 
@@ -542,14 +544,16 @@ function getCampaignDesiredBudget(campaign) {
 }
 
 function checkSingleCampaignVanityUrl(account, campaign) {
-  const { expectVanityUrl } = getExpectedVanityUrlStatus(campaign['campaign']['id']);
+  const {expectVanityUrl} = getExpectedVanityUrlStatus(
+    campaign['campaign']['id'],
+  );
   const actual = Boolean(campaign['campaign']['vanityPharma']);
 
   const accountId = account.getCustomerId();
   const accountName = account.getName();
   const campaignId = campaign['campaign']['id'];
   const campaignName = campaign['campaign']['resourceName'];
-  const vanityPharmaDisplayUrlMode = campaign['campaign']['vanityPharma']
+  const vanityPharmaDisplayUrlMode = campaign['campaign']['vanityPharma'];
 
   vanityUrlResult.push({
     accountId,
@@ -642,19 +646,26 @@ function getVanityUrlActualStatus(campaign) {
   }
 }
 
-function writeResultsToSheet(resultSheetName, results, headerRow, columnWidths) {
+function writeResultsToSheet(
+  resultSheetName,
+  results,
+  headerRow,
+  columnWidths,
+) {
   const resultSheet = createOrClearSheet(resultSheetName);
   resultSheet.appendRow(headerRow);
 
   results.forEach((r) => {
     const row = Object.values(r);
-    const rowData = headerRow.map((header, i) => {  // Dynamically create row data based on the header
+    const rowData = headerRow.map((header, i) => {
+      // Dynamically create row data based on the header
       const value = row[i];
       // Handle array values (join them with commas) and empty/zero values
       if (Array.isArray(value)) {
         return value.length !== 0 ? value.join(', ') : '-';
-      } else if (typeof value === 'number') {  // Handle numbers (display or '-')
-          return value || '-'; // Handle 0 as '-' if needed. Change to value !== 0 ? value : '-' to keep 0
+      } else if (typeof value === 'number') {
+        // Handle numbers (display or '-')
+        return value || '-'; // Handle 0 as '-' if needed. Change to value !== 0 ? value : '-' to keep 0
       }
       return value || '-'; // Keep the original value in other cases
     });
@@ -664,54 +675,118 @@ function writeResultsToSheet(resultSheetName, results, headerRow, columnWidths) 
 
   styleResultSheet(resultSheet, headerRow.length); // Apply consistent styling
 
-    // Set column widths dynamically
-    headerRow.forEach((header, index) => {
-        const width = columnWidths[index];
-        if(width){
-           resultSheet.setColumnWidth(index + 1, width);
-        }
-    });
-
+  // Set column widths dynamically
+  headerRow.forEach((header, index) => {
+    const width = columnWidths[index];
+    if (width) {
+      resultSheet.setColumnWidth(index + 1, width);
+    }
+  });
 }
-
 
 function styleResultSheet(sheet, lastColumn) {
-  let range = sheet.getRange('A1:' + String.fromCharCode(64 + lastColumn) + '1');
+  let range = sheet.getRange(
+    'A1:' + String.fromCharCode(64 + lastColumn) + '1',
+  );
   range.setBackground('#D9D9D9');
-  range.setBorder(null, null, true, null, null, null, '#000000', SpreadsheetApp.BorderStyle.SOLID_THICK);
+  range.setBorder(
+    null,
+    null,
+    true,
+    null,
+    null,
+    null,
+    '#000000',
+    SpreadsheetApp.BorderStyle.SOLID_THICK,
+  );
 
   range = sheet.getRange('A2:' + String.fromCharCode(64 + lastColumn) + '999');
-  range.setBorder(null, null, null, null, true, null, '#000000', SpreadsheetApp.BorderStyle.SOLID);
+  range.setBorder(
+    null,
+    null,
+    null,
+    null,
+    true,
+    null,
+    '#000000',
+    SpreadsheetApp.BorderStyle.SOLID,
+  );
 }
-
-
 
 function writeToResultSheet() {
   console.log('Writing results to sheets...');
 
   const languageHeader = [
-    'Customer ID', 'Customer name', 'Campaign ID', 'Campaign name', 'Desired languages', 'Current languages', 'MISCONFIGURED'
+    'Customer ID',
+    'Customer name',
+    'Campaign ID',
+    'Campaign name',
+    'Desired languages',
+    'Current languages',
+    'MISCONFIGURED',
   ];
   const languageWidths = [120, 300, 120, 300, 300, 300, 120];
-  writeResultsToSheet(languageResultSheetName, languageResult, languageHeader, languageWidths);
+  writeResultsToSheet(
+    languageResultSheetName,
+    languageResult,
+    languageHeader,
+    languageWidths,
+  );
 
   const geoTargetingHeader = [
-    'Customer ID', 'Customer name', 'Campaign ID', 'Campaign name', 'Desired included locations', 'Current included locations', 'Desired excluded locations', 'Current excluded locations', 'MISCONFIGURED'
+    'Customer ID',
+    'Customer name',
+    'Campaign ID',
+    'Campaign name',
+    'Desired included locations',
+    'Current included locations',
+    'Desired excluded locations',
+    'Current excluded locations',
+    'MISCONFIGURED',
   ];
   const geoTargetingWidths = [120, 300, 120, 300, 300, 300, 300, 300, 120];
-  writeResultsToSheet(geoTargetingResultSheetName, geoTargetingResult, geoTargetingHeader, geoTargetingWidths);
+  writeResultsToSheet(
+    geoTargetingResultSheetName,
+    geoTargetingResult,
+    geoTargetingHeader,
+    geoTargetingWidths,
+  );
 
   const budgetHeader = [
-    'Customer ID', 'Customer name', 'Campaign ID', 'Campaign name', 'Max daily budget', 'Current daily budget', 'Max total budget', 'Current total budget', 'MISCONFIGURED'
+    'Customer ID',
+    'Customer name',
+    'Campaign ID',
+    'Campaign name',
+    'Max daily budget',
+    'Current daily budget',
+    'Max total budget',
+    'Current total budget',
+    'MISCONFIGURED',
   ];
   const budgetWidths = [120, 300, 120, 300, 140, 140, 140, 140, 120];
-  writeResultsToSheet(budgetResultSheetName, budgetResult, budgetHeader, budgetWidths);
+  writeResultsToSheet(
+    budgetResultSheetName,
+    budgetResult,
+    budgetHeader,
+    budgetWidths,
+  );
 
   const vanityUrlHeader = [
-    'Customer ID', 'Customer name', 'Campaign ID', 'Campaign name', 'Has Vanity URL', 'Vanity URL Display Mode', 'MISCONFIGURED',
-  ]
+    'Customer ID',
+    'Customer name',
+    'Campaign ID',
+    'Campaign name',
+    'Has Vanity URL',
+    'Vanity URL Display Mode',
+    'MISCONFIGURED',
+  ];
   const vanityUrlWidths = [120, 300, 120, 300, 120, 300, 120];
-  writeResultsToSheet(vanityUrlResultSheetName, vanityUrlResult, vanityUrlHeader, vanityUrlWidths);
+  writeResultsToSheet(
+    vanityUrlResultSheetName,
+    vanityUrlResult,
+    vanityUrlHeader,
+    vanityUrlWidths,
+  );
 }
 
 function sendEmail() {

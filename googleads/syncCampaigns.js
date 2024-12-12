@@ -25,6 +25,11 @@ const budgetConfigSheetName = 'Budget config';
 const setupSheetName = 'Setup';
 const vanityUrlSheetName = 'Vanity URLs';
 
+const languageConfig = {};
+const geoTargetingConfig = {};
+const budgetConfig = {};
+const vanityUrlConfig = {};
+
 const spreadsheet = SpreadsheetApp.openById(spreadsheetId);
 const setupSheet = spreadsheet.getSheetByName(setupSheetName);
 const fetchOnlyActiveCampaigns = setupSheet
@@ -36,10 +41,37 @@ var geoTargetingConfigSheet = null;
 var budgetConfigSheet = null;
 var vanityUrlSheet = null;
 
+const sheetToConfigMap = {
+  [languageConfigSheetName]: languageConfig,
+  [geoTargetingConfigSheetName]: geoTargetingConfig,
+  [budgetConfigSheetName]: budgetConfig,
+  [vanityUrlSheetName]: vanityUrlConfig,
+};
+
 function main() {
   // Start checking this account
+  loadExistingConfigs();
   setUpConfigSheets();
   syncCampaigns(getCurrentAccount());
+}
+
+function getValuesIfExist(spreadsheetName, config) {
+  const CAMPAIGN_ID_COL = 2;
+  const CUSTOM_COLUMN_START = 4;
+  const sheet = spreadsheet.getSheetByName(spreadsheetName);
+  if (!sheet) {
+    return;
+  }
+  const values = sheet.getDataRange().getValues();
+  config = Object.fromEntries(
+    values.map((row) => [row[CAMPAIGN_ID_COL], row.slice(CUSTOM_COLUMN_START)]),
+  );
+}
+
+function loadExistingConfigs() {
+  Object.entries(sheetToConfigMap).map(([sheetName, config]) => {
+    getValuesIfExist(sheetName, config);
+  });
 }
 
 function syncCampaigns(account) {
@@ -109,7 +141,7 @@ function setUpConfigSheets() {
       'Campaign ID',
       'Campaign name',
       'Expect vanity URL',
-    ],    
+    ],
   );
 }
 
@@ -269,6 +301,7 @@ function addCampaignsToConfigSheets(account, campaignsIterator) {
       account.getName(),
       campaign.getId(),
       campaign.getName(),
+      ...(languageConfig[campaign.getId()] || []),
     ]);
 
     geoTargetingConfigSheet.appendRow([
@@ -276,6 +309,7 @@ function addCampaignsToConfigSheets(account, campaignsIterator) {
       account.getName(),
       campaign.getId(),
       campaign.getName(),
+      ...(geoTargetingConfig[campaign.getId()] || []),
     ]);
 
     budgetConfigSheet.appendRow([
@@ -283,6 +317,7 @@ function addCampaignsToConfigSheets(account, campaignsIterator) {
       account.getName(),
       campaign.getId(),
       campaign.getName(),
+      ...(budgetConfig[campaign.getId()] || []),
     ]);
 
     vanityUrlSheet.appendRow([
@@ -290,6 +325,7 @@ function addCampaignsToConfigSheets(account, campaignsIterator) {
       account.getName(),
       campaign.getId(),
       campaign.getName(),
+      ...(vanityUrlConfig[campaign.getId()] || []),
     ]);
   }
 }
