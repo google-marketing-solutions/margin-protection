@@ -63,9 +63,9 @@ function getValuesIfExist(spreadsheetName, config) {
     return;
   }
   const values = sheet.getDataRange().getValues();
-  config = Object.fromEntries(
-    values.map((row) => [row[CAMPAIGN_ID_COL], row.slice(CUSTOM_COLUMN_START)]),
-  );
+  for (const row of values) {
+    config[row[CAMPAIGN_ID_COL]] = row.slice(CUSTOM_COLUMN_START) || [];
+  }
 }
 
 function loadExistingConfigs() {
@@ -319,7 +319,6 @@ function addCampaignsToConfigSheets(account, campaignsIterator) {
       campaign.getName(),
       ...(budgetConfig[campaign.getId()] || []),
     ]);
-
     vanityUrlSheet.appendRow([
       account.getCustomerId(),
       account.getName(),

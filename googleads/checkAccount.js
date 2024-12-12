@@ -56,21 +56,22 @@ const geoTargetingResult = [];
 const budgetResult = [];
 const vanityUrlResult = [];
 
-var languageMisconfigured = [];
-var geoTargetingMisconfigured = [];
-var budgetMisconfigured = [];
-var vanityUrlMisconfigured = [];
-
+const misconfigured = {
+  language: [],
+  geoTargeting: [],
+  budget: [],
+  vanityUrl: [],
+}
 var campaignsWerePaused = false;
 
 function main() {
   checkInput();
   checkAccount(getCurrentAccount());
   writeToResultSheet();
-  languageMisconfigured = languageResult.filter((r) => r.misconfigured);
-  geoTargetingMisconfigured = geoTargetingResult.filter((r) => r.misconfigured);
-  budgetMisconfigured = budgetResult.filter((r) => r.misconfigured);
-  vanityUrlMisconfigured = vanityUrlResult.filter((r) => r.misconfigured);
+  misconfigured.language= languageResult.filter((r) => r.misconfigured);
+  misconfigured.geoTargeting = geoTargetingResult.filter((r) => r.misconfigured);
+  misconfigured.budget = budgetResult.filter((r) => r.misconfigured);
+  misconfigured.vanityUrl = vanityUrlResult.filter((r) => r.misconfigured);
 
   if (pauseCampaigns) {
     pauseMisconfiguredCampaigns();
@@ -790,7 +791,7 @@ function writeToResultSheet() {
 }
 
 function sendEmail() {
-  if (geoTargetingMisconfigured.length > 0 || budgetMisconfigured.length > 0) {
+  if (Object.values(misconfigured).some(v => v.length)) {
     console.log('Sending email...');
     const subject = '[Warning] Google Ads campaigns misconfiguration';
     const body = createEmailBody();
@@ -809,19 +810,19 @@ function createEmailBody() {
   <html>
   <body>
   `;
-  if (geoTargetingMisconfigured.length > 0) {
+  if (misconfigured.geoTargeting.length > 0) {
     body += `
     <h2>Misconfigured geo targeting</h2>
     ${createEmailGeoTargetingBodyTable()}
     `;
   }
-  if (budgetMisconfigured.length > 0) {
+  if (misconfigured.budget.length > 0) {
     body += `
     <h2>Misconfigured budget</h2>
     ${createEmailBudgetBodyTable()}
     `;
   }
-  if (vanityUrlMisconfigured.length > 0) {
+  if (misconfigured.vanityUrl.length > 0) {
     body += `
     <h2>Misconfigured Vanity URLs</h2>
     ${createVanityUrlHtmlTable()}
@@ -858,7 +859,7 @@ function createEmailGeoTargetingBodyTable() {
       <tbody>
   `;
 
-  geoTargetingMisconfigured.forEach((c) => {
+  misconfigured.geoTargeting.forEach((c) => {
     table += `
         <tr>
           <td>${c.accountId}</td>
@@ -955,7 +956,7 @@ function createVanityUrlHtmlTable() {
       <tbody>
   `;
 
-  vanityUrlMisconfigured.forEach((c) => {
+  misconfigured.vanityUrl.forEach((c) => {
     table += `
         <tr>
           <td>${c.accountId}</td>
@@ -980,10 +981,9 @@ function createVanityUrlHtmlTable() {
 function pauseMisconfiguredCampaigns() {
   console.log('Pausing campaigns...');
 
-  const campaignIdsToPause = [
-    ...geoTargetingMisconfigured.map((c) => c.campaignId),
-    ...budgetMisconfigured.map((c) => c.campaignId),
-  ];
+  const campaignIdsToPause = Object.values(misconfigured).map(m =>
+    m.map((c) => c.campaignId)
+  );
 
   const campaignSelector = AdsApp.campaigns().withIds(campaignIdsToPause);
   const campaignIterator = campaignSelector.get();
