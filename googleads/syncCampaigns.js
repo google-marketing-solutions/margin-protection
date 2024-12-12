@@ -15,6 +15,13 @@
  * limitations under the License.
  */
 
+/**
+ * This logic can be adjusted for different naming conventions.
+ */
+function vanityUrlFormula(campaignName) {
+  return campaignName.indexOf('Unbranded') >= 0;
+}
+
 const spreadsheetId = '1XgOZjlH7DA55x8hY3Xlo3_a7eqNSLZ9Irs3PtOkcBfY'; // Replace with your sheet's ID
 
 const fetchOnlyActiveCampaignsCell = 'B7';
@@ -324,7 +331,7 @@ function addCampaignsToConfigSheets(account, campaignsIterator) {
       account.getName(),
       campaign.getId(),
       campaign.getName(),
-      ...(vanityUrlConfig[campaign.getId()] || []),
+      vanityUrlFormula(campaign.getName()),
     ]);
   }
 }

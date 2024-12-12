@@ -61,15 +61,17 @@ const misconfigured = {
   geoTargeting: [],
   budget: [],
   vanityUrl: [],
-}
+};
 var campaignsWerePaused = false;
 
 function main() {
   checkInput();
   checkAccount(getCurrentAccount());
   writeToResultSheet();
-  misconfigured.language= languageResult.filter((r) => r.misconfigured);
-  misconfigured.geoTargeting = geoTargetingResult.filter((r) => r.misconfigured);
+  misconfigured.language = languageResult.filter((r) => r.misconfigured);
+  misconfigured.geoTargeting = geoTargetingResult.filter(
+    (r) => r.misconfigured,
+  );
   misconfigured.budget = budgetResult.filter((r) => r.misconfigured);
   misconfigured.vanityUrl = vanityUrlResult.filter((r) => r.misconfigured);
 
@@ -791,7 +793,7 @@ function writeToResultSheet() {
 }
 
 function sendEmail() {
-  if (Object.values(misconfigured).some(v => v.length)) {
+  if (Object.values(misconfigured).some((v) => v.length)) {
     console.log('Sending email...');
     const subject = '[Warning] Google Ads campaigns misconfiguration';
     const body = createEmailBody();
@@ -981,8 +983,8 @@ function createVanityUrlHtmlTable() {
 function pauseMisconfiguredCampaigns() {
   console.log('Pausing campaigns...');
 
-  const campaignIdsToPause = Object.values(misconfigured).map(m =>
-    m.map((c) => c.campaignId)
+  const campaignIdsToPause = Object.values(misconfigured).map((m) =>
+    m.map((c) => c.campaignId),
   );
 
   const campaignSelector = AdsApp.campaigns().withIds(campaignIdsToPause);
