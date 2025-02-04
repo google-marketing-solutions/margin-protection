@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-const spreadsheetId = '1XgOZjlH7DA55x8hY3Xlo3_a7eqNSLZ9Irs3PtOkcBfY'; // Replace with your sheet's ID
+const spreadsheetId = ''; // Replace with your sheet's ID
 
 const languageConfigSheetName = 'Language config';
 const geoTargetingConfigSheetName = 'Geo Targeting config';
@@ -196,9 +196,20 @@ function checkCampaigns(account) {
     var videoCampaignIterator = AdsApp.videoCampaigns().get();
     var performanceMaxCampaignIterator = AdsApp.performanceMaxCampaigns().get();
   }
-  var vanityUrlIterator = AdsApp.search(
-    `SELECT campaign.id, campaign.vanity_pharma.vanity_pharma_display_url_mode, campaign.vanity_pharma.vanity_pharma_text FROM campaign`,
-  );
+  const statusFilter = fetchOnlyActiveCampaigns
+    ? ' WHERE campaign.status = "ENABLED" AND campaign.serving_status = "SERVING"'
+    : '';
+
+  const query = `
+    SELECT
+      campaign.id,
+      campaign.name,
+      campaign.vanity_pharma.vanity_pharma_display_url_mode,
+      campaign.vanity_pharma.vanity_pharma_text
+    FROM campaign${statusFilter}`
+  ;
+
+  var vanityUrlIterator = AdsApp.search(query);
 
   // Standard Campaigns (Search, Display, etc.)
   checkCampaignIterator(account, campaignIterator, vanityUrlIterator);
@@ -223,9 +234,12 @@ function checkCampaignIterator(account, campaignIterator, vanityUrlIterator) {
   }
 
   if (vanityUrlIterator) {
+    const range = vanityUrlSheet.getDataRange();
+    const values = range.getValues();
+    const valueMap = Object.fromEntries(values.map(v => [v[2], maybeCoerceStringToBoolean(v[4])]));
     while (vanityUrlIterator.hasNext()) {
       const campaign = vanityUrlIterator.next();
-      checkSingleCampaignVanityUrl(account, campaign);
+      checkSingleCampaignVanityUrl(account, campaign, valueMap);
     }
   }
 }
@@ -388,15 +402,15 @@ function getCampaignDesiredLocations(campaign) {
   const campaignId = campaign.getId();
   const campaignName = campaign.getName();
 
-  var desiredIncludedGeotargetsStr = '';
-  var desiredExcludedGeotargetsStr = '';
+  let desiredIncludedGeotargetsStr = '';
+  let desiredExcludedGeotargetsStr = '';
 
-  for (var i = 0; i < values.length; i++) {
+  for (let i = 0; i < values.length; i++) {
     if (values[i][2] == campaignId) {
       // Account ID is in column A and Campaign ID is in column C
       desiredIncludedGeotargetsStr = values[i][4]; // Desired Included Geo Targeting is in column E
       desiredExcludedGeotargetsStr = values[i][5]; // Desired Excluded Geo Targeting is in column F
-
+      console.log(values[i]);
       break;
     }
   }
@@ -546,16 +560,14 @@ function getCampaignDesiredBudget(campaign) {
   }
 }
 
-function checkSingleCampaignVanityUrl(account, campaign) {
-  const {expectVanityUrl} = getExpectedVanityUrlStatus(
-    campaign['campaign']['id'],
-  );
+function checkSingleCampaignVanityUrl(account, campaign, valueMap) {
+  const expectVanityUrl = valueMap[campaign['campaign']['id']];
   const actual = Boolean(campaign['campaign']['vanityPharma']);
 
   const accountId = account.getCustomerId();
   const accountName = account.getName();
   const campaignId = campaign['campaign']['id'];
-  const campaignName = campaign['campaign']['resourceName'];
+  const campaignName = campaign['campaign']['name'];
   const vanityPharmaDisplayUrlMode = campaign['campaign']['vanityPharma'];
 
   vanityUrlResult.push({
@@ -567,20 +579,6 @@ function checkSingleCampaignVanityUrl(account, campaign) {
     vanityPharmaDisplayUrlMode,
     misconfigured: expectVanityUrl !== actual,
   });
-}
-
-function getExpectedVanityUrlStatus(campaignId) {
-  const range = vanityUrlSheet.getDataRange();
-  const values = range.getValues();
-
-  for (var i = 0; i < values.length; i++) {
-    if (values[i][2] == campaignId) {
-      // Campaign ID is in column C
-      return {
-        expectVanityUrl: maybeCoerceStringToBoolean(values[i][4]),
-      };
-    }
-  }
 }
 
 function maybeCoerceStringToBoolean(value) {
@@ -743,8 +741,10 @@ function writeToResultSheet() {
     'Campaign name',
     'Desired included locations',
     'Current included locations',
+    'Current included location types',
     'Desired excluded locations',
     'Current excluded locations',
+    'Current excluded location types',
     'MISCONFIGURED',
   ];
   const geoTargetingWidths = [120, 300, 120, 300, 300, 300, 300, 300, 120];
