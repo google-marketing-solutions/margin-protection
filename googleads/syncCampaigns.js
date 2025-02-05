@@ -18,8 +18,8 @@
 /**
  * This logic can be adjusted for different naming conventions.
  */
-function vanityUrlFormula(campaignName) {
-  return campaignName.indexOf('Unbranded') >= 0;
+function vanityUrlFormula(campaignName, patternMatch) {
+  return patternMatch.test(campaignName);
 }
 
 const spreadsheetId = '1XgOZjlH7DA55x8hY3Xlo3_a7eqNSLZ9Irs3PtOkcBfY'; // Replace with your sheet's ID
@@ -296,6 +296,7 @@ function syncCampaignsForSingleAccount(account) {
 }
 
 function addCampaignsToConfigSheets(account, campaignsIterator) {
+  const vanityUrlCampaignPattern = new RegExp(spreadsheet.getRangeByName('VANITY_URL_CAMPAIGN_PATTERN').getValue());
   while (campaignsIterator.hasNext()) {
     const campaign = campaignsIterator.next();
 
@@ -331,7 +332,7 @@ function addCampaignsToConfigSheets(account, campaignsIterator) {
       account.getName(),
       campaign.getId(),
       campaign.getName(),
-      vanityUrlFormula(campaign.getName()),
+      vanityUrlFormula(campaign.getName(), vanityUrlCampaignPattern),
     ]);
   }
 }
