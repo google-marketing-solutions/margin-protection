@@ -4,7 +4,7 @@ The Campaign Manager 360 Margin Protection Monitor is a tool that identifies con
 
 ## One Time Setup
 
-1. Join [the Google Group](https://github.com/google-marketing-solutions/margin-protection) to gain access to the Trix.
+1. Join [the Google Group](https://groups.google.com/a/professional-services.goog/g/solutions_launch_monitor-readers) to gain access to the Trix.
 2. Make a copy of the [CM360 Launch Monitor template](https://docs.google.com/spreadsheets/d/1JlPJlEwU3spwQTG97bvgjNG6t4do2LzZ45uhmTJcnYY/copy).
 
 3. (Optional) Setup Reports in Campaign Manager 360

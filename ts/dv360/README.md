@@ -8,7 +8,7 @@ The Display Video 360 Launch Monitor is a tool that identifies configuration err
 
 ## One Time Setup
 
-1. Join [the Google Group](https://github.com/google-marketing-solutions/margin-protection) to gain access to the Trix.
+1. Join [the Google Group](https://groups.google.com/a/professional-services.goog/g/solutions_launch_monitor-readers) to gain access to the Trix.
 2. Make a copy of the [DV360 Launch Monitor template](https://docs.google.com/spreadsheets/d/1zpmA0tmVg-IzGgO5sxjwY8i0XM3bHzgpqOI9xkN35Ns/copy).
 3. Follow the instructions for setting up in the sheet, including:
    1. Attach a Google Cloud Project project number to the Apps Script. This is required to interact with the DV360 API.
