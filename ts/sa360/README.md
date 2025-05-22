@@ -8,7 +8,7 @@ The Search Ads 360 Launch Monitor is a tool that identifies configuration errors
 
 ## One Time Setup
 
-1. Join [the Google Group](https://groups.google.com/a/professional-services.goog/g/solutions_launch_monitor-readers) to gain access to the Trix.
+1. Join [the Google Group](https://groups.google.com/a/professional-services.goog/g/solutions_launch_monitor-readers) to gain access to the Sheet.
 2. Make a copy of the [SA360 Launch Monitor template](https://docs.google.com/spreadsheets/d/1hUdgSKYwr95UIyi4zhsELurEQVXO4HO_XpD9tiKR4no/edit?resourcekey=0-1_3vkWl3oLtdancGfLp4pQ&gid=1285731396#gid=1285731396).
 3. Follow the instructions for setting up in the sheet, including:
    1. Attach a Google Cloud Project project number to the Apps Script. This is required to interact with the SA360 API.
