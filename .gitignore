@@ -9,3 +9,4 @@ dist
 .clasp.json
 package-lock.json
 .clasp.json*
+ai/plan*
