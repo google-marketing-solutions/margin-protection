@@ -16,7 +16,8 @@
  */
 
 /**
- * @fileoverview Client helpers - frontend agnostic.
+ * @fileoverview This file provides frontend-agnostic helpers for the client,
+ * primarily focusing on a factory for creating rule execution classes.
  */
 
 import { transformToParamValues } from './sheet_helpers';
@@ -30,31 +31,29 @@ import {
 } from './types';
 
 /**
- * Creates new rule with the metadata needed to generate settings.
+ * A higher-order function that returns a factory for creating rule classes.
+ * This pattern allows for the creation of type-safe, client-specific rule
+ * builders.
  *
- * Wrapping in this function gives us access to all methods in {@link
- * RuleUtilities} as part of `this` in our `callback`.
- *
- * Example:
- *
- * ```
- * newRule({
- *   //...
- *   callback(client, settings) {
- *     const rule = this.getRule(); // the `RuleGetter`
- *     const rule = rule.getValues();
- *     //...
- *   }
- * });
- * ```
+ * @return A `newRule` function that can be used to define and construct rule
+ *     executor classes.
  */
-
-// This returns a function that is self-typed.
 export function newRuleBuilder<T extends ClientTypes<T>>(): <
   P extends Record<keyof P, ParamDefinition>,
 >(
   p: RuleParams<T, P> & ThisType<RuleExecutor<T, P>>,
 ) => RuleExecutorClass<T, P> {
+  /**
+   * Defines a new rule and returns a class constructor for it.
+   * The returned class implements the `RuleExecutor` interface and encapsulates
+   * the logic and properties of the rule.
+   *
+   * @param ruleDefinition An object containing the rule's parameters,
+   *     metadata, and execution callback. The `callback` function will have its
+   *     `this` context set to the instance of the rule executor class,
+   *     providing access to settings and other instance properties.
+   * @return A class that can be instantiated to execute the rule.
+   */
   return function newRule<P extends Record<keyof P, ParamDefinition>>(
     ruleDefinition: RuleParams<T, P>,
   ): RuleExecutorClass<T, P> {

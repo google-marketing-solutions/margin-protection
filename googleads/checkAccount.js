@@ -1,3 +1,11 @@
+/**
+ * @fileoverview This Google Ads script audits campaign settings for language,
+ * geo-targeting, and budget against a configuration defined in a Google Sheet.
+ * It can operate on a single account or across an MCC. The script can report
+ * discrepancies to the spreadsheet, send email alerts, optionally pause
+ * misconfigured campaigns, and back up results to CSV files in Google Drive.
+ */
+
 const spreadsheetId = ''; // Replace with your sheet's ID
 
 const languageConfigSheetName = 'Language config';
@@ -41,6 +49,11 @@ var budgetMisconfigured = [];
 
 var campaignsWerePaused = false;
 
+/**
+ * The main function to be executed.
+ * It orchestrates the entire process of checking inputs, auditing accounts,
+ * writing results, pausing campaigns, and sending notifications.
+ */
 function main() {
   checkInput();
   checkAccount(getCurrentAccount());
@@ -62,6 +75,11 @@ function main() {
   }
 }
 
+/**
+ * Validates the script's input settings from the 'Setup' sheet.
+ * Throws an error if the email list is invalid or if the mode/folder ID
+ * configuration is incorrect.
+ */
 function checkInput() {
   if (!isValidEmailList(emailAddresses)) {
     throw new Error(
@@ -82,6 +100,12 @@ function checkInput() {
   }
 }
 
+/**
+ * Validates a comma-separated string of email addresses.
+ *
+ * @param {string} emailList The string of email addresses to validate.
+ * @return {boolean} True if the list is valid or empty, false otherwise.
+ */
 function isValidEmailList(emailList) {
   if (emailList === '') return true;
 
@@ -101,10 +125,22 @@ function isValidEmailList(emailList) {
   return true;
 }
 
+/**
+ * Checks if a string contains only digits.
+ *
+ * @param {string} str The string to check.
+ * @return {boolean} True if the string contains only digits, false otherwise.
+ */
 function isOnlyDigits(str) {
   return /^\d+$/.test(str);
 }
 
+/**
+ * Creates a new sheet with the given name or clears it if it already exists.
+ *
+ * @param {string} name The name of the sheet.
+ * @return {!Sheet} The created or cleared sheet object.
+ */
 function createOrClearSheet(name) {
   let sheet = spreadsheet.getSheetByName(name);
   if (sheet) {
@@ -115,6 +151,12 @@ function createOrClearSheet(name) {
   return sheet;
 }
 
+/**
+ * Checks all campaigns in a given account or iterates through sub-accounts if
+ * it's an MCC account.
+ *
+ * @param {!Object} account The Google Ads account object.
+ */
 function checkAccount(account) {
   const accountInfoStr =
     '{' + account.getName() + ' - ' + account.getCustomerId() + '}';
@@ -137,6 +179,12 @@ function checkAccount(account) {
   }
 }
 
+/**
+ * Iterates through all campaign types (standard, shopping, video, PMax) in a
+ * given account and checks their settings.
+ *
+ * @param {!Object} account The Google Ads account object.
+ */
 function checkCampaigns(account) {
   const accountInfoStr =
     '{' + account.getName() + ' - ' + account.getCustomerId() + '}';
@@ -184,6 +232,12 @@ function checkCampaigns(account) {
   checkCampaignIterator(account, performanceMaxCampaignIterator);
 }
 
+/**
+ * Iterates through a campaign iterator and checks each campaign's settings.
+ *
+ * @param {!Object} account The Google Ads account object.
+ * @param {!Iterator} campaignIterator A Google Ads campaign iterator.
+ */
 function checkCampaignIterator(account, campaignIterator) {
   while (campaignIterator.hasNext()) {
     const campaign = campaignIterator.next();
@@ -194,6 +248,13 @@ function checkCampaignIterator(account, campaignIterator) {
   }
 }
 
+/**
+ * Checks the language targeting of a single campaign against the desired
+ * configuration in the spreadsheet.
+ *
+ * @param {!Object} account The Google Ads account object.
+ * @param {!Campaign} campaign The campaign to check.
+ */
 function checkSingleCampaignLanguage(account, campaign) {
   const accountId = account.getCustomerId();
   const accountName = account.getName();
@@ -268,6 +329,13 @@ function checkSingleCampaignLanguage(account, campaign) {
   }
 }
 
+/**
+ * Checks the geo-targeting of a single campaign against the desired
+ * configuration in the spreadsheet.
+ *
+ * @param {!Object} account The Google Ads account object.
+ * @param {!Campaign} campaign The campaign to check.
+ */
 function checkSingleCampaignGeoTarget(account, campaign) {
   console.log(
     'Checking campaign ' +
@@ -356,6 +424,16 @@ function checkSingleCampaignGeoTarget(account, campaign) {
   }
 }
 
+/**
+ * Retrieves the desired included and excluded locations for a campaign from the
+ * 'Geo Targeting config' sheet.
+ *
+ * @param {!Campaign} campaign The campaign object.
+ * @return {{
+ *   desiredIncludedGeotargetsNames: !Array<string>,
+ *   desiredExcludedGeotargetsNames: !Array<string>
+ * }} An object containing arrays of desired location names.
+ */
 function getCampaignDesiredLocations(campaign) {
   // Find the campaign in the spreadsheet
   const range = geoTargetingConfigSheet.getDataRange();
@@ -394,6 +472,18 @@ function getCampaignDesiredLocations(campaign) {
   };
 }
 
+/**
+ * Retrieves the actual targeted and excluded locations for a campaign from the
+ * Google Ads API.
+ *
+ * @param {!Campaign} campaign The campaign object.
+ * @return {{
+ *   actualIncludedGeoTargetsNames: !Array<string>,
+ *   actualIncludedGeoTargetsTypes: !Array<string>,
+ *   actualExcludedGeoTargetsNames: !Array<string>,
+ *   actualExcludedGeoTargetsTypes: !Array<string>
+ * }} An object containing arrays of actual location names and types.
+ */
 function getCampaignActualLocations(campaign) {
   const actualIncludedGeoTargetsNames = [];
   const actualExcludedGeoTargetsNames = [];
@@ -428,6 +518,13 @@ function getCampaignActualLocations(campaign) {
   };
 }
 
+/**
+ * Checks the budget of a single campaign against the desired configuration in
+ * the spreadsheet.
+ *
+ * @param {!Object} account The Google Ads account object.
+ * @param {!Campaign} campaign The campaign to check.
+ */
 function checkSingleCampaignBudget(account, campaign) {
   const desired = getCampaignDesiredBudget(campaign);
   const maxDailyBudget = desired.maxDailyBudget;
@@ -502,6 +599,17 @@ function checkSingleCampaignBudget(account, campaign) {
   }
 }
 
+/**
+ * Retrieves the desired budget settings for a campaign from the 'Budget
+ * config' sheet.
+ *
+ * @param {!Campaign} campaign The campaign object.
+ * @return {{
+ *   maxDailyBudget: ?number,
+ *   maxTotalBudget: ?number,
+ *   maxPercentageOverAverageHistoricalBudget: ?number
+ * }} An object containing the desired budget values.
+ */
 function getCampaignDesiredBudget(campaign) {
   const range = budgetConfigSheet.getDataRange();
   const values = range.getValues();
@@ -522,6 +630,12 @@ function getCampaignDesiredBudget(campaign) {
   }
 }
 
+/**
+ * Converts a string value to a float, handling comma decimal separators.
+ *
+ * @param {*} value The value to convert.
+ * @return {*} The converted float, or the original value if conversion fails.
+ */
 function convertStringToFloat(value) {
   if (typeof value === 'string') {
     // Replace commas with periods for decimal notation
@@ -538,6 +652,16 @@ function convertStringToFloat(value) {
   return value;
 }
 
+/**
+ * Retrieves the actual budget settings for a campaign from the Google Ads API.
+ *
+ * @param {!Campaign} campaign The campaign object.
+ * @return {{
+ *   actualDailyBudget: number,
+ *   actualTotalBudget: ?number,
+ *   actualPercentageOverAverageHistoricalBudget: number
+ * }} An object containing the actual budget values.
+ */
 function getCampaignActualBudget(campaign) {
   var budget = campaign.getBudget();
 
@@ -556,6 +680,10 @@ function getCampaignActualBudget(campaign) {
   }
 }
 
+/**
+ * Writes the results of the language, geo-targeting, and budget checks to
+ * their respective sheets in the spreadsheet and applies formatting.
+ */
 function writeToResultSheet() {
   console.log('Writing results to sheets...');
 
@@ -760,6 +888,10 @@ function writeToResultSheet() {
   budgetResultSheet.setColumnWidths(9, 1, 120);
 }
 
+/**
+ * Sends an email notification if there are any misconfigured campaigns for geo
+ * targeting or budget.
+ */
 function sendEmail() {
   if (geoTargetingMisconfigured.length > 0 || budgetMisconfigured.length > 0) {
     console.log('Sending email...');
@@ -774,6 +906,11 @@ function sendEmail() {
   }
 }
 
+/**
+ * Creates the HTML body for the email notification.
+ *
+ * @return {string} The HTML string for the email body.
+ */
 function createEmailBody() {
   let body = `
   <!DOCTYPE html>
@@ -805,6 +942,12 @@ function createEmailBody() {
   return body;
 }
 
+/**
+ * Creates an HTML table for the geo-targeting misconfigurations section of the
+ * email body.
+ *
+ * @return {string} The HTML string for the geo-targeting results table.
+ */
 function createEmailGeoTargetingBodyTable() {
   let table = `
     <table border="1" cellpadding="5">
@@ -862,6 +1005,12 @@ function createEmailGeoTargetingBodyTable() {
   return table;
 }
 
+/**
+ * Creates an HTML table for the budget misconfigurations section of the email
+ * body.
+ *
+ * @return {string} The HTML string for the budget results table.
+ */
 function createEmailBudgetBodyTable() {
   let table = `
     <table border="1" cellpadding="5">
@@ -903,6 +1052,10 @@ function createEmailBudgetBodyTable() {
   return table;
 }
 
+/**
+ * Pauses all campaigns that were identified as having misconfigured geo
+ * targeting or budget settings.
+ */
 function pauseMisconfiguredCampaigns() {
   console.log('Pausing campaigns...');
 
@@ -935,12 +1088,26 @@ function pauseMisconfiguredCampaigns() {
   campaignsWerePaused = true;
 }
 
+/**
+ * Compares two arrays to see if they contain the same elements, regardless of
+ * order.
+ *
+ * @param {!Array} arr1 The first array.
+ * @param {!Array} arr2 The second array.
+ * @return {boolean} True if the arrays have the same elements, false
+ *     otherwise.
+ */
 function arraysHaveSameElements(arr1, arr2) {
   const set1 = new Set(arr1);
   const set2 = new Set(arr2);
   return set1.size === set2.size && [...set1].every((value) => set2.has(value));
 }
 
+/**
+ * Checks if the current script is running in an MCC (Manager) account context.
+ *
+ * @return {boolean} True if it's an MCC account, false otherwise.
+ */
 function isMCCAccount() {
   try {
     MccApp.accounts(); // Try to access MCC-specific functionality
@@ -950,6 +1117,12 @@ function isMCCAccount() {
   }
 }
 
+/**
+ * Gets the current account object, handling both single and MCC account
+ * contexts.
+ *
+ * @return {!Object} The current Google Ads account object.
+ */
 function getCurrentAccount() {
   try {
     // For MCC accounts:
@@ -960,6 +1133,10 @@ function getCurrentAccount() {
   }
 }
 
+/**
+ * Generates CSV files for the geo-targeting and budget results and saves them
+ * to the specified Google Drive folder.
+ */
 function generateCsvBackup() {
   console.log('Generating csv...');
 
@@ -986,6 +1163,14 @@ function generateCsvBackup() {
   folder.createFile(blob);
 }
 
+/**
+ * Creates the CSV data strings for geo-targeting and budget results.
+ *
+ * @return {{
+ *   geoTargetingCsvData: string,
+ *   budgetCsvData: string
+ * }} An object containing the CSV data as strings.
+ */
 function createCsvData() {
   let geoTargetingCsvData =
     'Customer ID,' +

@@ -1,9 +1,17 @@
+/**
+ * @fileoverview This file contains a collection of general-purpose utility
+ * functions that support the main script. These functions handle tasks such as
+ * creating UI menus, managing triggers, making API calls with retry logic,
+ * sending emails, and cleaning report data.
+ */
+
+/** @const {string} The base URL for the DCM/DFA Reporting and Trafficking API. */
 const BASE_API_URL = 'https://dfareporting.googleapis.com/dfareporting/v4';
 
 /**
- * Adds a custom menu to the sheet
+ * Creates a custom menu in the spreadsheet UI when the file is opened.
  *
- * @param {obj} e - The sheet event
+ * @param {Event} e The onOpen event object.
  */
 function onOpen(e) {
   const ui = SpreadsheetApp.getUi();
@@ -17,24 +25,24 @@ function onOpen(e) {
 }
 
 /**
- * Adds a daily trigger to execute the tool
+ * Sets up a daily trigger for the main function.
  */
 function daily() {
   setupTriggers('daily');
 }
 
 /**
- * Adds a weekly trigger to execute the tool
+ * Sets up a weekly trigger for the main function.
  */
 function weekly() {
   setupTriggers('weekly');
 }
 
 /**
- * Set up triggers to execute the tool
+ * Configures and creates a time-based trigger for the 'main' function.
  *
- * @param {string} cadence - How often the trigger will execute
- *
+ * @param {string} cadence The frequency of the trigger, either 'daily' or
+ *     'weekly'.
  */
 function setupTriggers(cadence) {
   // Remove previous triggers
@@ -61,8 +69,10 @@ function setupTriggers(cadence) {
 }
 
 /**
- * Removes all the configured triggers
+ * Removes all existing time-based triggers for the current project.
  *
+ * @param {boolean=} showMessage Whether to display a success alert. Defaults
+ *     to true.
  */
 function removeTriggers(showMessage = true) {
   // Remove triggers
@@ -77,14 +87,13 @@ function removeTriggers(showMessage = true) {
 }
 
 /**
- * Makes a call to the Campaign Manager 360 API using the specified URL and options.
+ * Makes a call to the Campaign Manager 360 API.
  *
- *  @param {string} urlSuffix - The API URL suffix.
- *  @param {obj} options - Additional options to be passed to the list API call.
- *  @param {string} baseApiURL - The API URL prefix
- *
- *  @return {string} - The content of the response as a string.
- *
+ * @param {string} urlSuffix The API URL suffix to append to the base URL.
+ * @param {?Object} options Additional options for the UrlFetchApp call.
+ * @param {string=} baseApiUrl The base API URL. Defaults to BASE_API_URL.
+ * @return {string} The content of the API response as a string.
+ * @throws {string} If the API call returns a non-200 status code.
  */
 function apiCall(urlSuffix, options, baseApiUrl = BASE_API_URL) {
   var url = baseApiUrl + urlSuffix;
@@ -105,13 +114,18 @@ function apiCall(urlSuffix, options, baseApiUrl = BASE_API_URL) {
 }
 
 /**
- * Wrapper to add retries and exponential backoff on API calls.
+ * A wrapper function that adds retries and exponential backoff to an API call.
  *
- *  @param {function} fn - Function to be invoked, the return of this funcntion is returned.
- *  @param {int} retries - Number of times to retry.
- *  @param {int} sleep - How many milliseconds to sleep, it will be doubled at each retry.
- *
- *  @return {obj} result - The return of fn.
+ * @param {function} fn The function to be invoked.
+ * @param {number} retries The number of times to retry.
+ * @param {number} sleep The initial time to sleep in milliseconds, which
+ *     doubles on each retry.
+ * @param {string} entity The primary API entity.
+ * @param {?string} secondEntity The secondary API entity.
+ * @param {!Object} options The options for the API call.
+ * @param {string} profileId The user profile ID.
+ * @return {*} The result of the invoked function.
+ * @private
  */
 function _retry(fn, retries, sleep, entity, secondEntity, options, profileId) {
   try {
@@ -128,15 +142,10 @@ function _retry(fn, retries, sleep, entity, secondEntity, options, profileId) {
 }
 
 /**
- * Given an error raised by an API call, determines if the error has a chance
- * of succeeding if it is retried. A good example of a "retriable" error is
- * rate limit, in which case waiting for a few seconds and trying again might
- * refresh the quota and allow the transaction to go through. This method is
- * desidned to be used by the _retry function.
+ * Checks if an error from an API call is retriable.
  *
- *   @param {string} error: Error to verify.
- *
- *   @return {boolean} - True if the error is "retriable", false otherwise
+ * @param {string|Error} error The error to verify.
+ * @return {boolean} True if the error is retriable, false otherwise.
  */
 function isRetriableError(error) {
   var retriableErroMessages = [
@@ -177,9 +186,13 @@ function isRetriableError(error) {
 }
 
 /**
- * Sends an email to a list of recipients.
+ * Sends an email with a specified subject and HTML body.
  *
- *   @param {obj} emailParameters - The email parameters such as email list, subject, cc, etc.
+ * @param {{
+ *   emails: string,
+ *   subject: string,
+ *   body: string
+ * }} emailParameters An object containing the email parameters.
  */
 function sendEmail(emailParameters) {
   const htmlBody = HtmlService.createHtmlOutput(emailParameters.body);
@@ -191,14 +204,24 @@ function sendEmail(emailParameters) {
 }
 
 /**
- * Builds email parameters for the sendEmail function.
+ * Builds the parameters object for sending an alert email.
  *
- *   @param {string} useCase - The error Mitigation use case
- *   @param {string} profileId - The user's profile ID in CM360
- *   @param {string} accountId - The CM360 Network ID
- *   @param {string} reportId - The generated Report ID
- *   @param {string} message - A custom message for the email
- *   @param {list[str]} emails - The list of recipients
+ * @param {string} useCase The key for the current use case.
+ * @param {string} profileId The user's profile ID in CM360.
+ * @param {string} accountId The CM360 Account ID.
+ * @param {string} reportId The generated Report ID.
+ * @param {string} message A custom message for the email body.
+ * @param {string} emails A comma-separated string of recipient email
+ *     addresses.
+ * @param {!Array<string>} reportHeader An array of strings for the table
+ *     header.
+ * @param {{issues: !Array<!Array<string>>}} issues An object containing the
+ *     identified issues.
+ * @return {{
+ *   subject: string,
+ *   body: string,
+ *   emails: string
+ * }} The complete email parameters object.
  */
 function getEmailParameters(
   useCase,
@@ -248,9 +271,9 @@ function getEmailParameters(
 }
 
 /**
- * Cleans the report data by removing extra headers and footers retrieved in the CSV file.
+ * Removes extraneous header and footer rows from a raw CSV report string.
  *
- *  @param {list[list]} data - The data in the report.
+ * @param {!Array<!Array<string>>} data The raw report data as a 2D array.
  */
 function cleanReportData(data) {
   if (!data || data.length === 0) {
@@ -272,11 +295,13 @@ function cleanReportData(data) {
 }
 
 /**
- * Logs execution status and timestamp
+ * Logs the execution status and timestamp to the 'Reports Config' sheet for a
+ * given row.
  *
- *  @param {int} row - The index of the current row
- *  @param {string} executionStatus - The execution status of the current row/report
- *  @param {string} executionTimestamp - The execution timestamp of the current row/report
+ * @param {number} row The index of the current row in the config sheet
+ *     (0-based).
+ * @param {string} executionStatus The status message to log.
+ * @param {string} executionTimestamp The timestamp string to log.
  */
 function logExecutionStatus(row, executionStatus, executionTimestamp) {
   spreadsheet

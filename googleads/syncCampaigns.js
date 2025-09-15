@@ -1,3 +1,11 @@
+/**
+ * @fileoverview This Google Ads script fetches campaigns from a Google Ads
+ * account (or all sub-accounts of an MCC) and populates configuration sheets
+ * in a Google Sheet. This prepares the spreadsheet for a user to define the
+ * desired settings for language, geo-targeting, and budget, which are then
+ * used by the main `checkAccount.js` auditing script.
+ */
+
 const spreadsheetId = ''; // Replace with your sheet's ID
 
 const fetchOnlyActiveCampaignsCell = 'B7';
@@ -17,12 +25,23 @@ var languageConfigSheet = null;
 var geoTargetingConfigSheet = null;
 var budgetConfigSheet = null;
 
+/**
+ * The main function to be executed.
+ * It sets up the configuration sheets and then starts the campaign syncing
+ * process.
+ */
 function main() {
   // Start checking this account
   setUpConfigSheets();
   syncCampaigns(getCurrentAccount());
 }
 
+/**
+ * Initiates the campaign sync process for a given account, handling both
+ * single and MCC account structures.
+ *
+ * @param {!Object} account The Google Ads account to sync.
+ */
 function syncCampaigns(account) {
   const accountInfoStr =
     '{' + account.getName() + ' - ' + account.getCustomerId() + '}';
@@ -45,6 +64,10 @@ function syncCampaigns(account) {
   }
 }
 
+/**
+ * Sets up the configuration sheets ('Language config', 'Geo Targeting config',
+ * 'Budget config') by clearing them and adding headers and formatting.
+ */
 function setUpConfigSheets() {
   languageConfigSheet = createOrClearSheet(languageConfigSheetName);
 
@@ -245,6 +268,12 @@ function setUpConfigSheets() {
   );
 }
 
+/**
+ * Creates a new sheet with the given name or clears it if it already exists.
+ *
+ * @param {string} name The name of the sheet.
+ * @return {!Sheet} The created or cleared sheet object.
+ */
 function createOrClearSheet(name) {
   let sheet = spreadsheet.getSheetByName(name);
   if (sheet) {
@@ -255,6 +284,12 @@ function createOrClearSheet(name) {
   return sheet;
 }
 
+/**
+ * Fetches and adds all campaigns from a single Google Ads account to the
+ * configuration sheets.
+ *
+ * @param {!Object} account The Google Ads account to sync.
+ */
 function syncCampaignsForSingleAccount(account) {
   const accountInfoStr =
     '{' + account.getName() + ' - ' + account.getCustomerId() + '}';
@@ -301,6 +336,13 @@ function syncCampaignsForSingleAccount(account) {
   addCampaignsToConfigSheets(account, performanceMaxCampaignIterator);
 }
 
+/**
+ * Iterates through a campaign iterator and appends each campaign's information
+ * to the three configuration sheets.
+ *
+ * @param {!Object} account The Google Ads account object.
+ * @param {!Iterator} campaignsIterator A Google Ads campaign iterator.
+ */
 function addCampaignsToConfigSheets(account, campaignsIterator) {
   while (campaignsIterator.hasNext()) {
     const campaign = campaignsIterator.next();
@@ -332,6 +374,11 @@ function addCampaignsToConfigSheets(account, campaignsIterator) {
   }
 }
 
+/**
+ * Checks if the current script is running in an MCC (Manager) account context.
+ *
+ * @return {boolean} True if it's an MCC account, false otherwise.
+ */
 function isMCCAccount() {
   try {
     MccApp.accounts(); // Try to access MCC-specific functionality
@@ -341,6 +388,12 @@ function isMCCAccount() {
   }
 }
 
+/**
+ * Gets the current account object, handling both single and MCC account
+ * contexts.
+ *
+ * @return {!Object} The current Google Ads account object.
+ */
 function getCurrentAccount() {
   try {
     // For MCC accounts:

@@ -23,20 +23,31 @@ const DEFAULT_SLEEP = 8 * 1000;
 const DEFAULT_RETRIES = 4;
 const REPORT_AVAILABLE_STATUS = 'REPORT_AVAILABLE';
 
+/**
+ * Wrapper for the Campaign Manager 360 API.
+ */
 class CampaignManagerAPI {
+  /**
+   * @param {string} profileId The Campaign Manager 360 user profile ID.
+   */
   constructor(profileId) {
     this.profileId = profileId;
   }
 
   /**
-   * Fetches items from Campaign Manager 360 based on the provided parameters and handles
-   * pagination by fetching all pages. This uses the list method of the API.
+   * Fetches items from Campaign Manager 360 and handles pagination to retrieve
+   * all pages.
    *
-   *  @param {string} entity - The name of the Campaign Manager 360 API entity.
-   *  @param {string} listName - Name of the list returned by the API.
-   *  @param {obj} options - Additional options to be passed to the list API call.
-   *
-   *  @return {array[obj]} result - Array with all items that match the specified search.
+   * @param {string} entity The name of the Campaign Manager 360 API entity
+   *     (e.g., 'reports').
+   * @param {?string} secondEntity The name of a second-level entity (e.g.,
+   *     'files' for reports). Can be null.
+   * @param {string} listName The name of the list property in the API response
+   *     that contains the items (e.g., 'items').
+   * @param {!Object} options Additional options to be passed to the list API
+   *     call.
+   * @return {!Array<!Object>} An array with all items that match the specified
+   *     search.
    */
   fetchAll(entity, secondEntity, listName, options) {
     // First API call
@@ -77,14 +88,15 @@ class CampaignManagerAPI {
   }
 
   /**
-   * Fetches items from Campaign Manager 360 based on the provided parameters and handles
-   * pagination by fetching all pages. This uses the list method of the API.
+   * Fetches a single page of items from Campaign Manager 360.
    *
-   *  @param {string} entity - The name of the Campaign Manager 360 API entity.
-   *  @param {string} listName - Name of the list returned by the API.
-   *  @param {obj} options - Additional options to be passed to the list API call.
-   *
-   *  @return {array[obj]} result - Array with all items that match the specified search.
+   * @param {string} entity The name of the Campaign Manager 360 API entity.
+   * @param {?string} secondEntity The name of a second Campaign Manager 360 API
+   *     entity. Can be null.
+   * @param {!Object} options Additional options to be passed to the list API
+   *     call.
+   * @param {string} profileId The Campaign Manager 360 user profile ID.
+   * @return {!Object} The API response.
    */
   fetch(entity, secondEntity, options, profileId) {
     if (!secondEntity) {
@@ -100,27 +112,29 @@ class CampaignManagerAPI {
   }
 
   /**
-   * List items from Campaign Manager 360 based on the provided parameters.
+   * Lists items from Campaign Manager 360, handling pagination to fetch all
+   * items.
    *
-   *  @param {string} entity - The name of the Campaign Manager 360 API entity.
-   *  @param {string} secondEntity - The name of a second Campaign Manager 360 API entity
-   *  (this is for getting report files i.e. Reports.Files).
-   *  @param {string} listName - Name of the list returned by the API.
-   *  @param {obj} options - Additional options to be passed to the list API call.
-   *
-   *  @return {array[obj]} - Array with all items that match the specified search.
-   **/
+   * @param {string} entity The name of the Campaign Manager 360 API entity.
+   * @param {?string} secondEntity The name of a second Campaign Manager 360 API
+   *     entity (e.g., 'Files' for 'Reports'). Can be null.
+   * @param {string} listName Name of the list property in the API response.
+   * @param {!Object} options Additional options to be passed to the list API
+   *     call.
+   * @return {!Array<!Object>} An array with all items that match the specified
+   *     search.
+   */
   list(entity, secondEntity, listName, options) {
     return this.fetchAll(entity, secondEntity, listName, options);
   }
 
   /**
-   * Gets the latest run report by report id from Campaign Manager 360.
+   * Gets the latest available report file for a given report ID by polling the
+   * API until the report is ready.
    *
-   *  @param {string} reportId - The id of the report in CM360.
-   *
-   *  @return {obj} latestReportFile - The latest report file in the report.
-   **/
+   * @param {string} reportId The ID of the report in CM360.
+   * @return {?Object} The latest report file object, or null if it times out.
+   */
   getLatestReportFile(reportId) {
     let sleepDuration = 2;
     while (true) {
@@ -155,13 +169,12 @@ class CampaignManagerAPI {
   }
 
   /**
-   * Gets the latest run report by report id from Campaign Manager 360
-   * using the redirect URL retrieved by the API.
+   * Downloads report data from the API's redirect URL.
    *
-   *  @param {obj} latestReportFile - The latest report file in the report.
-   *
-   *  @return {obj} reportResponse - The latest report file data.
-   **/
+   * @param {!Object} latestReportFile The report file object from
+   *     `getLatestReportFile`.
+   * @return {!Object} The parsed report data.
+   */
   getLatestReportFileDataByRedirectURL(latestReportFile) {
     let options = {
       method: 'GET',
@@ -172,16 +185,18 @@ class CampaignManagerAPI {
   }
 
   /**
-   * Creates and runs a Campaign Manager 360 report.
+   * Creates and runs a Campaign Manager 360 report based on a predefined use
+   * case.
    *
-   *  @param {string} useCase - The Margin Protection use case
-   *  @param {string} dateRange - The date range of the report
-   *  @param {list} filters - A list of filters to be applied to the report
-   *  @param {obj} extraParams - Any extra params that are required for the use case
-   *  For now, only the 'advertiserId' filter is supported.
-   *  Format for the filters: advertiserId=123,456,789;otherFilter=334,5566
-   *
-   *  @return {obj} report - The newly created report.
+   * @param {string} useCase The Margin Protection use case key.
+   * @param {string} dateRange The relative date range for the report (e.g.,
+   *     'LAST_7_DAYS').
+   * @param {string} filters A semi-colon delimited string of filters to apply.
+   *     Format: 'filterName1=value1,value2;filterName2=value3'. Currently only
+   *     'advertiserId' is supported.
+   * @param {?string} extraParams Any extra parameters required for the use case
+   *     (e.g., floodlightConfigId).
+   * @return {!Object} The newly created report resource.
    */
   createAndRunReport(useCase, dateRange, filters, extraParams) {
     const dimensionFilters = this.buildReportDimensionFilters(filters);
@@ -200,14 +215,12 @@ class CampaignManagerAPI {
   }
 
   /**
-   * Builds a Campaign Manager 360 report dimension filters based on the
-   * provided user input in the Reports Config tab.
+   * Builds Campaign Manager 360 report dimension filters from a filter string.
    *
-   * @param {list} filters - A list of filters to be applied to the report.
-   * For now, only the 'advertiserId' is supported.
-   * Format for the filters: advertiserId=123,456,789;otherFilter=334,5566
-   *
-   * @return {obj} dimensionFilters - The dimension filters object for the new report
+   * @param {string} filters A semi-colon delimited string of filters. Format:
+   *     'filterName1=value1,value2;filterName2=value3'. Currently, only
+   *     'advertiserId' is supported.
+   * @return {!Array<!Object>} The dimension filters object for the new report.
    */
   buildReportDimensionFilters(filters) {
     const filterItems = filters.split(';');
@@ -245,8 +258,9 @@ class CampaignManagerAPI {
   /**
    * Checks if a dimension filter is supported.
    *
-   *   @param {string} dimensionName - The name of the dimension filter
-   *   @return {boolean} - True if the dimension filter is supported, false otherwise.
+   * @param {string} dimensionName The name of the dimension filter.
+   * @return {boolean} True if the dimension filter is supported, false
+   *     otherwise.
    */
   isDimensionFilterSupported(dimensionName) {
     const supportedFilters = ['advertiserId'];
@@ -257,16 +271,16 @@ class CampaignManagerAPI {
   }
 
   /**
-   * Builds the schema for a new report in Campaign Manager 360
-   * using the provided dimensionFilters. For now, only dimension filters
-   * (advertiserId) are supported.
+   * Builds the schema for a new report in Campaign Manager 360 based on a use
+   * case.
    *
-   *   @param {string} useCase - The Margin Protection use case
-   *   @param {string} dateRange - The date range of the report
-   *   @param {obj} dimensionFilters - The dimension filters object for the new report
-   *   @param {obj} extraParams - Any extra params that are required for the use case
-   *
-   *   @return {obj} - The CM360 report schema
+   * @param {string} useCase The Margin Protection use case key.
+   * @param {string} dateRange The relative date range for the report.
+   * @param {!Array<!Object>} dimensionFilters The dimension filters to apply.
+   * @param {?string} extraParams Any extra parameters required for the use
+   *     case.
+   * @return {?Object} The CM360 report schema, or null if the use case is not
+   *     found.
    */
   buildReportSchemaByUseCase(
     useCase,

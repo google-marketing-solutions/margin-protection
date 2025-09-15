@@ -16,12 +16,13 @@
  */
 
 /**
- * @fileoverview This file encapsulates all utility classes and methods used by
- * the underlying API client library.
+ * @fileoverview This file provides a collection of utility classes and helper
+ * objects used throughout the DV360 API library, including tools for building
+ * API filters, modifying URIs, and working with objects.
  */
 
 /**
- * Defines the logical grouping for filter expressions.
+ * Defines the logical grouping operators for filter expressions.
  */
 export enum FilterGrouping {
   AND = ' AND ',
@@ -29,7 +30,7 @@ export enum FilterGrouping {
 }
 
 /**
- * Defines the supported filter rule equality operators.
+ * Defines the supported equality operators for filter rules.
  */
 export enum RuleOperator {
   EQ = '=',
@@ -38,16 +39,13 @@ export enum RuleOperator {
 }
 
 /**
- * Represents a filter rule for use with instances of
- * {@link FilterExpression}.
+ * Represents a single filter rule to be used in a `FilterExpression`.
  */
 export class Rule {
   /**
-   * Constructs an instance of Rule.
-   *
-   * @param field The field to apply the filter rule to
-   * @param operator The equality operator to use
-   * @param value The value to filter for
+   * @param field The API field to apply the filter rule to.
+   * @param operator The equality operator to use.
+   * @param value The value to filter for.
    */
   constructor(
     private readonly field: string,
@@ -56,36 +54,32 @@ export class Rule {
   ) {}
 
   /**
-   * Returns the field.
-   *
-   * @return The field
+   * Returns the field name of the rule.
+   * @return The field name.
    */
   getField(): string {
     return this.field;
   }
 
   /**
-   * Returns the operator.
-   *
-   * @return The operator
+   * Returns the operator of the rule.
+   * @return The rule operator.
    */
   getOperator(): RuleOperator {
     return this.operator;
   }
 
   /**
-   * Returns the value.
-   *
-   * @return The value
+   * Returns the value of the rule.
+   * @return The rule value.
    */
   getValue(): string | number {
     return this.value;
   }
 
   /**
-   * Returns a string representation of the Rule.
-   *
-   * @return The string representation of the Rule
+   * Returns a string representation of the rule in API query format.
+   * @return The string representation of the rule.
    */
   toString(): string {
     const val = this.getValue();
@@ -95,16 +89,13 @@ export class Rule {
 }
 
 /**
- * Represents a FilterExpression that can be applied when listing API entities
- * to filter results accordingly.
+ * Represents a filter expression that can be applied when listing API entities
+ * to filter results.
  */
 export class FilterExpression {
   /**
-   * Constructs an instance of FilterExpression.
-   *
-   * @param rules The filter rules to apply
-   * @param grouping Optional logical grouping for the given
-   *     filter 'rules'. Defaults to AND
+   * @param rules An array of `Rule` objects to apply.
+   * @param grouping The logical grouping for the rules. Defaults to AND.
    */
   constructor(
     private readonly rules: Rule[],
@@ -112,12 +103,10 @@ export class FilterExpression {
   ) {}
 
   /**
-   * Applies the FilterExpression's grouping to its rules and returns the
-   * API-ready value for the filter query string parameter. Returns an empty
-   * string if no rules are present.
+   * Converts the filter expression into a URL-encoded string suitable for use
+   * in an API request's 'filter' query parameter.
    *
-   * @return The API-ready value for the 'filter' query string param,
-   *     or an empty string if no rules are present
+   * @return The API-ready filter string.
    */
   toApiQueryString(): string {
     const queryString = this.rules
@@ -128,28 +117,28 @@ export class FilterExpression {
 }
 
 /**
- * Parameters that are allowed to be passed to `list` methods.
+ * Defines the common parameters for API `list` methods.
  */
 export interface ListParams {
+  /** An optional filter expression to apply to the list request. */
   filter?: FilterExpression | null;
+  /** The maximum number of results to return per page. */
   pageSize?: number;
+  /** A field to order the results by. */
   orderBy?: string;
 }
 
-/** Uility class for working with URIs. */
+/** A utility object for working with URIs. */
 // tslint:disable-next-line:enforce-name-casing Legacy from JS migration
 export const UriUtil = {
   /**
-   * Modifies a url by either appending the 'key' and 'value' to the end of the
-   * url if the 'key' was not present or replacing the value of the 'key' if it
-   * existed. Multiple values for the same key will all be replaced by a single
-   * key-value pair at the first seen key location. Assumes that all params have
-   * already been URL encoded.
+   * Modifies a URL by appending a new query parameter or replacing the value of
+   * an existing one.
    *
-   * @param url The url to modify
-   * @param key The key to check if present
-   * @param value The value to append / modify
-   * @return The modified url
+   * @param url The URL to modify.
+   * @param key The query parameter key.
+   * @param value The query parameter value.
+   * @return The modified URL.
    */
   modifyUrlQueryString(url: string, key: string, value: string): string {
     let baseUrl: string;
@@ -193,25 +182,16 @@ export const UriUtil = {
 };
 
 /**
- * Class holding utility methods for working with objects. It can essentially be
- * considered an extension of the built in static methods provided by the
- * `Object` class.
+ * A utility object for working with JavaScript objects.
  */
 // tslint:disable-next-line:enforce-name-casing legacy from JS migration
 export const ObjectUtil = {
   /**
-   * Extends an object identified by 'original' with the values in 'extension'.
-   * 'extension' will be returned if 'original' is null, otherwise 'original'
-   * will get extended. Array values in 'extension' will be appended to existing
-   * arrays in 'original', however all other objects in 'extension' will
-   * override existing counterparts in 'original'. The plain JS type of
-   * 'original' will be preserved (if it wasn't null or undefined - i.e. passing
-   * an instance of a specific class will not be overrided, rather extended).
+   * Extends a target object with the properties of a source object.
    *
-   * @param original The original object to extend, which
-   *     may be null
-   * @param extension The value to use for extending
-   * @return The extended object
+   * @param original The original object to extend.
+   * @param extension The object with properties to add.
+   * @return The extended object.
    */
   extend<T extends object | null, E extends object>(
     original: T,
@@ -237,7 +217,9 @@ export const ObjectUtil = {
   },
 
   /**
-   * Throws an error and sends a message to logs.
+   * Logs an error message to the console and throws a new `Error`.
+   * @param msg The error message.
+   * @return The new `Error` object.
    */
   error(msg: string) {
     // Apps Script is hiding thrown error messages, so we double up here.
@@ -246,18 +228,19 @@ export const ObjectUtil = {
   },
 
   /**
-   * Checks if the given object contains all of the given properties.
+   * Checks if a given object has a set of required properties and/or at least
+   * one of a set of optional properties.
    *
-   * @param obj The obj to check. Can be null or undefined
-   * @param requiredProperties The required properties to
-   *     check. Can only be empty if optionalProperties exist, otherwise false
-   * will be returned
-   * @param optionalProperties Optional properties to check.
-   *     Object must contain at least one of these properties. Defaults to an
-   *     empty array
-   * @param errorOnFail If true, this will error instead of sending undefined when missing.
-   * @return True if the object contains all properties, false
-   *     otherwise
+   * @param obj The object to check.
+   * @param options An object defining the properties to check for.
+   * @param options.requiredProperties An array of property names that must
+   *     exist.
+   * @param options.oneOf An array of property names where at least one must
+   *     exist.
+   * @param options.errorOnFail If true, throws an error on failure instead of
+   *     returning false.
+   * @return True if the object satisfies the property checks, false otherwise.
+   * @throws If `errorOnFail` is true and a check fails.
    */
   hasOwnProperties(
     obj: unknown,
@@ -304,10 +287,10 @@ export const ObjectUtil = {
   },
 
   /**
-   * Checks if the given object is indeed an object.
+   * Checks if a given value is a non-array object.
    *
-   * @param obj The obj to check. Can be null or undefined
-   * @return True if the object is an object, false otherwise
+   * @param obj The value to check.
+   * @return True if the value is an object, false otherwise.
    */
   isObject(obj: unknown): boolean {
     return obj != null && obj instanceof Object && !Array.isArray(obj);

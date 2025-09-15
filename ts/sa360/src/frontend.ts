@@ -16,7 +16,9 @@
  */
 
 /**
- * @fileoverview frontend/apps script hooks for SA360 launch monitor
+ * @fileoverview This file contains the frontend and Apps Script hooks for the
+ * SA360 Launch Monitor. It defines the main `SearchAdsFrontend` class that
+ * orchestrates the user interface and interactions within Google Sheets.
  */
 
 import {
@@ -50,23 +52,40 @@ const CUSTOMER_IDS = 'CUSTOMER_IDS';
 const FULL_FETCH_RANGE = 'FULL_FETCH';
 
 /**
- * Migrations for the new SA360 V2 Launch Monitor
+ * A record of migration functions, indexed by version string. This is currently
+ * empty as no migrations have been defined for this version.
  */
 export const migrations: Record<string, (frontend: SearchAdsFrontend) => void> =
   {};
 
 /**
- * Front-end configuration for the new SA360 (our V2) Apps Script.
+ * The main frontend class for the SA360 Launch Monitor. It extends the generic
+ * `AppsScriptFrontend` to provide SA360-specific implementations for
+ * identity management and UI interactions.
  */
 export class SearchAdsFrontend extends AppsScriptFrontend<SearchAdsClientTypes> {
+  /**
+   * @param args The frontend arguments for initialization.
+   */
   constructor(args: FrontendArgs<SearchAdsClientTypes>) {
     super('SA360', args);
   }
 
+  /**
+   * Cleans a customer ID string by removing hyphens and spaces.
+   * @param cid The customer ID to clean.
+   * @return The cleaned customer ID.
+   * @private
+   */
   private cleanCid(cid: string | number) {
     return String(cid).replace(/[- ]/g, '');
   }
 
+  /**
+   * Reads the Login Customer ID and Customer IDs from named ranges in the sheet
+   * to identify the client context.
+   * @return The client arguments for initializing the `Client`.
+   */
   override getIdentity() {
     const loginCustomerId = HELPERS.getValueFromRangeByName({
       name: LOGIN_CUSTOMER_ID,
@@ -91,6 +110,10 @@ export class SearchAdsFrontend extends AppsScriptFrontend<SearchAdsClientTypes> 
     };
   }
 
+  /**
+   * Displays a custom HTML modal dialog for initial tool setup.
+   * @return The advertiser ID value from the setup modal.
+   */
   override displaySetupModal() {
     const template = HtmlService.createTemplateFromFile('html/setup');
     template['agencyId'] =
@@ -103,14 +126,27 @@ export class SearchAdsFrontend extends AppsScriptFrontend<SearchAdsClientTypes> 
     return template['advertiserID'];
   }
 
+  /**
+   * Runs all enabled rules and displays the results in a 'Pre-Launch QA
+   * Results' sheet.
+   */
   override async preLaunchQa() {
     await super.preLaunchQa();
   }
 
+  /**
+   * Initializes the frontend by running migrations and setting up the rule
+   * sheets.
+   */
   override async initializeSheets() {
     await super.initializeSheets();
   }
 
+  /**
+   * Saves the current settings for all rules back to their respective sheets
+   * and resets the `FULL_FETCH` flag.
+   * @param rules An array of all rule executor instances.
+   */
   override saveSettingsBackToSheets(
     rules: Array<
       RuleExecutor<SearchAdsClientTypes, Record<string, ParamDefinition>>

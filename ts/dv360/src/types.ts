@@ -16,7 +16,9 @@
  */
 
 /**
- * @fileoverview Types for DV360
+ * @fileoverview This file contains the TypeScript interfaces and enums that
+ * are specific to the DV360 Launch Monitor implementation. It builds upon the
+ * common types to create contracts tailored for DV360 entities and logic.
  */
 
 import {
@@ -39,9 +41,8 @@ import {
 } from 'common/types';
 
 /**
- * Defines the type of ID set on the client.
- *
- * Can only be one of advertiser or partner.
+ * An enum to distinguish between running the tool at the Advertiser or Partner
+ * level.
  */
 export enum IDType {
   ADVERTISER = 1,
@@ -49,15 +50,17 @@ export enum IDType {
 }
 
 /**
- * A budget report DAO.
+ * An interface for a DAO that fetches an insertion order budget report.
  */
 export interface BudgetReportInterface {
   /**
-   * Gets the spend for the specific insertion order budget segment. Lazy
-   * loaded.
-   * @param insertionOrderId
-   * @param startTime The time in seconds since epoch
-   * @param endTime The time in seconds since epoch
+   * Gets the spend for a specific insertion order budget segment. This is lazy-
+   * loaded; the report is only fetched when a value is first requested.
+   *
+   * @param insertionOrderId The ID of the insertion order.
+   * @param startTime The start time of the budget segment in ms since epoch.
+   * @param endTime The end time of the budget segment in ms since epoch.
+   * @return The total spend for the segment.
    */
   getSpendForInsertionOrder(
     insertionOrderId: string,
@@ -67,49 +70,68 @@ export interface BudgetReportInterface {
 }
 
 /**
- * A budget DAO report for Line Items.
+ * An interface for a DAO that fetches a line item budget report.
  */
 export interface LineItemBudgetReportInterface {
   /**
-   * Gets the spend for the specific line item. Lazy loaded.
-   * @param lineItemId
+   * Gets the spend for a specific line item. This is lazy-loaded.
+   * @param lineItemId The ID of the line item.
+   * @return The total spend for the line item.
    */
   getSpendForLineItem(lineItemId: string): number;
 }
 
 /**
- * An impression report DAO.
+ * An interface for a DAO that fetches an impression report.
  */
 export interface ImpressionReportInterface {
+  /**
+   * Calculates the percentage of impressions served outside a given set of
+   * geographic locations.
+   * @param campaignId The ID of the campaign.
+   * @param geo An array of allowed geo target strings.
+   * @return The percentage of impressions served outside the allowed geos.
+   */
   getImpressionPercentOutsideOfGeos(campaignId: string, geo: string[]): number;
 }
 
 /**
- * Defines parameters used in a report.
+ * Defines the parameters required for fetching a query-based report.
  */
 export interface QueryReportParams extends DateRange {
+  /** The type of ID being used (Partner or Advertiser). */
   idType: IDType;
+  /** The Partner or Advertiser ID. */
   id: Readonly<string>;
 }
 
 /**
- * Defines a start and end date range for reports.
+ * Defines a date range with a start and end date.
  */
 export interface DateRange {
+  /** The start date of the range. */
   startDate: Readonly<Date>;
+  /** The end date of the range. */
   endDate: Readonly<Date>;
 }
 
 /**
- * Defines a client object, which is responsible for wrapping.
+ * Defines the interface for the DV360 client, extending the base client with
+ * DV360-specific methods.
  */
 export interface ClientInterface
   extends BaseClientInterface<DisplayVideoClientTypes> {
+  /** The Data Access Object for API and report classes. */
   dao: { accessors: Accessors };
+  /** Fetches all insertion orders for the client's scope. */
   getAllInsertionOrders(): { [id: string]: InsertionOrder };
+  /** Fetches all line items for the client's scope. */
   getAllLineItems(): Promise<{ [id: string]: LineItem }>;
+  /** Gets an instance of the budget report DAO for a given date range. */
   getBudgetReport(args: DateRange): BudgetReportInterface;
+  /** Gets an instance of the line item budget report DAO. */
   getLineItemBudgetReport(args: DateRange): LineItemBudgetReportInterface;
+  /** Builds a map of campaign IDs to their metadata. */
   getCampaignMap(): Promise<{
     campaignMap: Record<string, RecordInfo>;
     hasAdvertiserName: boolean;
@@ -117,15 +139,18 @@ export interface ClientInterface
 }
 
 /**
- * An agency ID and, optionally, an advertiser ID to narrow down.
+ * Defines the arguments required to initialize the DV360 client.
  */
 export interface ClientArgs extends BaseClientArgs<ClientArgs> {
+  /** The type of ID provided (Partner or Advertiser). */
   idType: IDType;
+  /** The Partner or Advertiser ID. */
   id: Readonly<string>;
 }
 
 /**
- * sed to determine which setting page a rule falls into.
+ * An enum defining the different entity levels at which a rule can be
+ * configured and executed.
  */
 export enum RuleGranularity {
   CAMPAIGN = 'Campaign',
@@ -134,7 +159,8 @@ export enum RuleGranularity {
 }
 
 /**
- * Represents the related interfaces for DV360.
+ * A concrete implementation of the generic `ClientTypes` interface, bundling
+ * all the DV360-specific types together.
  */
 export interface DisplayVideoClientTypes
   extends ClientTypes<DisplayVideoClientTypes> {
@@ -145,30 +171,36 @@ export interface DisplayVideoClientTypes
 }
 
 /**
- * Parameters for a rule, with `this` methods from {@link RuleUtilities}.
+ * A type alias for DV360 rule parameters, providing the correct `this` context
+ * for the rule's callback function.
  */
 export type RuleParams<Params extends Record<keyof Params, ParamDefinition>> =
   RuleDefinition<DisplayVideoClientTypes, Params> &
     ThisType<RuleExecutor<DisplayVideoClientTypes, Params>>;
 
 /**
- * A report class that can return a Report object.
+ * An interface for a class constructor that can instantiate a report DAO.
+ * @template T The type of the report DAO interface.
  */
 export interface ReportConstructor<T> {
   new (params: QueryReportParams): T;
 }
 
 /**
- * Convenience interface for defining report classes.
+ * A convenience interface for defining report class constructors.
+ * @template CallableClass The report DAO class.
  */
 interface DbmReportClass<CallableClass> {
   new (params: QueryReportParams): CallableClass;
 }
 
 /**
- * Used in a DAO to wrap access objects.
+ * Defines the structure of the Data Access Object, which holds the
+ * constructors for all the DV360 API and report classes. This allows for easy
+ * dependency injection and mocking.
  */
 export interface Accessors {
+  /** The constructor for the `BudgetReport` class. */
   budgetReport: DbmReportClass<BudgetReportInterface>;
   lineItemBudgetReport: DbmReportClass<LineItemBudgetReportInterface>;
   impressionReport: DbmReportClass<ImpressionReportInterface>;

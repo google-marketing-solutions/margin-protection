@@ -16,7 +16,10 @@
  */
 
 /**
- * @fileoverview Implement and bootstrap Apps Script.
+ * @fileoverview This file is the main entry point for the SA360 Launch Monitor
+ * when running in the Google Apps Script environment. It initializes the
+ * `SearchAdsFrontend` and exposes its methods as global functions that can be
+ * called from the spreadsheet UI or by Apps Script triggers.
  */
 
 import {
@@ -50,7 +53,15 @@ import { migrations, SearchAdsFrontend } from './frontend';
 export const CURRENT_SHEET_VERSION = '2.0';
 
 /**
- * Generate a front-end object for lazy loading.
+ * A factory function that instantiates and configures the `SearchAdsFrontend`.
+ *
+ * It injects all necessary dependencies, including the rule definitions, the
+ * `Client` initializer (which sets up the Ads API factories), migration
+ * functions, and the property store.
+ *
+ * @param properties An implementation of `PropertyStore` for handling script
+ *     properties.
+ * @return A fully configured instance of `SearchAdsFrontend`.
  */
 export function getFrontend(properties: PropertyStore) {
   return new SearchAdsFrontend({
@@ -80,6 +91,10 @@ export function getFrontend(properties: PropertyStore) {
   });
 }
 
+/**
+ * An Apps Script `onOpen` simple trigger that adds a custom menu to the
+ * spreadsheet UI.
+ */
 async function onOpen(
   _: GoogleAppsScript.Events.SheetsOnOpen,
   properties = new AppsScriptPropertyStore(),
@@ -87,6 +102,9 @@ async function onOpen(
   await getFrontend(properties).onOpen();
 }
 
+/**
+ * A global function to initialize the sheets. Can be called from the UI.
+ */
 async function initializeSheets(
   _: GoogleAppsScript.Events.TimeDriven,
   properties = new AppsScriptPropertyStore(),
@@ -94,6 +112,9 @@ async function initializeSheets(
   await getFrontend(properties).initializeSheets();
 }
 
+/**
+ * A global function to initialize the rules. Can be called from the UI.
+ */
 async function initializeRules(
   _: GoogleAppsScript.Events.TimeDriven,
   properties = new AppsScriptPropertyStore(),
@@ -101,6 +122,9 @@ async function initializeRules(
   await getFrontend(properties).initializeRules();
 }
 
+/**
+ * A global function to run the pre-launch QA. Can be called from the UI.
+ */
 async function preLaunchQa(
   _: GoogleAppsScript.Events.TimeDriven,
   properties = new AppsScriptPropertyStore(),
@@ -108,6 +132,10 @@ async function preLaunchQa(
   await getFrontend(properties).preLaunchQa();
 }
 
+/**
+ * A global function to run the launch monitor. Intended to be used as a
+ * time-based trigger.
+ */
 async function launchMonitor(
   _: GoogleAppsScript.Events.TimeDriven,
   properties = new AppsScriptPropertyStore(),
@@ -115,6 +143,9 @@ async function launchMonitor(
   await getFrontend(properties).launchMonitor();
 }
 
+/**
+ * A global function to display the setup modal. Can be called from the UI.
+ */
 async function displaySetupModal(
   _: GoogleAppsScript.Events.TimeDriven,
   properties = new AppsScriptPropertyStore(),
@@ -122,6 +153,9 @@ async function displaySetupModal(
   await getFrontend(properties).displaySetupModal();
 }
 
+/**
+ * A global function to display the rule glossary. Can be called from the UI.
+ */
 function displayGlossary(
   _: GoogleAppsScript.Events.TimeDriven,
   properties = new AppsScriptPropertyStore(),
@@ -129,6 +163,7 @@ function displayGlossary(
   getFrontend(properties).displayGlossary();
 }
 
+// Expose public functions to the Apps Script global object.
 global.onOpen = onOpen;
 global.initializeSheets = initializeSheets;
 global.initializeRules = initializeRules;

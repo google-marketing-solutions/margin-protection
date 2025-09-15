@@ -16,42 +16,54 @@
  */
 
 /**
- * @fileoverview This file encapsulates type definitions for subtypes of DV360
- * Resources that are accessible via the DV360 API. The bare minimum of all
- * required properties is implemented; refer to the API reference linked per
- * type for an exhaustive and up-to-date list of properties.
+ * @fileoverview This file defines the TypeScript types, interfaces, and enums
+ * that correspond to the various data structures used in the Display & Video
+ * 360 API. It also includes "Mapper" objects responsible for validating and
+ * converting raw API responses into these strongly-typed domain objects.
  */
 
 import { ObjectUtil } from './utils';
 
 /**
- * Defines the `*Mapper` contract.
- *
- * There are two scenarios:
- *
- * 1. Map a simple resource (what you get in is what you get out, unless there's an error).
- * 2. Map a resource to an internal representation with {@link InOut}.
+ * Defines the contract for a `Mapper` object, which is responsible for
+ * validating and transforming raw API resource objects into typed domain
+ * objects.
+ * @template T The type information for the mapper, which can be a direct type
+ *     or an `InOut` tuple for complex mappings.
  */
 interface Mapper<T> {
+  /**
+   * Maps a raw resource object to its corresponding typed domain object.
+   * @param resource The raw resource object from the API.
+   * @return The typed domain object, or `undefined` if mapping fails.
+   */
   map(
     resource: T extends InOut<infer I, unknown> ? I : T,
   ): (T extends InOut<unknown, infer O> ? O : T) | undefined;
 }
 
 /**
- * A mapper with JSON definitions.
- *
- * Not all `*Mapper` objects have JSON output. This mostly just inverts `map`.
- * "Mostly" because it's untested at this time, so shouldn't be relied on.
+ * Extends the `Mapper` interface to include a `toJson` method for serializing
+ * a domain object back into its raw API representation.
+ * @template T The type information for the mapper.
  */
 interface MapperWithJsonOut<T> extends Mapper<T> {
+  /**
+   * Converts a typed domain object back into its raw JSON representation for
+   * API requests.
+   * @param resource The typed domain object.
+   * @return The raw JSON object.
+   */
   toJson(
     resource: T extends InOut<unknown, infer O> ? O : T,
   ): T extends InOut<infer I, unknown> ? I : T;
 }
 
 /**
- * Some mappers have a different "in" and "out" type. This type supports that.
+ * A utility type to define separate "in" (raw API) and "out" (typed domain)
+ * types for a mapper.
+ * @template InType The raw type from the API.
+ * @template OutType The typed domain object.
  */
 type InOut<InType, OutType> = [InType, OutType];
 

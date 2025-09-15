@@ -16,7 +16,9 @@
  */
 
 /**
- * @fileoverview types for Google Ads
+ * @fileoverview This file contains the TypeScript interfaces and enums that
+ * are specific to the SA360 Launch Monitor implementation. It builds upon the
+ * common types to create contracts tailored for SA360 entities and logic.
  */
 
 import * as AdTypes from 'common/ads_api_types';
@@ -29,7 +31,8 @@ import {
 } from 'common/types';
 
 /**
- * Represents the related interfaces for SA360.
+ * A concrete implementation of the generic `ClientTypes` interface, bundling
+ * all the SA360-specific types together.
  */
 export interface SearchAdsClientTypes
   extends ClientTypes<SearchAdsClientTypes> {
@@ -40,14 +43,18 @@ export interface SearchAdsClientTypes
 }
 
 /**
- * Args for the new SA360 API.
+ * Defines the arguments required to initialize the SA360 client.
  */
 export interface ClientArgs extends AdTypes.AdsClientArgs {
+  /**
+   * An optional flag to indicate whether a full fetch should be performed,
+   * ignoring any caching or incremental logic.
+   */
   fullFetch?: boolean;
 }
 
 /**
- * Convenience wrapper for a {@link AdTypes.ReportInterface}.
+ * A convenience type alias for the generic `ReportInterface`.
  */
 export type ReportInterface<
   Q extends AdTypes.QueryBuilder<AdTypes.Query<Params>>,
@@ -56,7 +63,7 @@ export type ReportInterface<
 > = AdTypes.ReportInterface<Q, Output, Params>;
 
 /**
- * Convenience wrapper for a {@link AdTypes.ReportClass}.
+ * A convenience type alias for the generic `ReportClass`.
  */
 export type ReportClass<
   Q extends AdTypes.QueryBuilder<AdTypes.Query<Params>>,
@@ -65,11 +72,18 @@ export type ReportClass<
 > = AdTypes.ReportClass<Q, Output, Params>;
 
 /**
- * Extends the base client interface with SA360-specific features.
+ * Defines the interface for the SA360 client, extending the base client with
+ * SA360-specific methods.
  */
 export interface ClientInterface
   extends BaseClientInterface<SearchAdsClientTypes> {
+  /** Fetches all ad groups for the client's scope. */
   getAllAdGroups(): Promise<RecordInfo[]>;
+  /**
+   * Creates a report instance using the report factory.
+   * @param Report The report class to instantiate.
+   * @return An instance of the requested report.
+   */
   getReport<
     Q extends AdTypes.QueryBuilder<AdTypes.Query<Params>>,
     Output extends string,
@@ -80,30 +94,39 @@ export interface ClientInterface
 }
 
 /**
- * SA360 granularity options.
+ * An enum defining the entity levels at which a rule can be configured.
  */
 export enum RuleGranularity {
   CAMPAIGN = 'Campaign',
   AD_GROUP = 'Ad Group',
 }
 
+/**
+ * Defines the structure for a time range based on changed attributes.
+ */
 interface ChangedAttributesSinceTimestamp {
   changedAttributesSinceTimestamp: string;
 }
 
+/**
+ * Defines the structure for a time range based on changed metrics.
+ */
 interface ChangedMetricsSinceTimestamp {
   changedMetricsSinceTimestamp: string;
 }
 
+/**
+ * Defines the structure for a time range based on a start and end date.
+ */
 interface StartAndEndDate {
   startDate: string;
   endDate: string;
 }
 
 /**
- * SA360 report time range.
- *
- * https://developers.google.com/search-ads/v2/reference/reports#request.timeRange
+ * A type representing the possible time range structures for an SA360 report
+ * request.
+ * @see https://developers.google.com/search-ads/v2/reference/reports#request.timeRange
  */
 export type SearchAdsTimeRange =
   | StartAndEndDate

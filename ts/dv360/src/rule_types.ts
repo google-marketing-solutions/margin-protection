@@ -15,32 +15,47 @@
  * limitations under the License.
  */
 
+/**
+ * A base interface for budget pacing calculations, containing common properties
+ * for a given flight or budget segment.
+ */
 interface BudgetPacing {
+  /** The start date of the flight or budget segment. */
   startDate: Readonly<Date>;
+  /** The end date of the flight or budget segment. */
   endDate: Readonly<Date>;
+  /** The amount spent during the period. */
   spend: Readonly<number>;
+  /** The total budget for the period. */
   budget: Readonly<number>;
 }
 
 /**
- * Return type used to determine days ahead pacing.
+ * The return type for a rule that calculates budget pacing in terms of days
+ * ahead or behind schedule.
  */
 export interface InsertionOrderDaysAhead extends BudgetPacing {
+  /** The number of days the flight is ahead (positive) or behind (negative). */
   days: Readonly<number>;
 }
 
 /**
- * Return type used to determine percent ahead pacing.
+ * The return type for a rule that calculates budget pacing as a percentage
+ * ahead or behind schedule.
  */
 export interface InsertionOrderPercentAhead extends BudgetPacing {
+  /** The percentage the flight is ahead (positive) or behind (negative). */
   percent: Readonly<number>;
 }
 
 /**
- * Type for a daily budget rule.
+ * The return type for a rule that calculates the effective daily budget.
  */
 export interface DailyBudget {
+  /** The calculated daily budget. */
   dailyBudget: Readonly<number>;
+  /** The total duration of the flight in days. */
   flightDurationDays: Readonly<number>;
+  /** The total budget for the flight. */
   budget: Readonly<number>;
 }

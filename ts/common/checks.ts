@@ -16,11 +16,19 @@
  */
 
 /**
- * @fileoverview A series of checks that can be used for a rule.
+ * @fileoverview This file contains a collection of simple, reusable validation
+ * functions. These "checks" are designed to be used within rules to determine
+ * if a given value is anomalous.
  */
 
 /**
- * Ensures that a value is in a range between min and max (inclusive).
+ * Checks if a numeric value falls within a specified range (inclusive).
+ *
+ * @param params An object containing the min and max values of the range.
+ * @param value The numeric value to check.
+ * @param fields A record of additional fields to include in the result.
+ * @return An object containing the original value, a boolean indicating if it's
+ *     anomalous, and the additional fields.
  */
 export function inRange(
   { min, max }: { min: number; max: number },
@@ -35,7 +43,13 @@ export function inRange(
 }
 
 /**
- * Ensures a value is equal to a test value.
+ * Checks if a value is equal to a specified test value.
+ *
+ * @param test The value to compare against.
+ * @param value The value to check.
+ * @param fields A record of additional fields to include in the result.
+ * @return An object containing the original value, a boolean indicating if it's
+ *     anomalous, and the additional fields.
  */
 export function equalTo<T>(
   test: T,
@@ -46,7 +60,13 @@ export function equalTo<T>(
 }
 
 /**
- * Ensures a value is less than or equal to a test value.
+ * Checks if a numeric value is less than or equal to a specified test value.
+ *
+ * @param test The value to compare against.
+ * @param value The value to check.
+ * @param fields A record of additional fields to include in the result.
+ * @return An object containing the original value, a boolean indicating if it's
+ *     anomalous, and the additional fields.
  */
 export function lessThanOrEqualTo(
   test: number,

@@ -71,18 +71,21 @@ class ReportName:
 
   @classmethod
   def with_filename(cls, filename: str):
-    """Saves the component parts of a filename in an object.
+    """Parses a filename to extract metadata components.
+
+    The filename is expected to follow a specific format with underscores
+    separating the metadata parts.
 
     Args:
-      filename: A filename with the format {LABEL}_{RULE}_{SHEET_ID}_{DATE}.
-        Note that sometimes sheet_id has underscores in it, but the other values
-        should not.
+      filename: A filename with the format
+        `{CATEGORY}_{LABEL}_{RULE}_{SHEET_ID}_{DATE}.csv`. Note that sheet_id
+        can contain underscores.
 
     Returns:
-      A class of type `FileName`.
+      An instance of ReportName populated with the parsed metadata.
 
     Raises:
-      ValueError: If a filename doesn't meet the required format.
+      ValueError: If the filename does not match the required format.
     """
 
     pattern = (
@@ -109,14 +112,17 @@ class ReportName:
 
 
 def fill_dataframe(df: pd.DataFrame, report_name: ReportName) -> pd.DataFrame:
-  """Given a dataframe, prefix each row with a date, sheet ID and label.
+  """Adds metadata columns to a DataFrame based on the report name.
+
+  This function prefixes the DataFrame with a 'Date' column derived from the
+  report name and normalizes all column headers.
 
   Args:
-    df: A pandas DataFrame.
-    report_name: Contains the metadata found in a filename, split into parts.
+    df: The input pandas DataFrame.
+    report_name: A ReportName object containing the parsed file metadata.
 
   Returns:
-    A new pandas DataFrame with prefixed columns.
+    A new pandas DataFrame with the added 'Date' column and normalized headers.
   """
   dfl = len(df)
   date = [pd.to_datetime(report_name.date, format=_DATE_FORMAT)]
@@ -127,21 +133,31 @@ def fill_dataframe(df: pd.DataFrame, report_name: ReportName) -> pd.DataFrame:
   return df
 
 
-def _normalize(string):
+def _normalize(string: str) -> str:
+  """Normalizes a string to be a valid BigQuery column name.
+
+  Replaces spaces with underscores and removes periods.
+
+  Args:
+    string: The string to normalize.
+
+  Returns:
+    The normalized string.
+  """
   return string.replace(' ', '_').replace('.', '')
 
 
 def load_data_into_pandas(request: http.HttpRequest) -> pd.DataFrame:
-  """Use an API request to load the response into pandas for a BQ upload.
+  """Loads data from a Google Drive file download request into a DataFrame.
 
   This function expects the response data from the request to be a CSV.
 
   Args:
-    request: An HTTP request, i.e. the one used to download files from drive
-      (drive.files().get_media()).
+    request: An googleapiclient.http.HttpRequest object for downloading a file
+      from Google Drive (e.g., from drive.files().get_media()).
 
   Returns:
-    A pandas DataFrame with the data from the request file in it.
+    A pandas DataFrame containing the data from the downloaded CSV file.
   """
   file = io.BytesIO()
   downloader = http.MediaIoBaseDownload(file, request)
@@ -160,20 +176,23 @@ def load_files_into_dataframes(
     drive_api,
     drive_files: list[dict[str, str]],
 ) -> tuple[pd.DataFrame, dict[str, pd.DataFrame]]:
-  """Loads data into a pandas dataframe from the given list of drive files.
+  """Downloads files from Google Drive and loads their data into DataFrames.
 
-  Downloads the files and loads them into pandas.
+  It iterates through a list of file objects, parses their names for metadata,
+  downloads the content, and organizes the resulting DataFrames by rule.
 
   Args:
-    last_report_table: The dataframe that has a list of last updated reports
-    drive_api: The API for drive calls
-    drive_files: A list of drive files with 'name' and 'id' keys,
-      typically from drive.files().list()
+    last_report_table: A DataFrame tracking the last processed date for each
+      sheet ID.
+    drive_api: An authenticated Google Drive API service object.
+    drive_files: A list of file metadata dictionaries, each with 'name' and
+      'id' keys.
 
   Returns:
-    A tuple, the first one being the last_report_table, and the second being
-    a dict with the key the name of the rule and the value a DataFrame with
-    rule results to upload to BigQuery.
+    A tuple containing:
+      - The updated last_report_table DataFrame.
+      - A dictionary mapping rule names to concatenated DataFrames of their
+        respective report data.
   """
   dataframes: dict[str, list[pd.DataFrame]] = collections.defaultdict(list)
   for file_obj in drive_files:
@@ -201,16 +220,22 @@ def load_files_into_dataframes(
 def _get_or_create_last_report_table(
     bigquery_client: bigquery.Client, gcp_project: str, gcp_dataset: str
 ) -> pd.DataFrame:
-  """Retrieves a DataFrame with last updated dates per sheet ID.
+  """Retrieves or creates the 'last_report' table from BigQuery.
 
-  If a report table `last_report` exists in BigQuery, creates it.
+  This table tracks the timestamp of the last successfully processed report for
+  each unique sheet ID.
 
   Args:
-    bigquery_client: The client for BigQuery calls
-    gcp_project: The GCP Project
-    gcp_dataset: The dataset in which to store the report
+    bigquery_client: An authenticated BigQuery client.
+    gcp_project: The GCP project ID.
+    gcp_dataset: The BigQuery dataset ID.
 
   Returns:
+    A pandas DataFrame representing the 'last_report' table, indexed by
+    'Sheet_ID'.
+
+  Raises:
+    RuntimeError: If there's an unexpected issue retrieving the table.
   """
   try:
     select_tables = bigquery_client.query(
@@ -233,17 +258,20 @@ def load_data_into_bigquery(
     last_report_table: pd.DataFrame,
     dataframes: dict[str, pd.DataFrame],
 ) -> None:
-  """Loads pandas DataTables into BigQuery.
+  """Loads multiple pandas DataFrames into BigQuery tables.
 
-  Loads `last_report_table` and all `dataframes` where each table is named
-  by the dict key.
+  This function loads the `last_report_table` and all DataFrames in the
+  `dataframes` dictionary into BigQuery. Each table in `dataframes` is named
+  using its dictionary key.
 
   Args:
     gcp_project: The name of the GCP project.
-    gcp_dataset: The name of the dataset for BigQuery.
-    bigquery_client: A BigQuery python client.
-    last_report_table: The DataFrame for the `last_report` table.
-    dataframes: A dict of DataFrames to load, where the key is the table name.
+    gcp_dataset: The name of the BigQuery dataset.
+    bigquery_client: An authenticated BigQuery client.
+    last_report_table: The DataFrame for the 'last_report' table. It will
+      overwrite the existing table.
+    dataframes: A dictionary where keys are table names (rules) and values are
+      the DataFrames to load. These are appended to existing tables.
   """
   dataset_ref = dataset.DatasetReference(
       dataset_id=gcp_dataset,
@@ -274,14 +302,20 @@ def load_data_into_bigquery(
 
 @functions_framework.http
 def import_dashboard(request):
-  """Cloud function entrypoint.
+  """The main entry point for the Cloud Function.
+
+  This function is triggered by an HTTP request. It parses the request body for
+  GCP project info and a list of files from Google Drive, then orchestrates the
+  process of downloading, transforming, and loading the data into BigQuery.
 
   Args:
-    request: A Cloud Function HTTP request method
+    request: A Flask request object containing the JSON payload with 'gcp_project',
+      'gcp_dataset', and 'file_list'.
       <https://flask.palletsprojects.com/en/1.1.x/api/#incoming-request-data>
 
   Returns:
-    A list of tables names/rule names for further evaluation/view creation.
+    A dictionary containing a list of the table names (rules) that were
+    processed and loaded into BigQuery.
   """
   request_json = request.get_json(silent=True)
   gcp_project = request_json['gcp_project']

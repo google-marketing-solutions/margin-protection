@@ -16,7 +16,9 @@
  */
 
 /**
- * @fileoverview frontend/apps script hooks for DV360 launch monitor
+ * @fileoverview This file contains the frontend and Apps Script hooks for the
+ * DV360 Launch Monitor. It defines the main `DisplayVideoFrontend` class that
+ * orchestrates the user interface and interactions within Google Sheets.
  */
 
 import {
@@ -40,8 +42,9 @@ const DRIVE_ID = 'DRIVE_ID';
 export const GENERAL_SETTINGS_SHEET = 'General/Settings';
 
 /**
- * A list of migrations with version as key and a migration script as the
- * value.
+ * A record of migration functions, indexed by version string. These functions
+ * are used to update the spreadsheet's structure and data to be compatible
+ * with new versions of the tool.
  */
 export const migrations: Record<
   string,
@@ -143,16 +146,26 @@ export const migrations: Record<
 };
 
 /**
- * Front-end configuration for DV360 Apps Script.
+ * The main frontend class for the DV360 Launch Monitor. It extends the generic
+ * `AppsScriptFrontend` to provide DV360-specific implementations for
+ * identity management and UI interactions.
  */
 export class DisplayVideoFrontend
   extends AppsScriptFrontend<DisplayVideoClientTypes>
   implements FrontendInterface<DisplayVideoClientTypes>
 {
+  /**
+   * @param args The frontend arguments for initialization.
+   */
   constructor(args: FrontendArgs<DisplayVideoClientTypes>) {
     super('DV360', args);
   }
 
+  /**
+   * Reads the Partner/Advertiser ID and other settings from named ranges in the
+   * 'General/Settings' sheet to identify the client context.
+   * @return The client arguments, or null if essential ranges are missing.
+   */
   override getIdentity() {
     const sheet = SpreadsheetApp.getActive();
     if (!sheet) {
@@ -173,6 +186,10 @@ export class DisplayVideoFrontend
     };
   }
 
+  /**
+   * Displays a custom HTML modal dialog for initial tool setup.
+   * @return The ID value from the setup modal.
+   */
   override displaySetupModal() {
     const template = HtmlService.createTemplateFromFile('html/setup');
     template['id'] = HELPERS.getRangeByName(ENTITY_ID).getValue() || '';

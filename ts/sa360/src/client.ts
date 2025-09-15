@@ -16,7 +16,9 @@
  */
 
 /**
- * @fileoverview Client for SA360.
+ * @fileoverview This file defines the `Client` class for the SA360 Launch
+ * Monitor. This class is the primary interface for interacting with the SA360
+ * API, managing rules, and executing validation logic.
  */
 
 import { ReportFactory } from 'common/ads_api';
@@ -44,7 +46,7 @@ import {
 import { AD_GROUP_REPORT, CAMPAIGN_REPORT } from './api';
 
 /**
- * Creates a new rule for the new SA360.
+ * A pre-configured `newRuleBuilder` for creating rules specific to SA360.
  */
 export const newRule = newRuleBuilder<SearchAdsClientTypes>() as <
   P extends Record<keyof P, ParamDefinition>,
@@ -53,9 +55,12 @@ export const newRule = newRuleBuilder<SearchAdsClientTypes>() as <
 ) => RuleExecutorClass<SearchAdsClientTypes, P>;
 
 /**
- * Client for the new SA360
+ * A high-level client for the SA360 API that simplifies fetching data,
+ * managing rules, and executing validation logic. It uses the common Ads API
+ * for its backend operations.
  */
 export class Client implements ClientInterface {
+  /** A store of all registered rule executors, indexed by name. */
   readonly ruleStore: {
     [ruleName: string]: RuleExecutor<
       SearchAdsClientTypes,
@@ -63,12 +68,21 @@ export class Client implements ClientInterface {
     >;
   } = {};
 
+  /**
+   * @param args The client arguments, specifying the customer IDs.
+   * @param properties A `PropertyStore` instance for caching.
+   * @param reportFactory A factory for creating report instances.
+   */
   constructor(
     readonly args: ClientArgs,
     readonly properties: PropertyStore,
     readonly reportFactory: ReportFactory,
   ) {}
 
+  /**
+   * Fetches all campaigns for the configured customer ID(s).
+   * @return A promise that resolves to an array of campaign records.
+   */
   async getAllCampaigns(): Promise<RecordInfo[]> {
     const report = this.getReport(CAMPAIGN_REPORT).fetch();
     return Object.values(report).map((campaign) => ({
@@ -78,6 +92,10 @@ export class Client implements ClientInterface {
     }));
   }
 
+  /**
+   * Fetches all ad groups for the configured customer ID(s).
+   * @return A promise that resolves to an array of ad group records.
+   */
   async getAllAdGroups(): Promise<RecordInfo[]> {
     const report = this.getReport(AD_GROUP_REPORT).fetch();
     return Object.values(report).map((adGroup) => ({
@@ -87,6 +105,11 @@ export class Client implements ClientInterface {
     }));
   }
 
+  /**
+   * Creates a report instance using the report factory.
+   * @param report The report class to instantiate.
+   * @return An instance of the requested report.
+   */
   getReport<
     Q extends QueryBuilder<Query<Params>>,
     Output extends string,
@@ -98,11 +121,13 @@ export class Client implements ClientInterface {
   }
 
   /**
-   * Executes each added callable rule once per call to this method.
+   * Executes all enabled rules and returns their results.
    *
-   * This function is meant to be scheduled or otherwise called
-   * by the client. It relies on a rule changing state using the anomaly
-   * library.
+   * This is the main entry point for running the validation logic, intended to
+   * be called by a scheduled trigger or a user action.
+   *
+   * @return A promise that resolves to an object containing the executed rules
+   *     and their corresponding results.
    */
   async validate() {
     type Executor = RuleExecutor<SearchAdsClientTypes>;
@@ -129,11 +154,11 @@ export class Client implements ClientInterface {
   }
 
   /**
-   * Adds a rule to be checked by `this.validate()`.
+   * Adds a new rule to the client's rule store.
    *
-   * These rules are called whenever `this.validate()` is called, and added to
-   * state.
-   *
+   * @param rule The rule class to add.
+   * @param settingsArray A 2D array of settings for this rule from the sheet.
+   * @return The client instance, for chaining.
    */
   addRule<Params extends Record<keyof Params, ParamDefinition>>(
     rule: RuleExecutorClass<SearchAdsClientTypes>,
@@ -145,12 +170,23 @@ export class Client implements ClientInterface {
 }
 
 /**
- * SA360 rule args splits.
+ * A concrete implementation of `AbstractRuleRange` tailored for SA360.
+ * It defines how to fetch entities (Campaigns or Ad Groups) for the settings
+ * sheets based on the rule's granularity.
  */
 export class RuleRange extends AbstractRuleRange<SearchAdsClientTypes> {
+  /**
+   * Returns an empty array as there is no additional metadata for SA360 rules.
+   */
   async getRuleMetadata() {
     return [];
   }
+  /**
+   * Fetches the rows of entities (Campaigns or Ad Groups) based on the rule's
+   * granularity.
+   * @param ruleGranularity The granularity to fetch.
+   * @return A promise that resolves to an array of entity records.
+   */
   async getRows(ruleGranularity: RuleGranularity) {
     if (ruleGranularity === RuleGranularity.CAMPAIGN) {
       return this.client.getAllCampaigns();

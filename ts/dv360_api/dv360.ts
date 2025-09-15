@@ -17,9 +17,9 @@
 
 /**
  * @fileoverview This file encapsulates core functionality for accessing the
- * DV360 API and working with its resources. Class names have been chosen to
- * mimic the 'fluent' approach adopted by typical Google Apps Script client
- * libraries (e.g. 'DisplayVideo.Advertisers.list()').
+ * Display & Video 360 API. It provides a set of classes that mimic the
+ * 'fluent' API design of official Google Apps Script services (e.g.,
+ * `DisplayVideo.Advertisers.list()`).
  */
 
 import { BaseApiClient } from './base';
@@ -42,28 +42,26 @@ const API_SCOPE: string = 'displayvideo';
 const API_VERSION: string = 'v3';
 
 /**
- * An abstract API client for the DV360 API that extends `BaseApiClient`.
- * Provides base CRUD operations that are used by other resource-specific
- * extension classes to manipulate specific API resources.
+ * An abstract client for the DV360 API that extends `BaseApiClient`. It provides
+ * base CRUD (Create, Read, Update, Delete) operations that are used by other
+ * resource-specific classes.
  */
 export abstract class DisplayVideoApiClient extends BaseApiClient {
-  /** Constructs an instance of `DisplayVideoApiClient`. */
+  /**
+   * @param resourceName The name of the API resource (e.g., 'advertisers').
+   */
   protected constructor(private readonly resourceName: string) {
     super(API_SCOPE, API_VERSION);
   }
 
   /**
-   * Retrieves all resources for the given 'requestUri' from the API, calling
-   * 'requestCallback' for every retrieved 'page' of data (i.e. this function
-   * has no return value).
+   * Lists resources from the API, handling pagination.
    *
-   * @param requestUri The URI of the request
-   * @param requestCallback The callback to trigger after fetching every 'page' of
-   *     results
-   * @param maxPages The max number of pages to fetch. Defaults to -1
-   *     indicating 'fetch all'
-   * @param requestParams Optional requestParams to
-   *     use for the request
+   * @param requestUris An array of request URIs.
+   * @param requestCallback A callback function to process the results from
+   *     each page.
+   * @param maxPages The maximum number of pages to fetch. Defaults to -1 (all).
+   * @param requestParams Optional parameters for the request.
    */
   listResources<T extends DisplayVideoResource>(
     requestUris: string[],
@@ -91,23 +89,21 @@ export abstract class DisplayVideoApiClient extends BaseApiClient {
   }
 
   /**
-   * Converts a resource object returned by the API into a concrete
-   * {@link DisplayVideoResource} instance.
+   * An abstract method to convert a generic API resource object into a
+   * concrete `DisplayVideoResource` instance.
    *
-   * @param resource The API resource object
-   * @return The concrete instance
+   * @param resource The raw API resource object.
+   * @return The concrete resource instance.
    */
   abstract asDisplayVideoResource(resource: {
     [key: string]: unknown;
   }): DisplayVideoResource;
 
   /**
-   * Retrieves a single resource from the API. All required information
-   * will already be provided within the given 'requestUri'.
+   * Retrieves a single resource from the API.
    *
-   * @param requestUri The URI of the GET request
-   * @return An object representing the retrieved API
-   *     resource
+   * @param requestUris An array of request URIs.
+   * @return The retrieved resource.
    */
   getResource(requestUris: string[]): DisplayVideoResource {
     return this.asDisplayVideoResource(
@@ -120,12 +116,11 @@ export abstract class DisplayVideoApiClient extends BaseApiClient {
   }
 
   /**
-   * Creates an instance of the given API resource, described by 'payload'.
+   * Creates a new API resource.
    *
-   * @param requestUri The URI of the POST request
-   * @param payload The representation of the resource
-   *     to create
-   * @return The created resource
+   * @param requestUris An array of request URIs.
+   * @param payload The resource object to create.
+   * @return The created resource.
    */
   createResource(
     requestUris: string[],
@@ -144,13 +139,11 @@ export abstract class DisplayVideoApiClient extends BaseApiClient {
   }
 
   /**
-   * Modifies an API resource. All required information will already be provided
-   * within the given 'requestUri'.
+   * Updates an existing API resource using a PATCH request.
    *
-   * @param requestUri The URI of the PATCH request
-   * @param payload The representation of the resource
-   *     to patch
-   * @return The updated resource
+   * @param requestUris An array of request URIs.
+   * @param payload The resource object with updated properties.
+   * @return The updated resource.
    */
   patchResource(
     requestUris: string[],
@@ -169,14 +162,13 @@ export abstract class DisplayVideoApiClient extends BaseApiClient {
   }
 
   /**
-   * Modifies the 'original' resource by identifing properties that have changed
-   * after comparing 'original' to its 'modified' counterpart.
+   * Compares an original resource with a modified one and patches only the
+   * changed properties.
    *
-   * @param requestUri The URI of the PATCH request
-   * @param original The original resource
-   * @param modified The modified resource
-   * @return An object representing the modified
-   *     resource
+   * @param requestUris An array of request URIs.
+   * @param original The original resource state.
+   * @param modified The modified resource state.
+   * @return The updated resource.
    */
   patchResourceByComparison(
     requestUris: string[],
@@ -198,10 +190,9 @@ export abstract class DisplayVideoApiClient extends BaseApiClient {
   }
 
   /**
-   * Deletes an instance of the given API resource. All required information
-   * will already be provided within the given 'requestUri'.
+   * Deletes an API resource.
    *
-   * @param requestUri The URI of the DELETE request
+   * @param requestUris An array of request URIs.
    */
   deleteResource(requestUris: string[]) {
     this.executeApiRequest(
@@ -212,8 +203,8 @@ export abstract class DisplayVideoApiClient extends BaseApiClient {
   }
 
   /**
-   * Returns the API resource name.
-   *
+   * Returns the API resource name (e.g., 'advertisers').
+   * @return The resource name.
    */
   getResourceName(): string {
     return this.resourceName;
@@ -1250,7 +1241,8 @@ export class AssignedTargetingOptions extends DisplayVideoApiClient {
 }
 
 /**
- * Returns a `FilterExpression` for active entities.
+ * Creates a `FilterExpression` to filter for entities with an 'ACTIVE' status.
+ * @return A `FilterExpression` object.
  */
 export function activeEntityFilter(): FilterExpression {
   return new FilterExpression([
@@ -1259,7 +1251,15 @@ export function activeEntityFilter(): FilterExpression {
 }
 
 /**
- * Builds a query string from the provided {@link ListParams}.
+ * Builds a URL query string from a `ListParams` object.
+ *
+ * @param params An object containing list parameters like 'filter',
+ *     'orderBy', and 'pageSize'.
+ * @param options An object for configuration options.
+ * @param options.prependStr The character to prepend to the string ('?' or
+ *     '&'). Defaults to '?'.
+ * @param options.defaults Default parameter values to merge.
+ * @return The formatted URL query string.
  */
 export function buildParamString(
   params?: ListParams,

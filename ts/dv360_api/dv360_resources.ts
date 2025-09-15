@@ -16,10 +16,9 @@
  */
 
 /**
- * @fileoverview This file encapsulates domain object representations for DV360
- * Resources that are accessible via the DV360 API. Static mappers are
- * implemented per domain object to ensure proper separation of concerns between
- * the library's domain objects and their expected API counterparts.
+ * @fileoverview This file defines the data models for various Display & Video
+ * 360 API resources. These classes act as domain objects, encapsulating the
+ * properties and logic associated with each resource type.
  */
 
 import {
@@ -63,16 +62,16 @@ import {
 } from './dv360_types';
 import { ObjectUtil } from './utils';
 
-/** A base class for DV360 resources that are accessible via the API. */
+/**
+ * A base class for all DV360 API resources, providing common properties and
+ * methods.
+ */
 export class DisplayVideoResource {
   /**
-   * Constructs an instance of `DisplayVideoResource`.
-   *
-   * @param id The unique resource ID. Should be null for resources
-   *     that are yet to be created by the API
-   * @param displayName The display name. Can be null for certain
-   *     resources
-   * @param status Optional status to set
+   * @param id The unique resource ID. This can be null for new resources that
+   *     haven't been created in the API yet.
+   * @param displayName The display name of the resource.
+   * @param status The entity status of the resource.
    */
   constructor(
     readonly id: string | null,
@@ -81,15 +80,12 @@ export class DisplayVideoResource {
   ) {}
 
   /**
-   * Compares this `DisplayVideoResource` to 'other' and returns an `Array` of
-   * changed mutable properties (ID for example is immutable and cannot be
-   * changed (it can only be "set" after an object has been created by the API),
-   * therefore this method will not compare it between 'this' and 'other').
-   * @see #getMutableProperties for a complete list of mutable properties.
+   * Compares this resource to another and returns an array of property names
+   * that have changed. This is used to construct the `updateMask` for PATCH
+   * requests.
    *
-   * @param other The other resource to compare
-   * @return An array of changed mutable properties between
-   *     this and 'other'
+   * @param other The other resource to compare against.
+   * @return An array of changed mutable property names.
    */
   getChangedProperties(other: DisplayVideoResource | null): string[] {
     const changedProperties = [];
@@ -108,21 +104,21 @@ export class DisplayVideoResource {
   }
 
   /**
-   * Compares this `DisplayVideoResource` to 'other' and returns a
-   * comma-separated string of changed mutable properties.
+   * Compares this resource to another and returns a comma-separated string of
+   * changed mutable properties, suitable for an `updateMask`.
    *
-   * @param other The other resource to compare
-   * @return A comma-separated string of changed mutable properties
-   *     between this and 'other'
+   * @param other The other resource to compare against.
+   * @return A comma-separated string of changed properties.
    */
   getChangedPropertiesString(other: DisplayVideoResource | null): string {
     return this.getChangedProperties(other).join(',');
   }
 
   /**
-   * Returns all properties of this `DisplayVideoResource` that are modifiable.
+   * Returns a list of all properties of this resource that are modifiable via
+   * the API.
    *
-   * @return An array of properties that are modifiable
+   * @return An array of mutable property names.
    */
   getMutableProperties(): string[] {
     return ['displayName', 'entityStatus'];

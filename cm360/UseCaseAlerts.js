@@ -1,10 +1,19 @@
 /**
- * Identifies and gets the Ghost Placements issues.
+ * @fileoverview This file contains the logic for identifying issues in CM360
+ * report data based on various "use cases". Each function corresponds to a
+ * specific use case and applies a set of rules to flag potential problems.
+ * It also includes helpers for retrieving use case configurations.
+ */
+
+/**
+ * Identifies issues related to "Ghost Placements" based on predefined rules.
+ * This function checks for specific advertiser/campaign naming conventions and
+ * conversion thresholds.
  *
- *  @param {obj} config - The config and params for this use case
- *  @param {list[list]} data - The data in the report.
- *
- *  @return {list[str]} issues - A list of issues in the data
+ * @param {!Object} config The configuration object for this use case.
+ * @param {!Array<!Array<string>>} data The report data as a 2D array.
+ * @return {{issues: !Array<!Array<string>>}} An object containing the rows
+ *     that were identified as issues.
  */
 function getGhostPlacementsAlerts(config, data) {
   let issues = [];
@@ -66,12 +75,13 @@ function getGhostPlacementsAlerts(config, data) {
 }
 
 /**
- * Identifies and gets the Default Ads Rate issues.
+ * Identifies placements where the rate of "Default Ads" exceeds a given
+ * threshold.
  *
- *  @param {obj} config - The config and params for this use case
- *  @param {list[list]} data - The data in the report.
- *
- *  @return {list[str]} issues - A list of issues in the data
+ * @param {!Object} config The configuration object for this use case.
+ * @param {!Array<!Array<string>>} data The report data as a 2D array.
+ * @return {{issues: !Array<!Array<string>>}} An object containing the rows
+ *     that were identified as issues.
  */
 function getDefaultAdsRateAlerts(config, data) {
   let placementsMap = {};
@@ -168,12 +178,15 @@ function getDefaultAdsRateAlerts(config, data) {
 }
 
 /**
- * Identifies and gets the Floodlight trends issues.
+ * Analyzes week-over-week trends in Floodlight impressions and flags
+ * significant variances.
  *
- *  @param {obj} config - The config and params for this use case
- *  @param {list[list]} dataReport1 - The data in the report1. TODO: CHANGE THIS!!!!!!!!!!!
- *
- *  @return {list[str]} issues - A list of issues in the data
+ * @param {!Object} config The configuration object for this use case.
+ * @param {!Array<!Array<string>>} data The report data as a 2D array.
+ * @return {{
+ *   issues: !Array<!Array<string>>,
+ *   data: !Array<!Array<string>>
+ * }} An object containing the identified issues and the filtered data.
  */
 function getFloodlightTrendsAlerts(config, data) {
   let issues = [];
@@ -310,12 +323,12 @@ function getFloodlightTrendsAlerts(config, data) {
 }
 
 /**
- * Determine whether the placement is from before last week, last week
- * or the current week.
+ * Determines if a given date string falls in the current week, last week, or
+ * the week before last.
  *
- *  @param {string} week - The week coming form the report
- *
- *  @return {str} weekLabel - The week label: weekBeforeLast, lastWeek, currentWeek
+ * @param {string} week The week string from the report (e.g., 'YYYY-MM-DD').
+ * @return {string} The week label: 'currentWeek', 'lastWeek', or
+ *     'weekBeforeLast'.
  */
 function ftDetermineWeekForPlacement(week) {
   const weekParts = week.split('-');
@@ -338,11 +351,17 @@ function ftDetermineWeekForPlacement(week) {
 }
 
 /**
- * Evaluates Floodlight Trends rule 1 and add adds the identified issues
+ * Evaluates the variance between two weeks of Floodlight impressions and adds
+ * an issue to the list if the variance exceeds the threshold.
  *
- *  @param {obj} config - The config and params for this use case
- *  @param {int} floodlightImpressionsWeekBefore - The total conversions from a week before the week being evaluated
- *  @param {int} floodlightImpressionsWeek - The total conversions from the week being evaluated
+ * @param {!Object} config The configuration object for the use case.
+ * @param {number} floodlightImpressionsWeekBefore The total impressions from
+ *     the prior week.
+ * @param {number} floodlightImpressionsWeek The total impressions from the
+ *     current week.
+ * @param {!Array<string>} row The data row being evaluated.
+ * @param {!Array<!Array<string>>} issues The array to which identified issues
+ *     will be added.
  */
 function ftEvaluateVarianceAndAddIssues(
   config,
@@ -375,12 +394,12 @@ function ftEvaluateVarianceAndAddIssues(
 }
 
 /**
- * Identifies and gets the Out out Flight Placement issues.
+ * Identifies placements that served impressions after their scheduled end date.
  *
- *  @param {obj} config - The config and params for this use case
- *  @param {list[list]} data - The data in the report.
- *
- *  @return {list[str]} issues - A list of issues in the data
+ * @param {!Object} config The configuration object for this use case.
+ * @param {!Array<!Array<string>>} data The report data as a 2D array.
+ * @return {{issues: !Array<!Array<string>>}} An object containing the rows
+ *     that were identified as issues.
  */
 function getOutOfFlightPlacementsAlerts(config, data) {
   let issues = [];
@@ -432,12 +451,13 @@ function getOutOfFlightPlacementsAlerts(config, data) {
 }
 
 /**
- * Identifies and gets the Tracking Ads issues.
+ * Identifies issues with Tracking Ads, such as when clicks are greater than
+ * impressions.
  *
- *  @param {obj} config - The config and params for this use case
- *  @param {list[list]} data - The data in the report.
- *
- *  @return {list[str]} issues - A list of issues in the data
+ * @param {!Object} config The configuration object for this use case.
+ * @param {!Array<!Array<string>>} data The report data as a 2D array.
+ * @return {{issues: !Array<!Array<string>>}} An object containing the rows
+ *     that were identified as issues.
  */
 function getTrackingAdsAlerts(config, data) {
   let issues = [];
@@ -482,12 +502,13 @@ function getTrackingAdsAlerts(config, data) {
 }
 
 /**
- * Identifies and gets the Default Landing Page issues.
+ * Identifies creatives that are using a default landing page (e.g.,
+ * 'http://google.com').
  *
- *  @param {obj} config - The config and params for this use case
- *  @param {list[list]} data - The data in the report.
- *
- *  @return {list[str]} issues - A list of issues in the data
+ * @param {!Object} config The configuration object for this use case.
+ * @param {!Array<!Array<string>>} data The report data as a 2D array.
+ * @return {{issues: !Array<!Array<string>>}} An object containing the rows
+ *     that were identified as issues.
  */
 function getDefaultLandingPageAlerts(config, data) {
   let issues = [];
@@ -518,7 +539,11 @@ function getDefaultLandingPageAlerts(config, data) {
 }
 
 /**
- * Gets Use Case configuration from the sheet and builds a config map
+ * Reads the 'Use Cases Config' sheet and builds a configuration map for all
+ * defined use cases.
+ *
+ * @return {!Object<string, !Object>} A map where keys are use case names and
+ *     values are their corresponding configuration objects.
  */
 function getUseCasesConfiguration() {
   const useCasesSheet = spreadsheet.getSheetByName(USE_CASES_CONFIG_SHEET_NAME);
@@ -549,11 +574,14 @@ function getUseCasesConfiguration() {
 }
 
 /**
- * Gets the rules by use case to apply alerts if a rule is met
+ * Returns a detailed configuration object for a specific use case. This
+ * includes rules, formatting info, and sorting preferences.
  *
- *  @param {string} useCase - The error Mitigation use case
- *  @param {float} useCaseThreshold - A threshold for a numeric rule - REVISIT THIS
- *
+ * @param {string} useCase The name of the use case.
+ * @param {number} useCaseThreshold The primary threshold value for the use
+ *     case, read from the config sheet.
+ * @return {?Object} The configuration object for the specified use case, or
+ *     null if not found.
  */
 function getOtherConfigsByUseCase(useCase, useCaseThreshold) {
   const config = {

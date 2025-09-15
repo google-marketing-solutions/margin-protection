@@ -20,16 +20,21 @@
  ***************************************************************************/
 
 /**
- * Writes data to a sheet and formats the sheet and data.
+ * @fileoverview This file provides a set of utility functions for interacting
+ * with Google Sheets. These functions handle tasks like writing data, creating
+ * and formatting sheets, clearing ranges, and applying conditional formatting.
+ */
+
+/**
+ * Writes data to a sheet, clears previous content, and applies formatting.
  *
- *  @param {string} sheetName - The name of the tab where the data will be added.
- *  @param {string} tabColor - The color for the tab.
- *  @param {int} startRow - The row where the data will be added.
- *  @param {int} startColumn - The column where the data will be added.
- *  @param {int} columnToResize - The starting column to auto-resize.
- *  @param {int} numColsToResize - The number of columns to auto-resize.
- *  @param {list[list]} data - The data to be added to the sheet.
- *
+ * @param {string} sheetName The name of the target sheet.
+ * @param {string} tabColor The hex color code for the sheet tab.
+ * @param {number} startRow The starting row index for writing data.
+ * @param {number} startColumn The starting column index for writing data.
+ * @param {number} columnToResize The starting column index to auto-resize.
+ * @param {number} numColsToResize The number of columns to auto-resize.
+ * @param {!Array<!Array<string>>} data The 2D array of data to write.
  */
 function addDataToSheet(
   sheetName,
@@ -52,12 +57,12 @@ function addDataToSheet(
 }
 
 /**
- * Writes the specified data to the specified sheet.
+ * Writes a 2D array of data to a specified sheet and range.
  *
- *  @param {string} sheetName - The name of the tab where the data will be added.
- *  @param {int} startRow - The row where the data will be added.
- *  @param {int} startColumn - The column where the data will be added.
- *  @param {list[list]} data - The data to be added to the sheet.
+ * @param {string} sheetName The name of the target sheet.
+ * @param {number} startRow The starting row index.
+ * @param {number} startColumn The starting column index.
+ * @param {!Array<!Array<string>>} data The 2D array of data to write.
  */
 function writeData(sheetName, startRow, startColumn, data) {
   let sheet = spreadsheet.getSheetByName(sheetName);
@@ -67,11 +72,11 @@ function writeData(sheetName, startRow, startColumn, data) {
 }
 
 /**
- * Clears the sheet range.
+ * Clears all content from a sheet starting at a specified cell.
  *
- *  @param {string} sheetName - The name of the tab where the data will be added.
- *  @param {int} startRow - The row where the data will be added.
- *  @param {int} startColumn - The column where the data will be added.
+ * @param {string} sheetName The name of the sheet to clear.
+ * @param {number} startRow The starting row index to begin clearing.
+ * @param {number} startColumn The starting column index to begin clearing.
  */
 function clearSheetRange(sheetName, startRow, startColumn) {
   let sheet = spreadsheet.getSheetByName(sheetName);
@@ -86,9 +91,9 @@ function clearSheetRange(sheetName, startRow, startColumn) {
 }
 
 /**
- * Inserts a new sheet with the specified name if it does not exist.
+ * Inserts a new sheet with the specified name if it does not already exist.
  *
- * @param {string} sheetName - The name of the tab where the data will be added.
+ * @param {string} sheetName The name of the sheet to insert.
  */
 function insertSheet(sheetName) {
   const sheet = spreadsheet.getSheetByName(sheetName);
@@ -100,13 +105,12 @@ function insertSheet(sheetName) {
 }
 
 /**
- * Adds conditional formatting to a sheet using the TextEqualTo function.
+ * Adds conditional formatting rules to a sheet based on text values.
  *
- *  @param {string} sheetName - The name of the tab where the data will be added.
- *  @param {string} rangeToFormat - The range to format in A1 notation.
- *  @param {string} flagValue - The value that the condition has to meet to add apply the format.
- *  @param {string} color - The color to be applied if the condition is met.
- *
+ * @param {string} sheetName The name of the target sheet.
+ * @param {string} rangeToFormat The range in A1 notation to apply formatting.
+ * @param {!Array<{ruleType: string, color: string}>} alertRules An array of
+ *     objects, each defining a text value and a background color.
  */
 function addConditionalFormattingToSheet(sheetName, rangeToFormat, alertRules) {
   let sheet = spreadsheet.getSheetByName(sheetName);
@@ -125,12 +129,13 @@ function addConditionalFormattingToSheet(sheetName, rangeToFormat, alertRules) {
 }
 
 /**
- * Formats the sheet by adding colors and frozer rows
+ * Applies basic formatting to a sheet, such as freezing rows and setting tab
+ * color.
  *
- *  @param {string} sheetName - The name of the tab where the data will be added.
- *  @param {string} tabColor - The color for the tab.
- *  @param {int} columnToResize - The starting column to auto-resize.
- *  @param {int} numColsToResize - The number of columns to auto-resize.
+ * @param {string} sheetName The name of the target sheet.
+ * @param {string} tabColor The hex color code for the sheet tab.
+ * @param {?number} columnToResize The starting column to auto-resize.
+ * @param {?number} numColsToResize The number of columns to auto-resize.
  */
 function formatSheet(sheetName, tabColor, columnToResize, numColsToResize) {
   let sheet = spreadsheet.getSheetByName(sheetName);
@@ -142,11 +147,13 @@ function formatSheet(sheetName, tabColor, columnToResize, numColsToResize) {
 }
 
 /**
- * Formats the data in the sheet by header colors and row banding
+ * Formats a data table within a sheet, including header styling and row
+ * banding.
  *
- *  @param {string} sheetName - The name of the tab where the data will be added.
- *  @param {string} headersColor - The color of the header.
- *  @param {list[list]} data - The data to be added to the sheet.
+ * @param {string} sheetName The name of the target sheet.
+ * @param {string} headersColor The hex color code for the header background.
+ * @param {!Array<!Array<string>>} data The 2D data array, used to determine
+ *     range.
  */
 function formatTableInSheet(sheetName, headersColor, data) {
   const headers = data[0];
@@ -168,12 +175,11 @@ function formatTableInSheet(sheetName, headersColor, data) {
 }
 
 /**
- * Sorts the data table by the specified list of columns
- * Ascending order by default
+ * Sorts a data range in a sheet by one or more columns in ascending order.
  *
- *  @param {string} sheetName - The name of the tab where the data will be added.
- *  @param {list} sortByColumns - A list of columns to sort by
- *  @param {string} rangeToSort - The range in the table to sort
+ * @param {string} sheetName The name of the target sheet.
+ * @param {string} rangeToSort The range to sort in A1 notation.
+ * @param {!Array<number>} sortByColumns An array of column indexes to sort by.
  */
 function shortTableByColumns(sheetName, rangeToSort, sortByColumns) {
   const sheet = spreadsheet.getSheetByName(sheetName);
@@ -184,10 +190,11 @@ function shortTableByColumns(sheetName, rangeToSort, sortByColumns) {
 }
 
 /**
- * Creates a filter in the table containing the report data
+ * Creates a filter for a data range if one does not already exist.
  *
- *  @param {string} sheetName - The name of the tab where the data will be added.
- *  @param {string} rangeToSort - The range in the table to create the filter on
+ * @param {string} sheetName The name of the target sheet.
+ * @param {string} rangeToFilter The range to apply the filter to in A1
+ *     notation.
  */
 function createFilterForTable(sheetName, rangeToFilter) {
   const sheet = spreadsheet.getSheetByName(sheetName);

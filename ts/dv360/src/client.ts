@@ -16,7 +16,10 @@
  */
 
 /**
- * @fileoverview Client class for DV360.
+ * @fileoverview This file defines the main `Client` class for the DV360 Launch
+ * Monitor. This class acts as a high-level wrapper around the DV360 API,
+ * providing a simplified interface for fetching data, managing rules, and
+ * executing validation logic.
  */
 
 import {
@@ -61,7 +64,7 @@ import {
 } from './types';
 
 /**
- * A new rule in SA360.
+ * A pre-configured `newRuleBuilder` for creating rules specific to DV360.
  */
 export const newRule = newRuleBuilder<DisplayVideoClientTypes>() as <
   P extends DefinedParameters<P>,
@@ -70,16 +73,9 @@ export const newRule = newRuleBuilder<DisplayVideoClientTypes>() as <
 ) => RuleExecutorClass<DisplayVideoClientTypes>;
 
 /**
- * Contains a `RuleContainer` along with information to instantiate it.
- *
- * This interface enables type integrity between a rule and its args.
- *
- * This is not directly callable. Use {@link newRule} to generate a
- * {@link RuleExecutorClass}.
- *
- * @param Params a key/value pair where the key is the function parameter name
- *   and the value is the human-readable name. The latter can include spaces and
- *   special characters.
+ * Defines an entry in the rule store, containing the rule's class constructor
+ * and its settings.
+ * @template Params The parameter definitions for the rule.
  */
 export interface RuleStoreEntry<
   Params extends Record<
@@ -88,23 +84,20 @@ export interface RuleStoreEntry<
   >,
 > {
   /**
-   * Contains a rule's metadata.
+   * The constructor for the rule executor class.
    */
   rule: RuleExecutorClass<DisplayVideoClientTypes, Params>;
 
   /**
-   * Content in the form of {advertiserId: {paramKey: paramValue}}.
-   *
-   * This is the information that is passed into a `Rule` on instantiation.
+   * The settings for the rule, indexed by entity ID.
    */
   args: Settings<Params>;
 }
 
 /**
- * Wrapper client around the DV360 API for testability and efficiency.
- *
- * Rather than call APIs directly, it's better to use the methods that lazy-load
- * requests, like {@link getAllInsertionOrders}.
+ * A high-level client for the DV360 API that simplifies fetching data,
+ * managing rules, and executing validation logic. It provides caching and
+ * lazy-loading for API requests to improve efficiency.
  */
 export class Client implements ClientInterface {
   private storedInsertionOrders: { [id: string]: InsertionOrder } = {};
@@ -120,6 +113,12 @@ export class Client implements ClientInterface {
     [ruleName: string]: RuleExecutor<DisplayVideoClientTypes>;
   };
 
+  /**
+   * Adds a new rule to the client's rule store.
+   * @param rule The rule class to add.
+   * @param settingsArray A 2D array of settings for this rule from the sheet.
+   * @return The client instance, for chaining.
+   */
   addRule<Params extends Record<keyof Params, ParamDefinition>>(
     rule: RuleExecutorClass<DisplayVideoClientTypes>,
     settingsArray: ReadonlyArray<string[]>,
@@ -128,6 +127,11 @@ export class Client implements ClientInterface {
     return this;
   }
 
+  /**
+   * @param args The client arguments, specifying the partner/advertiser ID.
+   * @param properties A `PropertyStore` instance for caching.
+   * @param dao A `DataAccessObject` for accessing API and report classes.
+   */
   constructor(
     args: Omit<ClientArgs, 'idType' | 'id'> & { advertiserId: string },
     properties: PropertyStore,
@@ -163,15 +167,23 @@ export class Client implements ClientInterface {
     this.ruleStore = {};
   }
 
+  /**
+   * Retrieves a rule executor instance from the store by its name.
+   * @param ruleName The name of the rule to get.
+   * @return The rule executor instance.
+   */
   getRule(ruleName: string) {
     return this.ruleStore[ruleName];
   }
 
   /**
-   * Executes each added callable rule once per call to this method.
+   * Executes all enabled rules and returns their results.
    *
-   * This function is meant to be scheduled or otherwise called
-   * by the client.
+   * This is the main entry point for running the validation logic, intended to
+   * be called by a scheduled trigger or a user action.
+   *
+   * @return A promise that resolves to an object containing the executed rules
+   *     and their corresponding results.
    */
   async validate() {
     type Executor = RuleExecutor<DisplayVideoClientTypes>;
@@ -197,6 +209,11 @@ export class Client implements ClientInterface {
     return { rules, results };
   }
 
+  /**
+   * Fetches all line items for the configured partner or advertiser, caching
+   * the results.
+   * @return A promise that resolves to a record of line items, indexed by ID.
+   */
   async getAllLineItems(): Promise<{ [id: string]: LineItem }> {
     function entries(io: LineItem) {
       return [io.id, io] satisfies [id: string, resource: LineItem];
@@ -223,6 +240,11 @@ export class Client implements ClientInterface {
     return this.storedLineItems;
   }
 
+  /**
+   * Fetches all insertion orders for the configured partner or advertiser,
+   * caching the results.
+   * @return A record of insertion orders, indexed by ID.
+   */
   getAllInsertionOrders(): { [id: string]: InsertionOrder } {
     function entries(io: InsertionOrder) {
       return [io.id, io] satisfies [id: string, resource: InsertionOrder];
@@ -248,6 +270,11 @@ export class Client implements ClientInterface {
     return this.storedInsertionOrders;
   }
 
+  /**
+   * Fetches all campaigns for the configured partner or advertiser, caching the
+   * results.
+   * @return A promise that resolves to an array of campaign records.
+   */
   async getAllCampaigns(): Promise<RecordInfo[]> {
     if (!this.storedCampaigns.length) {
       const campaignsWithSegments = Object.values(
@@ -279,6 +306,10 @@ export class Client implements ClientInterface {
     return this.storedCampaigns;
   }
 
+  /**
+   * Fetches all advertisers for the configured partner, caching the results.
+   * @return An array of advertiser records.
+   */
   getAllAdvertisersForPartner(): Array<{
     advertiserId: string;
     advertiserName: string;
@@ -311,6 +342,11 @@ export class Client implements ClientInterface {
     return result;
   }
 
+  /**
+   * Fetches all line items for a given list of advertisers.
+   * @param advertiserIds An array of advertiser IDs.
+   * @return An array of line item objects.
+   */
   getAllLineItemsForAdvertisers(advertiserIds: string[]): LineItem[] {
     let result: LineItem[] = [];
     const lineItemApi = new this.dao.accessors.lineItems(advertiserIds);
@@ -320,6 +356,11 @@ export class Client implements ClientInterface {
     return result;
   }
 
+  /**
+   * Fetches all active insertion orders for a given list of advertisers.
+   * @param advertisers An array of advertiser IDs.
+   * @return An array of insertion order objects.
+   */
   getAllInsertionOrdersForAdvertisers(advertisers: string[]): InsertionOrder[] {
     let result: InsertionOrder[] = [];
     const todayDate = new Date();
@@ -342,6 +383,11 @@ export class Client implements ClientInterface {
     return result;
   }
 
+  /**
+   * Fetches all campaigns for a given map of advertisers.
+   * @param advertisers A record mapping advertiser IDs to advertiser names.
+   * @return An array of campaign records.
+   */
   getAllCampaignsForAdvertisers(advertisers: {
     [advertiserId: string]: string;
   }): RecordInfo[] {
@@ -370,6 +416,11 @@ export class Client implements ClientInterface {
     return result;
   }
 
+  /**
+   * Gets an instance of the `BudgetReport` DAO.
+   * @param params The start and end dates for the report.
+   * @return A `BudgetReport` instance.
+   */
   getBudgetReport({
     startDate,
     endDate,
@@ -388,6 +439,11 @@ export class Client implements ClientInterface {
     return this.savedBudgetReport;
   }
 
+  /**
+   * Gets an instance of the `LineItemBudgetReport` DAO.
+   * @param params The start and end dates for the report.
+   * @return A `LineItemBudgetReport` instance.
+   */
   getLineItemBudgetReport({
     startDate,
     endDate,
@@ -407,12 +463,22 @@ export class Client implements ClientInterface {
     return this.savedLineItemBudgetReport;
   }
 
+  /**
+   * Generates a unique key for caching or property storage.
+   * @param prefix The prefix for the key.
+   * @return A unique key string.
+   */
   getUniqueKey(prefix: string) {
     return `${prefix}-${this.args.idType === IDType.PARTNER ? 'P' : 'A'}${
       this.args.id
     }`;
   }
 
+  /**
+   * Builds and returns a map of campaign IDs to their record info.
+   * @return A promise that resolves to an object containing the campaign map
+   *     and a boolean indicating if advertiser names are present.
+   */
   async getCampaignMap(): Promise<{
     campaignMap: Record<string, RecordInfo>;
     hasAdvertiserName: boolean;
@@ -433,7 +499,9 @@ export class Client implements ClientInterface {
 }
 
 /**
- * Converts a {@link RawApiDate} to a {@link Date}.
+ * Converts a `RawApiDate` object from the API into a standard JavaScript `Date`.
+ * @param rawApiDate The raw date object from the API.
+ * @return A `Date` object.
  */
 export function getDate(rawApiDate: RawApiDate): Date {
   return new Date(rawApiDate.year, rawApiDate.month - 1, rawApiDate.day);

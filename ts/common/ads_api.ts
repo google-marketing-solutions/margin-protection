@@ -16,7 +16,9 @@
  */
 
 /**
- * @fileoverview DAO for the Google Ads API and SA360 API
+ * @fileoverview This file provides a Data Access Object (DAO) for interacting
+ * with the Google Ads and SA360 APIs. It includes classes for managing API
+ * credentials, creating API clients, and building and executing reports.
  */
 
 import * as AdTypes from './ads_api_types';
@@ -70,11 +72,16 @@ export const SA360_API_ENDPOINT = {
 };
 
 /**
- * Caching factory for Ads API instantiation.
+ * A factory class that creates and caches instances of `GoogleAdsApi`.
+ * This prevents re-instantiating the API client for the same login customer ID.
  */
 export class GoogleAdsApiFactory {
   private readonly cache = new Map<string, GoogleAdsApi>();
 
+  /**
+   * @param factoryArgs The arguments required to create a `GoogleAdsApi`
+   *     instance.
+   */
   constructor(
     private readonly factoryArgs: {
       developerToken: string;
@@ -83,6 +90,11 @@ export class GoogleAdsApiFactory {
     },
   ) {}
 
+  /**
+   * Creates a new `GoogleAdsApi` instance or returns a cached one.
+   * @param loginCustomerId The login customer ID to use for the API calls.
+   * @return A `GoogleAdsApi` instance.
+   */
   create(loginCustomerId: string) {
     let api = this.cache.get(loginCustomerId);
     if (!api) {
@@ -99,11 +111,17 @@ export class GoogleAdsApiFactory {
 }
 
 /**
- * Manages access token generation.
+ * Manages OAuth2 access tokens for API requests.
+ * It fetches a token using `ScriptApp.getOAuthToken()` and caches it for the
+ * duration of the script execution.
  */
 export class CredentialManager {
   private token?: string;
 
+  /**
+   * Retrieves the cached OAuth2 token or fetches a new one.
+   * @return The OAuth2 access token.
+   */
   getToken(): string {
     // Access tokens will always outlive an Apps Script invocation
     if (!this.token) {
@@ -114,9 +132,13 @@ export class CredentialManager {
 }
 
 /**
- * Ads API client
+ * A client for making requests to the Google Ads API.
+ * It handles query construction, request headers, and multi-account querying.
  */
 export class GoogleAdsApi implements AdTypes.GoogleAdsApiInterface {
+  /**
+   * @param apiInstructions The configuration required for API requests.
+   */
   constructor(
     private readonly apiInstructions: {
       developerToken: string;
@@ -126,10 +148,19 @@ export class GoogleAdsApi implements AdTypes.GoogleAdsApiInterface {
     },
   ) {}
 
+  /**
+   * Returns the login customer ID used by this API client instance.
+   * @return The login customer ID.
+   */
   getLoginCustomerId() {
     return this.apiInstructions.loginCustomerId;
   }
 
+  /**
+   * Constructs the required HTTP headers for an Ads API request.
+   * @return The request headers.
+   * @private
+   */
   private requestHeaders() {
     const token = this.apiInstructions.credentialManager.getToken();
     return {
@@ -143,6 +174,13 @@ export class GoogleAdsApi implements AdTypes.GoogleAdsApiInterface {
     };
   }
 
+  /**
+   * Executes a query against one or more customer accounts.
+   * @param customerIds An array of customer IDs to query.
+   * @param query The query builder object.
+   * @param queryWheres Additional WHERE clauses to append to the query.
+   * @yields The report response rows from the API.
+   */
   *query<
     Q extends AdTypes.QueryBuilder<AdTypes.Query<Params>>,
     Params extends string = Q['queryParams'][number],
@@ -158,7 +196,11 @@ export class GoogleAdsApi implements AdTypes.GoogleAdsApiInterface {
   }
 
   /**
-   * Handles the actual work for the query conversion to AQL, then executes.
+   * Handles the core logic of converting a query to Ads Query Language (AQL),
+   * executing it via `UrlFetchApp.fetchAll`, and handling pagination.
+   * @param params The parameters for the query execution.
+   * @yields The report response rows from the API.
+   * @private
    */
   *queryOne<
     Q extends AdTypes.QueryBuilder<AdTypes.Query<Params>>,
@@ -222,7 +264,10 @@ export class GoogleAdsApi implements AdTypes.GoogleAdsApiInterface {
   }
 
   /**
-   * A thin wrapper around {@link qlifyQuery} for testing.
+   * A thin wrapper around {@link qlifyQuery} for testing purposes.
+   * @param query The query builder object.
+   * @param queryWheres Additional WHERE clauses.
+   * @return The formatted AQL query string.
    */
   qlifyQuery<
     Q extends AdTypes.QueryBuilder<AdTypes.Query<Params>>,
@@ -233,7 +278,12 @@ export class GoogleAdsApi implements AdTypes.GoogleAdsApiInterface {
 }
 
 /**
- * Base class for all report types.
+ * An abstract base class for defining specific report types.
+ * It provides the core logic for fetching data, handling joins, and
+ * transforming the results.
+ * @template Q The query builder type.
+ * @template Output The output field names.
+ * @template Params The query parameter names.
  */
 export abstract class Report<
   Q extends AdTypes.QueryBuilder<AdTypes.Query<Params>>,
@@ -241,6 +291,13 @@ export abstract class Report<
   Params extends string = Q['queryParams'][number],
 > implements AdTypes.ReportInterface<Q, Output>
 {
+  /**
+   * @param api An instance of the Google Ads API client.
+   * @param clientIds An array of customer IDs to query.
+   * @param clientArgs The client arguments.
+   * @param query The query builder object for this report.
+   * @param factory An instance of the ReportFactory.
+   */
   constructor(
     protected readonly api: AdTypes.GoogleAdsApiInterface,
     protected readonly clientIds: string[],
@@ -250,22 +307,21 @@ export abstract class Report<
   ) {}
 
   /**
-   * Iteratively retrieves query results and returns them as a generator.
-   * @param queryWheres An array of filters to place into the WHERE clause
-   *   of an AQL query.
+   * A generator that iteratively retrieves query results.
+   * @param queryWheres An array of filters to append to the WHERE clause.
+   * @yields The report response rows.
+   * @private
    */
   private *mapIterators(queryWheres: string[] = []) {
     yield* this.api.query<Q>(this.clientIds, this.query, queryWheres);
   }
 
   /**
-   * Converts a raw nested API response into its corresponding flat output.
-   *
-   * {
-   *    campaign: {
-   *      id: 1
-   *    }
-   * }
+   * Fetches the report data, processes any joins, and transforms the results
+   * into a flat key-value record.
+   * @param queryWheres An array of filters to append to the WHERE clause.
+   * @return A record where keys are the primary entity's ID and values are
+   *     records of the fetched data.
    */
   fetch(queryWheres: string[] = []): Record<string, Record<Output, string>> {
     const results = this.api.query<Q>(this.clientIds, this.query, queryWheres);
@@ -306,6 +362,13 @@ export abstract class Report<
     return Object.fromEntries(this.unpackResults(resultsHolder, joins));
   }
 
+  /**
+   * Unpacks the results from the iterator and applies the transform function.
+   * @param resultsHolder The iterator or array of report responses.
+   * @param joins The dictionary of joined data.
+   * @return An array of transformed key-value pairs.
+   * @private
+   */
   private unpackResults(
     resultsHolder:
       | IterableIterator<AdTypes.ReportResponse<Q>>
@@ -339,9 +402,15 @@ export abstract class Report<
   }
 
   /**
-   * Fetches the data in a join.
-   *
-   * This allows the parent query to leverage join data in a transform.
+   * Fetches the data for a single join defined in the query.
+   * This allows the parent query to leverage the joined data in its transform
+   * function.
+   * @param joinKey The key identifying the join.
+   * @param joinClass The report class for the entity being joined.
+   * @param joinMatchKeys The foreign key values from the parent query to use
+   *     for the join.
+   * @return A tuple containing the join key and the fetched join data.
+   * @private
    */
   private joinMergeFunction([joinKey, [joinClass, joinMatchKeys]]): [
     JoinKey<Q['joins']>,
@@ -358,6 +427,12 @@ export abstract class Report<
     ];
   }
 
+  /**
+   * Abstract method to transform a single row of the report response into a
+   * key-value pair.
+   * @param result A single row from the API response.
+   * @param joins A dictionary of joined data, if applicable.
+   */
   abstract transform(
     result: AdTypes.ReportResponse<Q>,
     joins: Record<
@@ -378,6 +453,12 @@ export abstract class Report<
     record: Record<AdTypes.ArrayToUnion<Output[]>, string>,
   ];
 
+  /**
+   * Abstract method to transform a single row of the report response into a
+   * key-value pair.
+   * @param result A single row from the API response.
+   * @param joins A dictionary of joined data, if applicable.
+   */
   abstract transform(
     result: AdTypes.ReportResponse<Q>,
   ): readonly [
@@ -385,6 +466,12 @@ export abstract class Report<
     record: Record<AdTypes.ArrayToUnion<Output[]>, string>,
   ];
 
+  /**
+   * Abstract method to transform a single row of the report response into a
+   * key-value pair.
+   * @param result A single row from the API response.
+   * @param joins A dictionary of joined data, if applicable.
+   */
   abstract transform(
     result: AdTypes.ReportResponse<Q>,
     joins: Q['joins'] extends undefined
@@ -410,11 +497,14 @@ export abstract class Report<
   ];
 
   /**
-   * Prefetches any join values.
-   *
-   * This gets called when a join is requested so that the data can be populated
-   * in the Report object. We use this instead of lazy loading because we depend on
-   * the data immediately.
+   * Prefetches data for all joins defined in the query.
+   * This method iterates through the initial results to collect all foreign
+   * keys needed for the joins, then fetches the join data in a batch.
+   * @param results The initial report response iterator.
+   * @param joins The join definitions from the query.
+   * @return A tuple containing the buffered initial results and a map of the
+   *     prefetched join data.
+   * @protected
    */
   protected prefetchForJoins(
     results: IterableIterator<AdTypes.ReportResponse<Q>>,
@@ -464,26 +554,30 @@ export abstract class Report<
 }
 
 /**
- * Creates report instances as necessary.async (params:type) => {
- *
- * Injects the API and other dependencies while calling the primary query.
+ * A factory for creating report instances.
+ * It injects the necessary dependencies like the API client and handles the
+ * logic for expanding manager accounts into a list of leaf accounts.
  */
 export class ReportFactory implements AdTypes.ReportFactoryInterface {
   /**
-   * A list of CID leafs mapped to their parents.
+   * A cache of leaf account IDs mapped to their root manager account.
+   * @private
    */
   private readonly leafToRoot = new Set<string>();
 
+  /**
+   * @param apiFactory An instance of GoogleAdsApiFactory.
+   * @param clientArgs The client arguments containing customer IDs.
+   */
   constructor(
     protected readonly apiFactory: GoogleAdsApiFactory,
     protected readonly clientArgs: AdTypes.AdsClientArgs,
   ) {}
 
   /**
-   * Creates a report.
-   *
-   * Type-safe to a child of {@GoogleAdsFormat} and the Google Ads returned
-   * report format ({@link ReportResponse}).
+   * Creates an instance of a specified report class.
+   * @param reportClass The report class to instantiate.
+   * @return An instance of the requested report class.
    */
   create<
     Q extends AdTypes.QueryBuilder<AdTypes.Query<Params>>,
@@ -516,7 +610,10 @@ export class ReportFactory implements AdTypes.ReportFactoryInterface {
   }
 
   /**
-   * Returns all leaf account IDs for the initial login account map.
+   * Returns a list of all leaf account IDs under the initial manager account(s).
+   * It traverses the account hierarchy to find all serving, non-manager
+   * accounts.
+   * @return An array of leaf account customer IDs.
    */
   leafAccounts(): string[] {
     if (!this.leafToRoot.size) {
@@ -555,18 +652,21 @@ export class ReportFactory implements AdTypes.ReportFactoryInterface {
 }
 
 /**
- * Creates a report class with generics preset.
- *
- * This is useful for making reports without having to write a new
- * report class.
- *
- * The {@link ReportClass} that's returned is allows you to link to
- * {@link Report#fetch} data from the API.
+ * A factory function that creates a new `Report` class definition dynamically.
+ * This is useful for creating simple, one-off reports without the boilerplate
+ * of defining a new class.
  *
  * @example
- *   // handled transparently by the Client.
- *   const reportClass = makeReport(args, query, transform)
- *   client.getReport(reportClass).fetch();
+ *   const MyReport = makeReport({
+ *     output: ['campaign.id', 'campaign.name'],
+ *     query: buildQuery({...}),
+ *     transform: (row) => [row.campaign.id, { 'id': row.campaign.id, ... }],
+ *   });
+ *   const reportInstance = client.getReport(MyReport);
+ *   reportInstance.fetch();
+ *
+ * @param args The report definition arguments.
+ * @return A new class that extends `Report`.
  */
 export function makeReport<
   Q extends AdTypes.QueryBuilder<AdTypes.Query<Params>>,
@@ -609,7 +709,11 @@ export function makeReport<
 }
 
 /**
- * Turn a {@link AdTypes.QueryBuilder<Params, any>} into an AdsQL string.
+ * Converts a query builder object into a valid Ads Query Language (AQL) string.
+ *
+ * @param query The query builder object.
+ * @param queryWheres An array of additional `WHERE` clauses to append.
+ * @return The complete AQL query string.
  */
 export function qlifyQuery<
   Q extends AdTypes.QueryBuilder<AdTypes.Query<Params>>,
@@ -621,6 +725,14 @@ export function qlifyQuery<
   return `${aql}${wheres}`;
 }
 
+/**
+ * Splits a comma-separated string of customer IDs into an array and validates
+ * that each ID contains only digits.
+ * @param customerIdsStr The comma-separated string of customer IDs.
+ * @return An array of validated customer ID strings.
+ * @throws If any customer ID is invalid.
+ * @private
+ */
 function splitCids(customerIdsStr: string) {
   const customerIds = customerIdsStr.replace(/- /, '').split(',');
   if (customerIds.some((cid) => !cid.match(/^\d+$/))) {
@@ -634,7 +746,7 @@ function splitCids(customerIdsStr: string) {
 }
 
 /**
- * Retrieves leaf accounts from a given CID.
+ * A predefined report for retrieving all leaf accounts under a manager account.
  */
 export const GET_LEAF_ACCOUNTS_REPORT = makeReport({
   output: ['customerId', 'customerName', 'customerStatus'],

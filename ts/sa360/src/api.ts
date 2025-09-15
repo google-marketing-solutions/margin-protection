@@ -16,16 +16,18 @@
  */
 
 /**
- * @fileoverview DAO for the SA360 Reporting API
+ * @fileoverview This file defines the specific report structures for the SA360
+ * Launch Monitor. It leverages the generic `makeReport` factory function from
+ * the `common/ads_api` module to create several pre-defined report
+ * configurations.
  */
 
 import { makeReport } from 'common/ads_api';
 import { buildQuery } from 'common/ads_api_types';
 
 /**
- * SA360 campaign-based report.
- *
- * Exposed for testing.
+ * A report that fetches basic information about campaigns, including their
+ * status and customer details.
  */
 export const CAMPAIGN_REPORT = makeReport({
   output: [
@@ -61,9 +63,8 @@ export const CAMPAIGN_REPORT = makeReport({
 });
 
 /**
- * SA360 Ad group-based report.
- *
- * Exposed for testing.
+ * A report that fetches basic information about ad groups, including their
+ * status and associated campaign and customer details.
  */
 export const AD_GROUP_REPORT = makeReport({
   output: [
@@ -101,9 +102,8 @@ export const AD_GROUP_REPORT = makeReport({
 });
 
 /**
- * Geo target report.
- *
- * Exposed for testing.
+ * A report that fetches details about geographic target constants, such as
+ * their canonical name and country code.
  */
 export const GEO_TARGET_REPORT = makeReport({
   output: ['location'],
@@ -128,9 +128,9 @@ export const GEO_TARGET_REPORT = makeReport({
 });
 
 /**
- * Campaign target report columns.
- *
- * Exposed for testing.
+ * A report that fetches location targeting information at the campaign level.
+ * It joins with the `GEO_TARGET_REPORT` to resolve the location's canonical
+ * name.
  */
 export const CAMPAIGN_TARGET_REPORT = makeReport({
   output: [
@@ -170,9 +170,8 @@ export const CAMPAIGN_TARGET_REPORT = makeReport({
 });
 
 /**
- * Age target report.
- *
- * Exposed for testing.
+ * A report that fetches age range targeting information from the
+ * `age_range_view`.
  */
 export const AGE_TARGET_REPORT = makeReport({
   output: [
@@ -211,9 +210,7 @@ export const AGE_TARGET_REPORT = makeReport({
 });
 
 /**
- * Gender target report.
- *
- * Exposed for testing.
+ * A report that fetches gender targeting information from the `gender_view`.
  */
 export const GENDER_TARGET_REPORT = makeReport({
   output: [
@@ -252,9 +249,8 @@ export const GENDER_TARGET_REPORT = makeReport({
 });
 
 /**
- * User list report.
- *
- * Exposed for testing.
+ * A report that fetches details about user lists, including their name and
+ * type.
  */
 export const USER_LIST_REPORT = makeReport({
   output: ['userListName', 'userListType'],
@@ -279,9 +275,9 @@ export const USER_LIST_REPORT = makeReport({
 });
 
 /**
- * Campaign audience user list report.
- *
- * Exposed for testing.
+ * A report that fetches user list (audience) targeting information at the
+ * campaign level. It joins with the `USER_LIST_REPORT` to resolve the user
+ * list's name.
  */
 export const CAMPAIGN_USER_LIST_REPORT = makeReport({
   output: [
@@ -326,9 +322,9 @@ export const CAMPAIGN_USER_LIST_REPORT = makeReport({
 });
 
 /**
- * Ad group audience user list report columns.
- *
- * Exposed for testing.
+ * A report that fetches user list (audience) targeting information at the ad
+ * group level. It joins with the `USER_LIST_REPORT` to resolve the user list's
+ * name.
  */
 export const AD_GROUP_USER_LIST_REPORT = makeReport({
   output: [
@@ -376,7 +372,8 @@ export const AD_GROUP_USER_LIST_REPORT = makeReport({
 });
 
 /**
- * A pacing report to check spend vs budgeting.
+ * A report that fetches campaign performance metrics, specifically focusing on
+ * budget and spend (`cost_micros`).
  */
 export const CAMPAIGN_PACING_REPORT = makeReport({
   output: ['campaignId', 'campaignName', 'budget', 'spend'],

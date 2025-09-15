@@ -19,16 +19,20 @@
  *
  ***************************************************************************/
 
+/**
+ * @fileoverview This script is the main entry point for the CM360 Launch
+ * Monitor. It reads configuration from a Google Sheet, fetches and analyzes
+ * CM360 report data based on defined use cases, flags issues, and sends email
+ * notifications.
+ */
+
 let spreadsheet = SpreadsheetApp.getActiveSpreadsheet();
 
 /**
- * Runs the main logic to download CM360 reporting data and identifies
- * Tracking Ads issues based on the rules below:
- * Rule 1: clicks > impressions
- *
- * If isues are found:
- * 1. Visual alerts will be created using conditional formatting and highlighting the rows in color red
- * 2. Emails will be sent to the provided list of recipients, if this cell is empty, emails will not be sent.
+ * Main function to orchestrate the CM360 Launch Monitor process.
+ * It iterates through the 'Reports Config' sheet, processes each enabled use
+ * case by fetching or creating a CM360 report, analyzes the data for issues,
+ * writes the results to a new sheet, and sends email alerts.
  */
 function main() {
   let currentRow;
@@ -281,16 +285,16 @@ function main() {
 }
 
 /**
- * Gets data from an existing report in CM360. The data retrieved will be the latest
- * generated file in the report.
+ * Fetches and parses data from the latest run of an existing CM360 report.
  *
- *  @param {string} useCase - The Margin Protection use case
- *  @param {string} profileId - The CM360 profile Id for the account
- *  @param {string} accountId - The CM360 Network ID
- *  @param {string} reportId - The report Id to be retrieved
- *  @param {obj} campaignManagerAPI - The API wrapper class to perform CM360 operations
- *
- *  @param {list[list]} data - The data in the report
+ * @param {string} useCase The key for the current use case.
+ * @param {string} profileId The CM360 user profile ID.
+ * @param {string} accountId The CM360 account ID.
+ * @param {string} reportId The ID of the CM360 report to fetch.
+ * @param {!CampaignManagerAPI} campaignManagerAPI An instance of the
+ *     CampaignManagerAPI wrapper.
+ * @return {?Array<!Array<string>>} A 2D array of the report data, or null if
+ *     the report is not ready or has no data.
  */
 function getExistingReportData(
   useCase,
@@ -314,10 +318,13 @@ function getExistingReportData(
 }
 
 /**
- * Applies conditional formatting to the sheet to flag the issues
+ * Applies conditional formatting rules to the report data sheet to highlight
+ * issues based on the use case configuration.
  *
- *  @param {obj} config - Use case configuration containing the rules to evaluate
- *  @param {string} reportDataSheetName - The report sheet name
+ * @param {!Object} config The configuration object for the current use case,
+ *     containing formatting rules.
+ * @param {string} reportDataSheetName The name of the sheet where the report
+ *     data is stored.
  */
 function flagUseCaseIssues(config, reportDataSheetName) {
   addConditionalFormattingToSheet(

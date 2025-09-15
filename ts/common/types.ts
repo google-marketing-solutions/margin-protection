@@ -16,73 +16,90 @@
  */
 
 /**
- * An abstraction for retrieving properties.
+ * An interface for abstracting property storage, allowing for different
+ * implementations (e.g., `PropertiesService` or a mock for testing).
  */
 export interface PropertyStore {
+  /** Sets a property with the given key and value. */
   setProperty(propertyName: string, value: string): void;
+  /** Gets a property by its key. */
   getProperty(propertyName: string): string | null;
+  /** Gets all properties as a record. */
   getProperties(): Record<string, string>;
 }
 
 /**
- * The result of a rule executor once the Promise has resolved.
+ * The resolved result of a rule's execution, containing all checked values.
  */
 export interface ExecutorResult {
+  /** A record of checked values, indexed by a unique key. */
   values: Values;
 }
 
 /**
- * A rule callback is created to enable efficient API calls.
- *
- * Typically, wherever possible, rule methods should be used instead, because
- * they enable efficient pooling of API resources.
+ * The type for a rule's primary execution logic. It's a function that returns
+ * a promise resolving to the `ExecutorResult`.
+ * @template Params The parameter definitions for the rule.
  */
 export type Callback<Params extends Record<keyof Params, ParamDefinition>> =
   () => Promise<ExecutorResult> & ThisType<Params>;
 
 /**
- * Provides a useful data structure to get campaign ID settings.
- *
- * Defaults to the row with campaignId: 'default' if no campaign ID override is
- * set.
+ * An interface for a map-like object that stores rule settings on a per-ID
+ * basis (e.g., by campaign ID), with a fallback to 'default' settings.
+ * @template P A record type representing the parameters for a rule.
  */
 export interface SettingMapInterface<
   P extends { [Property in keyof P]: P[keyof P] },
 > {
+  /**
+   * Gets the settings for an ID, falling back to defaults for any unset
+   * values.
+   */
   getOrDefault(id: string): P;
 
   /**
-   * Retrieves a map of values for the ID {@link id}.
-   *
-   * If it's missing, blank strings.
+   * Gets the explicit settings for an ID, returning blank strings if not found.
    */
   get(id: string): P;
+  /** Sets the settings for a given ID. */
   set(id: string, value: P): void;
+  /** Returns all entries as an array of [id, values] tuples. */
   entries(): ReadonlyArray<[string, string[]]>;
 }
 
 /**
- * Represents a matrix with IDs leading to setting key:value pairs.
+ * A type alias for a `SettingMapInterface`, representing a matrix of settings
+ * indexed by ID.
+ * @template Params A record of parameter names to their values.
  */
 export type Settings<Params> = SettingMapInterface<{
   [Property in keyof Params]: Params[keyof Params];
 }>;
 
 /**
- * Defines a client object, which is responsible for wrapping.
+ * The base interface for a client object, which wraps the API and manages rule
+ * execution for a specific platform (e.g., DV360, SA360).
+ * @template T The specific `ClientTypes` for the platform.
  */
 export interface BaseClientInterface<T extends ClientTypes<T>> {
+  /** The arguments used to initialize the client. */
   readonly args: T['clientArgs'];
+  /** A store of all registered rule executors, indexed by name. */
   readonly ruleStore: {
     [ruleName: string]: RuleExecutor<T>;
   };
+  /** The property store instance used by the client. */
   readonly properties: PropertyStore;
+  /** Fetches all campaign-like entities for the client. */
   getAllCampaigns(): Promise<RecordInfo[]>;
+  /** Validates all enabled rules and returns the results. */
   validate(): Promise<{
     rules: Record<string, RuleExecutor<T>>;
     results: Record<string, ExecutorResult>;
   }>;
 
+  /** Adds a new rule executor to the client's rule store. */
   addRule<Params extends Record<keyof Params, ParamDefinition>>(
     rule: RuleExecutorClass<T, Params>,
     settingsArray: ReadonlyArray<string[]>,
@@ -90,53 +107,59 @@ export interface BaseClientInterface<T extends ClientTypes<T>> {
 }
 
 /**
- * Specifies the sheet (user) facing definition of a rule parameter.
+ * Defines the structure for a single, user-configurable rule parameter.
  */
 export interface ParamDefinition {
+  /** The user-facing label for the parameter in the settings sheet. */
   label: string;
-  /** If set, this will be the default parameter value. Unset means there is no default. */
+  /** An optional default value for the parameter. */
   defaultValue?: string;
-  /** A Google-Sheets formula for validating a column, e.g. "=TRUE". */
+  /** An optional array of Google Sheets data validation formulas. */
   validationFormulas?: string[];
+  /** An optional number format string to apply to the parameter's column. */
   numberFormat?: string;
 }
 
 /**
- * Determines how a rule is changed (e.g. at the campaign or ad group level).
- *
- * This includes any and all types of granularity for any and all products.
- * Use the granularity you'd like to appear on your settings page.
+ * A generic type representing the level at which a rule's settings can be
+ * configured (e.g., 'Campaign', 'AdGroup').
  */
 export type RuleGranularity<G extends RuleGranularity<G>> = {
   [Property in keyof G]: G;
 };
 
 /**
- * Actionable object to run a rule.
+ * An interface for an instantiated, executable rule object.
+ * @template T The specific `ClientTypes` for the platform.
+ * @template P The parameter definitions for the rule.
  */
 export interface RuleExecutor<
   T extends ClientTypes<T>,
   P extends DefinedParameters<P> = Record<string, ParamDefinition>,
 > extends Omit<RuleDefinition<T, P>, 'callback' | 'defaults' | 'granularity'> {
+  /** The client instance this rule is bound to. */
   client: T['client'];
+  /** The settings for this rule instance. */
   settings: Settings<Record<keyof P, string>>;
+  /** The function to run the rule's logic. */
   run: () => Promise<ExecutorResult>;
+  /** An optional helper description for the rule. */
   helper: string;
+  /** The granularity at which this rule operates. */
   granularity: T['ruleGranularity'];
+  /** Whether the rule is currently enabled for execution. */
   enabled: boolean;
 }
 
 /**
- * Simple information-level data holder for a rule.
- *
- * For more, use the generic {@link RuleDefinition}.
+ * A simple interface holding the name and description of a rule.
  */
 export interface RuleInfo {
   name: string;
   description: string;
 }
 /**
- * Merger of {@link RuleInfo} and {@link ExecutorResult}.
+ * An interface that merges basic rule information with its execution results.
  */
 export interface RuleGetter {
   name: string;
@@ -144,22 +167,29 @@ export interface RuleGetter {
 }
 
 /**
- * The type-enforced parameters required to create a rule with `newRule`.
+ * Defines the complete, type-enforced structure for a new rule.
+ * @template T The specific `ClientTypes` for the platform.
+ * @template P The parameter definitions for the rule.
  */
 export interface RuleDefinition<
   T extends ClientTypes<T>,
   P extends Record<keyof P, ParamDefinition>,
 > extends RuleInfo {
+  /** The core execution logic for the rule. */
   callback: Callback<P>;
+  /** The level at which the rule is configured (e.g., 'Campaign'). */
   granularity: T['ruleGranularity'];
+  /** A record defining the parameters this rule accepts. */
   params: { [Property in keyof P]: ParamDefinition };
+  /** An optional helper string displayed in the settings sheet. */
   helper?: string;
-  /** The name of the "value" column in the anomaly detector, for reporting. */
+  /** Defines the label and format for the 'value' column in results. */
   valueFormat: { label: string; numberFormat?: string };
 }
 
 /**
- * Extracts pertinent information from a campaign.
+ * A standardized structure for basic information about an advertising entity
+ * (e.g., a campaign, an insertion order).
  */
 export interface RecordInfo {
   advertiserId: string;
@@ -169,9 +199,8 @@ export interface RecordInfo {
 }
 
 /**
- * Record Info for the new SA360.
- *
- * SA360 no longer uses advertiser IDs, instead using customer IDs.
+ * A variation of `RecordInfo` for the new SA360 API, which uses customer IDs
+ * instead of advertiser IDs.
  */
 export interface RecordInfoV2 {
   customerId: string;
@@ -180,57 +209,68 @@ export interface RecordInfoV2 {
 }
 
 /**
- * Represents a client-specific set of client arguments to initialize a client.
+ * The base interface for client-specific arguments.
+ * @template ChildClass The extending class, for type safety.
  */
 export interface BaseClientArgs<ChildClass extends BaseClientArgs<ChildClass>> {
   /**
-   * The name of the client. Distinguishable for emails.
+   * A user-defined label for this client instance, used for identification in
+   * emails and reports.
    */
   label: string;
 }
 
 /**
- * The base front-end wrapper. Contains platform-specific logic.
+ * The base interface for a frontend wrapper.
+ * @template T The specific `ClientTypes` for the platform.
  */
 export interface Frontend<T extends ClientTypes<T>> {
   client: T['client'];
 }
 
 /**
- * Represents the related interfaces for a given platform's Launch Monitor.
+ * A generic interface that bundles all the specific types for a given client
+ * implementation (e.g., its client arguments, rule granularity, etc.).
+ * @template T The specific `ClientTypes` for the platform.
  */
 export interface ClientTypes<T extends ClientTypes<T>> {
+  /** The interface of the client object. */
   client: BaseClientInterface<T>;
+  /** The type defining the rule granularity options. */
   ruleGranularity: RuleGranularity<T['ruleGranularity']>;
+  /** The interface for the client's initialization arguments. */
   clientArgs: BaseClientArgs<T['clientArgs']>;
+  /** The interface for the frontend object. */
   frontend: Frontend<T>;
 }
 
 /**
- * A rule class that can instantiate a {@link RuleExecutor} object.
+ * An interface for a class constructor that can instantiate a `RuleExecutor`.
+ * @template T The specific `ClientTypes` for the platform.
+ * @template P The parameter definitions for the rule.
  */
 export interface RuleExecutorClass<
   T extends ClientTypes<T>,
   P extends Record<keyof P, P[keyof P]> = Record<string, ParamDefinition>,
 > {
+  /**
+   * The constructor for the rule executor.
+   * @param client The client instance.
+   * @param settings A 2D array of settings from the sheet.
+   */
   new (
     client: T['client'],
     settings: ReadonlyArray<string[]>,
   ): RuleExecutor<T, P>;
+  /** The static definition of the rule. */
   definition: RuleDefinition<T, P>;
 }
 
 /**
- * Contains a `RuleContainer` along with information to instantiate it.
- *
- * This interface enables type integrity between a rule and its settings.
- *
- * This is not directly callable. Use {@link newRule} to generate a
- * {@link RuleExecutorClass}.
- *
- * @param Params a key/value pair where the key is the function parameter name
- *   and the value is the human-readable name. The latter can include spaces and
- *   special characters.
+ * An interface representing an entry in the rule store, containing the rule's
+ * class and its settings.
+ * @template T The specific `ClientTypes` for the platform.
+ * @template P The parameter definitions for the rule.
  */
 export interface RuleStoreEntry<
   T extends ClientTypes<T>,
@@ -240,77 +280,86 @@ export interface RuleStoreEntry<
   >,
 > {
   /**
-   * Contains a rule's metadata.
+   * The constructor for the rule executor class.
    */
   rule: RuleExecutorClass<T>;
 
   /**
-   * Content in the form of {advertiserId: {paramKey: paramValue}}.
-   *
-   * This is the information that is passed into a `Rule` on instantiation.
+   * The settings for the rule, indexed by entity ID and parameter key.
    */
   settings: Settings<P>;
 }
 
 /**
- * Sheets interface. Writes parameters to and from Google Sheets.
+ * An interface for a class that manages the reading and writing of rule
+ * settings to and from a Google Sheet.
+ * @template T The specific `ClientTypes` for the platform.
  */
 export interface RuleRangeInterface<T extends ClientTypes<T>> {
+  /** Sets a single row of settings for a given category and ID. */
   setRow(category: string, campaignId: string, column: string[]): void;
 
   /**
-   * Given a 2-d array formatted like a rule sheet, create a {@link RuleRange}.
-   *
-   * A rule sheet contains the following structure:
-   *
-   *    ,,Category A,,Category B,,
-   *    header1,header2,header3,header4,header5,header6,header7
-   *    none1,none2,cata1,cata2,catb1,catb2,catb3
+   * Reconstructs and returns the entire 2D array for the settings sheet.
+   * @param ruleGranularity An optional filter for a specific granularity.
    */
   getValues(ruleGranularity?: T['ruleGranularity']): string[][];
 
+  /** Gets the settings for a single, specific rule. */
   getRule(ruleName: string): string[][];
-  getRule(ruleName: string): string[][];
+  /** Populates the sheet with the entities and parameters for a given rule. */
   fillRuleValues<Params>(
     rule: Pick<
       RuleDefinition<T, Record<keyof Params, ParamDefinition>>,
       'name' | 'params' | 'granularity'
     >,
   ): Promise<void>;
+  /** Gets all relevant entity rows for a given granularity. */
   getRows(granularity: T['ruleGranularity']): Promise<RecordInfo[]>;
 
   /**
-   * Writes the values of a rule sheet back to the rule.
+   * Writes the current state of the rule settings back to the spreadsheet.
    */
   writeBack(granularity: T['ruleGranularity']): void;
 }
 
 /**
- * Arguments to pass to all front-ends.
- *
- * This is used to inject arguments into implementations, which determines
- * how the client gets executed.
+ * Defines the arguments required to initialize a frontend instance.
+ * @template T The specific `ClientTypes` for the platform.
  */
 export interface FrontendArgs<T extends ClientTypes<T>> {
+  /** The constructor for the `RuleRange` class to be used. */
   readonly ruleRangeClass: {
     new (sheet: string[][], client: T['client']): RuleRangeInterface<T>;
   };
+  /** An array of all rule classes to be registered with the client. */
   readonly rules: ReadonlyArray<RuleExecutorClass<T>>;
+  /** A function that initializes the client instance. */
   readonly clientInitializer: (
     clientArgs: T['clientArgs'],
     properties: PropertyStore,
   ) => T['client'];
+  /** The current version of the application, used for migrations. */
   readonly version: string;
+  /** A record of migration functions, indexed by version string. */
   readonly migrations: Record<string, (frontend: T['frontend']) => void>;
+  /** The property store instance to be used. */
   readonly properties: PropertyStore;
 }
 
+/**
+ * Defines the interface for a frontend object.
+ * @template T The specific `ClientTypes` for the platform.
+ */
 export interface FrontendInterface<T extends ClientTypes<T>> {
   client: T['client'];
 }
 
 /**
- * Parameters for a rule.
+ * A type alias for a rule's parameters, including the `ThisType` definition
+ * for the rule's callback function.
+ * @template T The specific `ClientTypes` for the platform.
+ * @template P The parameter definitions for the rule.
  */
 export type RuleParams<
   T extends ClientTypes<T>,
@@ -318,7 +367,8 @@ export type RuleParams<
 > = RuleDefinition<T, P> & ThisType<RuleExecutor<T, P>>;
 
 /**
- * A list of available and required Apps Script functions for Launch Monitor.
+ * A type defining the names of the main Apps Script functions that serve as
+ * entry points from the UI or triggers.
  */
 export type AppsScriptFunctions =
   | 'onOpen'
@@ -329,24 +379,29 @@ export type AppsScriptFunctions =
   | 'displayGlossary';
 
 /**
- * An object mapping values to their anomalous status.
+ * Represents a collection of checked values, indexed by a unique key.
  */
 export interface Values {
   [key: string]: Value;
 }
 
 /**
- * Represents a value that can be returned by an executed check.
+ * Represents the result of a single check on a value.
  */
 export interface Value {
+  /** The original value that was checked. */
   value: Readonly<string>;
+  /** A boolean indicating whether the value is considered anomalous. */
   anomalous: Readonly<boolean>;
+  /** An optional timestamp of when an alert was last sent for this value. */
   alertedAt?: Readonly<number>;
+  /** A record of the fields that identify this specific value. */
   fields: Readonly<{ [key: string]: string }>;
 }
 
 /**
- * A check is a callback that can be executed.
+ * A type for a check function, which performs a validation and returns a
+ * `Value` object.
  */
 export type Check = (
   // Keeping this value flexible. Child functions will implement type.
@@ -359,9 +414,7 @@ export type Check = (
 ) => Value;
 
 /**
- * Identifies a named {@link ParamDefinition}.
- *
- * Allows linking the key name of the object to a list of parameters
- * in a rule.
+ * A utility type that enforces a record of named `ParamDefinition` objects.
+ * @template P A record where keys are parameter names.
  */
 export type DefinedParameters<P> = Record<keyof P, ParamDefinition>;

@@ -16,7 +16,9 @@
  */
 
 /**
- * @fileoverview Contains a DAO for DBM access.
+ * @fileoverview This file contains a Data Access Object (DAO) for fetching
+ * offline reports from the Display & Video 360 API via its `queries` and
+ * `reports` services.
  */
 
 import {
@@ -72,32 +74,39 @@ interface QueryBody {
   };
 }
 
+/**
+ * An abstract base class for fetching and processing DV360 reports.
+ * It handles the workflow of creating/finding a query, running it, and
+ * downloading the resulting report CSV from GCS.
+ */
 abstract class Report implements ReportInterface {
   key: { queryId: Readonly<string>; reportId: Readonly<string> };
   metadata: { googleCloudStoragePath: Readonly<string> };
 
   protected readonly properties: GoogleAppsScript.Properties.Properties;
   protected readonly report: Record<string, number>;
+  /** An abstract method to get the name of the report. */
   abstract getReportName(): string;
 
+  /**
+   * @param params The parameters for the query report.
+   */
   constructor(protected readonly params: QueryReportParams) {
     this.properties = PropertiesService.getScriptProperties();
     this.report = this.getReport();
   }
 
+  /** An abstract method to fetch and parse the report data. */
   protected abstract getReport(): Record<string, number>;
 
   /**
-   * Get a query ID that matches the requested insertion order of this object.
+   * Retrieves a query ID for the report.
    *
-   * Either:
+   * It first checks the `PropertiesService` for a cached query ID. If not
+   * found, it searches for an existing query by name in DV360. If still not
+   * found, it creates a new query. The resulting query ID is cached.
    *
-   * (A) quickly gets the query ID stored in the `PropertiesService`.
-   * (B) gets the query ID as stored in DBM.
-   * (C) generates a new query.
-   *
-   * Ensures that the `PropertiesService` has an up-to-date queryID in the case
-   * of (B) or (C).
+   * @return The query ID.
    */
   fetchQueryId(): string {
     const queryTitle = this.getQueryTitle();
@@ -117,6 +126,11 @@ abstract class Report implements ReportInterface {
     return query.queryId;
   }
 
+  /**
+   * Generates a unique title for the query based on its parameters.
+   * @return The query title string.
+   * @protected
+   */
   protected getQueryTitle() {
     return `${REPORT_HEADER} (${this.getReportName()}) ${
       this.params.idType === IDType.PARTNER ? 'P' : 'A'
@@ -124,9 +138,12 @@ abstract class Report implements ReportInterface {
   }
 
   /**
-   * Fetches the report URL by query ID.
+   * Fetches the Google Cloud Storage URL for a generated report.
+   * Results are cached for 60 seconds to avoid redundant API calls.
    *
-   * Briefly caches the result to avoid unnecessary API calls.
+   * @param queryId The ID of the query to run.
+   * @return The GCS path to the report file.
+   * @protected
    */
   protected fetchReportUrl(queryId: string): string {
     const reportUrl = CacheService.getScriptCache().get(`dbm-${queryId}`);
@@ -148,6 +165,12 @@ abstract class Report implements ReportInterface {
     return result;
   }
 
+  /**
+   * Fetches the report CSV content from a GCS URL and parses it.
+   * @param reportUrl The GCS URL of the report file.
+   * @return A 2D array of the parsed CSV data.
+   * @protected
+   */
   protected fetchReport(reportUrl: string): string[][] {
     const query: string = UrlFetchApp.fetch(
       reportUrl,
@@ -157,6 +180,7 @@ abstract class Report implements ReportInterface {
     return Utilities.parseCsv(query.split('\n\n')[0]);
   }
 
+  /** An abstract method to define the body of the query request. */
   protected abstract queryBody(): QueryBody;
 }
 

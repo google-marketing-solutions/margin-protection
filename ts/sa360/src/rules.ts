@@ -16,7 +16,9 @@
  */
 
 /**
- * @fileoverview General rules for SA360
+ * @fileoverview This file contains the specific rule implementations for the
+ * SA360 Launch Monitor. Each rule is defined using the `newRule` factory and
+ * contains the core business logic for identifying a specific type of anomaly.
  */
 
 import { equalTo, inRange } from 'common/checks';
@@ -57,7 +59,8 @@ const RULES = {
 };
 
 /**
- * Pacing rule for SA360.
+ * A rule that checks if a campaign's spend is within a defined percentage of
+ * its total budget.
  */
 export const budgetPacingRule = newRule({
   name: 'Budget Pacing',
@@ -103,10 +106,8 @@ export const budgetPacingRule = newRule({
 });
 
 /**
- * Anomalous if campaign status has gone from inactive to active after N days.
- *
- * This is a somewhat complex rule because it matters how many days a value
- * has been set, and this rule might be checked hourly or even ad-hoc.
+ * A rule that monitors campaigns to detect if a campaign becomes active again
+ * after being inactive for a specified number of days.
  */
 export const campaignStatusRule = newRule({
   name: 'Campaign Status Active after Inactive',
@@ -191,7 +192,8 @@ export const campaignStatusRule = newRule({
 });
 
 /**
- * Anomalous if an ad group has its status change.
+ * A rule that flags any status changes at the ad group level, as status
+ * changes are expected to happen at the campaign level.
  */
 export const adGroupStatusRule = newRule({
   name: 'Ad Group Status Change',
@@ -239,10 +241,9 @@ export const adGroupStatusRule = newRule({
 });
 
 /**
- * Anomalous if an audience target has changed.
- *
- * Automatically adds audience target from the system to the settings sheet
- * if it's empty.
+ * A rule that monitors for changes in audience targeting at the ad group level.
+ * It automatically populates the initial settings and then flags any subsequent
+ * additions or deletions.
  */
 export const adGroupAudienceTargetRule = newRule({
   name: 'Ad Group Audience Target Change',
@@ -281,10 +282,9 @@ export const adGroupAudienceTargetRule = newRule({
 });
 
 /**
- * Anomalous if an age target doesn't match expectations.
- *
- * Automatically adds gender target from the system to the settings sheet
- * if it's empty.
+ * A rule that monitors for changes in age targeting at the ad group level.
+ * It automatically populates the initial settings and then flags any subsequent
+ * additions or deletions.
  */
 export const ageTargetRule = newRule({
   name: 'Age Target Change',
@@ -319,10 +319,9 @@ export const ageTargetRule = newRule({
 });
 
 /**
- * Anomalous if a gender target doesn't match expectations.
- *
- * Automatically adds gender target from the system to the settings sheet
- * if it's empty.
+ * A rule that monitors for changes in gender targeting at the ad group level.
+ * It automatically populates the initial settings and then flags any subsequent
+ * additions or deletions.
  */
 export const genderTargetRule = newRule({
   name: 'Gender Target Change',
@@ -361,10 +360,9 @@ export const genderTargetRule = newRule({
 });
 
 /**
- * Anomalous if a location doesn't match expectations.
- *
- * Automatically adds location from the system to the settings sheet
- * if it's empty.
+ * A rule that monitors for changes in geo-targeting at the campaign level.
+ * It automatically populates the initial settings with geo criteria IDs and
+ * then flags any subsequent additions or deletions.
  */
 export const geoTargetRule = newRule({
   name: 'Geo Target Change',
@@ -404,10 +402,9 @@ export const geoTargetRule = newRule({
 });
 
 /**
- * Anomalous if an audience target has changed.
- *
- * Automatically adds audience target from the system to the settings sheet
- * if it's empty.
+ * A rule that monitors for changes in audience targeting at the campaign level.
+ * It automatically populates the initial settings and then flags any subsequent
+ * additions or deletions.
  */
 export const campaignAudienceTargetRule = newRule({
   name: 'Campaign Audience Target Change',
@@ -446,33 +443,32 @@ export const campaignAudienceTargetRule = newRule({
 });
 
 /**
- * Used for creating a value message.
+ * Defines the arguments for the `trackSettingsChanges` function.
  */
 interface TrackSettingsChangeArgs {
   /**
-   * A list of stored settings which are compared against for changes.
-   * They have the same keys as {@link args.targets}
+   * An array of the currently stored setting values from the sheet.
    */
   stored: string[];
   /**
-   * A key/value pair object with the unique key as key. These are the new
-   * values from the API.
+   * An array of the current target values fetched from the API.
    */
   targets: string[];
   /**
-   * Extra metadata that's used in reporting.
+   * A record of additional fields to include in the result.
    */
   fields: { [key: string]: string };
 }
 
 /**
- * Convenience method creates human-readable {@link Values} for settings.
+ * Compares a stored list of settings against a new list of targets from the
+ * API, identifies changes (additions/deletions), and returns a `Value` object.
  *
- * Tracks any changes and, if none, sets "No Changes" as the value.
+ * This function also updates the `stored` array in place with the new targets
+ * if it was previously empty, effectively populating the initial state.
  *
- * The return will show what values have been added or deleted since the initial
- * settings were recorded, or "No Changes" if there have been no changes.
- * Anything other than "No Changes" is registered as an anomaly.
+ * @param settingsChangeArgs The arguments for the settings change check.
+ * @return A `Value` object indicating if there was a change.
  */
 export function trackSettingsChanges(
   settingsChangeArgs: TrackSettingsChangeArgs,

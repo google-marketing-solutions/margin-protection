@@ -18,28 +18,32 @@
 import { ObjectUtil, UriUtil } from './utils';
 
 /**
- * DV360 API resources contain page tokens.
+ * Represents a paged API response that includes a token for the next page.
  */
 export interface PagedDisplayVideoResponse {
+  /** The token for retrieving the next page of results. */
   pageToken: string;
 }
 
+/**
+ * Defines a generic interface for API request parameters.
+ */
 interface Params {
   [key: string]: string | Params;
 }
 
 /**
- * Base class encapsulating all logic to access any Google API using the
- * built-in Google Apps Script service {@link UrlFetchApp}.
- *
+ * A base class that encapsulates the logic for accessing a Google API using
+ * Apps Script's `UrlFetchApp` service. It handles authentication, pagination,
+ * and error handling with retries.
  * @see appsscript.json for a list of enabled advanced services and API scopes.
  */
 export class BaseApiClient {
   /**
    * Constructs an instance of BaseApiClient.
    *
-   * @param apiScope The API scope
-   * @param apiVersion The API version
+   * @param apiScope The API scope (e.g., 'displayvideo').
+   * @param apiVersion The API version (e.g., 'v2').
    */
   constructor(
     private readonly apiScope: string,
@@ -47,18 +51,14 @@ export class BaseApiClient {
   ) {}
 
   /**
-   * Executes a paged API request (e.g. GET with pageToken). Keeps track of
-   * paged responses and delegates to @link {executeApiRequest} for the concrete
-   * request and response handling. Accepts a callback which is used to output
-   * intermediate results while fetching more pages.
+   * Executes a paginated API request and processes all pages of the response.
    *
-   * @param requestUri The URI of the GET request
-   * @param requestParams The options to use for the
-   *     GET request
-   * @param requestCallback The method
-   *     to call after the request has executed successfully
-   * @param maxPages The max number of pages to fetch. Defaults to -1
-   *     indicating 'fetch all'
+   * @param requestUris An array of request URIs.
+   * @param requestParams The options to use for the request.
+   * @param requestCallback A callback function to process the results from
+   *     each page.
+   * @param maxPages The maximum number of pages to fetch. Defaults to -1,
+   *     which indicates that all pages should be fetched.
    */
   executePagedApiRequest(
     requestUris: string[],
@@ -94,18 +94,14 @@ export class BaseApiClient {
   }
 
   /**
-   * Executes a request to the API while handling errors and response
-   * data parsing. Re-attempts failed executions up to the value of
-   * 'maxRetries'.
+   * Executes a batch of API requests using `UrlFetchApp.fetchAll` and handles
+   * errors with a retry mechanism.
    *
-   * @param requestUri The URI of the request
-   * @param requestParams The options to use for the
-   *     request
-   * @param retryOnFailure Whether the operation should be retried
-   *     in case of failure or not
-   * @param operationCount The number of failed attempts made.
-   * @return The parsed JSON response
-   *     data, or an empty object for empty responses
+   * @param requestUris An array of request URIs.
+   * @param requestParams The options to use for the request.
+   * @param retryOnFailure Whether the operation should be retried on failure.
+   * @param operationCount The current retry attempt count.
+   * @return An array of parsed JSON response objects.
    */
   executeApiRequest(
     requestUris: string[],
@@ -154,11 +150,10 @@ export class BaseApiClient {
   }
 
   /**
-   * Constructs the fully-qualified API URL using the given requestUri if not
-   * already done.
+   * Constructs the fully-qualified API URL.
    *
-   * @param requestUri The URI of the request
-   * @return The fully-qualified API URL
+   * @param requestUri The partial URI of the request (e.g., 'advertisers').
+   * @return The fully-qualified API URL.
    */
   buildApiUrl(requestUri: string): string {
     const protocolAndDomain = `https://${this.apiScope}.googleapis.com/`;
@@ -170,12 +165,11 @@ export class BaseApiClient {
   }
 
   /**
-   * Constructs the options to use for API requests, extending default options
-   * provided by the given requestParams.
+   * Constructs the parameters object for an API request, including the OAuth
+   * token and default headers.
    *
-   * @param requestParams The options to use for the
-   *     request
-   * @return The extended request options to use
+   * @param requestParams Custom options to extend the base parameters.
+   * @return The complete request parameters object.
    */
   buildApiParams(requestParams: Params | null): Params {
     const token = ScriptApp.getOAuthToken();
@@ -187,18 +181,16 @@ export class BaseApiClient {
   }
 
   /**
-   * Returns the API scope.
-   *
-   * @return The API scope
+   * Returns the API scope used by this client instance.
+   * @return The API scope.
    */
   getApiScope(): string {
     return this.apiScope;
   }
 
   /**
-   * Returns the API version.
-   *
-   * @return The API version
+   * Returns the API version used by this client instance.
+   * @return The API version.
    */
   getApiVersion(): string {
     return this.apiVersion;

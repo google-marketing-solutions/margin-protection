@@ -16,7 +16,9 @@
  */
 
 /**
- * @fileoverview Contains rules tailored for the current client.
+ * @fileoverview This file contains the specific rule implementations for the
+ * DV360 Launch Monitor. Each rule is defined using the `newRule` factory and
+ * contains the core business logic for identifying a specific type of anomaly.
  */
 
 import {
@@ -57,9 +59,8 @@ const RULES = {
 };
 
 /**
- * Adds a geotarget rule.
- *
- * Must have only US targets, and must contain at least one geo-target, to pass.
+ * A rule that checks a campaign's geo-targeting settings against a defined
+ * list of allowed, required, and excluded locations.
  */
 export const geoTargetRule = newRule({
   name: 'Geo Targeting',
@@ -201,9 +202,8 @@ export const geoTargetRule = newRule({
 });
 
 /**
- * Sets a violation if budget is pacing `X`% ahead of schedule.
- *
- * Compares DBM spend against DV360 budgets over a flight duration.
+ * A rule that calculates the budget pacing for an insertion order as a
+ * percentage and flags it as anomalous if it's outside a defined range.
  */
 export const budgetPacingPercentageRule = newRule({
   name: 'Budget Pacing by Percent Ahead',
@@ -307,9 +307,8 @@ export const budgetPacingPercentageRule = newRule({
 });
 
 /**
- * Sets a violation if budget is pacing `days` ahead of schedule in a line item.
- *
- * Compares DBM spend against DV360 budgets over a flight duration.
+ * A rule that calculates the budget pacing for a line item in terms of days
+ * ahead or behind schedule and flags it if outside a defined range.
  */
 export const budgetPacingRuleLineItem = newRule({
   name: 'Budget Pacing by Days Ahead/Behind (Line Item)',
@@ -400,7 +399,8 @@ export const budgetPacingRuleLineItem = newRule({
 });
 
 /**
- *  Checks if daily spend is outside the specified range `min` and `max`.
+ * A pre-launch rule that checks if the calculated daily budget of an insertion
+ * order's flight is within a specified min/max range.
  */
 export const dailyBudgetRule = newRule({
   name: 'Budget Per Day',
@@ -460,7 +460,12 @@ export const dailyBudgetRule = newRule({
 });
 
 /**
- * Checks the daily spend against a budget.
+ * Calculates the daily budget for each active budget segment of an insertion
+ * order.
+ * @param client The client interface.
+ * @param insertionOrder The insertion order to check.
+ * @return An array of `DailyBudget` objects.
+ * @private
  */
 function checkPlannedDailyBudget(
   client: ClientInterface,
@@ -496,6 +501,14 @@ function checkPlannedDailyBudget(
   return dailyBudgets;
 }
 
+/**
+ * Updates a date range object to encompass the earliest start date and latest
+ * end date from a given budget segment, if the segment is currently active.
+ * @param range The date range object to update.
+ * @param budgetSegment The budget segment to evaluate.
+ * @param todayDate The current date.
+ * @private
+ */
 function calculateOuterBounds(
   range: { startDate: Date | undefined; endDate: Date | undefined },
   budgetSegment: InsertionOrderBudgetSegment,
@@ -515,9 +528,8 @@ function calculateOuterBounds(
 }
 
 /**
- * Sets a violation if budget is pacing `X`% ahead of schedule.
- *
- * Compares DBM spend against DV360 budgets over a flight duration.
+ * A rule that checks if the percentage of impressions served outside of a
+ * defined set of countries exceeds a specified maximum.
  */
 export const impressionsByGeoTarget = newRule({
   name: 'Impressions by Geo Target',
@@ -607,6 +619,14 @@ export const impressionsByGeoTarget = newRule({
   },
 });
 
+/**
+ * Expands a date range to include a new start and end date if they extend the
+ * current boundaries.
+ * @param dateRange The date range object to expand.
+ * @param startDate The new start date to consider.
+ * @param endDate The new end date to consider.
+ * @private
+ */
 function expandDateRanges(
   dateRange: { earliestStartDate?: Date; latestEndDate?: Date },
   startDate: Date,
@@ -620,6 +640,16 @@ function expandDateRanges(
   }
 }
 
+/**
+ * Creates a human-readable error message and a `Value` object for pacing
+ * rules.
+ * @param settings The rule settings, including min and max thresholds.
+ * @param pacingType The actual pacing type of the entity.
+ * @param percent The calculated pacing percentage.
+ * @param fields A record of fields to include in the result.
+ * @return A `Value` object.
+ * @private
+ */
 function humanReadableError(
   settings: { min: string; max: string; pacingType: string },
   pacingType: PacingType,
@@ -645,6 +675,9 @@ function humanReadableError(
   };
 }
 
+/**
+ * Defines the parameters for the `calculatePacing` function.
+ */
 interface PacingParameters {
   budget: number;
   today: number;
@@ -653,6 +686,12 @@ interface PacingParameters {
   spend: number;
 }
 
+/**
+ * Calculates various pacing metrics based on budget, spend, and time.
+ * @param params The pacing parameters.
+ * @return An object containing calculated pacing metrics.
+ * @private
+ */
 function calculatePacing({
   startTimeSeconds,
   endTimeSeconds,
@@ -676,6 +715,15 @@ function calculatePacing({
   };
 }
 
+/**
+ * Processes a list of line items to determine which ones are active and to
+ * calculate the overall date range required for the budget report.
+ * @param settings The rule settings.
+ * @param lineItems An array of line items to process.
+ * @return An object containing the processed results and the calculated date
+ *     range.
+ * @private
+ */
 function getLineItemBudgetPacingResult<SettingsObj>(
   settings: Settings<SettingsObj>,
   lineItems: LineItem[],
@@ -725,6 +773,15 @@ function getLineItemBudgetPacingResult<SettingsObj>(
   return { results, dateRange };
 }
 
+/**
+ * Processes a list of insertion orders to determine which ones are active and
+ * to calculate the overall date range required for the budget report.
+ * @param settings The rule settings.
+ * @param insertionOrders An array of insertion orders to process.
+ * @return An object containing the processed results and the calculated date
+ *     range.
+ * @private
+ */
 function getInsertionOrderBudgetPacingResult<SettingsObj>(
   settings: Settings<SettingsObj>,
   insertionOrders: InsertionOrder[],
