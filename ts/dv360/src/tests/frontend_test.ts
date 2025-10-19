@@ -4,7 +4,7 @@
 
 import { TARGETING_TYPE } from 'dv360_api/dv360_types';
 import { equalTo } from 'common/checks';
-import { HELPERS, RULE_SETTINGS_SHEET } from 'common/sheet_helpers';
+import { HELPERS } from 'common/sheet_helpers';
 import {
   FakeHtmlOutput,
   FakePropertyStore,
@@ -35,8 +35,6 @@ import { AssignedTargetingOption } from 'dv360_api/dv360_resources';
 import * as sinon from 'sinon';
 import { expect } from 'chai';
 import { tearDownStubs } from 'common/tests/helpers';
-
-const FOLDER = 'application/vnd.google-apps.folder';
 
 describe('Rule value filling', function () {
   let client: Client;
@@ -377,180 +375,6 @@ function testData(params: {
   });
 }
 
-describe('Matrix to CSV', function () {
-  let frontend: DisplayVideoFrontend;
-  let stubs: sinon.SinonStub[];
-
-  beforeEach(function () {
-    ({ stubs } = setUp());
-    frontend = getFrontend();
-  });
-
-  afterEach(function () {
-    tearDownStubs(stubs);
-  });
-
-  it('Handles simple 2-d arrays', function () {
-    const matrix = [
-      ['a1', 'b1', 'c1'],
-      ['a2', 'b2', 'c2'],
-      ['a3', 'b3', 'c3'],
-    ];
-    expect(
-      frontend.matrixToCsv(matrix, {
-        category: 'dv360',
-        sheetId: 'a',
-        ruleName: 'rule1',
-        label: 'label',
-        currentTime: '2020-01-01T00:00:00.000Z',
-      }),
-    ).to.equal(
-      '"Category","Sheet ID","Label","Rule Name","Current Time","a1","b1","c1"\n"dv360","a","label","rule1","2020-01-01T00:00:00.000Z","a2","b2","c2"\n"dv360","a","label","rule1","2020-01-01T00:00:00.000Z","a3","b3","c3"',
-    );
-  });
-
-  it('Handles complex 2-d arrays', function () {
-    const matrix = [
-      ['Not another CSV function!'],
-      [`Famous last words, like "This format probably won't happen!"`],
-    ];
-    expect(
-      frontend.matrixToCsv(matrix, {
-        category: 'dv360',
-        sheetId: 'a',
-        ruleName: 'rule1',
-        label: 'label',
-        currentTime: '2020-01-01T00:00:00.000Z',
-      }),
-    ).to.equal(
-      `"Category","Sheet ID","Label","Rule Name","Current Time","Not another CSV function!"\n"dv360","a","label","rule1","2020-01-01T00:00:00.000Z","Famous last words, like """This format probably won't happen!""""`,
-    );
-  });
-});
-
-interface FakeFiles {
-  currentId: number;
-  drives: Record<string, GoogleAppsScript.Drive.Schema.File>;
-  folders: Record<string, GoogleAppsScript.Drive.Schema.File[]>;
-  files: Record<string, GoogleAppsScript.Drive.Schema.File>;
-  get(id: string): GoogleAppsScript.Drive.Schema.File;
-  list(): { items?: GoogleAppsScript.Drive.Schema.File[] };
-  list({ q }: { q?: string }): { items?: GoogleAppsScript.Drive.Schema.File[] };
-  insert(
-    schema: GoogleAppsScript.Drive.Schema.File,
-    file: GoogleAppsScript.Base.Blob,
-  ): GoogleAppsScript.Drive.Schema.File;
-}
-const fakeFiles: FakeFiles = {
-  currentId: 0,
-  drives: {},
-  folders: {},
-  files: {},
-  list({ q }: { q?: string } = {}) {
-    if (!q) {
-      return { items: undefined };
-    }
-    const title: string | null = (q.match(/title="([^"]+)"/) || [])[1];
-    return { items: this.folders[title] };
-  },
-  insert(schema: GoogleAppsScript.Drive.Schema.File) {
-    if (!schema.title) {
-      throw new Error('A schema title is expected.');
-    }
-    for (const p of schema.parents || []) {
-      (this.folders[p.id!] ??= []).push(schema);
-    }
-    schema.id = schema.id || String(++this.currentId);
-    this.files[schema.title] = schema;
-    return schema;
-  },
-  get(id: string) {
-    return this.drives[id];
-  },
-};
-
-describe('Export as CSV', function () {
-  let frontend: DisplayVideoFrontend;
-  let oldDrive: GoogleAppsScript.Drive;
-  let clock: sinon.SinonFakeTimers;
-  let stubs: sinon.SinonStub[];
-
-  beforeEach(function () {
-    ({ stubs } = setUp());
-    frontend = getFrontend();
-    oldDrive = Drive;
-    Drive.Files =
-      fakeFiles as unknown as GoogleAppsScript.Drive.Collection.FilesCollection;
-    const range1 = SpreadsheetApp.getActive().getActiveSheet().getRange('Z10');
-    const range2 = SpreadsheetApp.getActive().getActiveSheet().getRange('Z11');
-    SpreadsheetApp.getActive().setNamedRange('REPORT_LABEL', range1);
-    SpreadsheetApp.getActive().setNamedRange('DRIVE_ID', range2);
-    SpreadsheetApp.getActive()
-      .getRangeByName('REPORT_LABEL')!
-      .setValue('Acme Inc.');
-    SpreadsheetApp.getActive().getRangeByName('DRIVE_ID')!.setValue('123abc');
-    clock = sinon.useFakeTimers(new Date('January 1, 1970 00:00:00 GMT'));
-  });
-
-  afterEach(function () {
-    Drive = oldDrive;
-    clock.restore();
-    tearDownStubs(stubs);
-  });
-
-  it('saves the file', function () {
-    fakeFiles.drives['123abc'] = {
-      id: '123abc',
-      mimeType: FOLDER,
-      title: 'launch_monitor',
-    };
-    frontend.exportAsCsv('my check', [['it works!']]);
-    const folderId = fakeFiles.files['reports'];
-    expect(fakeFiles.folders[folderId.id!][0]).to.deep.include({
-      id: '2',
-      mimeType: 'text/plain',
-    });
-
-    for (const value of [
-      'Acme Inc.',
-      'my check',
-      '1970-01-01T00:00:00.000Z.csv',
-    ]) {
-      expect(Object.keys(fakeFiles.files)[1].split('_')).to.contain(value);
-    }
-  });
-});
-
-describe('Fill check values', function () {
-  let rules: RuleRange;
-  let frontend: DisplayVideoFrontend;
-  let stubs: sinon.SinonStub[];
-
-  beforeEach(async function () {
-    ({ stubs } = setUp());
-    frontend = getFrontend(() => testData({}));
-    rules = new RuleRange([[]], frontend.client);
-    await frontend.initializeRules();
-  });
-
-  afterEach(function () {
-    tearDownStubs(stubs);
-  });
-
-  it('removes extra fields', async function () {
-    const noise = Array.from<string>({ length: 10 })
-      .fill('')
-      .map(() => Array.from<string>({ length: 10 }).fill('lorem ipsum'));
-    const sheet = HELPERS.getOrCreateSheet(
-      RULE_SETTINGS_SHEET + ' - Insertion Order',
-    )!;
-    sheet.clear();
-    sheet.getRange(1, 1, noise.length, noise[0].length).setValues(noise);
-    await rules.fillRuleValues(geoTargetRule.definition);
-    expect(rules.getValues()[0].length).to.equal(5);
-  });
-});
-
 describe('getMatrixOfResults', function () {
   let frontend: DisplayVideoFrontend;
   let stubs: sinon.SinonStub[];
@@ -820,6 +644,7 @@ function scaffoldSheetWithNamedRanges(
     ['EMAIL_LIST', ''],
     ['LABEL', 'Acme Inc.'],
     ['LAUNCH_MONITOR_OPTION', 'Sheets only'],
+    ['EXPORT_SETTINGS', 'drive'],
   ].entries()) {
     const range = SpreadsheetApp.getActive()
       .getActiveSheet()

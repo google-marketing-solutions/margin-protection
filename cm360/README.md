@@ -64,13 +64,13 @@ The Campaign Manager 360 Margin Protection Monitor is a tool that identifies con
 
 10. Set Up Alerts using Triggers
 
-   1. In the Report Config, populate the Emails for Alerts column with the email addresses that alerts should be sent to. The list should be a comma separated list of emails. For example: user1@company.com,user2@company.com,user3@company.com. If the column is empty, this step will be skipped.
-   2. If you want to receive a custom email message, please fill out the Email Message column in the Reports Config tab. If this column is empty, a default message will be used.
-   3. Triggers. In order to retrieve the latest report data, the CM360 scheduled reports should run before this solution executes.
-      IMPORTANT - Follow the steps below to change your spreadsheet time zone to match your CM360 report time zone.
-   4. Go to File -> Settings menu at the top of your spreadsheet and change the time zone to match your CM360 report time zone. See the screenshot below.
-   5. Go to Extensions -> Apps Script menu at the top of your spreadsheet and change the time zone to match your CM360 report time zone. See the screenshot below.
-   6. Once the time zone has been changed you can set up triggers to automatically execute the solution on a daily or weekly (Monday) basis. You can access these options in the Margin Protection Monitor menu.
+11. In the Report Config, populate the Emails for Alerts column with the email addresses that alerts should be sent to. The list should be a comma separated list of emails. For example: user1@company.com,user2@company.com,user3@company.com. If the column is empty, this step will be skipped.
+12. If you want to receive a custom email message, please fill out the Email Message column in the Reports Config tab. If this column is empty, a default message will be used.
+13. Triggers. In order to retrieve the latest report data, the CM360 scheduled reports should run before this solution executes.
+    IMPORTANT - Follow the steps below to change your spreadsheet time zone to match your CM360 report time zone.
+14. Go to File -> Settings menu at the top of your spreadsheet and change the time zone to match your CM360 report time zone. See the screenshot below.
+15. Go to Extensions -> Apps Script menu at the top of your spreadsheet and change the time zone to match your CM360 report time zone. See the screenshot below.
+16. Once the time zone has been changed you can set up triggers to automatically execute the solution on a daily or weekly (Monday) basis. You can access these options in the Margin Protection Monitor menu.
 
 ## Run the Tool manually
 

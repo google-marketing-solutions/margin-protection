@@ -16,6 +16,15 @@ describe('Migrations: upgrades', function () {
     scaffoldSheetWithNamedRanges();
   });
 
+  it('to v2.2.0', function () {
+    PropertiesService.getScriptProperties().setProperty('sheet_version', '2.1');
+    const frontend = getFrontend('2.2.0');
+    frontend.migrate();
+    const range = SpreadsheetApp.getActive().getRangeByName('EXPORT_SETTINGS');
+    expect(range).to.exist;
+    expect(range!.getValue()).to.equal('drive');
+  });
+
   it('to v3.0', async function () {
     const sheet = SpreadsheetApp.getActive().insertSheet(
       'Rule Settings - Campaign',

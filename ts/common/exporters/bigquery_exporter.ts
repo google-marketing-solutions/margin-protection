@@ -1,10 +1,15 @@
+/// <reference path="../bigquery.d.ts" />
+
 /**
- * @fileoverview Placeholder for BigQueryExporter class.
+ * @fileoverview Implements the BigQueryStrategyExporter class for exporting data to BigQuery.
  */
 
-// ts/common/bigquery_exporter.ts
+import { Exporter, ExportOptions } from '../exporter';
 
-export class BigQueryStrategyExporter {
+/**
+ * A class for exporting data to BigQuery.
+ */
+export class BigQueryStrategyExporter implements Exporter {
   private projectId: string;
   private datasetId: string;
   private bigQueryService: GoogleAppsScript.BigQuery;
@@ -22,19 +27,17 @@ export class BigQueryStrategyExporter {
     this.scriptAppService = scriptAppService;
   }
 
-  authenticate(): boolean {
-    try {
-      console.log('Attempting BigQuery authentication...');
-      // In a real Apps Script environment, you might call BigQuery.authenticate();
-      // For this example, we'll simulate success.
-      return true;
-    } catch (error) {
-      console.error('BigQuery authentication failed:', error);
-      return false;
+  export<T extends Record<string, unknown>>(
+    data: T[],
+    options: ExportOptions,
+  ): void {
+    if (!options.tableName) {
+      throw new Error('Table name is required for BigQuery export.');
     }
+    this.insertData(options.tableName, data);
   }
 
-  insertData<T extends Record<string, unknown>>(
+  private insertData<T extends Record<string, unknown>>(
     tableName: string,
     data: T[],
   ): boolean {
@@ -45,27 +48,29 @@ export class BigQueryStrategyExporter {
     }
 
     try {
-      const tableReference = this.bigQueryService
-        .newTableReference()
-        .setProjectId(this.projectId)
-        .setDatasetId(this.datasetId)
-        .setTableId(tableName);
+      const tableReference: GoogleAppsScript.BigQuery.TableReference = {
+        projectId: this.projectId,
+        datasetId: this.datasetId,
+        tableId: tableName,
+      };
 
       const rows = data.map((row) => {
-        return this.bigQueryService
-          .newTableDataInsertAllRequestRows()
-          .json(row);
+        const newRow: GoogleAppsScript.BigQuery.TableDataInsertAllRequestRows =
+          {
+            json: row,
+          };
+        return newRow;
       });
 
-      const request = this.bigQueryService
-        .newTableDataInsertAllRequest()
-        .setRows(rows);
+      const request: GoogleAppsScript.BigQuery.TableDataInsertAllRequest = {
+        rows: rows,
+      };
 
       const response = this.bigQueryService.Tabledata.insertAll(
         request,
-        tableReference.getProjectId(),
-        tableReference.getDatasetId(),
-        tableReference.getTableId(),
+        tableReference.projectId,
+        tableReference.datasetId,
+        tableReference.tableId,
       );
 
       if (response.insertErrors && response.insertErrors.length > 0) {

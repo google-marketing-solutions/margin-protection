@@ -33,6 +33,7 @@ const ENTITY_ID = 'ENTITY_ID';
 const ID_TYPE = 'ID_TYPE';
 const REPORT_LABEL = 'REPORT_LABEL';
 const DRIVE_ID = 'DRIVE_ID';
+const EXPORT_SETTINGS = 'EXPORT_SETTINGS';
 
 /**
  * The name of the general settings sheet.
@@ -139,6 +140,23 @@ export const migrations: Record<
     }
     headers[geoTargetIndex] = 'Allowed Geo Targets';
     sheet.getRange(1, 1, values.length, values[0].length).setValues(values);
+  },
+  '2.2.0': () => {
+    const active = SpreadsheetApp.getActive();
+    if (active.getRangeByName(EXPORT_SETTINGS)) {
+      return;
+    }
+    const sheet = HELPERS.getOrCreateSheet('General/Settings');
+    const range = sheet.getRange('A8:C8');
+    HELPERS.insertRows(range);
+    const exportSettings = sheet.getRange('B8:C8').merge();
+    active.setNamedRange(EXPORT_SETTINGS, exportSettings);
+
+    addSettingWithDescription(sheet, 'A8', [
+      'Export Settings',
+      'Whether to export to Drive, BigQuery, or both.',
+    ]);
+    exportSettings.setValue('drive');
   },
 };
 

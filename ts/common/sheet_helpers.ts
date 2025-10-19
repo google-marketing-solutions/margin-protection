@@ -35,6 +35,9 @@ import {
   RuleRangeInterface,
   SettingMapInterface,
 } from 'common/types';
+import { ExportContext, ExportOptions } from './exporter';
+import { DriveExporter } from './exporters/drive_exporter';
+import { BigQueryStrategyExporter } from './exporters/bigquery_exporter';
 
 const FOLDER = 'application/vnd.google-apps.folder';
 const HEADER_RULE_NAME_INDEX = 0;
@@ -67,6 +70,11 @@ export const GENERAL_SETTINGS_SHEET = 'General/Settings';
  * Used to figure out the GCP project name. May be blank (if BigQuery isn't used).
  */
 export const GCP_PROJECT_RANGE = 'GCP_PROJECT_ID';
+
+/**
+ * The named range for the export settings.
+ */
+export const EXPORT_SETTINGS_RANGE = 'EXPORT_SETTINGS';
 
 /**
  * Provides a useful data structure to get campaign ID settings.
@@ -187,17 +195,6 @@ function makeCampaignIndexedSettings(
     }
   }
   return result;
-}
-
-/**
- * Metadata that gets prepended to CSV exports.
- */
-interface MetadataForCsv {
-  category: string;
-  sheetId: string;
-  label: string;
-  ruleName: string;
-  currentTime: string;
 }
 
 /**
@@ -851,71 +848,44 @@ export abstract class AppsScriptFrontend<T extends ClientTypes<T>> {
   }
 
   /**
-   * Converts a 2-d array to a CSV.
-   *
-   * Prepends metadata from {@link MetadataForCsv}.
+   * Exports rules as a CSV.
    */
-  matrixToCsv(
-    matrix: string[][],
-    { category, sheetId, label, ruleName, currentTime }: MetadataForCsv,
-  ): string {
-    // note - the arrays we're using get API data, not user input. Not
-    // anticipating anything that complicated, but we're adding tests to be
-    // sure.
-    const headers = [
-      'Category',
-      'Sheet ID',
-      'Label',
-      'Rule Name',
-      'Current Time',
-      ...matrix[0],
-    ]
-      .map((col) => `"${col.replaceAll('"', '"""')}"`)
-      .join(',');
-    return (
-      headers +
-      '\n' +
-      matrix
-        .slice(1)
-        .map((row) =>
-          [category, sheetId, label, ruleName, currentTime, ...row]
-            .map((col) => `"${col.replaceAll('"', '"""')}"`)
-            .join(','),
-        )
-        .join('\n')
+  exportData(ruleName: string, matrix: string[][]) {
+    const options = this.getExportOptions();
+    const exportContext = new ExportContext(
+      options.destination === 'bigquery'
+        ? new BigQueryStrategyExporter('your_project_id', 'your_dataset_id') // TODO: Get from settings
+        : new DriveExporter(),
     );
+
+    exportContext.export(matrix, {
+      ...options,
+      tableName: ruleName,
+      fileName: `${this.category}_${
+        this.getIdentity()?.label
+      }_${ruleName}_${HELPERS.getSheetId()}_${new Date().toISOString()}.csv`,
+    });
   }
 
   /**
-   * Exports rules as a CSV.
+   * Retrieves the export options from the sheet.
    */
-  exportAsCsv(ruleName: string, matrix: string[][]) {
-    const folder = this.getOrCreateFolder('reports');
-    const sheetId = HELPERS.getSheetId();
-    const label: string = HELPERS.getRangeByName(LABEL_RANGE).getValue();
-    const currentTime = new Date(Date.now()).toISOString();
-    const category = this.category;
-    const file = Utilities.newBlob(
-      this.matrixToCsv(matrix, {
-        category,
-        sheetId,
-        label,
-        ruleName,
-        currentTime,
-      }),
-    );
-    const filename = `${this.category}_${
-      label ? label + '_' : 'report_'
-    }${ruleName}_${sheetId}_${currentTime}`;
-    Drive.Files!.insert(
-      {
-        parents: [{ id: folder }],
-        title: `${filename}.csv`,
-        mimeType: 'text/plain',
-      },
-      file,
-    );
-    console.log(`Exported CSV launch_monitor/${filename} to Google Drive`);
+  getExportOptions(): ExportOptions {
+    const range = HELPERS.getRangeByName(EXPORT_SETTINGS_RANGE);
+    const values = range.getValues();
+    const options: ExportOptions = {
+      destination: 'drive', // Default to drive
+    };
+    if (values && values.length > 0) {
+      for (const row of values) {
+        const key = row[0];
+        const value = row[1];
+        if (key === 'destination') {
+          options.destination = value as 'bigquery' | 'drive';
+        }
+      }
+    }
+    return options;
   }
 
   /**
@@ -1012,7 +982,7 @@ export abstract class AppsScriptFrontend<T extends ClientTypes<T>> {
       if (
         getTemplateSetting('LAUNCH_MONITOR_OPTION').getValue() === 'CSV Back-Up'
       ) {
-        this.exportAsCsv(rule.name, matrix);
+        this.exportData(rule.name, matrix);
       }
     }
     if (ruleSheets.length == 0) {

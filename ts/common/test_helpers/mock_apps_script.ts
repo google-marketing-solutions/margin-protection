@@ -732,3 +732,53 @@ declare global {
     with(index: number, value: T): T[];
   }
 }
+
+export const FOLDER = 'application/vnd.google-apps.folder';
+
+interface FakeFiles {
+  currentId: number;
+  drives: Record<string, GoogleAppsScript.Drive.Schema.File>;
+  folders: Record<string, GoogleAppsScript.Drive.Schema.File[]>;
+  files: Record<string, GoogleAppsScript.Drive.Schema.File>;
+  get(id: string): GoogleAppsScript.Drive.Schema.File;
+  list(): { items?: GoogleAppsScript.Drive.Schema.File[] };
+  list({ q }: { q?: string }): { items?: GoogleAppsScript.Drive.Schema.File[] };
+  insert(
+    schema: GoogleAppsScript.Drive.Schema.File,
+    file: GoogleAppsScript.Base.Blob,
+  ): GoogleAppsScript.Drive.Schema.File;
+}
+export const fakeFiles: FakeFiles = {
+  currentId: 0,
+  drives: {},
+  folders: {},
+  files: {},
+  list({ q }: { q?: string } = {}) {
+    if (!q) {
+      return { items: undefined };
+    }
+    const title: string | null = (q.match(/title="([^"]+)"/) || [])[1];
+    return { items: this.folders[title] };
+  },
+  insert(schema: GoogleAppsScript.Drive.Schema.File) {
+    if (!schema.title) {
+      throw new Error('A schema title is expected.');
+    }
+    for (const p of schema.parents || []) {
+      (this.folders[p.id!] ??= []).push(schema);
+    }
+    schema.id = schema.id || String(++this.currentId);
+    this.files[schema.title] = schema;
+    return schema;
+  },
+  get(id: string) {
+    return this.drives[id];
+  },
+};
+
+/**
+ * Restores any stubs passed to it to their original form.
+ */
+export function tearDownStubs(stubs: sinon.SinonStub[]) {
+  stubs.forEach((stub) => stub.restore());
+}

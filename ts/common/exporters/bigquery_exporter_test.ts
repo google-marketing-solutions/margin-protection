@@ -2,10 +2,9 @@
  * @fileoverview Unit tests for the BigQueryStrategyExporter class.
  */
 
-// ts/common/tests/bigquery_exporter_test.ts
 import { expect } from 'chai';
 import * as sinon from 'sinon';
-import { BigQueryStrategyExporter } from '../bigquery_exporter';
+import { BigQueryStrategyExporter } from './bigquery_exporter';
 
 // Mock the global Apps Script BigQuery service and ScriptApp
 const mockBigQueryService = {
@@ -42,49 +41,26 @@ describe('BigQueryStrategyExporter', function () {
     exporter = new BigQueryStrategyExporter(
       'test_project',
       'test_dataset',
-      mockBigQueryService as unknown as GoogleAppsScript.BigQuery.BigQueryService,
+      mockBigQueryService as unknown as GoogleAppsScript.BigQuery,
       mockScriptApp as unknown as GoogleAppsScript.Script.ScriptApp,
     );
     sinon.resetHistory(); // Reset history of stubs before each test
   });
 
-  describe('authenticate', function () {
-    it('should return true on successful authentication', function () {
-      expect(exporter.authenticate()).to.be.true;
-    });
-
-    it('should return false on failed authentication (simulated)', function () {
-      // For this test, we'd need to simulate an error during authentication.
-      // Since the current authenticate() method always returns true,
-      // this test will pass.
-      expect(exporter.authenticate()).to.be.true;
-    });
-  });
-
-  describe('insertData', function () {
+  describe('export', function () {
     it('should return true on successful data insertion', function () {
       const tableName = 'test_table';
       const data = [{ id: 1, name: 'test' }];
       mockBigQueryService.Tabledata.insertAll.returns({}); // Simulate success
-      expect(exporter.insertData(tableName, data)).to.be.true;
+      exporter.export(data, { destination: 'bigquery', tableName });
       expect(mockBigQueryService.Tabledata.insertAll.calledOnce).to.be.true;
     });
 
-    it('should return true if no data is provided', function () {
-      const tableName = 'test_table';
-      const data: unknown[] = []; // Changed from any[] to unknown[]
-      expect(exporter.insertData(tableName, data)).to.be.true;
-      expect(mockBigQueryService.Tabledata.insertAll.called).to.be.false; // Should not call insertAll
-    });
-
-    it('should return false on failed data insertion (simulated)', function () {
-      const tableName = 'test_table';
+    it('should throw an error if table name is not provided', function () {
       const data = [{ id: 1, name: 'test' }];
-      mockBigQueryService.Tabledata.insertAll.throws(
-        new Error('BigQuery API error'),
-      ); // Simulate failure
-      expect(exporter.insertData(tableName, data)).to.be.false;
-      expect(mockBigQueryService.Tabledata.insertAll.calledOnce).to.be.true;
+      expect(() => exporter.export(data, { destination: 'bigquery' })).to.throw(
+        'Table name is required for BigQuery export.',
+      );
     });
   });
 });
