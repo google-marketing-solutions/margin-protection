@@ -1,5 +1,3 @@
-/// <reference path="../bigquery.d.ts" />
-
 /**
  * @fileoverview Implements the BigQueryStrategyExporter class for exporting data to BigQuery.
  */
@@ -48,23 +46,19 @@ export class BigQueryStrategyExporter implements Exporter {
     }
 
     try {
-      const tableReference: GoogleAppsScript.BigQuery.TableReference = {
-        projectId: this.projectId,
-        datasetId: this.datasetId,
-        tableId: tableName,
-      };
+      const tableReference = this.bigQueryService.newTableReference();
+      tableReference.projectId = this.projectId;
+      tableReference.datasetId = this.datasetId;
+      tableReference.tableId = tableName;
 
       const rows = data.map((row) => {
-        const newRow: GoogleAppsScript.BigQuery.TableDataInsertAllRequestRows =
-          {
-            json: row,
-          };
+        const newRow = this.bigQueryService.newTableDataInsertAllRequestRows();
+        newRow.json = row;
         return newRow;
       });
 
-      const request: GoogleAppsScript.BigQuery.TableDataInsertAllRequest = {
-        rows: rows,
-      };
+      const request = this.bigQueryService.newTableDataInsertAllRequest();
+      request.rows = rows;
 
       const response = this.bigQueryService.Tabledata.insertAll(
         request,

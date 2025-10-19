@@ -1,17 +1,17 @@
 declare global {
   declare namespace GoogleAppsScript {
-    namespace BigQuery {
-      interface TableReference {
+    export namespace BigQuery {
+      export interface TableReference {
         projectId: string;
         datasetId: string;
         tableId: string;
       }
 
-      interface TableDataInsertAllRequestRows {
+      export interface TableDataInsertAllRequestRows {
         json: Record<string, unknown>;
       }
 
-      interface TableDataInsertAllRequest {
+      export interface TableDataInsertAllRequest {
         rows: TableDataInsertAllRequestRows[];
       }
 
