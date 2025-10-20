@@ -810,14 +810,14 @@ export abstract class AppsScriptFrontend<T extends ClientTypes<T>> {
   }
 
   displayGlossary() {
-    const template = HtmlService.createTemplateFromFile('html/glossary');
+    const template = HtmlService.createTemplateFromFile('glossary');
     template['rules'] = this.getFrontendDefinitions();
     SpreadsheetApp.getUi().showSidebar(template.evaluate());
   }
 
   displaySetupGuide() {
     SpreadsheetApp.getUi().showSidebar(
-      HtmlService.createHtmlOutputFromFile('html/guide'),
+      HtmlService.createHtmlOutputFromFile('guide'),
     );
   }
 

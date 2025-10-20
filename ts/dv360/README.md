@@ -17,3 +17,7 @@ The Display Video 360 Launch Monitor is a tool that identifies configuration err
 4. Add your Agency ID or Advertiser ID under **General/Settings**. Note: Agency ID is **not recommended** for large agencies because it can exhaust time limits in Apps Script.
 5. Manually run **Fetch Data** or **Pre-Launch QA** under the **Launch Monitor** menu in Google Sheets. You will probably need to do this twice: Once to authorize permissions Launch Monitor requests, and once to see results.
    ![screenshot showing Launch Monitor menu in Google Sheets](docs/resources/menu.png)
+
+## Development
+
+To build this project from source, run `yarn build`.

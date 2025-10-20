@@ -192,7 +192,7 @@ export class DisplayVideoFrontend
   }
 
   override displaySetupModal() {
-    const template = HtmlService.createTemplateFromFile('html/setup');
+    const template = HtmlService.createTemplateFromFile('setup');
     template['id'] = HELPERS.getRangeByName(ENTITY_ID).getValue() || '';
     template['idType'] = HELPERS.getRangeByName(ID_TYPE).getValue() || '';
     const htmlOutput = template.evaluate().setWidth(350).setHeight(400);

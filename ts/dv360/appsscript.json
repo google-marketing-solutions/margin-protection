@@ -1,13 +1,36 @@
 {
   "timeZone": "Etc/GMT",
   "dependencies": {
-    "enabledAdvancedServices": [{
-      "userSymbol": "Drive",
-      "serviceId": "drive",
-      "version": "v2"
-    }]
+    "enabledAdvancedServices": [
+      {
+        "userSymbol": "Drive",
+        "serviceId": "drive",
+        "version": "v2"
+      },
+      {
+        "userSymbol": "DisplayVideo",
+        "version": "v4",
+        "serviceId": "displayvideo"
+      },
+      {
+        "userSymbol": "DoubleClickBidManager",
+        "version": "v2",
+        "serviceId": "doubleclickbidmanager"
+      }
+    ]
   },
+
   "exceptionLogging": "STACKDRIVER",
-  "oauthScopes": ["https://www.googleapis.com/auth/doubleclickbidmanager", "https://www.googleapis.com/auth/display-video", "https://www.googleapis.com/auth/script.external_request", "https://www.googleapis.com/auth/spreadsheets.currentonly", "https://www.googleapis.com/auth/drive.file", "https://www.googleapis.com/auth/drive.readonly", "https://www.googleapis.com/auth/adwords", "https://www.googleapis.com/auth/script.container.ui", "https://www.googleapis.com/auth/script.send_mail"],
+  "oauthScopes": [
+    "https://www.googleapis.com/auth/doubleclickbidmanager",
+    "https://www.googleapis.com/auth/display-video",
+    "https://www.googleapis.com/auth/script.external_request",
+    "https://www.googleapis.com/auth/spreadsheets.currentonly",
+    "https://www.googleapis.com/auth/drive.file",
+    "https://www.googleapis.com/auth/drive.readonly",
+    "https://www.googleapis.com/auth/adwords",
+    "https://www.googleapis.com/auth/script.container.ui",
+    "https://www.googleapis.com/auth/script.send_mail"
+  ],
   "runtimeVersion": "V8"
 }

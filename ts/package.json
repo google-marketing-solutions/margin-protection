@@ -5,8 +5,12 @@
   "main": "index.js",
   "type": "module",
   "scripts": {
+    "push": "npx clasp push",
     "install-deps": "yarn && yarn --cwd ../",
-    "test": "yarn install-deps && mocha"
+    "test": "yarn install-deps && mocha",
+    "gas:init": "tsx scripts/init.ts",
+    "migrate": "node scripts/run-migrations.mjs",
+    "postinstall": "node scripts/run-migrations.mjs"
   },
   "author": "Sean Capaloff-Jones <seancjones@google.com>",
   "license": "MIT",
@@ -14,12 +18,17 @@
   "private": true,
   "devDependencies": {
     "@types/google-apps-script": "^1.0.83",
+    "@types/inquirer": "^8.0.0",
     "@types/mocha": "^10.0.9",
+    "@types/node": "^24.9.0",
     "@types/sinon-chai": "^4.0.0",
     "@types/webpack": "^5.28.5",
+    "commander": "^14.0.1",
     "css-loader": "^6.7.3",
     "file-loader": "^6.2.0",
     "gas-webpack-plugin": "^2.3.0",
+    "glob": "^11.0.3",
+    "inquirer": "^8.0.0",
     "mocha": "^10.7.3",
     "ts-loader": "^9.4.2",
     "tsconfig-paths-webpack-plugin": "^4.0.0",

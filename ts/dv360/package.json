@@ -3,21 +3,12 @@
   "type": "module",
   "devDependencies": {
     "@types/google-apps-script": "^1.0.56",
-    "css-loader": "^6.7.3",
-    "file-loader": "^6.2.0",
-    "gas-webpack-plugin": "^2.3.0",
-    "ts-loader": "^9.4.2",
-    "tsconfig-paths-webpack-plugin": "^4.0.0",
-    "typescript": "^4.9.3",
-    "webpack-cli": "^5.0.1"
+    "tsup": "^8.5.0",
+    "typescript": "^4.9.3"
   },
   "scripts": {
-    "install-deps": "yarn --cwd ../ install-deps && yarn",
-    "build": "yarn install-deps && cp -rf ../common/html . && webpack",
-    "build:dev": "yarn build --mode development --devtool source-map",
-    "build:prod": "yarn build --mode production",
-    "push": "yarn build:dev && clasp push",
-    "push:prod": "yarn build:prod && clasp push",
+    "build": "tsup",
+    "push": "yarn build && clasp push",
     "push:client": "yarn --cwd ../client push",
     "test": "yarn --cwd .. test dv360/src/tests/*_test.ts",
     "lint": "yarn --cwd .. lint dv360/src/**/*.ts"

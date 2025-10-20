@@ -92,7 +92,7 @@ export class SearchAdsFrontend extends AppsScriptFrontend<SearchAdsClientTypes> 
   }
 
   override displaySetupModal() {
-    const template = HtmlService.createTemplateFromFile('html/setup');
+    const template = HtmlService.createTemplateFromFile('setup');
     template['agencyId'] =
       HELPERS.getRangeByName(LOGIN_CUSTOMER_ID).getValue() || '';
     template['advertiserId'] =

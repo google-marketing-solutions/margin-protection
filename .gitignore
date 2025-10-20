@@ -9,3 +9,5 @@ dist
 .clasp.json
 package-lock.json
 .clasp.json*
+.migrations_ran
+**/.clasp*.json

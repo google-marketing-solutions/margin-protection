@@ -4,7 +4,7 @@
     "outDir": "dist",
     "skipLibCheck": true,
     "module": "esnext",
-    "moduleResolution": "node10",
+    "moduleResolution": "node",
     "target": "es2020",
     "lib": ["esnext", "dom"],
     "noImplicitThis": true,

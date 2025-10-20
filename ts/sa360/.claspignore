@@ -14,5 +14,5 @@
 
 **/*
 !html/*.html
-!Code.js
+!main.js
 !appsscript.json
