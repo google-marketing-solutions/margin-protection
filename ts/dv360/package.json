@@ -8,9 +8,9 @@
   },
   "scripts": {
     "build": "tsup",
-    "push": "yarn build && clasp push",
-    "push:client": "yarn --cwd ../client push",
-    "test": "yarn --cwd .. test dv360/src/tests/*_test.ts",
-    "lint": "yarn --cwd .. lint dv360/src/**/*.ts"
+    "push": "pnpm build && clasp push",
+    "push:client": "pnpm --filter client push",
+    "test": "pnpm --filter ts test dv360/src/tests/*_test.ts",
+    "lint": "pnpm --filter ts lint dv360/src/**/*.ts"
   }
 }

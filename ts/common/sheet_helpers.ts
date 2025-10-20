@@ -906,8 +906,7 @@ export abstract class AppsScriptFrontend<T extends ClientTypes<T>> {
     }
     const driveId: string = parentId.getValue().trim();
 
-    const file: GoogleAppsScript.Drive.Schema.File | undefined =
-      Drive.Files!.get(driveId);
+    const file = Drive.Files!.get(driveId);
     let parentName = '';
     if (file && file.id) {
       if (file.mimeType !== FOLDER) {
@@ -920,19 +919,19 @@ export abstract class AppsScriptFrontend<T extends ClientTypes<T>> {
 
     const q =
       (parentName ? `'${parentName}' in parents and ` : '') +
-      `title="${folderName}" and mimeType="${FOLDER}" and not trashed`;
+      `name="${folderName}" and mimeType="${FOLDER}" and not trashed`;
     const args = {
       q,
     };
-    const folders = Drive.Files!.list(args).items;
+    const folders = Drive.Files!.list(args).files;
     let folder: string;
     if (folders && folders.length) {
       folder = folders[0].id as string;
     } else {
-      folder = Drive.Files!.insert({
-        title: folderName,
+      folder = Drive.Files!.create({
+        name: folderName,
         mimeType: FOLDER,
-        parents: [{ id: driveId }],
+        parents: [driveId],
       }).id as string;
     }
     return folder;

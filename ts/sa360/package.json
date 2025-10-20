@@ -13,14 +13,13 @@
     "webpack-cli": "^5.0.1"
   },
   "scripts": {
-    "install-deps": "yarn --cwd ../ install-deps && yarn",
-    "build": "yarn install-deps && cp -rf ../common/html . && webpack",
-    "build:dev": "yarn build --mode development --devtool source-map",
-    "build:prod": "yarn build --mode production",
-    "push": "yarn build:dev && clasp push",
-    "push:prod": "yarn build:prod && clasp push",
-    "push:client": "yarn --cwd ../client push",
-    "test": "yarn --cwd ./ts test",
-    "lint": "yarn --cwd .. lint dv360/src/**/*.ts"
+    "build": "pnpm install && cp -rf ../common/html . && webpack",
+    "build:dev": "pnpm build --mode development --devtool source-map",
+    "build:prod": "pnpm build --mode production",
+    "push": "pnpm build:dev && clasp push",
+    "push:prod": "pnpm build:prod && clasp push",
+    "push:client": "pnpm --filter client push",
+    "test": "pnpm --filter ts test",
+    "lint": "pnpm --filter ts lint dv360/src/**/*.ts"
   }
 }

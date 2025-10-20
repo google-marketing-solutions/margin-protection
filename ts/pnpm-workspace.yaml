@@ -1,0 +1,5 @@
+packages:
+  - 'dv360'
+  - 'sa360'
+  - 'client'
+  - '!scripts'

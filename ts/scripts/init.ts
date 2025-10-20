@@ -167,7 +167,7 @@ async function main() {
       project === 'googleads' ? 'build --mode production' : 'build:prod';
   }
 
-  const buildFullCommand = `yarn ${buildCommand}`;
+  const buildFullCommand = `pnpm ${buildCommand}`;
   const pushFullCommand = `npx clasp push --project ${path.basename(claspProjectPath)}`;
 
   console.log(

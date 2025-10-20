@@ -20,4 +20,4 @@ The Display Video 360 Launch Monitor is a tool that identifies configuration err
 
 ## Development
 
-To build this project from source, run `yarn build`.
+To build this project from source, run `pnpm build`.

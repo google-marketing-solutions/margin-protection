@@ -20,10 +20,10 @@ export class DriveExporter implements Exporter {
 
     const folderId = this.getFolderIdFromOptions(options);
 
-    Drive.Files.insert(
+    Drive.Files.create(
       {
-        parents: [{ id: folderId }],
-        title: options.fileName,
+        parents: [folderId],
+        name: options.fileName,
         mimeType: 'text/csv',
       },
       blob,

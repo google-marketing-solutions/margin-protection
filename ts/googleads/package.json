@@ -18,8 +18,8 @@
     "webpack-cli": "^5.0.1"
   },
   "scripts": {
-    "build": "yarn && cp -rf ../../common/html/*.html html && webpack",
-    "push-dev": "yarn build --mode development --devtool source-map && clasp push",
-    "push": "yarn build --mode production && clasp push"
+    "build": "pnpm install && cp -rf ../../common/html/*.html html && webpack",
+    "push-dev": "pnpm build --mode development --devtool source-map && clasp push",
+    "push": "pnpm build --mode production && clasp push"
   }
 }

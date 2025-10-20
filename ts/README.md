@@ -14,7 +14,7 @@ These projects are written in TypeScript and need to be built to be deployed to
 Apps Script. The badge statuses above represent whether building is working or
 not.
 
-`yarn` contains scripts that make this simple.
+`pnpm` contains scripts that make this simple.
 
 ### Recommended Installation (library)
 
@@ -22,8 +22,8 @@ not.
 
    ```
    clasp create
-   yarn
-   yarn push
+   pnpm install
+   pnpm push
    ```
 
 2. Create a [library](https://developers.google.com/apps-script/guides/libraries#create_and_share_a_library) called `Launch Monitor` with the code provided.

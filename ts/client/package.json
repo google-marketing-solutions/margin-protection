@@ -11,7 +11,7 @@
   },
   "scripts": {
     "build": "tsup",
-    "push": "yarn build && clasp push",
+    "push": "pnpm build && clasp push",
     "test": "echo 'no tests for client wrapper.'"
   }
 }
