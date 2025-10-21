@@ -2,6 +2,16 @@
  * @fileoverview Tests the Apps Script main functions.
  */
 
+import {
+  afterAll,
+  afterEach,
+  beforeAll,
+  beforeEach,
+  describe,
+  expect,
+  it,
+  vi,
+} from 'vitest';
 import { TARGETING_TYPE } from 'dv360_api/dv360_types';
 import { equalTo } from 'common/checks';
 import { HELPERS } from 'common/sheet_helpers';
@@ -29,30 +39,25 @@ import {
   LineItemTemplateConverter,
 } from './client_helpers';
 
-import HtmlTemplate = GoogleAppsScript.HTML.HtmlTemplate;
 import { AssignedTargetingOption } from 'dv360_api/dv360_resources';
 
-import * as sinon from 'sinon';
-import { expect } from 'chai';
-import { tearDownStubs } from 'common/tests/helpers';
+type HtmlTemplate = GoogleAppsScript.HTML.HtmlTemplate;
 
-describe('Rule value filling', function () {
+describe('Rule value filling', () => {
   let client: Client;
   let rules: RuleRange;
-  let clock: sinon.SinonFakeTimers;
-  let stubs: sinon.SinonStub[];
 
   const allCampaigns: Record<string, CampaignTemplateConverter[]> = {};
   const allInsertionOrders: Record<string, InsertionOrderTemplateConverter[]> =
     {};
 
-  beforeEach(async function () {
+  beforeEach(async () => {
     client = testData({ allCampaigns, allInsertionOrders });
 
-    ({ stubs } = setUp());
+    setUp();
 
     rules = new RuleRange([[]], client);
-    clock = sinon.useFakeTimers({
+    vi.useFakeTimers({
       now: new Date('1970-03-01'),
       shouldAdvanceTime: true,
     });
@@ -60,12 +65,12 @@ describe('Rule value filling', function () {
     await rules.fillRuleValues(geoTargetRule.definition);
   });
 
-  afterEach(function () {
-    clock.restore();
-    tearDownStubs(stubs);
+  afterEach(() => {
+    vi.useRealTimers();
+    vi.restoreAllMocks();
   });
 
-  it('uses existing settings when adding new campaigns', async function () {
+  it('uses existing settings when adding new campaigns', async () => {
     rules.setRule('none', [
       ['ID', 'ID', 'Campaign Name'],
       ['c1', 'c1', 'Campaign 1'],
@@ -100,7 +105,7 @@ describe('Rule value filling', function () {
       [];
 
     await rules.fillRuleValues(geoTargetRule.definition);
-    expect(rules.getRule(geoTargetRule.definition.name)).to.eql([
+    expect(rules.getRule(geoTargetRule.definition.name)).toEqual([
       [
         'ID',
         'Allowed Geo Targets',
@@ -114,13 +119,11 @@ describe('Rule value filling', function () {
   });
 });
 
-describe('validate/launchMonitor functions', function () {
+describe('validate/launchMonitor functions', () => {
   let frontend: DisplayVideoFrontend;
-  let clock: sinon.SinonFakeTimers;
-  let stubs: sinon.SinonStub[];
 
-  beforeEach(async function () {
-    clock = sinon.useFakeTimers({
+  beforeEach(async () => {
+    vi.useFakeTimers({
       now: new Date(Date.UTC(1970, 0, 1)),
       shouldAdvanceTime: false,
     });
@@ -144,7 +147,7 @@ describe('validate/launchMonitor functions', function () {
         },
       ],
     };
-    ({ stubs } = setUp());
+    setUp();
     frontend = getFrontend(() =>
       testData({ allCampaigns, allInsertionOrders }),
     );
@@ -153,22 +156,22 @@ describe('validate/launchMonitor functions', function () {
     await frontend.initializeRules();
   });
 
-  afterEach(function () {
-    clock.restore();
-    tearDownStubs(stubs);
+  afterEach(() => {
+    vi.useRealTimers();
+    vi.restoreAllMocks();
   });
 
-  it('runs with no errors', async function () {
+  it('runs with no errors', async () => {
     await frontend.launchMonitor();
     expect(
       SpreadsheetApp.getActive()
         .getSheetByName('Budget Pacing by Percent Ahead - Results')
         .getDataRange()
         .getValues(),
-    ).to.eql([]);
+    ).toEqual([]);
   });
 
-  it('runs with errors', async function () {
+  it('runs with errors', async () => {
     scaffoldSheetWithNamedRanges();
     SpreadsheetApp.getActive()
       .getSheetByName('Rule Settings - Campaign')
@@ -181,7 +184,7 @@ describe('validate/launchMonitor functions', function () {
         .getSheetByName('Geo Targeting - Results')
         .getDataRange()
         .getValues(),
-    ).to.eql([
+    ).toEqual([
       [
         'Result',
         'anomalous',
@@ -201,7 +204,7 @@ describe('validate/launchMonitor functions', function () {
     ]);
   });
 
-  it('skips disabled rules', async function () {
+  it('skips disabled rules', async () => {
     console.log('en');
     scaffoldSheetWithNamedRanges();
     SpreadsheetApp.getActive()
@@ -222,44 +225,42 @@ describe('validate/launchMonitor functions', function () {
     await frontend.launchMonitor();
 
     // first perform sanity checks
-    expect(budgetPacingRuleName).to.equal(budgetPacingPercentageRule.name);
-    expect(geoTargetRuleName).to.equal(geoTargetRule.name);
+    expect(budgetPacingRuleName).toEqual(budgetPacingPercentageRule.name);
+    expect(geoTargetRuleName).toEqual(geoTargetRule.name);
     // then validate that pacing doesn't work (it's disabled).
     expect(
       SpreadsheetApp.getActive().getSheetByName(
         `${budgetPacingPercentageRule.name} - Results`,
       ),
-    ).to.not.be.undefined;
+    ).toBeDefined();
     expect(
       SpreadsheetApp.getActive()
         .getSheetByName(`${geoTargetRule.name} - Results`)
         .getDataRange()
         .getValues(),
-    ).to.eql([]);
+    ).toEqual([]);
   });
 });
 
-describe('Pre-Launch QA menu option', function () {
+describe('Pre-Launch QA menu option', () => {
   let frontend: DisplayVideoFrontend;
-  let clock: sinon.SinonFakeTimers;
-  let stubs: sinon.SinonStub[];
 
-  beforeEach(async function () {
-    ({ stubs } = setUp());
+  beforeEach(async () => {
+    setUp();
     frontend = getFrontend(() => testData({}));
     HtmlService.createTemplateFromFile = () =>
       ({ evaluate: () => new FakeHtmlOutput() }) as unknown as HtmlTemplate;
     // force private methods to be visible, so we can manipulate them.
     await frontend.initializeRules();
-    clock = sinon.useFakeTimers(new Date(Date.UTC(1970, 0, 1)));
+    vi.useFakeTimers({ now: new Date(Date.UTC(1970, 0, 1)) });
   });
 
-  afterEach(function () {
-    clock.restore();
-    tearDownStubs(stubs);
+  afterEach(() => {
+    vi.useRealTimers();
+    vi.restoreAllMocks();
   });
 
-  it('clears check results that were previously set', async function () {
+  it('clears check results that were previously set', async () => {
     const noise = Array.from<string>({ length: 10 })
       .fill('')
       .map(() => Array.from<string>({ length: 10 }).fill('lorem ipsum'));
@@ -273,9 +274,9 @@ describe('Pre-Launch QA menu option', function () {
     // try again
     await frontend.preLaunchQa();
 
-    expect(origValues[9][9]).to.equal('lorem ipsum');
-    expect(sheet.getDataRange().getValues()).to.have.length(3);
-    expect(sheet.getDataRange().getValues()[2]).to.eql([
+    expect(origValues[9][9]).toEqual('lorem ipsum');
+    expect(sheet.getDataRange().getValues()).toHaveLength(3);
+    expect(sheet.getDataRange().getValues()[2]).toEqual([
       'Geo Targeting',
       'Advertiser ID: 1, Campaign Name: Campaign 1, Campaign ID: c1, Number of Geos: 1',
       'OK',
@@ -283,7 +284,7 @@ describe('Pre-Launch QA menu option', function () {
     ]);
   });
 
-  it('ignores disabled rules', async function () {
+  it('ignores disabled rules', async () => {
     const noise = Array.from<string>({ length: 10 })
       .fill('')
       .map(() => Array.from<string>({ length: 10 }).fill('lorem ipsum'));
@@ -304,7 +305,7 @@ describe('Pre-Launch QA menu option', function () {
     // try again
     await frontend.preLaunchQa();
 
-    expect(sheet.getDataRange().getValues()).to.have.length(2);
+    expect(sheet.getDataRange().getValues()).toHaveLength(2);
   });
 });
 
@@ -347,7 +348,9 @@ function testData(params: {
             TARGETING_TYPE.GEO_REGION,
             '',
             '',
-            { displayName: geoTarget },
+            {
+              displayName: geoTarget,
+            },
           ),
       ),
     },
@@ -374,53 +377,50 @@ function testData(params: {
   });
 }
 
-describe('getMatrixOfResults', function () {
+describe('getMatrixOfResults', () => {
   let frontend: DisplayVideoFrontend;
-  let stubs: sinon.SinonStub[];
 
-  beforeEach(function () {
-    ({ stubs } = setUp());
+  beforeEach(() => {
+    setUp();
     frontend = getFrontend();
   });
 
-  afterEach(function () {
-    tearDownStubs(stubs);
+  afterEach(() => {
+    vi.restoreAllMocks();
   });
 
-  it('Provides 2-d array from a set of values with no fields.', async function () {
+  it('Provides 2-d array from a set of values with no fields.', async () => {
     const result = frontend.getMatrixOfResults('value1', [equalTo(1, 1, {})]);
-    expect(result).to.eql([
+    expect(result).toEqual([
       ['value1', 'anomalous'],
       ['1', 'false'],
     ]);
   });
 
-  it('Provides 2-d array from a set of values with fields.', async function () {
+  it('Provides 2-d array from a set of values with fields.', async () => {
     const result = frontend.getMatrixOfResults('value2', [
       equalTo(1, 1, { test1: 'a', test2: 'b' }),
     ]);
-    expect(result).to.eql([
+    expect(result).toEqual([
       ['value2', 'anomalous', 'test1', 'test2'],
       ['1', 'false', 'a', 'b'],
     ]);
   });
 });
 
-describe('Partner view', function () {
+describe('Partner view', () => {
   let frontend: DisplayVideoFrontend;
-  let clock: sinon.SinonFakeTimers;
-  let stubs: sinon.SinonStub[];
 
-  before(function () {
-    clock = sinon.useFakeTimers(new Date('January 1, 1970 00:00:00 GMT'));
+  beforeAll(() => {
+    vi.useFakeTimers({ now: new Date('January 1, 1970 00:00:00 GMT') });
   });
 
-  after(function () {
-    clock.restore();
+  afterAll(() => {
+    vi.useRealTimers();
   });
 
-  beforeEach(async function () {
-    ({ stubs } = setUp({ level: 'Partner' }));
+  beforeEach(async () => {
+    setUp({ level: 'Partner' });
     const allAdvertisers: Record<string, AdvertiserTemplateConverter[]> = {
       a1: [
         (advertiser) => {
@@ -539,80 +539,75 @@ describe('Partner view', function () {
     );
   });
 
-  afterEach(function () {
-    tearDownStubs(stubs);
+  afterEach(() => {
+    vi.restoreAllMocks();
   });
 
-  context(
-    'initializeRules includes advertiser ID and name in settings',
-    function () {
-      it('Insertion Order', async function () {
-        await frontend.initializeRules();
-        const values = SpreadsheetApp.getActive()
-          .getSheetByName('Rule Settings - Insertion Order')
-          .getDataRange()
-          .getValues();
-        expect(values[2].slice(0, 4)).to.eql([
-          'ID',
-          'Insertion Order Name',
-          'Advertiser ID',
-          'Advertiser Name',
-        ]);
-        expect(values.slice(4, 6).map((r) => r.slice(0, 4))).to.eql([
-          ['io1', 'Insertion Order 1', 'a1', 'Advertiser 1'],
-          ['io2', 'Insertion Order 2', 'a2', 'Advertiser 2'],
-        ]);
-      });
+  describe('initializeRules includes advertiser ID and name in settings', () => {
+    it('Insertion Order', async () => {
+      await frontend.initializeRules();
+      const values = SpreadsheetApp.getActive()
+        .getSheetByName('Rule Settings - Insertion Order')
+        .getDataRange()
+        .getValues();
+      expect(values[2].slice(0, 4)).toEqual([
+        'ID',
+        'Insertion Order Name',
+        'Advertiser ID',
+        'Advertiser Name',
+      ]);
+      expect(values.slice(4, 6).map((r) => r.slice(0, 4))).toEqual([
+        ['io1', 'Insertion Order 1', 'a1', 'Advertiser 1'],
+        ['io2', 'Insertion Order 2', 'a2', 'Advertiser 2'],
+      ]);
+    });
 
-      it('Line Item', async function () {
-        await frontend.initializeRules();
-        const values = SpreadsheetApp.getActive()
-          .getSheetByName('Rule Settings - Line Item')
-          .getDataRange()
-          .getValues();
-        expect(values[2].slice(0, 4)).to.eql([
-          'ID',
-          'Line Item Name',
-          'Advertiser ID',
-          'Advertiser Name',
-        ]);
-        expect(values.slice(4, 6).map((r) => r.slice(0, 4))).to.eql([
-          ['li1', 'Line Item 1', 'a1', 'Advertiser 1'],
-          ['li2', 'Line Item 2', 'a2', 'Advertiser 2'],
-        ]);
-      });
-    },
-  );
+    it('Line Item', async () => {
+      await frontend.initializeRules();
+      const values = SpreadsheetApp.getActive()
+        .getSheetByName('Rule Settings - Line Item')
+        .getDataRange()
+        .getValues();
+      expect(values[2].slice(0, 4)).toEqual([
+        'ID',
+        'Line Item Name',
+        'Advertiser ID',
+        'Advertiser Name',
+      ]);
+      expect(values.slice(4, 6).map((r) => r.slice(0, 4))).toEqual([
+        ['li1', 'Line Item 1', 'a1', 'Advertiser 1'],
+        ['li2', 'Line Item 2', 'a2', 'Advertiser 2'],
+      ]);
+    });
+  });
 });
 
-describe('initializeRules', function () {
+describe('initializeRules', () => {
   const allCampaigns: { [advertiserId: string]: CampaignTemplateConverter[] } =
     {};
   let frontend: DisplayVideoFrontend;
-  let clock: sinon.SinonFakeTimers;
-  let stubs: sinon.SinonStub[];
 
-  before(function () {
-    clock = sinon.useFakeTimers(new Date('1970-03-01'));
+  beforeAll(() => {
+    vi.useFakeTimers({ now: new Date('1970-03-01') });
   });
 
-  after(function () {
-    clock.restore();
+  afterAll(() => {
+    vi.useRealTimers();
   });
 
-  beforeEach(async function () {
-    ({ stubs } = setUp());
+  beforeEach(async () => {
+    setUp();
     frontend = getFrontend(() => testData({ allCampaigns }));
     await frontend.initializeRules();
   });
 
-  afterEach(function () {
-    tearDownStubs(stubs);
+  afterEach(() => {
+    vi.restoreAllMocks();
   });
 
-  it('creates a settings page', function () {
+  it('creates a settings page', () => {
     const sheet = HELPERS.getOrCreateSheet('Rule Settings - Insertion Order');
-    expect(sheet).to.exist;
+    expect(sheet).toBeDefined();
   });
 });
 
@@ -625,11 +620,9 @@ function setUp(
   PropertiesService.getScriptProperties().setProperty('sheet_version', '5.0');
   scaffoldSheetWithNamedRanges({ level });
   const frontend = getFrontend(() => testData({ idType: IDType.PARTNER }));
-  const insertRows = sinon
-    .stub(HELPERS, 'insertRows')
-    .callsFake((range) => range);
-  const getSheetId = sinon.stub(HELPERS, 'getSheetId').callsFake(() => 'id1');
-  return { frontend, stubs: [insertRows, getSheetId] };
+  vi.spyOn(HELPERS, 'insertRows').mockImplementation((range) => range);
+  vi.spyOn(HELPERS, 'getSheetId').mockReturnValue('id1');
+  return { frontend };
 }
 
 function scaffoldSheetWithNamedRanges(
