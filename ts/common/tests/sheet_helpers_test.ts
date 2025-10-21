@@ -25,12 +25,7 @@ import {
 } from '../test_helpers/mock_apps_script';
 import { ParamDefinition, RuleExecutorClass, RuleGetter } from '../types';
 
-import {
-  HELPERS,
-  SettingMap,
-  sortMigrations,
-  transformToParamValues,
-} from '../sheet_helpers';
+import { HELPERS, SettingMap, transformToParamValues } from '../sheet_helpers';
 
 import {
   FakeClient,
@@ -54,103 +49,6 @@ function setUp() {
     .callsFake((range) => range);
   return { stubs: [insertRows] };
 }
-
-describe('Test migration order', function () {
-  const list: string[] = [];
-  const CURRENT_SHEET_VERSION = '2.2.0';
-  const migrations = {
-    '3.0': () => list.push('3.0'),
-    '2.1.4': () => list.push('2.1.4'),
-    '2.0': () => list.push('2.0'),
-    '2.1.0': () => list.push('2.1.0'),
-    '2.2.0': () => list.push('2.2.0'),
-  };
-
-  function setFrontend({
-    expectedVersion,
-    currentVersion,
-  }: {
-    expectedVersion: string;
-    currentVersion: string;
-  }) {
-    PropertiesService.getScriptProperties().setProperty(
-      'sheet_version',
-      currentVersion,
-    );
-    return new FakeFrontend({
-      ruleRangeClass: RuleRange,
-      rules: [],
-      version: expectedVersion,
-      clientInitializer: () => new FakeClient(),
-      migrations,
-      properties: new FakePropertyStore(),
-    });
-  }
-
-  beforeEach(function () {
-    mockAppsScript();
-  });
-
-  afterEach(function () {
-    list.splice(0, list.length);
-  });
-
-  it('migrates all', function () {
-    const frontend = setFrontend({
-      expectedVersion: '5.0',
-      currentVersion: '1.0',
-    });
-    frontend.migrate();
-    expect(list).to.deep.eq(['2.0', '2.1.0', '2.1.4', '2.2.0', '3.0']);
-  });
-
-  it('partially migrates', function () {
-    const frontend = setFrontend({
-      expectedVersion: '5.0',
-      currentVersion: '2.1.0',
-    });
-    frontend.migrate();
-    expect(list).to.deep.eq(['2.1.4', '2.2.0', '3.0']);
-  });
-
-  it('runs when initializeSheets runs', async function () {
-    const frontend = setFrontend({
-      expectedVersion: CURRENT_SHEET_VERSION,
-      currentVersion: '1.0',
-    });
-    mockAppsScript();
-    sinon.stub(HtmlService, 'createTemplateFromFile');
-    PropertiesService.getScriptProperties().setProperty('sheet_version', '0.1');
-    await frontend.initializeSheets();
-    expect(
-      PropertiesService.getScriptProperties().getProperty('sheet_version'),
-    ).to.equal(String(CURRENT_SHEET_VERSION));
-  });
-
-  it('does not run migrations if version is up-to-date', function () {
-    const frontend = setFrontend({
-      expectedVersion: CURRENT_SHEET_VERSION,
-      currentVersion: '1.0',
-    });
-    // NOTE - do not change this test. Change `CURRENT_SHEET_VERSION` instead.
-    PropertiesService.getScriptProperties().setProperty(
-      'sheet_version',
-      String(CURRENT_SHEET_VERSION),
-    );
-    const numberRun = frontend.migrate();
-    expect(numberRun).to.equal(0);
-  });
-
-  it('migrates only to specified version cap', function () {
-    const frontend = setFrontend({
-      expectedVersion: '2.1.0',
-      currentVersion: '2.1.0',
-    });
-    const numberOfMigrations = frontend.migrate();
-    expect(list).to.deep.eq([]);
-    expect(numberOfMigrations).to.equal(0);
-  });
-});
 
 describe('2-D array', function () {
   let array2d: string[][];
@@ -230,8 +128,8 @@ describe('Rule Settings helper functions', function () {
     mockAppsScript();
     rules.writeBack(Granularity.DEFAULT);
     const expected = [
-      ['', '', 'Category A', '', 'Category B', '', '', 'Category C'],
-      ['', '', '', '', '', '', '', ''],
+      ['-', '-', 'Category A', '-', 'Category B', '-', '-', 'Category C'],
+      ['-', '-', '-', '-', '-', '-', '-', '-'],
       [
         'id',
         'name',
@@ -258,8 +156,8 @@ describe('Rule Settings helper functions', function () {
     const sheet = HELPERS.getOrCreateSheet('Rule Settings - default');
     rules.writeBack(Granularity.DEFAULT);
     const expected = [
-      ['', '', 'Category A', '', 'Category B', '', '', 'Category C'],
-      ['', '', '', '', '', '', '', ''],
+      ['-', '-', 'Category A', '-', 'Category B', '-', '-', 'Category C'],
+      ['-', '-', '-', '-', '-', '-', '-', '-'],
       [
         'id',
         'name',
@@ -278,8 +176,8 @@ describe('Rule Settings helper functions', function () {
     rules.writeBack(Granularity.DEFAULT);
 
     expect(range.getValues()).to.deep.eq([
-      ['', '', 'Category A', '', 'Category B', '', '', 'Category C'],
-      ['', '', '', '', '', '', '', ''],
+      ['-', '-', 'Category A', '-', 'Category B', '-', '-', 'Category C'],
+      ['-', '-', '-', '-', '-', '-', '-', '-'],
       [
         'id',
         'name',
@@ -323,35 +221,6 @@ describe('SettingMap#getOrDefault', function () {
   it('returns blank when default is undefined and value is blank', function () {
     const settingMap = new SettingMap([['1', { rule1: '' }]]);
     expect(settingMap.getOrDefault('1').rule1).to.equal('');
-  });
-});
-
-describe('sortMigrations', function () {
-  it('sorts migrations as expected', function () {
-    expect(['0.6', '1.2', '1.0'].sort(sortMigrations)).to.deep.eq([
-      '0.6',
-      '1.0',
-      '1.2',
-    ]);
-  });
-
-  it('manages incremental versions', function () {
-    expect(['0.6.1', '0.6', '1.0'].sort(sortMigrations)).to.deep.eq([
-      '0.6',
-      '0.6.1',
-      '1.0',
-    ]);
-  });
-
-  it('works with objects', function () {
-    expect(
-      Object.entries({ '0.1': 'b', '0.0.1': 'a' }).sort((e1, e2) =>
-        sortMigrations(e1[0], e2[0]),
-      ),
-    ).to.deep.eq([
-      ['0.0.1', 'a'],
-      ['0.1', 'b'],
-    ]);
   });
 });
 
@@ -407,15 +276,19 @@ describe('rule sheet', function () {
     mockAppsScript();
     frontend = new FakeFrontend({
       ruleRangeClass: RuleRange,
-      rules: Object.values(rules),
+      rules: [],
       version: '1.0',
-      clientInitializer: () => new FakeClient(),
-      migrations: {},
+      clientInitializer: (clientArgs, properties) =>
+        new FakeClient(clientArgs.label, properties),
+      migrations: [],
       properties: new FakePropertyStore(),
     });
   });
 
   it('loads rules fresh when empty', async function () {
+    for (const rule of Object.values(rules)) {
+      frontend.client.addRule(rule, [[''], ['']]);
+    }
     await frontend.initializeRules();
     const sheet = SpreadsheetApp.getActive().getSheetByName(
       'Enable/Disable Rules',
@@ -430,6 +303,9 @@ describe('rule sheet', function () {
   });
 
   it('strips non-paragraph HTML tags from descriptions', async function () {
+    for (const rule of Object.values(rules)) {
+      frontend.client.addRule(rule, [[''], ['']]);
+    }
     await frontend.initializeRules();
     const sheet = SpreadsheetApp.getActive().getSheetByName(
       'Enable/Disable Rules',
@@ -440,6 +316,9 @@ describe('rule sheet', function () {
   });
 
   it('converts paragraph HTML tags to newlines', async function () {
+    for (const rule of Object.values(rules)) {
+      frontend.client.addRule(rule, [[''], ['']]);
+    }
     await frontend.initializeRules();
     const sheet = SpreadsheetApp.getActive().getSheetByName(
       'Enable/Disable Rules',
@@ -480,6 +359,9 @@ describe('rule sheet', function () {
       checkboxes: Record<number, Record<number, boolean>>;
     };
 
+    for (const rule of Object.values(rules)) {
+      frontend.client.addRule(rule, [[''], ['']]);
+    }
     await frontend.initializeRules();
     const sheet = SpreadsheetApp.getActive().getSheetByName(
       'Enable/Disable Rules',
@@ -493,10 +375,10 @@ describe('rule sheet', function () {
       'Paragraphs',
     ]);
     expect(sheet.checkboxes).to.deep.eq({
-      2: { 3: true },
-      3: { 3: true },
-      4: { 3: true },
-      5: { 3: true },
+      1: { 2: true },
+      2: { 2: true },
+      3: { 2: true },
+      4: { 2: true },
     });
   });
 });
@@ -547,6 +429,7 @@ describe('Test emails', function () {
 
   beforeEach(function () {
     ({ stubs } = setUp());
+    FakePropertyStore.clearCache();
     rules = {
       keyA: {
         name: 'Rule A',
@@ -603,8 +486,9 @@ describe('Test emails', function () {
       ruleRangeClass: RuleRange,
       rules: [],
       version: '1.0',
-      clientInitializer: () => new FakeClient(),
-      migrations: {},
+      clientInitializer: (clientArgs, properties) =>
+        new FakeClient(clientArgs.label, properties),
+      migrations: [],
       properties: new FakePropertyStore(),
     });
   });

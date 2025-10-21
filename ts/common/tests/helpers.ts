@@ -22,10 +22,11 @@
 import {
   ClientTypes,
   DefinedParameters,
+  MigrationArgs,
+  PropertyStore,
   RuleExecutorClass,
   RuleParams,
 } from '../types';
-import { FakePropertyStore } from '../test_helpers/mock_apps_script';
 
 import {
   CredentialManager,
@@ -73,6 +74,15 @@ export interface TestClientInterface
 }
 
 /**
+ * Fake client interface for use in tests.
+ */
+export interface FakeClientInterface
+  extends BaseClientInterface<TestClientTypes> {
+  id: string;
+  getAllCampaigns(): Promise<RecordInfo[]>;
+}
+
+/**
  * Test ad client interface for use in tests.
  */
 export interface AdsClientInterface
@@ -96,13 +106,19 @@ export class RuleRange extends AbstractRuleRange<TestClientTypes> {
 /**
  * Test client for use in tests.
  */
-export class FakeClient implements TestClientInterface {
-  id: string = 'test';
-  readonly args: ClientArgs = { label: 'test' };
+export class FakeClient implements FakeClientInterface {
+  id: string;
+  readonly args: ClientArgs;
   readonly ruleStore: {
     [ruleName: string]: RuleExecutor<TestClientTypes>;
   } = {};
-  readonly properties = new FakePropertyStore();
+  readonly properties: PropertyStore;
+
+  constructor(label: string, properties: PropertyStore) {
+    this.id = label;
+    this.args = { label };
+    this.properties = properties;
+  }
 
   getRule(): RuleExecutor<TestClientTypes, Record<string, ParamDefinition>> {
     throw new Error('Method not implemented.');
@@ -148,9 +164,15 @@ export class FakeFrontend extends AppsScriptFrontend<TestClientTypes> {
     [];
   private readonly old: GoogleAppsScript.Mail.MailAdvancedParameters[] = [];
 
-  constructor(args: FrontendArgs<TestClientTypes>) {
+  constructor(
+    args: FrontendArgs<TestClientTypes> & MigrationArgs<TestClientTypes>,
+  ) {
     scaffoldSheetWithNamedRanges();
-    super('Fake', args);
+    super('Fake', {
+      ...args,
+      clientInitializer: (clientArgs, properties) =>
+        new FakeClient(clientArgs.label, properties),
+    });
   }
 
   getIdentity(): ClientArgs {
@@ -203,6 +225,8 @@ export function scaffoldSheetWithNamedRanges(
     ['EMAIL_LIST', ''],
     ['LABEL', 'Acme Inc.'],
     ['GCP_PROJECT_ID', 'myproject'],
+    ['DRIVE_ID', ''],
+    ['SETTINGS', ''],
   ].entries()) {
     const range = SpreadsheetApp.getActive()
       .getActiveSheet()

@@ -4,7 +4,7 @@
 
 import { expect } from 'chai';
 import * as sinon from 'sinon';
-import { ExportContext, Exporter, ExportOptions } from '../exporter';
+import { ExportContext, Exporter, ExportOptions } from './exporter';
 
 class MockExporter implements Exporter {
   export(): void {

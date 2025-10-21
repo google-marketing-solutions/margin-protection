@@ -8,6 +8,7 @@
     "push": "npx clasp push",
     "test": "pnpm install && mocha",
     "gas:init": "tsx scripts/init.ts",
+    "generate-version": "node scripts/generate-version.mjs",
     "migrate": "node scripts/run-migrations.mjs",
     "postinstall": "node scripts/run-migrations.mjs"
   },

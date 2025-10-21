@@ -10,7 +10,7 @@ import {
   fakeFiles,
   mockAppsScript,
   tearDownStubs,
-} from '../../test_helpers/mock_apps_script';
+} from '../test_helpers/mock_apps_script';
 
 describe('DriveExporter', function () {
   let exporter: DriveExporter;
@@ -22,8 +22,6 @@ describe('DriveExporter', function () {
     mockAppsScript();
     exporter = new DriveExporter();
     oldDrive = Drive;
-    Drive.Files =
-      fakeFiles as unknown as GoogleAppsScript.Drive.Collection.FilesCollection;
   });
 
   afterEach(function () {

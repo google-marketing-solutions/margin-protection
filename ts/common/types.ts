@@ -301,8 +301,19 @@ export interface FrontendArgs<T extends ClientTypes<T>> {
     properties: PropertyStore,
   ) => T['client'];
   readonly version: string;
-  readonly migrations: Record<string, (frontend: T['frontend']) => void>;
+  readonly legacyMigrations?: Record<string, (frontend: T['frontend']) => void>;
   readonly properties: PropertyStore;
+}
+
+import { Migration } from './migrations/types';
+
+// ...
+
+/**
+ * Arguments for the new date-based migration system.
+ */
+export interface MigrationArgs<T extends ClientTypes<T>> {
+  readonly migrations: ReadonlyArray<Migration>;
 }
 
 export interface FrontendInterface<T extends ClientTypes<T>> {

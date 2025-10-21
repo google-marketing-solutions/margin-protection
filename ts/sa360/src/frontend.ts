@@ -19,6 +19,7 @@
  * @fileoverview frontend/apps script hooks for SA360 launch monitor
  */
 
+import { ALL_MIGRATIONS } from 'common/migrations';
 import {
   AppsScriptFrontend,
   getTemplateSetting,
@@ -50,17 +51,11 @@ const CUSTOMER_IDS = 'CUSTOMER_IDS';
 const FULL_FETCH_RANGE = 'FULL_FETCH';
 
 /**
- * Migrations for the new SA360 V2 Launch Monitor
- */
-export const migrations: Record<string, (frontend: SearchAdsFrontend) => void> =
-  {};
-
-/**
  * Front-end configuration for the new SA360 (our V2) Apps Script.
  */
 export class SearchAdsFrontend extends AppsScriptFrontend<SearchAdsClientTypes> {
   constructor(args: FrontendArgs<SearchAdsClientTypes>) {
-    super('SA360', args);
+    super('sa360', { ...args, migrations: ALL_MIGRATIONS });
   }
 
   private cleanCid(cid: string | number) {

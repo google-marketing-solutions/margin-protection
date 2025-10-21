@@ -62,5 +62,31 @@ describe('BigQueryStrategyExporter', function () {
         'Table name is required for BigQuery export.',
       );
     });
+
+    it('should handle empty data gracefully', function () {
+      const tableName = 'test_table';
+      const data = [
+        { a: '1', b: '2' },
+        { a: '3', b: '4' },
+      ];
+      exporter.export(data as Record<string, unknown>[], {
+        destination: 'bigquery',
+        tableName,
+      });
+      expect(mockBigQueryService.Tabledata.insertAll.called).to.be.false;
+    });
+
+    it('should handle insertion failure gracefully', function () {
+      const tableName = 'test_table';
+      const data = [{ id: 1, name: 'test' }];
+      mockBigQueryService.Tabledata.insertAll.throws(
+        new Error('BigQuery API error'),
+      );
+      // We expect the method to catch the error and not throw.
+      expect(() =>
+        exporter.export(data, { destination: 'bigquery', tableName }),
+      ).to.not.throw();
+      expect(mockBigQueryService.Tabledata.insertAll.calledOnce).to.be.true;
+    });
   });
 });

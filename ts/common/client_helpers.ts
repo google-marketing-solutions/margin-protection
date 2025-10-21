@@ -73,7 +73,22 @@ export function newRuleBuilder<T extends ClientTypes<T>>(): <
         readonly client: T['client'],
         settingsArray: ReadonlyArray<string[]>,
       ) {
-        this.settings = transformToParamValues(settingsArray, this.params);
+        this.settings = transformToParamValues(
+          settingsArray,
+          ruleDefinition.params,
+        );
+      }
+
+      getParams() {
+        return ruleDefinition.params;
+      }
+
+      getRuleName() {
+        return ruleDefinition.name;
+      }
+
+      getGranularity() {
+        return ruleDefinition.granularity;
       }
 
       async run() {

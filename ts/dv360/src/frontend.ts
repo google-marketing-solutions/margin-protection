@@ -19,146 +19,19 @@
  * @fileoverview frontend/apps script hooks for DV360 launch monitor
  */
 
-import {
-  AppsScriptFrontend,
-  HELPERS,
-  LABEL_RANGE,
-  addSettingWithDescription,
-} from 'common/sheet_helpers';
+import { ALL_MIGRATIONS } from 'common/migrations';
+import { LEGACY_MIGRATIONS } from 'common/migrations/legacy_migrations';
+import { AppsScriptFrontend, HELPERS, LABEL_RANGE } from 'common/sheet_helpers';
 import { FrontendArgs, FrontendInterface } from 'common/types';
-import { RuleRange } from 'dv360/src/client';
-import { IDType, RuleGranularity, DisplayVideoClientTypes } from './types';
+import { IDType, DisplayVideoClientTypes } from './types';
 
 const ENTITY_ID = 'ENTITY_ID';
 const ID_TYPE = 'ID_TYPE';
-const REPORT_LABEL = 'REPORT_LABEL';
-const DRIVE_ID = 'DRIVE_ID';
-const EXPORT_SETTINGS = 'EXPORT_SETTINGS';
 
 /**
  * The name of the general settings sheet.
  */
 export const GENERAL_SETTINGS_SHEET = 'General/Settings';
-
-/**
- * A list of migrations with version as key and a migration script as the
- * value.
- */
-export const migrations: Record<
-  string,
-  (frontend: DisplayVideoFrontend) => void
-> = {
-  '1.1': (frontend) => {
-    const active = SpreadsheetApp.getActive();
-    const ruleSettingsSheet = active.getSheetByName('Rule Settings');
-    if (!ruleSettingsSheet) {
-      return;
-    }
-    let campaignValues: string[][] = [[]];
-    let ioValues: string[][] = [[]];
-
-    const ruleRange = new RuleRange(
-      ruleSettingsSheet.getDataRange().getValues(),
-      frontend.client,
-    );
-    campaignValues = ruleRange.getValues(RuleGranularity.CAMPAIGN);
-    ioValues = ruleRange.getValues(RuleGranularity.INSERTION_ORDER);
-    active.deleteSheet(ruleSettingsSheet);
-    HELPERS.getOrCreateSheet('Rule Settings - Campaign')
-      .getRange(1, 1, campaignValues.length, campaignValues[0].length)
-      .setValues(campaignValues);
-    HELPERS.getOrCreateSheet('Rule Settings - Insertion Order')
-      .getRange(1, 1, ioValues.length, ioValues[0].length)
-      .setValues(ioValues);
-  },
-  '1.2': () => {
-    // encrypt rules
-    const properties = PropertiesService.getScriptProperties().getProperties();
-    const newProperties = { ...properties };
-    for (const [key, property] of Object.entries(properties)) {
-      if (
-        [
-          'pacingDays',
-          'impressionsByGeo',
-          'pacingPercent',
-          'dailyBudget',
-          'geo',
-        ].indexOf(key.split('-')[0]) < 0
-      ) {
-        continue;
-      }
-      if (!property.startsWith('{')) {
-        continue;
-      }
-      newProperties[key] = Utilities.gzip(
-        Utilities.newBlob(property),
-      ).getDataAsString();
-    }
-    PropertiesService.getScriptProperties().setProperties(newProperties);
-  },
-  '1.3': () => {
-    const active = SpreadsheetApp.getActive();
-    if (active.getRangeByName(REPORT_LABEL)) {
-      return;
-    }
-    const sheet = HELPERS.getOrCreateSheet('General/Settings');
-    const range = sheet.getRange('A6:C7');
-    HELPERS.insertRows(range);
-    const reportLabel = sheet.getRange('B6:C6').merge();
-    const driveId = sheet.getRange('B7:C7').merge();
-    active.setNamedRange(REPORT_LABEL, reportLabel);
-    active.setNamedRange(DRIVE_ID, driveId);
-
-    addSettingWithDescription(sheet, 'A6', [
-      'Report Label',
-      'A human readable label for exported reports\n(e.g. customer name)',
-    ]);
-    addSettingWithDescription(sheet, 'A7', [
-      'Drive ID',
-      "The ID of the Drive folder destination\n(copy in folder URL after '/folders/' and before the '?')",
-    ]);
-  },
-  '2.1': (frontend) => {
-    const sheet = SpreadsheetApp.getActive().getSheetByName(
-      'Rule Settings - Campaign',
-    );
-    if (!sheet) {
-      return;
-    }
-    const ruleRange = new RuleRange(
-      sheet.getDataRange().getValues(),
-      frontend.client,
-    );
-    const values = ruleRange.getValues();
-    const headers = values[2];
-    if (!headers) {
-      return;
-    }
-    const geoTargetIndex = headers.findIndex((c) => c === 'Geo Targets');
-    if (geoTargetIndex === -1) {
-      return;
-    }
-    headers[geoTargetIndex] = 'Allowed Geo Targets';
-    sheet.getRange(1, 1, values.length, values[0].length).setValues(values);
-  },
-  '2.2.0': () => {
-    const active = SpreadsheetApp.getActive();
-    if (active.getRangeByName(EXPORT_SETTINGS)) {
-      return;
-    }
-    const sheet = HELPERS.getOrCreateSheet('General/Settings');
-    const range = sheet.getRange('A8:C8');
-    HELPERS.insertRows(range);
-    const exportSettings = sheet.getRange('B8:C8').merge();
-    active.setNamedRange(EXPORT_SETTINGS, exportSettings);
-
-    addSettingWithDescription(sheet, 'A8', [
-      'Export Settings',
-      'Whether to export to Drive, BigQuery, or both.',
-    ]);
-    exportSettings.setValue('drive');
-  },
-};
 
 /**
  * Front-end configuration for DV360 Apps Script.
@@ -168,7 +41,11 @@ export class DisplayVideoFrontend
   implements FrontendInterface<DisplayVideoClientTypes>
 {
   constructor(args: FrontendArgs<DisplayVideoClientTypes>) {
-    super('DV360', args);
+    super('dv360', {
+      ...args,
+      migrations: ALL_MIGRATIONS,
+      legacyMigrations: LEGACY_MIGRATIONS,
+    });
   }
 
   override getIdentity() {

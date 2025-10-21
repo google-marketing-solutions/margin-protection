@@ -13,7 +13,7 @@ import {
 import { PropertyStore } from 'common/types';
 
 import { Client, RuleRange } from '../client';
-import { DisplayVideoFrontend, migrations } from '../frontend';
+import { DisplayVideoFrontend } from '../frontend';
 import {
   budgetPacingPercentageRule,
   budgetPacingRuleLineItem,
@@ -172,7 +172,7 @@ describe('validate/launchMonitor functions', function () {
     scaffoldSheetWithNamedRanges();
     SpreadsheetApp.getActive()
       .getSheetByName('Rule Settings - Campaign')
-      .getRange(4, 2)
+      .getRange(4, 3)
       .setValue('Nowhere');
     await frontend.launchMonitor();
 
@@ -324,7 +324,6 @@ function getFrontend(
       const client = new Client(clientArgs, properties);
       return overrides(client);
     },
-    migrations,
     properties,
   });
 }

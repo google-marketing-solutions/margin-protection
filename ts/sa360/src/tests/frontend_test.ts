@@ -83,11 +83,23 @@ describe('validate/launchMonitor functions', function () {
 
   describe('error run', function () {
     beforeEach(async function () {
+      const customFn = (o: string, rowNumber: number) => {
+        if (o === 'campaignId') return `c${rowNumber + 1}`;
+        if (o === 'criterionId' && rowNumber === 0) {
+          return 'Nowhere';
+        }
+        if (rowNumber === 0) return '1';
+        return '';
+      };
+      frontend = getFrontend((client) =>
+        testData(client, { reportResult: customFn }),
+      );
       await frontend.initializeRules();
-      SpreadsheetApp.getActive()
-        .getSheetByName('Rule Settings - Campaign')
-        .getRange(4, 2)
-        .setValue('Nowhere');
+      const sheet = SpreadsheetApp.getActive().getSheetByName(
+        'Rule Settings - Campaign',
+      );
+      sheet.getRange(4, 3).setValue('Nowhere'); // Set default to Nowhere
+      sheet.getRange(5, 3).setValue('1'); // Set c1 to 1
       await frontend.launchMonitor();
     });
 
@@ -105,7 +117,7 @@ describe('validate/launchMonitor functions', function () {
           .getValues(),
       ).to.eql([
         ['Change', 'anomalous', 'Customer ID', 'Customer Name', 'Campaign ID'],
-        ['Nowhere DELETED, 1 ADDED', 'true', '1', '1', 'c1'],
+        ['1 DELETED, Nowhere ADDED', 'true', '1', '1', 'c1'],
       ]);
     });
 
@@ -117,9 +129,9 @@ describe('validate/launchMonitor functions', function () {
           .getValues(),
       ).to.eql([
         ['ID', 'Campaign Name', 'Criteria IDs'],
-        ['default', '', ''],
-        ['c1', 'Campaign 1', 'Nowhere'],
-        ['c2', 'Campaign 2', '-'],
+        ['default', '', 'Nowhere'],
+        ['c1', 'Campaign 1', '1'],
+        ['c2', 'Campaign 2', ''],
       ]);
     });
   });
@@ -209,7 +221,6 @@ function getFrontend(
       const client = new Client(clientArgs, properties, reportFactory);
       return overrides(client);
     },
-    migrations: {},
     properties,
   });
 }

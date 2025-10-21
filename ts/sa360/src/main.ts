@@ -19,6 +19,7 @@
  * @fileoverview Implement and bootstrap Apps Script.
  */
 
+import { CURRENT_SHEET_VERSION } from './version';
 import {
   CredentialManager,
   GoogleAdsApiFactory,
@@ -39,15 +40,7 @@ import {
   campaignAudienceTargetRule,
 } from 'sa360/src/rules';
 
-import { migrations, SearchAdsFrontend } from './frontend';
-
-/**
- * The sheet version the app currently has.
- *
- * This is used to manage migrations from one version of Launch Monitor to
- * another.
- */
-export const CURRENT_SHEET_VERSION = '2.0';
+import { SearchAdsFrontend } from './frontend';
 
 /**
  * Generate a front-end object for lazy loading.
@@ -75,7 +68,6 @@ export function getFrontend(properties: PropertyStore) {
       const reportFactory = new ReportFactory(apiFactory, clientArgs);
       return new Client(clientArgs, properties, reportFactory);
     },
-    migrations,
     properties,
   });
 }

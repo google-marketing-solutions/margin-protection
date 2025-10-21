@@ -19,6 +19,7 @@
  * @fileoverview Mocked classes for Apps Script to help with unit tests.
  */
 
+import * as sinon from 'sinon';
 import { PropertyStore } from 'common/types';
 
 import BigQuery = GoogleAppsScript.BigQuery;
@@ -49,7 +50,7 @@ function a1NotationToRowColumn(a1Notation: string, start = true) {
 
 class FakeRange {
   private readonly arrayRange: string[][];
-  validation: FakeNewDataValidation;
+  validation?: FakeNewDataValidation;
 
   constructor(
     private readonly sheet: FakeSheet,
@@ -62,16 +63,19 @@ class FakeRange {
   }
 
   private getRangeComponent() {
-    return this.sheet.cells.slice(this.row - 1, this.row - 1 + this.numRows);
+    return this.sheet.cells
+      .slice(this.row - 1, this.row - 1 + this.numRows)
+      .map((row) =>
+        row.slice(this.column - 1, this.column - 1 + this.numColumns),
+      );
   }
 
   initializeSheet() {
     return this.getRangeComponent().map((columns) =>
-      columns
-        .slice(this.column - 1, this.column - 1 + this.numColumns)
-        .map((cell) => cell ?? ''),
+      columns.map((cell) => cell ?? ''),
     );
   }
+
   static byA1Notation(sheet: FakeSheet, a1Notation: string) {
     const parts = a1Notation.split(':');
     const { row: row1, column: column1 } = a1NotationToRowColumn(
@@ -97,6 +101,22 @@ class FakeRange {
 
   getValue() {
     return this.arrayRange[0][0];
+  }
+
+  getRow() {
+    return this.row;
+  }
+
+  getColumn() {
+    return this.column;
+  }
+
+  getNumRows() {
+    return this.numRows;
+  }
+
+  getNumColumns() {
+    return this.numColumns;
   }
 
   setValues(range: string[][]) {
@@ -130,7 +150,7 @@ class FakeRange {
 
   setValue(value: string) {
     this.arrayRange[0][0] = value;
-    this.sheet.cells[this.row][this.column] = value;
+    this.sheet.cells[this.row - 1][this.column - 1] = value;
     return this;
   }
 
@@ -138,6 +158,21 @@ class FakeRange {
     return this;
   }
 
+  clearContent(): FakeRange {
+    const emptyRange = Array.from({ length: this.numRows }, () =>
+      Array.from({ length: this.numColumns }, () => ''),
+    );
+    this.setValues(emptyRange);
+    return this;
+  }
+
+  clear(): FakeRange {
+    const emptyRange = Array.from({ length: this.numRows }, () =>
+      Array.from({ length: this.numColumns }, () => ''),
+    );
+    this.setValues(emptyRange);
+    return this;
+  }
   setDataValidation(validation: FakeNewDataValidation) {
     this.validation = validation;
     return this;
@@ -148,6 +183,10 @@ class FakeRange {
   }
 
   merge() {
+    const value = this.getValue();
+    this.setValues(this.arrayRange.map((row) => row.map(() => '')));
+    this.setValue(value);
+    // TODO add more here to get merging to work or scrap all of this?
     return this;
   }
 
@@ -168,8 +207,12 @@ class FakeRange {
   }
 
   insertCheckboxes() {
-    for (let r = this.row; r < this.row + this.numRows; r++) {
-      for (let c = this.column; c < this.column + this.numColumns; c++) {
+    for (let r = this.row - 1; r < this.row - 1 + this.numRows; r++) {
+      for (
+        let c = this.column - 1;
+        c < this.column - 1 + this.numColumns;
+        c++
+      ) {
         if (!this.sheet.checkboxes[r]) {
           this.sheet.checkboxes[r] = {};
         }
@@ -578,7 +621,19 @@ export class FakeHtmlOutput {}
 /**
  * Stub for Drive testing
  */
-export class FakeDrive {}
+export class FakeDrive {
+  Files = {
+    copy: sinon.stub(),
+    create: sinon.stub(),
+    emptyTrash: sinon.stub(),
+    get: sinon.stub(),
+    list: sinon.stub(),
+    patch: sinon.stub(),
+    remove: sinon.stub(),
+    update: sinon.stub(),
+    watch: sinon.stub(),
+  };
+}
 
 export class FakeNewDataValidation {
   requireFormulaSatisfied() {

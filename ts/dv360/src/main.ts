@@ -19,10 +19,11 @@
  * @fileoverview Apps Script handlers.
  */
 
+import { CURRENT_SHEET_VERSION } from './version';
 import { PropertyStore } from 'common/types';
 
 import { Client, RuleRange } from './client';
-import { DisplayVideoFrontend, migrations } from './frontend';
+import { DisplayVideoFrontend } from './frontend';
 import {
   budgetPacingRuleLineItem,
   budgetPacingPercentageRule,
@@ -31,14 +32,6 @@ import {
   dailyBudgetRule,
 } from './rules';
 import { AppsScriptPropertyStore } from 'common/sheet_helpers';
-
-/**
- * The sheet version the app currently has.
- *
- * This is used to manage migrations from one version of Launch Monitor to
- * another.
- */
-export const CURRENT_SHEET_VERSION = '2.2.0';
 
 /**
  * Retrieves the front-end as a function.
@@ -62,7 +55,6 @@ export function getFrontend(
     clientInitializer(clientArgs, properties) {
       return new Client(clientArgs, properties);
     },
-    migrations,
     properties,
   });
 }

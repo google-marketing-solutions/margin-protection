@@ -17,6 +17,6 @@
       "googleads/*": ["googleads/old/src/*"]
     }
   },
-  "include": ["**/src/**/*", "outs.d.ts"],
-  "exclude": ["**/node_modules/**/*", "**/dist/**/*", "**/*_test.ts"]
+  "include": ["**/src/**/*", "outs.d.ts", "common/**/*"],
+  "exclude": ["**/node_modules/**/*", "**/dist/**/*"]
 }
