@@ -2,7 +2,7 @@
  * @fileoverview Unit tests for the ExportContext class.
  */
 
-import { expect } from 'chai';
+import { expect } from 'vitest';
 import * as sinon from 'sinon';
 import { ExportContext, Exporter, ExportOptions } from './exporter';
 
@@ -25,6 +25,6 @@ describe('ExportContext', function () {
 
     context.export(data, options);
 
-    expect(exportSpy.calledOnceWith(data, options)).to.be.true;
+    expect(exportSpy.calledOnceWith(data, options)).toBeTruthy();
   });
 });

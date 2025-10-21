@@ -114,6 +114,6 @@ it('should flag an insertion order that is pacing too fast', () => {
   // Expected spend is 50% (5 out of 10 days have passed).
   // Actual spend is 75%. Pacing is 75/50 = 1.5 or 150%.
   const result = checkFlightPacing(insertionOrder, 1.1); // Threshold is 110%
-  expect(result.isViolation).to.be.true;
+  expect(result.isViolation).toBeTruthy();
 });
 ```

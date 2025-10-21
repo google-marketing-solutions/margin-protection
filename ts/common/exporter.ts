@@ -14,8 +14,17 @@ export interface Exporter {
  */
 export interface ExportOptions {
   destination: 'bigquery' | 'drive';
-  tableName?: string; // For BigQuery
-  fileName?: string; // For Drive
+}
+
+export interface BigQueryOptions extends ExportOptions {
+  destination: 'bigquery';
+  tableName?: string;
+}
+
+export interface DriveExportOptions {
+  destination: 'drive';
+  folderId: string;
+  fileName?: string;
 }
 
 /**

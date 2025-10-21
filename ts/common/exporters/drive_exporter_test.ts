@@ -2,56 +2,48 @@
  * @fileoverview Unit tests for the DriveExporter class.
  */
 
-import { expect } from 'chai';
-import * as sinon from 'sinon';
+import { expect, afterEach, beforeEach, describe, it } from 'vitest';
 import { DriveExporter } from './drive_exporter';
-import {
-  FOLDER,
-  fakeFiles,
-  mockAppsScript,
-  tearDownStubs,
-} from '../test_helpers/mock_apps_script';
+import { FOLDER, mockAppsScript } from '../test_helpers/mock_apps_script';
 
-describe('DriveExporter', function () {
+describe('DriveExporter', () => {
   let exporter: DriveExporter;
-  let oldDrive: GoogleAppsScript.Drive;
-  let stubs: sinon.SinonStub[];
 
-  beforeEach(function () {
-    stubs = [sinon.stub(Utilities, 'newBlob')];
+  beforeEach(() => {
     mockAppsScript();
     exporter = new DriveExporter();
-    oldDrive = Drive;
   });
 
-  afterEach(function () {
-    Drive = oldDrive;
-    tearDownStubs(stubs);
+  afterEach(() => {
+    // This is not strictly necessary with the new mock, but good practice.
   });
 
-  it('saves the file', function () {
-    const reportsFolder = {
-      id: 'reports_folder_id',
+  it('saves the file to the specified Drive folder', () => {
+    // ARRANGE
+    // Create a folder where the file will be saved, using the v3 `name` property.
+    const reportsFolder = Drive.Files.create({
+      name: 'Reports',
       mimeType: FOLDER,
-      title: 'reports',
-    };
-    fakeFiles.folders['your_folder_id'] = [reportsFolder];
-    fakeFiles.files['reports'] = reportsFolder;
+    });
+    const folderId = reportsFolder.id!;
+    const fileName = 'Acme Inc._my check_1970-01-01T00:00:00.000Z.csv';
+
+    // ACT
     exporter.export([['it works!']], {
       destination: 'drive',
-      fileName: 'Acme Inc._my check_1970-01-01T00:00:00.000Z.csv',
-    });
-    const folderId = fakeFiles.files['reports'].id;
-    expect(fakeFiles.folders[folderId!][0]).to.deep.include({
-      mimeType: 'text/csv',
+      fileName,
+      folderId,
     });
 
-    for (const value of [
-      'Acme Inc.',
-      'my check',
-      '1970-01-01T00:00:00.000Z.csv',
-    ]) {
-      expect(Object.keys(fakeFiles.files)[1]).to.contain(value);
-    }
+    // ASSERT
+    // Verify that a new file was created in the correct folder.
+    const filesInFolder = Drive.Files.list({ q: `'${folderId}' in parents` });
+    
+    expect(filesInFolder.items).toBeDefined();
+    expect(filesInFolder.items.length).toBe(1);
+
+    const newFile = filesInFolder.items[0];
+    expect(newFile.name).toEqual(fileName);
+    expect(newFile.mimeType).toEqual('text/csv');
   });
 });

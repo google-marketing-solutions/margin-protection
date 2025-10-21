@@ -10,7 +10,10 @@
     "build": "pnpm -w generate-version && tsup",
     "push": "pnpm build && clasp push",
     "push:client": "pnpm --filter client push",
-    "test": "pnpm --filter ts test dv360/src/tests/*_test.ts",
+    "test": "vitest run",
     "lint": "pnpm --filter ts lint dv360/src/**/*.ts"
+  },
+  "dependencies": {
+    "vitest": "^3.2.4"
   }
 }

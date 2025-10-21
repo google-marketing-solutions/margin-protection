@@ -113,7 +113,7 @@ it('should flag an audience with a high CPA', () => {
   };
 
   const result = checkAudienceCpa(audiencePerf, 'Test Campaign', 'Cart Abandoners', 40);
-  expect(result.isViolation).to.be.true;
+  expect(result.isViolation).toBeTruthy();
 });
 
 it('should not flag an audience in a different campaign', () => {
@@ -125,6 +125,6 @@ it('should not flag an audience in a different campaign', () => {
   };
 
   const result = checkAudienceCpa(audiencePerf, 'Test Campaign', 'Cart Abandoners', 40);
-  expect(result.isViolation).to.be.false;
+  expect(result.isViolation).toBeFalsy();
 });
 ```

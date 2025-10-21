@@ -2,91 +2,79 @@
  * @fileoverview Unit tests for the BigQueryStrategyExporter class.
  */
 
-import { expect } from 'chai';
-import * as sinon from 'sinon';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { BigQueryStrategyExporter } from './bigquery_exporter';
+import { mockAppsScript } from '../test_helpers/mock_apps_script';
 
-// Mock the global Apps Script BigQuery service and ScriptApp
-const mockBigQueryService = {
-  Jobs: {
-    insert: sinon.stub(),
-  },
-  newTableDataInsertAllRequest: sinon.stub().returns({
-    setRows: sinon.stub().returnsThis(),
-  }),
-  newTableReference: sinon.stub().returns({
-    setProjectId: sinon.stub().returnsThis(),
-    setDatasetId: sinon.stub().returnsThis(),
-    setTableId: sinon.stub().returnsThis(),
-    getProjectId: sinon.stub().returns('mock_project_id'),
-    getDatasetId: sinon.stub().returns('mock_dataset_id'),
-    getTableId: sinon.stub().returns('mock_table_id'),
-  }),
-  newTableDataInsertAllRequestRows: sinon.stub().returns({
-    json: sinon.stub().returnsThis(),
-  }),
-  Tabledata: {
-    insertAll: sinon.stub(),
-  },
-};
-
-const mockScriptApp = {
-  getOAuthToken: sinon.stub().returns('mock_oauth_token'),
-};
-
-describe('BigQueryStrategyExporter', function () {
+describe('BigQueryStrategyExporter', () => {
   let exporter: BigQueryStrategyExporter;
 
-  beforeEach(function () {
+  beforeEach(() => {
+    // Use the helper to create fresh mocks for all Apps Script services.
+    mockAppsScript();
+
     exporter = new BigQueryStrategyExporter(
       'test_project',
       'test_dataset',
-      mockBigQueryService as unknown as GoogleAppsScript.BigQuery,
-      mockScriptApp as unknown as GoogleAppsScript.Script.ScriptApp,
+      // The mockAppsScript helper makes these available globally.
+      BigQuery,
+      ScriptApp,
     );
-    sinon.resetHistory(); // Reset history of stubs before each test
   });
 
-  describe('export', function () {
-    it('should return true on successful data insertion', function () {
+  describe('export', () => {
+    it('should call the BigQuery API when data is provided', () => {
       const tableName = 'test_table';
       const data = [{ id: 1, name: 'test' }];
-      mockBigQueryService.Tabledata.insertAll.returns({}); // Simulate success
+      
+      // Spy on the insertAll method and provide a mock return value
+      const insertAllSpy = vi.spyOn(BigQuery.Tabledata, 'insertAll').mockReturnValue({
+        insertErrors: [],
+      });
+
       exporter.export(data, { destination: 'bigquery', tableName });
-      expect(mockBigQueryService.Tabledata.insertAll.calledOnce).to.be.true;
+
+      expect(insertAllSpy).toHaveBeenCalledOnce();
     });
 
-    it('should throw an error if table name is not provided', function () {
+    it('should throw an error if table name is not provided', () => {
       const data = [{ id: 1, name: 'test' }];
-      expect(() => exporter.export(data, { destination: 'bigquery' })).to.throw(
+      expect(() => exporter.export(data, { destination: 'bigquery' })).toThrowError(
         'Table name is required for BigQuery export.',
       );
     });
 
-    it('should handle empty data gracefully', function () {
+    it('should not call the BigQuery API when data is empty', () => {
       const tableName = 'test_table';
-      const data = [
-        { a: '1', b: '2' },
-        { a: '3', b: '4' },
-      ];
-      exporter.export(data as Record<string, unknown>[], {
+      const data: Record<string, unknown>[] = [];
+      const insertAllSpy = vi.spyOn(BigQuery.Tabledata, 'insertAll');
+
+      exporter.export(data, {
         destination: 'bigquery',
         tableName,
       });
-      expect(mockBigQueryService.Tabledata.insertAll.called).to.be.false;
+
+      expect(insertAllSpy).not.toHaveBeenCalled();
     });
 
-    it('should handle insertion failure gracefully', function () {
+
+
+    it('should handle insertion failure gracefully', () => {
       const tableName = 'test_table';
       const data = [{ id: 1, name: 'test' }];
-      mockBigQueryService.Tabledata.insertAll.throws(
-        new Error('BigQuery API error'),
-      );
+      
+      // Simulate an error during the API call
+      const insertAllSpy = vi.spyOn(BigQuery.Tabledata, 'insertAll').mockImplementation(() => {
+        throw new Error('BigQuery API error');
+      });
+
       // We expect the method to catch the error and not throw.
       expect(() =>
         exporter.export(data, { destination: 'bigquery', tableName }),
-      ).to.not.throw();
-      expect(mockBigQueryService.Tabledata.insertAll.calledOnce).to.be.true;
+      ).not.toThrow();
+
+      // Verify that the insertAll method was still called.
+      expect(insertAllSpy).toHaveBeenCalledOnce();
     });
   });
 });

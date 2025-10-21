@@ -6,9 +6,8 @@
   "type": "module",
   "scripts": {
     "push": "npx clasp push",
-    "test": "pnpm install && mocha",
+    "test": "vitest run",
     "gas:init": "tsx scripts/init.ts",
-    "generate-version": "node scripts/generate-version.mjs",
     "migrate": "node scripts/run-migrations.mjs",
     "postinstall": "node scripts/run-migrations.mjs"
   },
@@ -16,7 +15,7 @@
   "license": "MIT",
   "repository": "git@github.com:google-marketing-solutions/margin-protection",
   "private": true,
-  "packageManager": "pnpm@10.18.3+sha512.bbd16e6d7286fd7e01f6b3c0b3c932cda2965c06a908328f74663f10a9aea51f1129eea615134bf992831b009eabe167ecb7008b597f40ff9bc75946aadfb08d",
+  "packageManager": "pnpm@8.15.0",
   "devDependencies": {
     "@types/google-apps-script": "^1.0.100",
     "@types/inquirer": "^8.2.12",
@@ -35,6 +34,7 @@
     "tsconfig-paths-webpack-plugin": "^4.2.0",
     "tsx": "^4.20.6",
     "typescript": "^5.9.3",
+    "vitest": "^3.2.4",
     "webpack": "^5.102.1",
     "webpack-cli": "^5.1.4"
   }

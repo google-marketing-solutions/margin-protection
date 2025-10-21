@@ -19,7 +19,6 @@
  * @fileoverview Mocked classes for Apps Script to help with unit tests.
  */
 
-import * as sinon from 'sinon';
 import { PropertyStore } from 'common/types';
 
 import BigQuery = GoogleAppsScript.BigQuery;
@@ -511,16 +510,14 @@ class CacheStub implements Cache.Cache {
   }
 }
 class FakePropertiesService {
-  constructor(private readonly propertyStub = new PropertyStub()) {}
-
+  private readonly propertyStub = new PropertyStub();
   getScriptProperties() {
     return this.propertyStub;
   }
 }
 
 class FakeCacheService {
-  constructor(private readonly cacheStub = new CacheStub()) {}
-
+  private readonly cacheStub = new CacheStub();
   getScriptCache() {
     return this.cacheStub;
   }
@@ -618,21 +615,124 @@ export class FakePropertyStore implements PropertyStore {
  */
 export class FakeHtmlOutput {}
 
+
 /**
- * Stub for Drive testing
+ * Stub for Drive testing, implementing a fake in-memory file system aligned with V3 API.
  */
 export class FakeDrive {
-  Files = {
-    copy: sinon.stub(),
-    create: sinon.stub(),
-    emptyTrash: sinon.stub(),
-    get: sinon.stub(),
-    list: sinon.stub(),
-    patch: sinon.stub(),
-    remove: sinon.stub(),
-    update: sinon.stub(),
-    watch: sinon.stub(),
-  };
+  // Expose Files property to match the structure of the real Drive service.
+  Files = new FakeDriveFiles();
+}
+
+class FakeDriveFiles {
+  private files: Map<string, GoogleAppsScript.Drive.Schema.File> = new Map();
+  private currentId = 0;
+
+  constructor() {
+    // Initialize with a root folder.
+    this.create({ name: 'My Drive', mimeType: FOLDER, id: 'root' });
+  }
+
+  private getNextId(): string {
+    return String(++this.currentId);
+  }
+
+  /**
+   * Creates a new file or folder. Aligned with Drive API v3.
+   */
+  create(
+    resource: GoogleAppsScript.Drive.Schema.File,
+    mediaData?: GoogleAppsScript.Base.Blob,
+  ): GoogleAppsScript.Drive.Schema.File {
+    const fileId = resource.id || this.getNextId();
+    const fileName = resource.name ?? resource.title; // Handle both name and title for compatibility.
+    if (!fileName) {
+      throw new Error('A "name" or "title" is required to create a file.');
+    }
+
+    const newFile: GoogleAppsScript.Drive.Schema.File = {
+      id: fileId,
+      name: fileName,
+      title: fileName, // Set both for compatibility.
+      mimeType: resource.mimeType,
+      parents: resource.parents || [],
+      labels: { trashed: false, ...resource.labels },
+      ...resource,
+    };
+
+    this.files.set(fileId, newFile);
+    return newFile;
+  }
+
+  /**
+   * Legacy alias for `create`.
+   */
+  insert(
+    resource: GoogleAppsScript.Drive.Schema.File,
+    mediaData?: GoogleAppsScript.Base.Blob,
+  ): GoogleAppsScript.Drive.Schema.File {
+    return this.create(resource, mediaData);
+  }
+
+  get(fileId: string): GoogleAppsScript.Drive.Schema.File {
+    if (!this.files.has(fileId)) {
+      throw new Error(`File with id "${fileId}" not found.`);
+    }
+    return this.files.get(fileId)!;
+  }
+
+  list(options?: { q?: string }): { items: GoogleAppsScript.Drive.Schema.File[] } {
+    let fileList = Array.from(this.files.values());
+
+    if (options?.q) {
+      const parentMatch = options.q.match(/'([^']+)' in parents/);
+      if (parentMatch) {
+        const parentId = parentMatch[1];
+        fileList = fileList.filter(file =>
+          file.parents?.some(p => p.id === parentId)
+        );
+      }
+      // Add more query parsing here as needed (e.g., for name, mimeType, trashed status).
+    }
+
+    return { items: fileList };
+  }
+
+  remove(fileId: string): void {
+    const file = this.get(fileId);
+    file.labels!.trashed = true;
+  }
+
+  patch(resource: GoogleAppsScript.Drive.Schema.File, fileId: string): GoogleAppsScript.Drive.Schema.File {
+    const file = this.get(fileId);
+    const updatedFile = { ...file, ...resource };
+    this.files.set(fileId, updatedFile);
+    return updatedFile;
+  }
+
+  copy(resource: GoogleAppsScript.Drive.Schema.File, fileId: string): GoogleAppsScript.Drive.Schema.File {
+    const originalFile = this.get(fileId);
+    const newName = resource.name || `Copy of ${originalFile.name}`;
+    const newParents = resource.parents || originalFile.parents;
+    
+    const copiedFileResource: GoogleAppsScript.Drive.Schema.File = {
+      ...JSON.parse(JSON.stringify(originalFile)), // Deep copy to avoid reference issues.
+      name: newName,
+      title: newName,
+      parents: newParents,
+    };
+    delete copiedFileResource.id; // Remove old ID so a new one is generated.
+
+    return this.create(copiedFileResource);
+  }
+
+  emptyTrash(): void {
+    this.files.forEach((file, id) => {
+      if (file.labels?.trashed) {
+        this.files.delete(id);
+      }
+    });
+  }
 }
 
 export class FakeNewDataValidation {
@@ -695,13 +795,57 @@ class FakeRichTextValue {
 class FakeFilter {}
 
 class FakeBigQuery {
-  Jobs = new FakeBigQueryJobs();
+  readonly Jobs = new FakeBigQueryJobs();
+  readonly Tabledata = new FakeBigQueryTabledata();
+  private readonly tableReference = new FakeTableReference();
+  private readonly insertRequest = new FakeTableDataInsertAllRequest();
+  private readonly insertRequestRows = new FakeTableDataInsertAllRequestRows();
+
+  newTableReference() {
+    return this.tableReference;
+  }
+
+  newTableDataInsertAllRequest() {
+    return this.insertRequest;
+  }
+
+  newTableDataInsertAllRequestRows() {
+    return this.insertRequestRows;
+  }
 }
 
 class FakeBigQueryJobs {
   query: () => BigQuery.Schema.QueryResponse = () => {
     throw new Error('Not implemented');
   };
+}
+
+class FakeBigQueryTabledata {
+  insertAll() {}
+}
+
+class FakeTableReference {
+  setProjectId() {
+    return this;
+  }
+  setDatasetId() {
+    return this;
+  }
+  setTableId() {
+    return this;
+  }
+}
+
+class FakeTableDataInsertAllRequest {
+  setRows() {
+    return this;
+  }
+}
+
+class FakeTableDataInsertAllRequestRows {
+  setJson() {
+    return this;
+  }
 }
 
 // findLastIndex isn't properly supported in TypeScript definitions at the moemnt.
@@ -789,51 +933,3 @@ declare global {
 }
 
 export const FOLDER = 'application/vnd.google-apps.folder';
-
-interface FakeFiles {
-  currentId: number;
-  drives: Record<string, GoogleAppsScript.Drive.Schema.File>;
-  folders: Record<string, GoogleAppsScript.Drive.Schema.File[]>;
-  files: Record<string, GoogleAppsScript.Drive.Schema.File>;
-  get(id: string): GoogleAppsScript.Drive.Schema.File;
-  list(): { items?: GoogleAppsScript.Drive.Schema.File[] };
-  list({ q }: { q?: string }): { items?: GoogleAppsScript.Drive.Schema.File[] };
-  insert(
-    schema: GoogleAppsScript.Drive.Schema.File,
-    file: GoogleAppsScript.Base.Blob,
-  ): GoogleAppsScript.Drive.Schema.File;
-}
-export const fakeFiles: FakeFiles = {
-  currentId: 0,
-  drives: {},
-  folders: {},
-  files: {},
-  list({ q }: { q?: string } = {}) {
-    if (!q) {
-      return { items: undefined };
-    }
-    const title: string | null = (q.match(/title="([^"]+)"/) || [])[1];
-    return { items: this.folders[title] };
-  },
-  insert(schema: GoogleAppsScript.Drive.Schema.File) {
-    if (!schema.title) {
-      throw new Error('A schema title is expected.');
-    }
-    for (const p of schema.parents || []) {
-      (this.folders[p.id!] ??= []).push(schema);
-    }
-    schema.id = schema.id || String(++this.currentId);
-    this.files[schema.title] = schema;
-    return schema;
-  },
-  get(id: string) {
-    return this.drives[id];
-  },
-};
-
-/**
- * Restores any stubs passed to it to their original form.
- */
-export function tearDownStubs(stubs: sinon.SinonStub[]) {
-  stubs.forEach((stub) => stub.restore());
-}

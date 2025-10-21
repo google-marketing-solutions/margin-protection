@@ -1,28 +1,21 @@
-import { defineConfig } from 'tsup';
-import { cp } from 'fs/promises';
+/**
+ * @license
+ * Copyright 2025 Google LLC.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     https://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 
-export default defineConfig({
-  entry: ['src/main.ts'],
-  format: 'iife',
-  clean: true,
-  outExtension() {
-    return { js: '.js' };
-  },
-  publicDir: '../common/html',
-  esbuildOptions(options) {
-    options.banner = {
-      js: `var global = this || globalThis;
-function onOpen() {}
-function initializeSheets() {}
-function initializeRules() {}
-function preLaunchQa() {}
-function launchMonitor() {}
-function displaySetupModal() {}
-function displayGlossary() {}
-      `,
-    };
-  },
-  async onSuccess() {
-    await cp('appsscript.json', 'dist/appsscript.json');
-  },
-});
+import { defineConfig } from 'tsup';
+import { getTsupConfig } from '../common/build';
+
+export default defineConfig(getTsupConfig(__dirname, 'dist'));

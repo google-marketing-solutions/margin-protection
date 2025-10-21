@@ -88,7 +88,7 @@ it('should flag an active placement with no ads', () => {
   };
 
   const result = checkPlacementHasAds(placement);
-  expect(result.isViolation).to.be.true;
+  expect(result.isViolation).toBeTruthy();
 });
 
 it('should not flag an inactive placement with no ads', () => {
@@ -101,6 +101,6 @@ it('should not flag an inactive placement with no ads', () => {
   };
 
   const result = checkPlacementHasAds(placement);
-  expect(result.isViolation).to.be.false;
+  expect(result.isViolation).toBeFalsy();
 });
 ```

@@ -19,7 +19,10 @@
     "push": "pnpm build:dev && clasp push",
     "push:prod": "pnpm build:prod && clasp push",
     "push:client": "pnpm --filter client push",
-    "test": "pnpm --filter ts test",
+    "test": "vitest run",
     "lint": "pnpm --filter ts lint dv360/src/**/*.ts"
+  },
+  "dependencies": {
+    "vitest": "^3.2.4"
   }
 }

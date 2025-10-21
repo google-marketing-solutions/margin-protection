@@ -1,8 +1,6 @@
 import globals from 'globals';
 import tseslint from 'typescript-eslint';
 import eslintConfigPrettier from 'eslint-config-prettier';
-import eslintChaiFriendly from 'eslint-plugin-chai-friendly';
-import eslintMocha from 'eslint-plugin-mocha';
 
 const ignores = [
   'main.js',
@@ -23,7 +21,6 @@ const rules = {
     },
   ],
   '@typescript-eslint/no-unused-expressions': ['off'],
-  'mocha/max-top-level-suites': ['off'],
 };
 
 export default [
@@ -32,7 +29,5 @@ export default [
   { ignores },
   ...tseslint.configs.recommended,
   eslintConfigPrettier,
-  eslintMocha.configs.flat.recommended,
-  eslintChaiFriendly.configs.recommendedFlat,
   { rules },
 ];

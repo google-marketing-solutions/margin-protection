@@ -13,7 +13,7 @@ import path from 'path';
 export default defineConfig({
   test: {
     globals: true,
-    include: ['dv360/src/tests/frontend_test.ts'],
+    include: ['dv360/src/tests/**/*_test.ts'],
   },
   resolve: {
     alias: [

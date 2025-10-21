@@ -343,7 +343,7 @@ export class Client implements ClientInterface {
   }
 
   getAllCampaignsForAdvertisers(advertisers: {
-    [advertiserId: string]: string;
+    [advertiserId: string]: string | undefined;
   }): RecordInfo[] {
     const result: RecordInfo[] = [];
     const campaignApi = new this.dao.accessors.campaigns(
@@ -356,14 +356,15 @@ export class Client implements ClientInterface {
         if (!id) {
           throw new Error('Campaign ID is missing.');
         }
-        result.push({
+        const recordInfo: RecordInfo = {
           advertiserId,
-          ...(advertisers[advertiserId]
-            ? { advertiserName: advertisers[advertiserId] }
-            : {}),
           id,
           displayName: campaign.displayName!,
-        });
+        };
+        if (advertisers[advertiserId]) {
+          recordInfo.advertiserName = advertisers[advertiserId];
+        }
+        result.push(recordInfo);
       }
     });
 
@@ -411,6 +412,10 @@ export class Client implements ClientInterface {
     return `${prefix}-${this.args.idType === IDType.PARTNER ? 'P' : 'A'}${
       this.args.id
     }`;
+  }
+
+  async preloadCampaignMap(): Promise<void> {
+    await this.getCampaignMap();
   }
 
   async getCampaignMap(): Promise<{

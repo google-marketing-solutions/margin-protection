@@ -89,7 +89,7 @@ it('should flag a keyword with a low quality score', () => {
   };
 
   const result = checkKeywordQualityScore(keyword, 5);
-  expect(result.isViolation).to.be.true;
+  expect(result.isViolation).toBeTruthy();
 });
 
 it('should not flag a paused keyword with a low quality score', () => {
@@ -101,6 +101,6 @@ it('should not flag a paused keyword with a low quality score', () => {
   };
 
   const result = checkKeywordQualityScore(keyword, 5);
-  expect(result.isViolation).to.be.false;
+  expect(result.isViolation).toBeFalsy();
 });
 ```
