@@ -39,7 +39,7 @@ import { FilterExpression, ListParams, Rule, RuleOperator } from './utils';
 import { STATUS } from './dv360_types';
 const API_SCOPE: string = 'displayvideo';
 
-const API_VERSION: string = 'v3';
+const API_VERSION: string = 'v4';
 
 /**
  * An abstract API client for the DV360 API that extends `BaseApiClient`.

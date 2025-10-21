@@ -11,3 +11,4 @@ package-lock.json
 .clasp.json*
 .migrations_ran
 **/.clasp*.json
+version.ts

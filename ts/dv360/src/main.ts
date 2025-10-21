@@ -19,7 +19,6 @@
  * @fileoverview Apps Script handlers.
  */
 
-import { CURRENT_SHEET_VERSION } from './version';
 import { PropertyStore } from 'common/types';
 
 import { Client, RuleRange } from './client';
@@ -32,6 +31,7 @@ import {
   dailyBudgetRule,
 } from './rules';
 import { AppsScriptPropertyStore } from 'common/sheet_helpers';
+const CURRENT_SHEET_VERSION = global.CURRENT_SHEET_VERSION || '';
 
 /**
  * Retrieves the front-end as a function.

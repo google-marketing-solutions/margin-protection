@@ -19,7 +19,6 @@
  * @fileoverview Implement and bootstrap Apps Script.
  */
 
-import { CURRENT_SHEET_VERSION } from './version';
 import {
   CredentialManager,
   GoogleAdsApiFactory,
@@ -41,6 +40,8 @@ import {
 } from 'sa360/src/rules';
 
 import { SearchAdsFrontend } from './frontend';
+
+const CURRENT_SHEET_VERSION = global.CURRENT_SHEET_VERSION || '';
 
 /**
  * Generate a front-end object for lazy loading.
