@@ -37,7 +37,6 @@ class DriveIdToSettingsJson implements Migration {
     let driveIdRange: GoogleAppsScript.Spreadsheet.Range | null = null;
 
     try {
-      console.log(driveIdRange, { typeof: typeof driveIdRange });
       driveIdRange = active.getRangeByName('DRIVE_ID');
     } catch (_e) {
       console.log(

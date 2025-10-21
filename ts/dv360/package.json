@@ -1,5 +1,5 @@
 {
-  "name": "launch_monitor",
+  "name": "@launch_monitor/dv360",
   "type": "module",
   "devDependencies": {
     "@types/google-apps-script": "^1.0.56",
@@ -7,10 +7,10 @@
     "typescript": "^4.9.3"
   },
   "scripts": {
-    "build": "tsup",
-    "push": "yarn build && clasp push",
-    "push:client": "yarn --cwd ../client push",
-    "test": "yarn --cwd .. test dv360/src/tests/*_test.ts",
-    "lint": "yarn --cwd .. lint dv360/src/**/*.ts"
+    "build": "pnpm -w generate-version && tsup",
+    "push": "pnpm build && clasp push",
+    "push:client": "pnpm --filter client push",
+    "test": "pnpm --filter ts test dv360/src/tests/*_test.ts",
+    "lint": "pnpm --filter ts lint dv360/src/**/*.ts"
   }
 }
