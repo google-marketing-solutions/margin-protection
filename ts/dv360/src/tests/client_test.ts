@@ -104,14 +104,15 @@ describe('RuleRange', function () {
     budgetPacingRuleLineItem,
     geoTargetRule,
   ];
+  let client: Client;
 
   beforeEach(function () {
     mockAppsScript();
     scaffoldSheetWithNamedRanges();
-    this.client = generateTestClient({ id: '123' });
-    rules.forEach((rule) => this.client.addRule(rule, [['ID'], ['default']]));
+    client = generateTestClient({ id: '123' });
+    rules.forEach((rule) => client.addRule(rule, [['ID'], ['default']]));
     this.ruleRange = new RuleRange([[]], this.client);
-    this.client.getCampaignMap = function () {
+    client.getCampaignMap = async () => {
       return { hasAdvertiserName: true, campaignMap: { '1': {} } };
     };
   });
@@ -125,7 +126,7 @@ describe('RuleRange', function () {
     expect(ruleGranularities).to.eql(systemGranularities);
   });
 
-  context('getRows', function () {
+  describe('getRows', function () {
     it('loads each granularity', async function () {
       let error: string;
       try {
@@ -147,7 +148,7 @@ describe('RuleRange', function () {
     });
   });
 
-  context('getMetadata', function () {
+  describe('getMetadata', function () {
     it('loads each granularity', async function () {
       let error: string;
       try {
@@ -171,21 +172,23 @@ describe('RuleRange', function () {
 });
 
 describe('API integrations', function () {
-  beforeEach(function () {
-    mockAppsScript();
-    const client = new TestClient({ id: '123' });
-    UrlFetchApp.fetchAll = ((requests) => {
-      return requests.map((_, i) => ({
-        getContentText() {
-          const tpl = { ...client.campaignTemplate };
-          tpl['advertiserId'] = `a${i + 1}`;
-          tpl['campaignId'] = `c${i + 1}`;
-          return JSON.stringify({ campaigns: [tpl] });
-        },
-      }));
-    }) as typeof UrlFetchApp.fetchAll;
-    this.client = client.generate();
-  });
+  // let client: Client;
+
+  // beforeEach(function () {
+  //   mockAppsScript();
+  //   const testClient = new TestClient({ id: '123' });
+  //   UrlFetchApp.fetchAll = ((requests) => {
+  //     return requests.map((_, i) => ({
+  //       getContentText() {
+  //         const tpl = { ...testClient.campaignTemplate };
+  //         tpl['advertiserId'] = `a${i + 1}`;
+  //         tpl['campaignId'] = `c${i + 1}`;
+  //         return JSON.stringify({ campaigns: [tpl] });
+  //       },
+  //     }));
+  //   }) as typeof UrlFetchApp.fetchAll;
+  //   client = testClient.generate();
+  // });
 
   it('grabs all records from getAllCampaignsFromAdvertisers', function () {
     const campaigns = this.client.getAllCampaignsForAdvertisers({
