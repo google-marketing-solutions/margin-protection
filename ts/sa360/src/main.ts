@@ -27,7 +27,7 @@ import {
 } from 'common/ads_api';
 import { AppsScriptPropertyStore } from 'common/sheet_helpers';
 import { PropertyStore } from 'common/types';
-import { Client, RuleRange } from 'sa360/src/client';
+import { Client, RuleRange } from 'sa360/client';
 import {
   budgetPacingRule,
   campaignStatusRule,
@@ -37,7 +37,7 @@ import {
   genderTargetRule,
   geoTargetRule,
   campaignAudienceTargetRule,
-} from 'sa360/src/rules';
+} from 'sa360/rules';
 
 import { SearchAdsFrontend } from './frontend';
 

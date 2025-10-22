@@ -39,7 +39,7 @@ import {
   ReportInterface,
   RuleGranularity,
   SearchAdsClientTypes,
-} from 'sa360/src/types';
+} from 'sa360/types';
 
 import { AD_GROUP_REPORT, CAMPAIGN_REPORT } from './api';
 

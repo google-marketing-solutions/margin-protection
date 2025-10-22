@@ -20,7 +20,7 @@ import { RuleRange, getDate } from '../client';
 
 import { mockAppsScript } from 'common/test_helpers/mock_apps_script';
 import { generateTestClient } from './client_helpers';
-import { expect } from 'chai';
+import { describe, beforeEach, it, expect } from 'vitest';
 
 describe('transformToParamValues', function () {
   let array2d: string[][];

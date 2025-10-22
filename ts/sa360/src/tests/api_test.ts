@@ -36,12 +36,11 @@ import {
   CAMPAIGN_TARGET_REPORT,
   CAMPAIGN_USER_LIST_REPORT,
   GENDER_TARGET_REPORT,
-} from 'sa360/src/api';
-import { expect } from 'chai';
-import * as sinon from 'sinon';
+} from 'sa360/api';
+import { expect, describe, beforeEach, it, vi, MockInstance } from 'vitest';
 
 describe('API Queries', function () {
-  let mockQuery: sinon.SinonStub;
+  let mockQuery: MockInstance;
   let api: GoogleAdsApi;
   let reportFactory: ReportFactory;
 
@@ -50,8 +49,8 @@ describe('API Queries', function () {
   });
 
   it('returns expected results from query', function () {
-    mockQuery = sinon.stub(api, 'query');
-    mockQuery.returns(
+    mockQuery = vi.spyOn(api, 'query');
+    mockQuery.mockReturnValue(
       iterator({
         some: { one: 'one' },
         other: { two: 'two' },
@@ -74,8 +73,8 @@ describe('Campaign report', function () {
   });
 
   it('returns expected results', function () {
-    const mockQuery = sinon.stub(api, 'query');
-    mockQuery.returns(
+    const mockQuery = vi.spyOn(api, 'query');
+    mockQuery.mockReturnValue(
       iterator(
         ...[...Array.from({ length: 5 }).keys()].map((x: number) => ({
           customer: {
@@ -143,8 +142,8 @@ describe('Ad Group report', function () {
   });
 
   it('returns expected results', function () {
-    const mockQuery = sinon.stub(api, 'query');
-    mockQuery.returns(
+    const mockQuery = vi.spyOn(api, 'query');
+    mockQuery.mockReturnValue(
       iterator(
         ...[...Array.from({ length: 5 }).keys()].map((x) => ({
           customer: {
@@ -220,8 +219,8 @@ describe('Geo target report', function () {
   });
 
   it('returns expected results', function () {
-    const mockQuery = sinon.stub(api, 'query');
-    mockQuery.callsFake((customerId, query) => {
+    const mockQuery = vi.spyOn(api, 'query');
+    mockQuery.mockImplementation((customerId, query) => {
       if (query === CAMPAIGN_TARGET_REPORT.query) {
         return iterator(
           ...[...Array.from({ length: 5 }).keys()].map((x) => ({
@@ -308,8 +307,8 @@ describe('Age target report', function () {
   });
 
   it('returns expected results', function () {
-    const mockQuery = sinon.stub(api, 'query');
-    mockQuery.returns(
+    const mockQuery = vi.spyOn(api, 'query');
+    mockQuery.mockReturnValue(
       iterator(
         ...[...Array.from({ length: 5 }).keys()].map((x) => ({
           customer: {
@@ -382,8 +381,8 @@ describe('Age range target report', function () {
   });
 
   it('returns expected results', function () {
-    const mockQuery = sinon.stub(api, 'query');
-    mockQuery.returns(
+    const mockQuery = vi.spyOn(api, 'query');
+    mockQuery.mockReturnValue(
       iterator(
         ...[...Array.from({ length: 5 }).keys()].map((x) => ({
           customer: {
@@ -456,8 +455,8 @@ describe('Gender type target report', function () {
   });
 
   it('returns expected results', function () {
-    const mockQuery = sinon.stub(api, 'query');
-    mockQuery.returns(
+    const mockQuery = vi.spyOn(api, 'query');
+    mockQuery.mockReturnValue(
       iterator(
         ...[...Array.from({ length: 5 }).keys()].map((x) => ({
           customer: {
@@ -531,8 +530,8 @@ describe('Campaign user list report', function () {
   });
 
   it('returns expected results', function () {
-    const mockQuery = sinon.stub(api, 'query');
-    mockQuery.callsFake((customerId, query) => {
+    const mockQuery = vi.spyOn(api, 'query');
+    mockQuery.mockImplementation((customerId, query) => {
       if (query === CAMPAIGN_USER_LIST_REPORT.query) {
         return iterator(
           ...[...Array.from({ length: 5 }).keys()].map((x) => ({
@@ -617,8 +616,8 @@ describe('Ad group user list report', function () {
   });
 
   it('returns expected results', function () {
-    const mockQuery = sinon.stub(api, 'query');
-    mockQuery.callsFake((customerId, query) => {
+    const mockQuery = vi.spyOn(api, 'query');
+    mockQuery.mockImplementation((customerId, query) => {
       if (query === AD_GROUP_USER_LIST_REPORT.query) {
         return iterator(
           ...[...Array.from({ length: 5 }).keys()].map((x) => ({
@@ -731,12 +730,12 @@ function setUp() {
     apiEndpoint: SA360_API_ENDPOINT,
   });
   const api = apiFactory.create('');
-  sinon.stub(apiFactory, 'create').returns(api);
+  vi.spyOn(apiFactory, 'create').mockReturnValue(api);
   const reportFactory = new ReportFactory(apiFactory, {
     customerIds: '1',
     label: 'test',
   });
-  sinon.stub(reportFactory, 'leafAccounts').returns(['2']);
+  vi.spyOn(reportFactory, 'leafAccounts').mockReturnValue(['2']);
 
   return { apiFactory, api, reportFactory };
 }

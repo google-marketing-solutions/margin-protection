@@ -47,7 +47,7 @@ import {
   RuleExecutor,
   RuleGetter,
 } from '../types';
-import { vi } from 'vitest';
+import { vi, type MockInstance } from 'vitest';
 
 /**
  * Test granularity for use in tests.
@@ -278,7 +278,7 @@ export function bootstrapGoogleAdsApi({
     apiEndpoint: FAKE_API_ENDPOINT,
   });
   const original = api.queryOne.bind(api);
-  const mockQuery: any = vi
+  const mockQuery: MockInstance = vi
     .spyOn(api, 'queryOne')
     .mockImplementation((...args) => original(...args));
   vi.spyOn(apiFactory, 'create').mockImplementation(() => api);

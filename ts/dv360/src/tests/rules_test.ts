@@ -31,21 +31,20 @@ import {
   generateInsertionOrderReportWithDateValues,
 } from './rules_test_helpers';
 import { expect } from 'chai';
-import * as sinon from 'sinon';
+import { afterEach, beforeEach, describe, it, vi } from 'vitest';
 
-describe('Geo targeting Rule', function () {
-  let timer: sinon.SinonFakeTimers;
-
-  beforeEach(function () {
+describe('Geo targeting Rule', () => {
+  beforeEach(() => {
     mockAppsScript();
-    timer = sinon.useFakeTimers(new Date('1970-01-01'));
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date('1970-01-01'));
   });
 
-  afterEach(function () {
-    timer.restore();
+  afterEach(() => {
+    vi.useRealTimers();
   });
 
-  it('passes when geo is in the US', async function () {
+  it('passes when geo is in the US', async () => {
     const values = await generateGeoTestData({
       advertiserId: '123',
       geoTargets: ['United States (Country)'],
@@ -53,7 +52,7 @@ describe('Geo targeting Rule', function () {
     expect(values['c1']).to.include({ anomalous: false });
   });
 
-  it('triggers an error when a non-US geo is found', async function () {
+  it('triggers an error when a non-US geo is found', async () => {
     const values = await generateGeoTestData({
       advertiserId: '456',
       geoTargets: ['United States (Country)', 'Portugal (Country)'],
@@ -64,7 +63,7 @@ describe('Geo targeting Rule', function () {
     });
   });
 
-  it('triggers an error when a negative match is found', async function () {
+  it('triggers an error when a negative match is found', async () => {
     const values = await generateGeoTestData({
       advertiserId: '456',
       excludes: ['United States (Country)'],
@@ -84,7 +83,7 @@ describe('Geo targeting Rule', function () {
     });
   });
 
-  it('triggers an error when a required geo is not found', async function () {
+  it('triggers an error when a required geo is not found', async () => {
     const values = await generateGeoTestData({
       advertiserId: '456',
       excludes: ['United States (Country)'],
@@ -104,7 +103,7 @@ describe('Geo targeting Rule', function () {
     });
   });
 
-  it('triggers an error when an excluded geo is set but there is no targeting', async function () {
+  it('triggers an error when an excluded geo is set but there is no targeting', async () => {
     const values = await generateGeoTestData({
       advertiserId: '456',
       columns: [
@@ -123,7 +122,7 @@ describe('Geo targeting Rule', function () {
     });
   });
 
-  it('triggers an error when an allowed geo is set but there is no targeting', async function () {
+  it('triggers an error when an allowed geo is set but there is no targeting', async () => {
     const values = await generateGeoTestData({
       advertiserId: '456',
       columns: [
@@ -143,15 +142,14 @@ describe('Geo targeting Rule', function () {
   });
 });
 
-describe('Percentage Budget Pacing Rule (Insertion Order)', function () {
-  let timer: sinon.SinonFakeTimers;
-
-  beforeEach(function () {
-    timer = sinon.useFakeTimers(new Date(1970, 0, 3));
+describe('Percentage Budget Pacing Rule (Insertion Order)', () => {
+  beforeEach(() => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date(1970, 0, 3));
   });
 
-  afterEach(function () {
-    timer.restore();
+  afterEach(() => {
+    vi.useRealTimers();
     (
       AppsScriptPropertyStore as unknown as {
         cache: Record<string, string>;
@@ -167,7 +165,7 @@ describe('Percentage Budget Pacing Rule (Insertion Order)', function () {
   ];
 
   for (const [operator, fakeSpendAmount, value] of tests) {
-    it(`fails when pacing ${operator} threshold`, async function () {
+    it(`fails when pacing ${operator} threshold`, async () => {
       const values = await insertionOrderPacingRuleTestData(fakeSpendAmount);
       expect(values['io1']).to.include({
         value,
@@ -176,12 +174,12 @@ describe('Percentage Budget Pacing Rule (Insertion Order)', function () {
     });
   }
 
-  it(`doesn't fail when pacing is equal to threshold`, async function () {
+  it(`doesn't fail when pacing is equal to threshold`, async () => {
     const values = await insertionOrderPacingRuleTestData(50);
     expect(values['io1']).to.include({ anomalous: false, value: 'Pace OK' });
   });
 
-  it('has the correct fields and values', async function () {
+  it('has the correct fields and values', async () => {
     const values = await generateInsertionOrderTestData(
       budgetPacingPercentageRule,
       {
@@ -215,16 +213,15 @@ describe('Percentage Budget Pacing Rule (Insertion Order)', function () {
   });
 });
 
-describe('Percentage Budget Pacing Rule (Line Item)', function () {
-  let timer: sinon.SinonFakeTimers;
-
-  beforeEach(function () {
-    timer = sinon.useFakeTimers(new Date(1970, 0, 3));
+describe('Percentage Budget Pacing Rule (Line Item)', () => {
+  beforeEach(() => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date(1970, 0, 3));
     mockAppsScript();
   });
 
-  afterEach(function () {
-    timer.restore();
+  afterEach(() => {
+    vi.useRealTimers();
     (
       AppsScriptPropertyStore as unknown as {
         cache: Record<string, string>;
@@ -237,13 +234,13 @@ describe('Percentage Budget Pacing Rule (Line Item)', function () {
     [5, 6],
   ];
   for (const [startDate, endDate] of parameters) {
-    it(`skips rule when out of date range (${startDate} < 4 < ${endDate})`, async function () {
+    it(`skips rule when out of date range (${startDate} < 4 < ${endDate})`, async () => {
       const values = await generateLineItemReport(startDate, endDate);
       expect(values).to.eql({});
     });
   }
 
-  it('checks rules when in date range', async function () {
+  it('checks rules when in date range', async () => {
     const values = await generateLineItemReport(1, 6);
     expect(values['li1']).to.include({
       anomalous: true,
@@ -258,7 +255,7 @@ describe('Percentage Budget Pacing Rule (Line Item)', function () {
   ];
 
   for (const [operator, fakeSpendAmount, value] of tests) {
-    it(`fails when pacing ${operator} threshold`, async function () {
+    it(`fails when pacing ${operator} threshold`, async () => {
       const values = await lineItemPacingRuleTestData(fakeSpendAmount);
       expect(values['li1']).to.include({
         value,
@@ -267,12 +264,12 @@ describe('Percentage Budget Pacing Rule (Line Item)', function () {
     });
   }
 
-  it(`doesn't fail when pacing is equal to threshold`, async function () {
+  it(`doesn't fail when pacing is equal to threshold`, async () => {
     const values = await lineItemPacingRuleTestData(50);
     expect(values['li1']).to.include({ anomalous: false, value: 'Pace OK' });
   });
 
-  it('has the correct fields and values', async function () {
+  it('has the correct fields and values', async () => {
     const values = await generateLineItemTestData({
       advertiserId: '123',
       startDate: new ApiDate(1970, 1, 1),
@@ -302,15 +299,14 @@ describe('Percentage Budget Pacing Rule (Line Item)', function () {
   });
 });
 
-describe('Daily Budgets Rule', function () {
-  let timer: sinon.SinonFakeTimers;
-
-  beforeEach(function () {
-    timer = sinon.useFakeTimers(new Date(1970, 0, 2));
+describe('Daily Budgets Rule', () => {
+  beforeEach(() => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date(1970, 0, 2));
   });
 
-  afterEach(function () {
-    timer.restore();
+  afterEach(() => {
+    vi.useRealTimers();
     PropertiesService.getScriptProperties().deleteAllProperties();
   });
 
@@ -326,7 +322,7 @@ describe('Daily Budgets Rule', function () {
     ['is above', 120, '12', true],
   ];
   for (const [operator, fakeTotalBudget, value, anomalous] of tests) {
-    it(`fails when daily budgets ${operator} range`, async function () {
+    it(`fails when daily budgets ${operator} range`, async () => {
       const values = await dailyBudgetRuleTestData(fakeTotalBudget);
       expect(values['io1']).to.include({
         value,
@@ -335,7 +331,7 @@ describe('Daily Budgets Rule', function () {
     });
   }
 
-  it(`doesn't fail when daily budgets is equal to range`, async function () {
+  it(`doesn't fail when daily budgets is equal to range`, async () => {
     const values = await dailyBudgetRuleTestData(50);
     expect(values['io1']).to.include({ value: '5', anomalous: false });
   });
@@ -345,7 +341,7 @@ describe('Daily Budgets Rule', function () {
     [1, 6],
   ];
   for (const [startDate, endDate] of values) {
-    it(`checks rules when in date range (${startDate}-${endDate})`, async function () {
+    it(`checks rules when in date range (${startDate}-${endDate})`, async () => {
       const values = await generateInsertionOrderReportWithDateValues(
         startDate,
         endDate,
@@ -356,26 +352,25 @@ describe('Daily Budgets Rule', function () {
     });
   }
 
-  it('skips rules when out of date range', async function () {
-    timer.setSystemTime(new Date('3000-01-01'));
+  it('skips rules when out of date range', async () => {
+    vi.setSystemTime(new Date('3000-01-01'));
     const values = await generateInsertionOrderReportWithDateValues(1, 1);
     expect(values).to.eql({});
   });
 });
 
-describe('impressionsByGeoTarget', function () {
-  let timer: sinon.SinonFakeTimers;
-
-  beforeEach(function () {
-    timer = sinon.useFakeTimers(new Date(1970, 0, 2));
+describe('impressionsByGeoTarget', () => {
+  beforeEach(() => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date(1970, 0, 2));
     mockAppsScript();
   });
 
-  afterEach(function () {
-    timer.restore();
+  afterEach(() => {
+    vi.useRealTimers();
   });
 
-  it('checks rules when in date range', async function () {
+  it('checks rules when in date range', async () => {
     const values = await generateImpressionReport(impressionsByGeoTarget, 1);
     expect(values['io1']).to.include({
       anomalous: true,

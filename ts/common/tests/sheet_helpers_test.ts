@@ -244,8 +244,8 @@ describe('Sheet helpers', () => {
       const sheet = HELPERS.getOrCreateSheet('Rule Settings - default');
       rules.writeBack(Granularity.DEFAULT);
       const expected = [
-        ['-', '-', 'Category A', '-', 'Category B', '-', '-', 'Category C'],
-        ['-', '-', '-', '-', '-', '-', '-', '-'],
+        ['', '', 'Category A', '', 'Category B', '', '', 'Category C'],
+        ['', '', '', '', '', '', '', ''],
         [
           'id',
           'name',
@@ -264,8 +264,8 @@ describe('Sheet helpers', () => {
       rules.writeBack(Granularity.DEFAULT);
 
       expect(range.getValues()).toEqual([
-        ['-', '-', 'Category A', '-', 'Category B', '-', '-', 'Category C'],
-        ['-', '-', '-', '-', '-', '-', '-', '-'],
+        ['', '', 'Category A', '', 'Category B', '', '', 'Category C'],
+        ['', '', '', '', '', '', '', ''],
         [
           'id',
           'name',

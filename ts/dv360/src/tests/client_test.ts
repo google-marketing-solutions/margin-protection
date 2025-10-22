@@ -182,7 +182,9 @@ describe('API integrations', () => {
   beforeEach(() => {
     mockAppsScript();
     const testClient = new TestClient({ id: '123' });
-    UrlFetchApp.fetchAll = ((requests: any[]) => {
+    UrlFetchApp.fetchAll = ((
+      requests: GoogleAppsScript.URL_Fetch.URLFetchRequest[],
+    ) => {
       return requests.map((_, i) => ({
         getContentText() {
           const tpl = { ...testClient.campaignTemplate };

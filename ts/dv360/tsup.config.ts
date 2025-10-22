@@ -16,6 +16,6 @@
  */
 
 import { defineConfig } from 'tsup';
-import { getTsupConfig } from '../common/build';
+import { getTsupConfig } from 'common/build';
 
 export default defineConfig(getTsupConfig(__dirname, 'dist'));

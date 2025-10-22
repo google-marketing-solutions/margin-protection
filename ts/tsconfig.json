@@ -9,12 +9,16 @@
     "lib": ["esnext", "dom"],
     "noImplicitThis": true,
     "useDefineForClassFields": true,
+
+    "types": [
+      "google-apps-script"
+    ],
     "paths": {
       "common/*": ["common/*"],
-      "sa360/*": ["sa360/*"],
-      "dv360/*": ["dv360/*"],
+      "sa360/*": ["sa360/src/*"],
+      "dv360/*": ["dv360/src/*"],
       "dv360_api/*": ["dv360_api/*"],
-      "googleads/*": ["googleads/old/src/*"]
+      "googleads/*": ["googleads/src/*"]
     }
   },
   "include": ["**/src/**/*", "outs.d.ts", "common/**/*"],

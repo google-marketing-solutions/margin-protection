@@ -281,10 +281,7 @@ export abstract class AbstractRuleRange<T extends ClientTypes<T>>
     const range = HELPERS.getOrCreateSheet(
       `Rule Settings - ${ruleGranularity}`,
     ).getRange(1, 1, values.length, values[0].length);
-    range.setValues(
-      values.map((row) => row.map((cell) => (cell === '' ? '-' : cell))),
-    );
-    console.log('done');
+    range.setValues(values);
   }
 
   abstract getRows(granularity: T['ruleGranularity']): Promise<RecordInfo[]>;

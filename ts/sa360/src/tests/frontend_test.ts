@@ -2,7 +2,7 @@ import {
   FakePropertyStore,
   mockAppsScript,
 } from 'common/test_helpers/mock_apps_script';
-import { SearchAdsFrontend } from 'sa360/src/frontend';
+import { SearchAdsFrontend } from 'sa360/frontend';
 import { ClientInterface, ReportClass, ReportInterface } from '../types';
 import { PropertyStore, RecordInfo } from 'common/types';
 import { Client, RuleRange } from '../client';
@@ -14,58 +14,55 @@ import {
   SA360_API_ENDPOINT,
 } from 'common/ads_api';
 import { Query, QueryBuilder } from 'common/ads_api_types';
-import { expect } from 'chai';
-import * as sinon from 'sinon';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-describe('initializeSheets', function () {
+describe('initializeSheets', () => {
   let frontend: SearchAdsFrontend;
-  let timer: sinon.SinonFakeTimers;
 
-  beforeEach(async function () {
+  beforeEach(async () => {
     setUp();
-    timer = sinon.useFakeTimers(new Date(Date.UTC(1970, 0, 1)));
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date(Date.UTC(1970, 0, 1)));
     frontend = getFrontend((client) => testData(client));
     await frontend.initializeRules();
   });
 
-  afterEach(function () {
-    timer.restore();
+  afterEach(() => {
+    vi.useRealTimers();
   });
 
-  it('loads blank values', function () {
+  it('loads blank values', () => {
     const values = SpreadsheetApp.getActive()
       .getSheetByName('Rule Settings - Campaign')
       .getRange(5, 1, 2, 3)
       .getValues();
-    expect(values).to.eql([
+    expect(values).toEqual([
       ['c1', 'Campaign 1', ''],
       ['c2', 'Campaign 2', ''],
     ]);
   });
 });
 
-describe('validate/launchMonitor functions', function () {
+describe('validate/launchMonitor functions', () => {
   let frontend: SearchAdsFrontend;
-  let timer: sinon.SinonFakeTimers;
 
-  beforeEach(async function () {
+  beforeEach(async () => {
     setUp();
-    timer = sinon.useFakeTimers(new Date(Date.UTC(1970, 0, 1)));
     frontend = getFrontend((client) => testData(client));
     await frontend.initializeRules();
   });
 
-  it('runs with no errors when entity first found', async function () {
+  it('runs with no errors when entity first found', async () => {
     await frontend.launchMonitor();
     expect(
       SpreadsheetApp.getActive()
         .getSheetByName('Age Target Change - Results')
         .getDataRange()
         .getValues(),
-    ).to.eql([]);
+    ).toEqual([]);
   });
 
-  it('runs with no errors', async function () {
+  it('runs with no errors', async () => {
     const range = SpreadsheetApp.getActive().getSheetByName(
       'Rule Settings - Ad Group',
     );
@@ -78,11 +75,11 @@ describe('validate/launchMonitor functions', function () {
         .getSheetByName('Age Target Change - Results')
         .getDataRange()
         .getValues(),
-    ).to.eql([]);
+    ).toEqual([]);
   });
 
-  describe('error run', function () {
-    beforeEach(async function () {
+  describe('error run', () => {
+    beforeEach(async () => {
       const customFn = (o: string, rowNumber: number) => {
         if (o === 'campaignId') return `c${rowNumber + 1}`;
         if (o === 'criterionId' && rowNumber === 0) {
@@ -103,31 +100,31 @@ describe('validate/launchMonitor functions', function () {
       await frontend.launchMonitor();
     });
 
-    afterEach(function () {
+    afterEach(() => {
       SpreadsheetApp.getActive()
         .getSheetByName('Rule Settings - Campaign')
         .clear();
     });
 
-    it('runs with errors', function () {
+    it('runs with errors', () => {
       expect(
         SpreadsheetApp.getActive()
           .getSheetByName('Geo Target Change - Results')
           .getDataRange()
           .getValues(),
-      ).to.eql([
+      ).toEqual([
         ['Change', 'anomalous', 'Customer ID', 'Customer Name', 'Campaign ID'],
         ['1 DELETED, Nowhere ADDED', 'true', '1', '1', 'c1'],
       ]);
     });
 
-    it('has blank set safely', function () {
+    it('has blank set safely', () => {
       expect(
         SpreadsheetApp.getActive()
           .getSheetByName('Rule Settings - Campaign')
           .getRange(3, 1, 4, 3)
           .getValues(),
-      ).to.eql([
+      ).toEqual([
         ['ID', 'Campaign Name', 'Criteria IDs'],
         ['default', '', 'Nowhere'],
         ['c1', 'Campaign 1', '1'],
@@ -136,7 +133,7 @@ describe('validate/launchMonitor functions', function () {
     });
   });
 
-  it('skips disabled rules', async function () {
+  it('skips disabled rules', async () => {
     SpreadsheetApp.getActive()
       .getSheetByName('Rule Settings - Campaign')
       .getRange(4, 2)
@@ -168,11 +165,7 @@ describe('validate/launchMonitor functions', function () {
         .getSheetByName(`${geoTargetRule.name} - Results`)
         .getDataRange()
         .getValues(),
-    ).to.deep.eq([]);
-  });
-
-  afterEach(function () {
-    timer.restore();
+    ).toEqual([]);
   });
 });
 
@@ -208,7 +201,7 @@ function getFrontend(
     apiEndpoint: SA360_API_ENDPOINT,
   });
   const api = apiFactory.create('');
-  sinon.stub(apiFactory, 'create').returns(api);
+  vi.spyOn(apiFactory, 'create').mockReturnValue(api);
   const reportFactory = new ReportFactory(apiFactory, {
     customerIds: '1',
     label: 'test',

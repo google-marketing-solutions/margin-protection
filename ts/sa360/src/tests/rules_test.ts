@@ -25,8 +25,8 @@ import {
 } from 'common/test_helpers/mock_apps_script';
 import { bootstrapGoogleAdsApi, iterator } from 'common/tests/helpers';
 import { ParamDefinition, RuleExecutor, Values } from 'common/types';
-import { Client } from 'sa360/src/client';
-import { SearchAdsClientTypes } from 'sa360/src/types';
+import { Client } from 'sa360/client';
+import { SearchAdsClientTypes } from 'sa360/types';
 import { ReportClass } from 'common/ads_api_types';
 import {
   AD_GROUP_USER_LIST_REPORT,
@@ -36,7 +36,7 @@ import {
   AD_GROUP_REPORT,
   AGE_TARGET_REPORT,
   GENDER_TARGET_REPORT,
-} from 'sa360/src/api';
+} from 'sa360/api';
 
 import {
   budgetPacingRule,
@@ -48,21 +48,16 @@ import {
   ageTargetRule,
   genderTargetRule,
 } from '../rules';
-import { expect, use } from 'chai';
-import * as sinon from 'sinon';
-import sinonChai from 'sinon-chai';
-use(sinonChai);
+import { afterEach, beforeEach, describe, it, expect, vi } from 'vitest';
 
-describe('Campaign pacing rule', function () {
-  let timer: sinon.SinonFakeTimers;
-
-  beforeEach(function () {
+describe('Campaign pacing rule', () => {
+  beforeEach(() => {
     mockAppsScript();
-    timer = sinon.useFakeTimers();
+    vi.useFakeTimers();
   });
 
-  afterEach(function () {
-    timer.restore();
+  afterEach(() => {
+    vi.useRealTimers();
     FakePropertyStore.clearCache();
   });
 
@@ -83,7 +78,7 @@ describe('Campaign pacing rule', function () {
       ['C2', '', '0.95', '1'],
     ]);
     expect(value['C1'].anomalous).to.be.false;
-    expect(value['C2'].anomalous).to.be.true;
+    expect(value['C2'].anomalous).toBe(true);
   });
 
   it('fails to pace when there is no cost', async function () {
@@ -133,8 +128,8 @@ async function generateCampaignPacingTestData(
   };
 
   let values: Values = {};
-  const mockGetReport = sinon.stub(client, 'getReport');
-  const mockQuery = sinon.stub(api, 'query');
+  const mockGetReport = vi.spyOn(client, 'getReport');
+  const mockQuery = vi.spyOn(api, 'query');
 
   for (const [i, { budget, spend }] of pacings.entries()) {
     obj.campaign.id = `C${i + 1}`;
@@ -144,8 +139,8 @@ async function generateCampaignPacingTestData(
       };
     }
     obj.campaignBudget.amountMicros = `${budget * 1e6}`;
-    mockQuery.returns(iterator(obj));
-    mockGetReport.callsFake((reportClass) => {
+    mockQuery.mockReturnValue(iterator(obj));
+    mockGetReport.mockImplementation((reportClass) => {
       queryEquals(reportClass, CAMPAIGN_PACING_REPORT);
       const report = client.reportFactory.create(reportClass);
       return report;
@@ -178,16 +173,14 @@ function writeBackToColumns(
   }
 }
 
-describe('Campaign Status rule', function () {
-  let timer: sinon.SinonFakeTimers;
-
-  beforeEach(function () {
+describe('Campaign Status rule', () => {
+  beforeEach(() => {
     mockAppsScript();
-    timer = sinon.useFakeTimers();
+    vi.useFakeTimers();
   });
 
-  afterEach(function () {
-    timer.restore();
+  afterEach(() => {
+    vi.useRealTimers();
     FakePropertyStore.clearCache();
   });
   for (const statuses of [
@@ -199,7 +192,6 @@ describe('Campaign Status rule', function () {
   ]) {
     it(`is not anomalous because ${statuses} is not anomalous`, async function () {
       const value = await generateCampaignStatusTestData(
-        timer,
         statuses.map((campaignStatus: string) => ({ campaignStatus })),
         [
           ['Campaign ID', 'Campaign', 'Max. Days Inactive before Active'],
@@ -227,7 +219,6 @@ describe('Campaign Status rule', function () {
       ',',
     )} is over the threshold.`, async function () {
       const value = await generateCampaignStatusTestData(
-        timer,
         statuses.map((campaignStatus: string) => ({ campaignStatus })),
         [
           [
@@ -240,39 +231,35 @@ describe('Campaign Status rule', function () {
           ['C1', '', '', ''],
         ],
       );
-      expect(value['C1'].anomalous).to.be.true;
+      expect(value['C1'].anomalous).toBe(true);
     });
   }
 });
 
-describe('Ad Group status rule', function () {
-  let timer: sinon.SinonFakeTimers;
-
-  beforeEach(function () {
+describe('Ad Group status rule', () => {
+  beforeEach(() => {
     mockAppsScript();
-    timer = sinon.useFakeTimers();
+    vi.useFakeTimers();
   });
 
-  afterEach(function () {
-    timer.restore();
+  afterEach(() => {
+    vi.useRealTimers();
     FakePropertyStore.clearCache();
   });
 
   it('Status "Removed" is anomalous', async function () {
     const value = await generateAdGroupStatusTestData(
-      timer,
       [{ adGroupStatus: 'Removed' }],
       [
         ['Campaign ID', 'Campaign'],
         ['default', ''],
       ],
     );
-    expect(value['AG1'].anomalous).to.be.true;
+    expect(value['AG1'].anomalous).toBe(true);
   });
 
   it('Status "Paused" is not anomalous if it has never been active', async function () {
     const value = await generateAdGroupStatusTestData(
-      timer,
       [{ adGroupStatus: 'Paused' }],
       [
         ['Campaign ID', 'Campaign'],
@@ -284,7 +271,6 @@ describe('Ad Group status rule', function () {
 
   it('Status "Active" is not anomalous', async function () {
     const value = await generateAdGroupStatusTestData(
-      timer,
       [{ adGroupStatus: 'Active' }],
       [
         ['Campaign ID', 'Campaign'],
@@ -296,14 +282,13 @@ describe('Ad Group status rule', function () {
 
   it('Status "Paused" is anomalous if it follows an "Active" state', async function () {
     const value = await generateAdGroupStatusTestData(
-      timer,
       [{ adGroupStatus: 'Active' }, { adGroupStatus: 'Paused' }],
       [
         ['Campaign ID', 'Campaign'],
         ['default', ''],
       ],
     );
-    expect(value['AG1'].anomalous).to.be.true;
+    expect(value['AG1'].anomalous).toBe(true);
   });
 });
 
@@ -616,7 +601,6 @@ describe('Gender target rule', function () {
  * Generates geo test data for the tests below.
  */
 async function generateCampaignStatusTestData(
-  timer: sinon.SinonFakeTimers,
   pacings: Array<{ campaignStatus: string }>,
   columns: string[][],
 ) {
@@ -643,11 +627,11 @@ async function generateCampaignStatusTestData(
   };
 
   let values: Values = {};
-  const mockQuery = sinon.stub(api, 'query');
+  const mockQuery = vi.spyOn(api, 'query');
   for (const [i, { campaignStatus }] of pacings.entries()) {
-    timer.setSystemTime(new Date(60 * 60 * 24 * 1000 * i));
+    vi.setSystemTime(new Date(60 * 60 * 24 * 1000 * i));
     obj.campaign.status = campaignStatus;
-    mockQuery.returns(iterator(obj));
+    mockQuery.mockReturnValue(iterator(obj));
     const { results, rules } = await client.validate();
     writeBackToColumns(rules, columns);
     values = {
@@ -660,7 +644,6 @@ async function generateCampaignStatusTestData(
 }
 
 async function generateAdGroupStatusTestData(
-  timer: sinon.SinonFakeTimers,
   pacings: Array<{ adGroupStatus: string }>,
   columns: string[][],
 ) {
@@ -688,13 +671,13 @@ async function generateAdGroupStatusTestData(
     },
   };
   let values: Values = {};
-  const mockQuery = sinon.stub(api, 'query');
-  const mockGetReport = sinon.stub(client, 'getReport');
+  const mockQuery = vi.spyOn(api, 'query');
+  const mockGetReport = vi.spyOn(client, 'getReport');
   for (const [i, { adGroupStatus }] of pacings.entries()) {
-    timer.setSystemTime(new Date(60 * 60 * 24 * 1000 * i));
+    vi.setSystemTime(new Date(60 * 60 * 24 * 1000 * i));
     obj.adGroup.status = adGroupStatus;
-    mockQuery.returns(iterator(obj));
-    mockGetReport.callsFake((reportClass) => {
+    mockQuery.mockReturnValue(iterator(obj));
+    mockGetReport.mockImplementation((reportClass) => {
       queryEquals(reportClass, AD_GROUP_REPORT);
       const report = client.reportFactory.create(reportClass);
       return report;
@@ -726,7 +709,7 @@ async function generateAdGroupAudienceTestData(
     reportFactory,
   );
   client.addRule(adGroupAudienceTargetRule, columns);
-  const mockGetReport = sinon.stub(client, 'getReport');
+  const mockGetReport = vi.spyOn(client, 'getReport');
   let values: Values = {};
   const obj = {
     criterionId: 'cr1',
@@ -738,12 +721,12 @@ async function generateAdGroupAudienceTestData(
     userListName: '',
   };
   for (const { userLists } of overrides.values()) {
-    mockGetReport.callsFake((reportClass) => {
+    mockGetReport.mockImplementation((reportClass) => {
       queryEquals(reportClass, AD_GROUP_USER_LIST_REPORT);
       const report = client.reportFactory.create(reportClass);
-      const reportGetter = sinon.stub(report, 'fetch');
+      const reportGetter = vi.spyOn(report, 'fetch');
       obj.userListName = userLists as string;
-      reportGetter.returns({ AG1: obj });
+      reportGetter.mockReturnValue({ AG1: obj });
       return report;
     });
     const { results, rules } = await client.validate();
@@ -771,7 +754,7 @@ async function generateCampaignAudienceTestData(
   );
   client.addRule(campaignAudienceTargetRule, columns);
 
-  const mockGetReport = sinon.stub(client, 'getReport');
+  const mockGetReport = vi.spyOn(client, 'getReport');
   let values: Values = {};
 
   const obj = {
@@ -784,19 +767,19 @@ async function generateCampaignAudienceTestData(
     userListType: 'USER_LIST',
   };
   for (const { userLists } of overrides.values()) {
-    mockGetReport.callsFake((reportClass) => {
+    mockGetReport.mockImplementation((reportClass) => {
       queryEquals(reportClass, CAMPAIGN_USER_LIST_REPORT);
       const report = client.reportFactory.create(reportClass);
-      const reportGetter = sinon.stub(report, 'fetch');
+      const reportGetter = vi.spyOn(report, 'fetch');
       obj.userListName = userLists as string;
-      reportGetter.returns({ C1: obj });
+      reportGetter.mockReturnValue({ C1: obj });
       return report;
     });
     const { results, rules } = await client.validate();
     writeBackToColumns(rules, columns);
     values = results['Campaign Audience Target Change']?.values || {};
   }
-  expect(mockGetReport).to.have.been.called;
+  expect(mockGetReport).toHaveBeenCalled();
   return values;
 }
 
@@ -818,7 +801,7 @@ async function generateGeoTargetTestData(
   );
   client.addRule(geoTargetRule, columns);
 
-  const mockGetReport = sinon.stub(client, 'getReport');
+  const mockGetReport = vi.spyOn(client, 'getReport');
 
   let values: Values = {};
 
@@ -831,18 +814,18 @@ async function generateGeoTargetTestData(
     campaignName: 'Campaign 1',
   };
   for (const { criterionId } of overrides.values()) {
-    mockGetReport.callsFake((reportClass) => {
+    mockGetReport.mockImplementation((reportClass) => {
       queryEquals(reportClass, CAMPAIGN_TARGET_REPORT);
       const report = client.reportFactory.create(reportClass);
-      const reportGetter = sinon.stub(report, 'fetch');
+      const reportGetter = vi.spyOn(report, 'fetch');
       obj.criterionId = criterionId!;
-      reportGetter.returns({ geo1: obj });
+      reportGetter.mockReturnValue({ geo1: obj });
       return report;
     });
     const { results, rules } = await client.validate();
     writeBackToColumns(rules, columns);
     values = results['Geo Target Change']?.values || {};
-    expect(mockGetReport).to.have.been.called;
+    expect(mockGetReport).toHaveBeenCalled();
   }
   return values;
 }
@@ -862,7 +845,7 @@ async function generateAdGroupStatusReportTestData(
   );
   client.addRule(adGroupStatusRule, columns);
 
-  const mockGetReport = sinon.stub(client, 'getReport');
+  const mockGetReport = vi.spyOn(client, 'getReport');
 
   let values: Values = {};
 
@@ -877,18 +860,18 @@ async function generateAdGroupStatusReportTestData(
   };
 
   for (const { adGroupStatus } of overrides.values()) {
-    mockGetReport.callsFake((reportClass) => {
+    mockGetReport.mockImplementation((reportClass) => {
       queryEquals(reportClass, AD_GROUP_REPORT);
       const report = client.reportFactory.create(reportClass);
-      const reportGetter = sinon.stub(report, 'fetch');
+      const reportGetter = vi.spyOn(report, 'fetch');
       obj.adGroupStatus = adGroupStatus!;
-      reportGetter.returns({ AG1: obj });
+      reportGetter.mockReturnValue({ AG1: obj });
       return report;
     });
     const { results, rules } = await client.validate();
     writeBackToColumns(rules, columns);
     values = results['Ad Group Status Change']?.values || {};
-    expect(mockGetReport).to.have.been.called;
+    expect(mockGetReport).toHaveBeenCalled();
   }
   return values;
 }
@@ -909,7 +892,7 @@ async function generateAgeTargetTestData(
 
   client.addRule(ageTargetRule, columns);
 
-  const mockGetReport = sinon.stub(client, 'getReport');
+  const mockGetReport = vi.spyOn(client, 'getReport');
 
   let values: Values = {};
 
@@ -923,18 +906,18 @@ async function generateAgeTargetTestData(
   };
 
   for (const { ageRange } of overrides.values()) {
-    mockGetReport.callsFake((reportClass) => {
+    mockGetReport.mockImplementation((reportClass) => {
       queryEquals(reportClass, AGE_TARGET_REPORT);
       const report = client.reportFactory.create(reportClass);
-      const reportGetter = sinon.stub(report, 'fetch');
+      const reportGetter = vi.spyOn(report, 'fetch');
       obj.ageRange = ageRange!;
-      reportGetter.returns({ age1: obj });
+      reportGetter.mockReturnValue({ age1: obj });
       return report;
     });
     const { results, rules } = await client.validate();
     writeBackToColumns(rules, columns);
     values = results['Age Target Change']?.values || {};
-    expect(mockGetReport).to.have.been.called;
+    expect(mockGetReport).toHaveBeenCalled();
   }
   return values;
 }
@@ -955,7 +938,7 @@ async function generateGenderTargetTestData(
 
   client.addRule(genderTargetRule, columns);
 
-  const mockGetReport = sinon.stub(client, 'getReport');
+  const mockGetReport = vi.spyOn(client, 'getReport');
 
   let values: Values = {};
 
@@ -969,18 +952,18 @@ async function generateGenderTargetTestData(
   };
 
   for (const { gender } of overrides.values()) {
-    mockGetReport.callsFake((reportClass) => {
+    mockGetReport.mockImplementation((reportClass) => {
       queryEquals(reportClass, GENDER_TARGET_REPORT);
       const report = client.reportFactory.create(reportClass);
-      const mockReportFetch = sinon.stub(report, 'fetch');
+      const mockReportFetch = vi.spyOn(report, 'fetch');
       obj.gender = gender;
-      mockReportFetch.returns({ AG1: obj });
+      mockReportFetch.mockReturnValue({ AG1: obj });
       return report;
     });
     const { results, rules } = await client.validate();
     writeBackToColumns(rules, columns);
     values = results['Gender Target Change']?.values || {};
-    expect(mockGetReport).to.have.been.called;
+    expect(mockGetReport).toHaveBeenCalled();
   }
   return values;
 }

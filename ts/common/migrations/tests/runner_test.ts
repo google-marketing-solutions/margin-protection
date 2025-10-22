@@ -22,7 +22,7 @@ import {
 } from '../../test_helpers/mock_apps_script';
 import { runMigrations } from '../runner';
 import { Migration } from '../types';
-import { DisplayVideoFrontend } from 'dv360/src/frontend';
+import { DisplayVideoFrontend } from 'dv360/frontend';
 
 describe('Migration Runner', function () {
   let properties: FakePropertyStore;

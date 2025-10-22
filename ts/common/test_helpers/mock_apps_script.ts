@@ -624,7 +624,8 @@ export class FakeDrive {
 }
 
 class FakeDriveFiles {
-  private files: Map<string, GoogleAppsScript.Drive_v3.Drive.V3.Schema.File> = new Map();
+  private files: Map<string, GoogleAppsScript.Drive_v3.Drive.V3.Schema.File> =
+    new Map();
   private currentId = 0;
 
   constructor() {
@@ -800,15 +801,18 @@ class FakeBigQuery {
   readonly Datasets = new FakeBigQueryDatasets();
   readonly Tables = new FakeBigQueryTables();
 
-  newTableReference(): GoogleAppsScript.BigQuery.TableReference {
+  newTableReference(): GoogleAppsScript.BigQuery.Schema.TableReference {
+    console.log('FakeBigQuery.newTableReference called');
     return new FakeTableReference();
   }
 
-  newTableDataInsertAllRequest(): GoogleAppsScript.BigQuery.TableDataInsertAllRequest {
+  newTableDataInsertAllRequest(): GoogleAppsScript.BigQuery.Schema.TableDataInsertAllRequest {
+    console.log('FakeBigQuery.newTableDataInsertAllRequest called');
     return new FakeTableDataInsertAllRequest();
   }
 
-  newTableDataInsertAllRequestRows(): GoogleAppsScript.BigQuery.TableDataInsertAllRequestRows {
+  newTableDataInsertAllRequestRows(): GoogleAppsScript.BigQuery.Schema.TableDataInsertAllRequestRows {
+    console.log('FakeBigQuery.newTableDataInsertAllRequestRows called');
     return new FakeTableDataInsertAllRequestRows();
   }
 }
@@ -821,17 +825,15 @@ class FakeBigQueryJobs {
 
 class FakeBigQueryTabledata {
   insertAll() {
-    return { insertErrors: [] };
+    console.log('FakeBigQueryTabledata.insertAll called');
   }
 }
 
 class FakeBigQueryDatasets {
-  get(_projectId: string, _dataset: string) {
-  }
+  get(_projectId: string, _dataset: string) {}
 }
 class FakeBigQueryTables {
-  get(_projectId: string, _dataset: string) {
-  }
+  get(_projectId: string, _dataset: string) {}
 }
 
 class FakeTableReference {

@@ -21,7 +21,7 @@ import { BudgetReport, ImpressionReport } from '../api';
 import { IDType } from '../types';
 
 import { BudgetMatchTable, ImpressionMatchTable } from './dbm_test_helpers';
-import { expect } from 'chai';
+import { describe, beforeEach, it, expect } from 'vitest';
 
 class FakeScriptApp {
   getOAuthToken() {

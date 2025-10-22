@@ -19,9 +19,9 @@ import { equalTo } from 'common/checks';
 import { AppsScriptPropertyStore } from 'common/sheet_helpers';
 import { bootstrapGoogleAdsApi } from 'common/tests/helpers';
 import { mockAppsScript } from 'common/test_helpers/mock_apps_script';
-import { Client, newRule } from 'sa360/src/client';
-import { RuleGranularity } from 'sa360/src/types';
-import { expect } from 'chai';
+import { Client, newRule } from 'sa360/client';
+import { RuleGranularity } from 'sa360/types';
+import { describe, beforeEach, afterEach, it, expect } from 'vitest';
 
 describe('Client rules are validated', function () {
   let output: string[] = [];

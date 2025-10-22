@@ -18,7 +18,11 @@ export default defineConfig({
   resolve: {
     alias: [
       {
-        find: /^(sa360|dv360|dv360_api|googleads)\/(.*)/,
+        find: /^(sa360|dv360|googleads)\/(.*)/,
+        replacement: path.resolve(import.meta.dirname, './$1/src/$2'),
+      },
+      {
+        find: /^(dv360_api|common)\/(.*)/,
         replacement: path.resolve(import.meta.dirname, './$1/$2'),
       },
     ],

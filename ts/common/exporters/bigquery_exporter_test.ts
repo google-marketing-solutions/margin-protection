@@ -28,7 +28,10 @@ describe('BigQueryStrategyExporter', () => {
       vi.spyOn(mockBigQueryService.Tabledata, 'insertAll').mockReturnValue({}); // Adjust mock return value as needed
 
       // Sanity check to ensure the exporter is using the mocked service.
-      expect((exporter as any).bigQueryService).toBe(mockBigQueryService);
+      expect(
+        (exporter as unknown as { bigQueryService: GoogleAppsScript.BigQuery })
+          .bigQueryService,
+      ).toBe(mockBigQueryService);
 
       const result = exporter.export(data, {
         destination: 'bigquery',

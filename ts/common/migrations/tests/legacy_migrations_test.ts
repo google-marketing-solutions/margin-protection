@@ -22,9 +22,9 @@ import {
   mockAppsScript,
 } from 'common/test_helpers/mock_apps_script';
 import { scaffoldSheetWithNamedRanges } from 'common/tests/helpers';
-import { DisplayVideoFrontend } from 'dv360/src/frontend';
-import { ClientInterface } from 'dv360/src/types';
-import { RuleRange } from 'dv360/src/client';
+import { DisplayVideoFrontend } from 'dv360/frontend';
+import { ClientInterface } from 'dv360/types';
+import { RuleRange } from 'dv360/client';
 import { describe, beforeEach, afterEach, it, expect, vi } from 'vitest';
 
 describe('Full migration path', function () {
@@ -105,22 +105,28 @@ describe('Legacy Migrations', function () {
 
       // Assert
       expect(setNamedRangeSpy).toHaveBeenCalledTimes(2);
-      expect(setNamedRangeSpy).toHaveBeenCalledWith('REPORT_LABEL', expect.anything);
-      expect(setNamedRangeSpy).toHaveBeenCalledWith('DRIVE_ID', expect.anything);
+      expect(setNamedRangeSpy).toHaveBeenCalledWith(
+        'REPORT_LABEL',
+        expect.any(Object),
+      );
+      expect(setNamedRangeSpy).toHaveBeenCalledWith(
+        'DRIVE_ID',
+        expect.any(Object),
+      );
     });
 
     it('should not run if REPORT_LABEL named range already exists', function () {
       // Arrange
       const activeSpreadsheet = SpreadsheetApp.getActive();
       const fakeRange = activeSpreadsheet.getActiveSheet().getRange('A1');
-     vi 
-        .spyOn(activeSpreadsheet, 'getRangeByName')
-        .mockImplementation((label) => {
+      vi.spyOn(activeSpreadsheet, 'getRangeByName').mockImplementation(
+        (label) => {
           if (label === 'REPORT_LABEL') {
             return fakeRange;
           }
           return activeSpreadsheet.getRangeByName(label);
-        });
+        },
+      );
       const setNamedRangeSpy = vi.spyOn(activeSpreadsheet, 'setNamedRange');
 
       // Act
@@ -138,14 +144,14 @@ describe('Legacy Migrations', function () {
     it('should create EXPORT_SETTINGS named range and set its value if it does not exist', function () {
       // Arrange
       const activeSpreadsheet = SpreadsheetApp.getActive();
-      vi
-        .spyOn(activeSpreadsheet, 'getRangeByName')
-        .mockImplementation(rangeName => {
+      vi.spyOn(activeSpreadsheet, 'getRangeByName').mockImplementation(
+        (rangeName) => {
           if (rangeName === 'EXPORT_SETTINGS') {
             return undefined;
           }
           return activeSpreadsheet.getRangeByName(rangeName);
-        });
+        },
+      );
       const setNamedRangeSpy = vi.spyOn(activeSpreadsheet, 'setNamedRange');
 
       // Act
@@ -155,7 +161,10 @@ describe('Legacy Migrations', function () {
       migration();
 
       // Assert: Test the final state of the sheet, not just the calls.
-      expect(setNamedRangeSpy).toHaveBeenCalledExactlyOnceWith('EXPORT_SETTINGS', expect.anything);
+      expect(setNamedRangeSpy).toHaveBeenCalledExactlyOnceWith(
+        'EXPORT_SETTINGS',
+        expect.any(Object),
+      );
       const sheet = activeSpreadsheet.getSheetByName('General/Settings');
       expect(sheet).to.not.be.null; // Ensure the sheet was created
       expect(sheet.getRange('B8').getValue()).to.equal('drive');
@@ -165,14 +174,14 @@ describe('Legacy Migrations', function () {
       // Arrange
       const activeSpreadsheet = SpreadsheetApp.getActive();
       const fakeRange = activeSpreadsheet.getActiveSheet().getRange('A1');
-      vi
-        .spyOn(activeSpreadsheet, 'getRangeByName')
-        .mockImplementation(rangeName => {
-         if (rangeName === 'EXPORT_SETTINGS') {
-          return fakeRange;
-         }
-         return activeSpreadsheet.getRangeByName(rangeName);
-        });
+      vi.spyOn(activeSpreadsheet, 'getRangeByName').mockImplementation(
+        (rangeName) => {
+          if (rangeName === 'EXPORT_SETTINGS') {
+            return fakeRange;
+          }
+          return activeSpreadsheet.getRangeByName(rangeName);
+        },
+      );
       const setNamedRangeSpy = vi.spyOn(activeSpreadsheet, 'setNamedRange');
 
       // Act
@@ -209,7 +218,7 @@ describe('Legacy Migrations', function () {
       expect(setPropertiesSpy).toHaveBeenCalledExactlyOnceWith({
         'pacingDays-123': 'gzipped:{"key":"value"}',
         'impressionsByGeo-456': 'gzipped:{"foo":"bar"}',
-        'notAJson': 'just a string',
+        notAJson: 'just a string',
         'pacingPercent-789': 'not a json string',
       });
     });

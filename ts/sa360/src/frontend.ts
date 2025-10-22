@@ -26,7 +26,7 @@ import {
   HELPERS,
 } from 'common/sheet_helpers';
 import { FrontendArgs, ParamDefinition, RuleExecutor } from 'common/types';
-import { SearchAdsClientTypes } from 'sa360/src/types';
+import { SearchAdsClientTypes } from 'sa360/types';
 
 /**
  * The name of the general settings sheet.
