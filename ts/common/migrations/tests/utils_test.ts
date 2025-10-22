@@ -15,9 +15,8 @@
  * limitations under the License.
  */
 
-import 'mocha';
-import { expect } from 'chai';
 import { sortMigrations } from '../utils';
+import { describe, expect, it } from 'vitest';
 
 describe('sortMigrations', function () {
   it('sorts migrations as expected', function () {

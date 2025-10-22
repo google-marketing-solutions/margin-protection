@@ -15,13 +15,13 @@
  * limitations under the License.
  */
 
+import { describe, expect, it } from 'vitest';
 import {
   buildQuery,
   CamelCase,
   DotsToObject,
   ReportInterface,
 } from '../ads_api_types';
-import { expect } from 'chai';
 
 type AssertSubtype<TestType, End> = End extends TestType ? true : false;
 

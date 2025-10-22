@@ -38,11 +38,11 @@ describe('DriveExporter', () => {
     // ASSERT
     // Verify that a new file was created in the correct folder.
     const filesInFolder = Drive.Files.list({ q: `'${folderId}' in parents` });
-    
-    expect(filesInFolder.items).toBeDefined();
-    expect(filesInFolder.items.length).toBe(1);
 
-    const newFile = filesInFolder.items[0];
+    expect(filesInFolder.files).toBeDefined();
+    expect(filesInFolder.files.length).toBe(1);
+
+    const newFile = filesInFolder.files[0];
     expect(newFile.name).toEqual(fileName);
     expect(newFile.mimeType).toEqual('text/csv');
   });

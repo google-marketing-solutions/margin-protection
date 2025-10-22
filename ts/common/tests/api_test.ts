@@ -20,6 +20,15 @@
  */
 
 import {
+  afterEach,
+  beforeEach,
+  describe,
+  expect,
+  it,
+  vi,
+  type MockInstance,
+} from 'vitest';
+import {
   CredentialManager,
   GET_LEAF_ACCOUNTS_REPORT,
   GOOGLEADS_API_ENDPOINT,
@@ -37,16 +46,12 @@ import {
   mockAppsScript,
 } from '../test_helpers/mock_apps_script';
 
-import { bootstrapGoogleAdsApi, tearDownStubs } from './helpers';
-import * as sinon from 'sinon';
-import { expect, use } from 'chai';
-import sinonChai from 'sinon-chai';
-use(sinonChai);
+import { bootstrapGoogleAdsApi } from './helpers';
 
 import HTTPResponse = GoogleAppsScript.URL_Fetch.HTTPResponse;
 
-describe('Google Ads API Factory', function () {
-  it('caches API objects per login ID', function () {
+describe('Google Ads API Factory', () => {
+  it('caches API objects per login ID', () => {
     const factory = new GoogleAdsApiFactory({
       developerToken: '',
       credentialManager: new CredentialManager(),
@@ -57,59 +62,63 @@ describe('Google Ads API Factory', function () {
     const secondClient = factory.create('456');
     const shouldBeCached = factory.create('123');
 
-    expect(shouldBeCached).not.to.equal(secondClient);
-    expect(shouldBeCached).to.equal(firstClient);
+    expect(shouldBeCached).not.toBe(secondClient);
+    expect(shouldBeCached).toBe(firstClient);
   });
 });
 
-describe('qlifyQuery', function () {
-  it('builds legible queries when there are no wheres', function () {
+describe('qlifyQuery', () => {
+  it('builds legible queries when there are no wheres', () => {
     const query = qlifyQuery(
       { queryParams: ['a.one'], queryWheres: [], queryFrom: 'table' },
       [],
     );
-    expect(query).to.equal('SELECT a.one FROM table');
+    expect(query).toEqual('SELECT a.one FROM table');
   });
 
-  it('builds legible queries when there is one where', function () {
+  it('builds legible queries when there is one where', () => {
     const query = qlifyQuery(
       { queryParams: ['a.one'], queryWheres: [], queryFrom: 'table' },
       ['foo = "1"'],
     );
-    expect(query).to.equal('SELECT a.one FROM table WHERE foo = "1"');
+    expect(query).toEqual('SELECT a.one FROM table WHERE foo = "1"');
   });
 
-  it('builds legible queries when there are multiple wheres', function () {
+  it('builds legible queries when there are multiple wheres', () => {
     const query = qlifyQuery(
       { queryParams: ['a.one'], queryWheres: [], queryFrom: 'table' },
       ['foo = "1"', 'bar = "2"'],
     );
-    expect(query).to.equal(
+    expect(query).toEqual(
       'SELECT a.one FROM table WHERE foo = "1" AND bar = "2"',
     );
   });
 });
 
-describe('Google Ads API', function () {
+describe('Google Ads API', () => {
   const urls: string[] = [];
 
-  beforeEach(function () {
+  beforeEach(() => {
     mockAppsScript();
-    sinon.stub(UrlFetchApp, 'fetch').callsFake((requestUrl: string) => {
+    vi.spyOn(UrlFetchApp, 'fetch').mockImplementation((requestUrl: string) => {
       urls.push(requestUrl);
 
       return generateFakeHttpResponse({ contentText: '{}' });
     });
-    sinon
-      .stub(UrlFetchApp, 'fetchAll')
-      .callsFake((requests: GoogleAppsScript.URL_Fetch.URLFetchRequest[]) => {
+    vi.spyOn(UrlFetchApp, 'fetchAll').mockImplementation(
+      (requests: GoogleAppsScript.URL_Fetch.URLFetchRequest[]) => {
         urls.splice(0, 0, ...requests.map((r) => r.url));
 
         return [generateFakeHttpResponse({ contentText: '{}' })];
-      });
+      },
+    );
   });
 
-  it('has a well-formed URL for GOOGLEADS_API_ENDPOINT', function () {
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
+  it('has a well-formed URL for GOOGLEADS_API_ENDPOINT', () => {
     const factory = new GoogleAdsApiFactory({
       developerToken: '',
       credentialManager: new CredentialManager(),
@@ -118,12 +127,12 @@ describe('Google Ads API', function () {
     const api = factory.create('123');
     api.query(['1'], FAKE_REPORT.query).next();
 
-    expect(urls[0]).to.equal(
+    expect(urls[0]).toEqual(
       'https://googleads.googleapis.com/v11/customers/1/googleAds:search',
     );
   });
 
-  it('has a well-formed URL for SA360_API_ENDPOINT', function () {
+  it('has a well-formed URL for SA360_API_ENDPOINT', () => {
     const factory = new GoogleAdsApiFactory({
       developerToken: '',
       credentialManager: new CredentialManager(),
@@ -132,131 +141,131 @@ describe('Google Ads API', function () {
     const api = factory.create('123');
     api.query(['1'], FAKE_REPORT.query).next();
 
-    expect(urls[0]).to.equal(
+    expect(urls[0]).toEqual(
       'https://searchads360.googleapis.com/v0/customers/1/searchAds360:search',
     );
   });
 });
 
-describe('Credential Manager', function () {
-  beforeEach(function () {
-    this.token = 'myBearerToken';
-    this.stub = sinon.stub(ScriptApp, 'getOAuthToken').returns(this.token);
+describe('Credential Manager', () => {
+  let token: string;
+  beforeEach(() => {
+    token = 'myBearerToken';
+    vi.spyOn(ScriptApp, 'getOAuthToken').mockReturnValue(token);
   });
 
-  it('caches credential token', function () {
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
+  it('caches credential token', () => {
     const manager = new CredentialManager();
     const firstToken = manager.getToken();
     const secondToken = manager.getToken();
 
-    expect(ScriptApp.getOAuthToken).to.have.been.calledOnce;
-    expect(firstToken).to.equal(this.token);
-    expect(secondToken).to.equal(this.token);
-  });
-
-  afterEach(function () {
-    this.stub.restore();
+    expect(ScriptApp.getOAuthToken).toHaveBeenCalledTimes(1);
+    expect(firstToken).toEqual(token);
+    expect(secondToken).toEqual(token);
   });
 });
 
-describe('Google Ads API Client', function () {
-  let fetch: sinon.SinonStub;
-  let getContentText: sinon.SinonStub;
+describe('Google Ads API Client', () => {
+  let fetch: MockInstance;
+  let getContentText: MockInstance;
+  let httpResponse: HTTPResponse;
 
   function getSearchRequestPayload(idx = 0): AdsSearchRequest {
     return JSON.parse(
-      fetch.getCalls()[idx].args[0][0].payload! as string,
+      fetch.mock.calls[idx][0][0].payload! as string,
     ) as AdsSearchRequest;
   }
 
-  beforeEach(function () {
+  beforeEach(() => {
     mockAppsScript();
-    this.httpResponse = generateFakeHttpResponse({
+    httpResponse = generateFakeHttpResponse({
       contentText: 'hello world',
     });
-    fetch = sinon.stub(UrlFetchApp, 'fetchAll');
-    getContentText = sinon
-      .stub(this.httpResponse, 'getContentText')
-      .returns('{"results": [{"customer": { "id": 123 }}]}');
-    fetch.returns([this.httpResponse]);
+    fetch = vi.spyOn(UrlFetchApp, 'fetchAll');
+    getContentText = vi
+      .spyOn(httpResponse, 'getContentText')
+      .mockReturnValue('{"results": [{"customer": { "id": 123 }}]}');
+    fetch.mockReturnValue([httpResponse]);
   });
 
-  afterEach(function () {
-    tearDownStubs([getContentText]);
+  afterEach(() => {
+    vi.restoreAllMocks();
   });
 
-  it('Passes developer-token header', function () {
+  it('Passes developer-token header', () => {
     const developerToken = 'myDevToken';
 
     const client = createClient(developerToken);
     client.query(['1'], FAKE_REPORT['query']).next();
 
-    const actualToken = fetch.lastCall.args[0][0].headers!['developer-token'];
-    expect(actualToken).to.equal(developerToken);
+    const actualToken = fetch.mock.lastCall![0][0].headers!['developer-token'];
+    expect(actualToken).toEqual(developerToken);
   });
 
-  it('Passes login-customer-id header', function () {
+  it('Passes login-customer-id header', () => {
     const loginCustomerId = '1234567890';
 
     const client = createClient('', loginCustomerId);
     client.query(['1'], FAKE_REPORT.query).next();
     const actualLoginCustomerId =
-      fetch.lastCall.args[0][0].headers!['login-customer-id'];
-    expect(actualLoginCustomerId).to.equal(loginCustomerId);
+      fetch.mock.lastCall![0][0].headers!['login-customer-id'];
+    expect(actualLoginCustomerId).toEqual(loginCustomerId);
   });
 
-  it('Passes Authorization header', function () {
+  it('Passes Authorization header', () => {
     const token = 'myBearerToken';
     const credentialManager = new CredentialManager();
-    const getTokenSpy = sinon
-      .stub(credentialManager, 'getToken')
-      .returns(token);
+    const getTokenSpy = vi
+      .spyOn(credentialManager, 'getToken')
+      .mockReturnValue(token);
 
     const client = createClient('', '', credentialManager);
     client.query(['1'], FAKE_REPORT.query).next();
 
-    expect(getTokenSpy).to.have.been.calledOnce;
-    const actualToken = fetch.lastCall.args[0][0].headers!['Authorization'];
-    expect(actualToken).to.equal(`Bearer ${token}`);
+    expect(getTokenSpy).toHaveBeenCalledTimes(1);
+    const actualToken = fetch.mock.lastCall![0][0].headers!['Authorization'];
+    expect(actualToken).toEqual(`Bearer ${token}`);
   });
 
-  it('Has customer ID in payload', function () {
+  it('Has customer ID in payload', () => {
     const client = createClient();
     client.query(['1'], FAKE_REPORT.query).next();
 
     const payload = getSearchRequestPayload();
-    expect(payload.customerId).to.equal('1');
+    expect(payload.customerId).toEqual('1');
   });
 
-  it('Has query in payload', function () {
+  it('Has query in payload', () => {
     const client = createClient();
-    sinon
-      .stub(client as unknown as { requestHeaders(): object }, 'requestHeaders')
-      .returns({});
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    vi.spyOn(client as any, 'requestHeaders').mockReturnValue({});
     client.query(['1'], FAKE_REPORT.query).next();
     const token = 'myBearerToken';
     const credentialManager = new CredentialManager();
-    sinon.stub(credentialManager, 'getToken').returns(token);
+    vi.spyOn(credentialManager, 'getToken').mockReturnValue(token);
 
     const payload = getSearchRequestPayload();
-    expect(payload.query).to.equal(
+    expect(payload.query).toEqual(
       `SELECT ${FAKE_REPORT.query.queryParams.join(', ')} FROM ${
         FAKE_REPORT.query.queryFrom
       }`,
     );
   });
 
-  it('Handles paginated results', function () {
-    const firstHttpResponse = sinon.stub<HTTPResponse>(
-      generateFakeHttpResponse({ contentText: 'foo' }),
-    );
-    firstHttpResponse.getContentText.returns(
+  it('Handles paginated results', () => {
+    const firstHttpResponse = generateFakeHttpResponse({ contentText: 'foo' });
+    vi.spyOn(firstHttpResponse, 'getContentText').mockReturnValue(
       '{"results": [{"customer": { "id": 456 }}], "nextPageToken": "pointer"}',
     );
+
     const urls = new Set<string>();
-    fetch.callsFake((req) => {
+    fetch.mockImplementation((req) => {
       if (JSON.parse(req[0].payload)['pageToken'] === 'pointer') {
-        return [this.httpResponse];
+        return [httpResponse];
       }
       return [firstHttpResponse];
     });
@@ -265,96 +274,102 @@ describe('Google Ads API Client', function () {
     const rows = [...client.query(['1'], CUSTOMER_QUERY)];
     console.log([...urls]);
 
-    expect(fetch).to.have.been.calledTwice;
+    expect(fetch).toHaveBeenCalledTimes(2);
 
     const firstPayload = getSearchRequestPayload(0);
-    expect(firstPayload.pageToken).to.be.undefined;
+    expect(firstPayload.pageToken).toBeUndefined();
     const lastPayload = getSearchRequestPayload(1);
-    expect(lastPayload.pageToken).to.equal('pointer');
+    expect(lastPayload.pageToken).toEqual('pointer');
 
-    expect(rows).to.deep.eq([
+    expect(rows).toEqual([
       { customer: { id: 456 } },
       { customer: { id: 123 } },
     ]);
   });
 
-  it('Handles empty results', function () {
-    getContentText.returns('{"results": []}');
+  it('Handles empty results', () => {
+    getContentText.mockReturnValue('{"results": []}');
 
     const client = createClient();
     const rows = [...client.query(['1'], FAKE_REPORT.query)];
 
-    expect(fetch).to.have.been.calledOnce;
+    expect(fetch).toHaveBeenCalledTimes(1);
 
-    expect(rows).to.deep.eq([]);
+    expect(rows).toEqual([]);
   });
 });
 
-describe('Report Factory', function () {
+describe('Report Factory', () => {
   let apiFactory: GoogleAdsApiFactory;
   let reportFactory: ReportFactory;
 
-  beforeEach(function () {
+  beforeEach(() => {
     apiFactory = new GoogleAdsApiFactory({
       developerToken: '',
       credentialManager: new CredentialManager(),
       apiEndpoint: FAKE_API_ENDPOINT,
     });
-    sinon.stub(apiFactory, 'create').callsFake((loginCustomerId: string) => {
-      const api = new GoogleAdsApiFactory({
-        developerToken: '',
-        credentialManager: new CredentialManager(),
-        apiEndpoint: FAKE_API_ENDPOINT,
-      }).create(loginCustomerId);
-      const mockQuery: sinon.SinonStub = sinon.stub(api, 'queryOne');
-      mockQuery.callsFake(({ query, customerIds }) => {
-        if (query === FAKE_REPORT.query) {
-          return iterator(
-            ...customerIds.flatMap((customerId) => ({
-              a: { one: `${customerId}/one` },
-              b: { two: `${customerId}/two` },
-              c: { three: `${customerId}/three` },
-            })),
-          );
-        } else {
-          return iterator(
-            {
-              customerClient: { id: '2' },
-            },
-            {
-              customerClient: { id: '3' },
-            },
-          );
-        }
-      });
-      return api;
-    });
+    vi.spyOn(apiFactory, 'create').mockImplementation(
+      (loginCustomerId: string) => {
+        const api = new GoogleAdsApiFactory({
+          developerToken: '',
+          credentialManager: new CredentialManager(),
+          apiEndpoint: FAKE_API_ENDPOINT,
+        }).create(loginCustomerId);
+        const mockQuery = vi.spyOn(api, 'queryOne');
+        mockQuery.mockImplementation(({ query, customerIds }) => {
+          if (query === FAKE_REPORT.query) {
+            return iterator(
+              ...customerIds.flatMap((customerId) => ({
+                a: { one: `${customerId}/one` },
+                b: { two: `${customerId}/two` },
+                c: { three: `${customerId}/three` },
+              })),
+            );
+          } else {
+            return iterator(
+              {
+                customerClient: { id: '2' },
+              },
+              {
+                customerClient: { id: '3' },
+              },
+            );
+          }
+        });
+        return api;
+      },
+    );
     reportFactory = new ReportFactory(apiFactory, {
       customerIds: '1',
       label: 'test',
     });
   });
 
-  it('returns expected results from query', function () {
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
+  it('returns expected results from query', () => {
     const report = reportFactory.create(FAKE_REPORT);
-    expect(report.fetch()).to.deep.eq({
+    expect(report.fetch()).toEqual({
       '2/one': { one: '2/one', two: '2/two', three: '2/three' },
       '3/one': { one: '3/one', two: '3/two', three: '3/three' },
     });
   });
 
-  it('Errors when multiple CIDs are set with no login customer ID', function () {
+  it('Errors when multiple CIDs are set with no login customer ID', () => {
     const multiFactory = new ReportFactory(apiFactory, {
       customerIds: '1,2,3,4,5',
       label: 'test',
     });
 
-    expect(() => multiFactory.create(FAKE_REPORT)).to.throw(
+    expect(() => multiFactory.create(FAKE_REPORT)).toThrow(
       'Please provide a single login customer ID for multiple CIDs.',
     );
   });
 
-  it('Infers all login customer IDs when none is set', function () {
+  it('Infers all login customer IDs when none is set', () => {
     const multiFactory = new ReportFactory(apiFactory, {
       loginCustomerId: '1',
       customerIds: '2,3',
@@ -362,28 +377,27 @@ describe('Report Factory', function () {
     });
     const report = multiFactory.create(FAKE_REPORT);
 
-    expect(report.fetch()).to.deep.eq({
+    expect(report.fetch()).toEqual({
       '2/one': { one: '2/one', two: '2/two', three: '2/three' },
       '3/one': { one: '3/one', two: '3/two', three: '3/three' },
     });
   });
 });
 
-describe('Join Report', function () {
+describe('Join Report', () => {
   let reportFactory: ReportFactory;
-  let mockQuery: sinon.SinonStub;
-  let stubs: sinon.SinonStub[];
+  let mockQuery: MockInstance;
 
-  beforeEach(function () {
-    ({ reportFactory, mockQuery, stubs } = bootstrapGoogleAdsApi());
+  beforeEach(() => {
+    ({ reportFactory, mockQuery } = bootstrapGoogleAdsApi());
   });
 
-  afterEach(function () {
-    tearDownStubs(stubs);
+  afterEach(() => {
+    vi.restoreAllMocks();
   });
 
-  it('returns expected results from query', function () {
-    mockQuery.callsFake(({ query }) => {
+  it('returns expected results from query', () => {
+    mockQuery.mockImplementation(({ query }: { query: unknown }) => {
       if (query === JOIN_REPORT.query) {
         return iterator(
           { d: { one: 'one', nother: 'another' } },
@@ -403,130 +417,130 @@ describe('Join Report', function () {
       }
     });
     const report = reportFactory.create(JOIN_REPORT);
-    expect(report.fetch()).to.deep.eq({
+    expect(report.fetch()).toEqual({
       one: { one: 'one', two: 'two', another: 'another' },
     });
   });
 });
 
-describe('Join query handling', function () {
+describe('Join query handling', () => {
   let reportFactory: ReportFactory;
   let api: GoogleAdsApi;
-  let stubs: sinon.SinonStub[];
   const qlifyStack: string[] = [];
 
-  beforeEach(function () {
-    ({ reportFactory, api, stubs } = bootstrapGoogleAdsApi());
-    const qlifyQuery = api.qlifyQuery;
-    stubs.push(
-      sinon.stub(api, 'qlifyQuery').callsFake((query, queryWheres) => {
-        const aql = qlifyQuery(query, queryWheres);
-        qlifyStack.push(aql);
-        return aql;
-      }),
-    );
+  beforeEach(() => {
+    ({ reportFactory, api } = bootstrapGoogleAdsApi());
+    const qlifyQueryOriginal = api.qlifyQuery.bind(api);
+    vi.spyOn(api, 'qlifyQuery').mockImplementation((query, queryWheres) => {
+      const aql = qlifyQueryOriginal(query, queryWheres);
+      qlifyStack.push(aql);
+      return aql;
+    });
     mockAppsScript();
-    stubs.push(
-      sinon
-        .stub(
-          UrlFetchApp as unknown as FakeUrlFetchApp,
-          'generateFakeHttpResponse',
-        )
-        .callsFake((request) => {
-          const payload = JSON.parse(request.payload as string) as {
-            query: string;
-          };
-          if (payload.query === 'SELECT d.one, d.nother FROM the_main_table') {
-            return {
-              getContentText() {
-                return JSON.stringify({
-                  results: [
-                    { d: { one: '1', nother: 'another' } },
-                    { d: { one: '11', nother: 'yet another' } },
-                    // this value doesn't exist - but should still be queried.
-                    { d: { one: '111', nother: 'yet another' } },
-                  ],
-                });
-              },
-            } as HTTPResponse;
-          }
-          const joinedPayload = {
-            results: [
-              {
-                a: { one: '1' },
-                b: { two: '2' },
-                c: { three: '3' },
-              },
-              {
-                a: { one: '11' },
-                b: { two: '22' },
-                c: { three: '3' },
-              },
-            ],
-          };
-          return {
-            getContentText() {
-              return JSON.stringify(joinedPayload);
-            },
-          } as HTTPResponse;
-        }),
-    );
+    vi.spyOn(
+      UrlFetchApp as unknown as FakeUrlFetchApp,
+      'generateFakeHttpResponse',
+    ).mockImplementation((request) => {
+      const payload = JSON.parse(request.payload as string) as {
+        query: string;
+      };
+      if (payload.query === 'SELECT d.one, d.nother FROM the_main_table') {
+        return {
+          getContentText() {
+            return JSON.stringify({
+              results: [
+                { d: { one: '1', nother: 'another' } },
+                { d: { one: '11', nother: 'yet another' } },
+                // this value doesn't exist - but should still be queried.
+                { d: { one: '111', nother: 'yet another' } },
+              ],
+            });
+          },
+        } as HTTPResponse;
+      }
+      const joinedPayload = {
+        results: [
+          {
+            a: { one: '1' },
+            b: { two: '2' },
+            c: { three: '3' },
+          },
+          {
+            a: { one: '11' },
+            b: { two: '22' },
+            c: { three: '3' },
+          },
+        ],
+      };
+      return {
+        getContentText() {
+          return JSON.stringify(joinedPayload);
+        },
+      } as HTTPResponse;
+    });
   });
 
-  afterEach(function () {
-    tearDownStubs(stubs);
+  afterEach(() => {
+    vi.restoreAllMocks();
   });
 
-  it('joins on IDs that exist', function () {
+  it('joins on IDs that exist', () => {
     const report = reportFactory.create(JOIN_REPORT);
     report.fetch();
-    expect(qlifyStack.pop()).to.equal(
+    expect(qlifyStack.pop()).toEqual(
       'SELECT a.one, b.two, c.three FROM something WHERE something.id IN (1,11,111)',
     );
   });
 });
 
-describe('Leaf expansion', function () {
+describe('Leaf expansion', () => {
   let reportFactory: ReportFactory;
-  let mockQuery: sinon.SinonStub;
-  let stubs: sinon.SinonStub[];
+  let mockQuery: MockInstance;
   const mockLeafAccounts: Record<string, string[]> = { '123': ['1', '2', '3'] };
 
-  beforeEach(function () {
-    ({ reportFactory, mockQuery, stubs } = bootstrapGoogleAdsApi({
+  beforeEach(() => {
+    ({ reportFactory, mockQuery } = bootstrapGoogleAdsApi({
       mockLeafAccounts,
       spyOnLeaf: false,
     }));
   });
 
-  afterEach(function () {
-    tearDownStubs(stubs);
+  afterEach(() => {
+    vi.restoreAllMocks();
   });
 
-  it('checks all expanded accounts are added to the report', function () {
-    mockQuery.callsFake(({ customerIds, query }) => {
-      if (query === GET_LEAF_ACCOUNTS_REPORT.query) {
-        const results = customerIds.flatMap((customerId) =>
-          mockLeafAccounts[customerId].map((id) => ({
-            customerClient: { id, name: `customer ${id}`, status: 'ENABLED' },
-          })),
-        );
-        return iterator(...results);
-      } else {
-        return iterator(
-          ...customerIds.map((customerId) => ({
-            customerId,
-            a: { id: customerId },
-          })),
-        );
-      }
-    });
+  it('checks all expanded accounts are added to the report', () => {
+    mockQuery.mockImplementation(
+      ({ customerIds, query }: { customerIds: string[]; query: unknown }) => {
+        if (query === GET_LEAF_ACCOUNTS_REPORT.query) {
+          const results = customerIds.flatMap((customerId) =>
+            mockLeafAccounts[customerId].map((id) => ({
+              customerClient: {
+                id,
+                name: `customer ${id}`,
+                status: 'ENABLED',
+              },
+            })),
+          );
+          return iterator(...results);
+        } else {
+          return iterator(
+            ...customerIds.map((customerId) => ({
+              customerId,
+              a: { id: customerId },
+            })),
+          );
+        }
+      },
+    );
     const report = reportFactory.create(FAKE_REPORT_2);
-    expect(report.fetch()).to.deep.include({
-      'customers/1/id/a1': { customerId: '1', id: 'a1' },
-      'customers/2/id/a2': { customerId: '2', id: 'a2' },
-      'customers/3/id/a3': { customerId: '3', id: 'a3' },
-    });
+    expect(report.fetch()).toEqual(
+      expect.objectContaining({
+        'customers/1/id/a1': { customerId: '1', id: 'a1' },
+        'customers/2/id/a2': { customerId: '2', id: 'a2' },
+        'customers/3/id/a3': { customerId: '3', id: 'a3' },
+      }),
+    );
   });
 });
 

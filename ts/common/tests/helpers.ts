@@ -47,7 +47,7 @@ import {
   RuleExecutor,
   RuleGetter,
 } from '../types';
-import * as sinon from 'sinon';
+import { vi } from 'vitest';
 
 /**
  * Test granularity for use in tests.
@@ -247,16 +247,13 @@ const FAKE_API_ENDPOINT = {
 /**
  * Set up a Google Ads API for testing.
  */
-export function bootstrapGoogleAdsApi(
-  {
-    mockLeafAccounts = { '1': ['123'] },
-    spyOnLeaf = true,
-  }: { mockLeafAccounts: Record<string, string[]>; spyOnLeaf: boolean } = {
-    mockLeafAccounts: { '1': ['123'] },
-    spyOnLeaf: true,
-  },
-) {
-  const stubs: sinon.SinonStub[] = [];
+export function bootstrapGoogleAdsApi({
+  mockLeafAccounts = { '1': ['123'] },
+  spyOnLeaf = true,
+}: {
+  mockLeafAccounts?: Record<string, string[]>;
+  spyOnLeaf?: boolean;
+} = {}) {
   const apiFactory = new GoogleAdsApiFactory({
     developerToken: '',
     credentialManager: new CredentialManager(),
@@ -268,7 +265,7 @@ export function bootstrapGoogleAdsApi(
     label: 'test',
   });
   if (spyOnLeaf) {
-    stubs.push(sinon.stub(reportFactory, 'leafAccounts').returns(['1']));
+    vi.spyOn(reportFactory, 'leafAccounts').mockReturnValue(['1']);
   }
   const api = new GoogleAdsApi({
     developerToken: '',
@@ -281,19 +278,11 @@ export function bootstrapGoogleAdsApi(
     apiEndpoint: FAKE_API_ENDPOINT,
   });
   const original = api.queryOne.bind(api);
-  const mockQuery: sinon.SinonStub = sinon
-    .stub(api, 'queryOne')
-    .callsFake((...args) => original(...args));
-  stubs.push(mockQuery);
-  stubs.push(sinon.stub(apiFactory, 'create').callsFake(() => api));
-  return { api, reportFactory, mockQuery, stubs };
-}
-
-/**
- * Restores any stubs passed to it to their original form.
- */
-export function tearDownStubs(stubs: sinon.SinonStub[]) {
-  stubs.forEach((stub) => stub.restore());
+  const mockQuery: any = vi
+    .spyOn(api, 'queryOne')
+    .mockImplementation((...args) => original(...args));
+  vi.spyOn(apiFactory, 'create').mockImplementation(() => api);
+  return { api, reportFactory, mockQuery };
 }
 
 /**

@@ -51,16 +51,15 @@ declare global {
       interface Jobs {
         query(request: QueryRequest, projectId: string): QueryResponse;
       }
-
-      export interface BigQuery {
-        newTableReference(): TableReference;
-        newTableDataInsertAllRequestRows(): TableDataInsertAllRequestRows;
-        newTableDataInsertAllRequest(): TableDataInsertAllRequest;
-        Tabledata: Tabledata;
-        Jobs: Jobs;
-      }
     }
+    export const Drive: GoogleAppsScript.Drive_v3.Drive.V3;
   }
 
-  declare const BigQuery: GoogleAppsScript.BigQuery.BigQuery;
+  declare const BigQuery: {
+    newTableReference(): GoogleAppsScript.BigQuery.TableReference;
+    newTableDataInsertAllRequestRows(): GoogleAppsScript.BigQuery.TableDataInsertAllRequestRows;
+    newTableDataInsertAllRequest(): GoogleAppsScript.BigQuery.TableDataInsertAllRequest;
+    Tabledata: GoogleAppsScript.BigQuery.Tabledata;
+    Jobs: GoogleAppsScript.BigQuery.Jobs;
+  };
 }

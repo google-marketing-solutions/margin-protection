@@ -615,7 +615,6 @@ export class FakePropertyStore implements PropertyStore {
  */
 export class FakeHtmlOutput {}
 
-
 /**
  * Stub for Drive testing, implementing a fake in-memory file system aligned with V3 API.
  */
@@ -625,7 +624,7 @@ export class FakeDrive {
 }
 
 class FakeDriveFiles {
-  private files: Map<string, GoogleAppsScript.Drive.Schema.File> = new Map();
+  private files: Map<string, GoogleAppsScript.Drive_v3.Drive.V3.Schema.File> = new Map();
   private currentId = 0;
 
   constructor() {
@@ -641,24 +640,19 @@ class FakeDriveFiles {
    * Creates a new file or folder. Aligned with Drive API v3.
    */
   create(
-    resource: GoogleAppsScript.Drive.Schema.File,
-    mediaData?: GoogleAppsScript.Base.Blob,
-  ): GoogleAppsScript.Drive.Schema.File {
+    resource: GoogleAppsScript.Drive_v3.Drive.V3.Schema.File,
+  ): GoogleAppsScript.Drive_v3.Drive.V3.Schema.File {
     const fileId = resource.id || this.getNextId();
-    const fileName = resource.name ?? resource.title; // Handle both name and title for compatibility.
+    const fileName = resource.name;
     if (!fileName) {
       throw new Error('A "name" or "title" is required to create a file.');
     }
 
-    const newFile: GoogleAppsScript.Drive.Schema.File = {
+    const newFile: GoogleAppsScript.Drive_v3.Drive.V3.Schema.File = {
       id: fileId,
       name: fileName,
-      title: fileName, // Set both for compatibility.
-      mimeType: resource.mimeType,
-      parents: resource.parents || [],
-      labels: { trashed: false, ...resource.labels },
       ...resource,
-    };
+    } as const;
 
     this.files.set(fileId, newFile);
     return newFile;
@@ -668,28 +662,29 @@ class FakeDriveFiles {
    * Legacy alias for `create`.
    */
   insert(
-    resource: GoogleAppsScript.Drive.Schema.File,
-    mediaData?: GoogleAppsScript.Base.Blob,
-  ): GoogleAppsScript.Drive.Schema.File {
-    return this.create(resource, mediaData);
+    resource: GoogleAppsScript.Drive_v3.Drive.V3.Schema.File,
+  ): GoogleAppsScript.Drive_v3.Drive.V3.Schema.File {
+    return this.create(resource);
   }
 
-  get(fileId: string): GoogleAppsScript.Drive.Schema.File {
+  get(fileId: string): GoogleAppsScript.Drive_v3.Drive.V3.Schema.File {
     if (!this.files.has(fileId)) {
       throw new Error(`File with id "${fileId}" not found.`);
     }
     return this.files.get(fileId)!;
   }
 
-  list(options?: { q?: string }): { items: GoogleAppsScript.Drive.Schema.File[] } {
+  list(options?: { q?: string }): {
+    items: GoogleAppsScript.Drive_v3.Drive.V3.Schema.File[];
+  } {
     let fileList = Array.from(this.files.values());
 
     if (options?.q) {
       const parentMatch = options.q.match(/'([^']+)' in parents/);
       if (parentMatch) {
         const parentId = parentMatch[1];
-        fileList = fileList.filter(file =>
-          file.parents?.some(p => p.id === parentId)
+        fileList = fileList.filter((file) =>
+          file.parents?.some((p) => p === parentId),
         );
       }
       // Add more query parsing here as needed (e.g., for name, mimeType, trashed status).
@@ -700,25 +695,30 @@ class FakeDriveFiles {
 
   remove(fileId: string): void {
     const file = this.get(fileId);
-    file.labels!.trashed = true;
+    file.trashed = true;
   }
 
-  patch(resource: GoogleAppsScript.Drive.Schema.File, fileId: string): GoogleAppsScript.Drive.Schema.File {
+  patch(
+    resource: GoogleAppsScript.Drive_v3.Drive.V3.Schema.File,
+    fileId: string,
+  ): GoogleAppsScript.Drive_v3.Drive.V3.Schema.File {
     const file = this.get(fileId);
     const updatedFile = { ...file, ...resource };
     this.files.set(fileId, updatedFile);
     return updatedFile;
   }
 
-  copy(resource: GoogleAppsScript.Drive.Schema.File, fileId: string): GoogleAppsScript.Drive.Schema.File {
+  copy(
+    resource: GoogleAppsScript.Drive_v3.Drive.V3.Schema.File,
+    fileId: string,
+  ): GoogleAppsScript.Drive_v3.Drive.V3.Schema.File {
     const originalFile = this.get(fileId);
     const newName = resource.name || `Copy of ${originalFile.name}`;
     const newParents = resource.parents || originalFile.parents;
-    
-    const copiedFileResource: GoogleAppsScript.Drive.Schema.File = {
+
+    const copiedFileResource: GoogleAppsScript.Drive_v3.Drive.V3.Schema.File = {
       ...JSON.parse(JSON.stringify(originalFile)), // Deep copy to avoid reference issues.
       name: newName,
-      title: newName,
       parents: newParents,
     };
     delete copiedFileResource.id; // Remove old ID so a new one is generated.
@@ -728,7 +728,7 @@ class FakeDriveFiles {
 
   emptyTrash(): void {
     this.files.forEach((file, id) => {
-      if (file.labels?.trashed) {
+      if (file.trashed) {
         this.files.delete(id);
       }
     });
@@ -797,20 +797,19 @@ class FakeFilter {}
 class FakeBigQuery {
   readonly Jobs = new FakeBigQueryJobs();
   readonly Tabledata = new FakeBigQueryTabledata();
-  private readonly tableReference = new FakeTableReference();
-  private readonly insertRequest = new FakeTableDataInsertAllRequest();
-  private readonly insertRequestRows = new FakeTableDataInsertAllRequestRows();
+  readonly Datasets = new FakeBigQueryDatasets();
+  readonly Tables = new FakeBigQueryTables();
 
-  newTableReference() {
-    return this.tableReference;
+  newTableReference(): GoogleAppsScript.BigQuery.TableReference {
+    return new FakeTableReference();
   }
 
-  newTableDataInsertAllRequest() {
-    return this.insertRequest;
+  newTableDataInsertAllRequest(): GoogleAppsScript.BigQuery.TableDataInsertAllRequest {
+    return new FakeTableDataInsertAllRequest();
   }
 
-  newTableDataInsertAllRequestRows() {
-    return this.insertRequestRows;
+  newTableDataInsertAllRequestRows(): GoogleAppsScript.BigQuery.TableDataInsertAllRequestRows {
+    return new FakeTableDataInsertAllRequestRows();
   }
 }
 
@@ -821,29 +820,53 @@ class FakeBigQueryJobs {
 }
 
 class FakeBigQueryTabledata {
-  insertAll() {}
+  insertAll() {
+    return { insertErrors: [] };
+  }
+}
+
+class FakeBigQueryDatasets {
+  get(_projectId: string, _dataset: string) {
+  }
+}
+class FakeBigQueryTables {
+  get(_projectId: string, _dataset: string) {
+  }
 }
 
 class FakeTableReference {
-  setProjectId() {
+  projectId: string;
+  datasetId: string;
+  tableId: string;
+
+  setProjectId(projectId: string) {
+    this.projectId = projectId;
     return this;
   }
-  setDatasetId() {
+  setDatasetId(datasetId: string) {
+    this.datasetId = datasetId;
     return this;
   }
-  setTableId() {
+  setTableId(tableId: string) {
+    this.tableId = tableId;
     return this;
   }
 }
 
 class FakeTableDataInsertAllRequest {
-  setRows() {
+  rows: FakeTableDataInsertAllRequestRows[];
+
+  setRows(rows: FakeTableDataInsertAllRequestRows[]) {
+    this.rows = rows;
     return this;
   }
 }
 
 class FakeTableDataInsertAllRequestRows {
-  setJson() {
+  json: Record<string, unknown>;
+
+  setJson(json: Record<string, unknown>) {
+    this.json = json;
     return this;
   }
 }

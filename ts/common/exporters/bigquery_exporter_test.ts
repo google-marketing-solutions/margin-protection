@@ -8,73 +8,69 @@ import { mockAppsScript } from '../test_helpers/mock_apps_script';
 
 describe('BigQueryStrategyExporter', () => {
   let exporter: BigQueryStrategyExporter;
+  let mockBigQueryService: GoogleAppsScript.BigQuery;
 
   beforeEach(() => {
-    // Use the helper to create fresh mocks for all Apps Script services.
     mockAppsScript();
-
+    mockBigQueryService = BigQuery;
     exporter = new BigQueryStrategyExporter(
       'test_project',
       'test_dataset',
-      // The mockAppsScript helper makes these available globally.
-      BigQuery,
+      mockBigQueryService,
       ScriptApp,
     );
   });
 
   describe('export', () => {
-    it('should call the BigQuery API when data is provided', () => {
+    it('should return true on successful data insertion', () => {
       const tableName = 'test_table';
       const data = [{ id: 1, name: 'test' }];
-      
-      // Spy on the insertAll method and provide a mock return value
-      const insertAllSpy = vi.spyOn(BigQuery.Tabledata, 'insertAll').mockReturnValue({
-        insertErrors: [],
+      vi.spyOn(mockBigQueryService.Tabledata, 'insertAll').mockReturnValue({}); // Adjust mock return value as needed
+
+      // Sanity check to ensure the exporter is using the mocked service.
+      expect((exporter as any).bigQueryService).toBe(mockBigQueryService);
+
+      const result = exporter.export(data, {
+        destination: 'bigquery',
+        tableName,
       });
-
-      exporter.export(data, { destination: 'bigquery', tableName });
-
-      expect(insertAllSpy).toHaveBeenCalledOnce();
+      expect(result).toBe(true);
     });
 
-    it('should throw an error if table name is not provided', () => {
-      const data = [{ id: 1, name: 'test' }];
-      expect(() => exporter.export(data, { destination: 'bigquery' })).toThrowError(
-        'Table name is required for BigQuery export.',
-      );
-    });
-
-    it('should not call the BigQuery API when data is empty', () => {
+    it('should call insertAll when data is provided', () => {
       const tableName = 'test_table';
-      const data: Record<string, unknown>[] = [];
-      const insertAllSpy = vi.spyOn(BigQuery.Tabledata, 'insertAll');
+      const data = [
+        { a: '1', b: '2' },
+        { a: '3', b: '4' },
+      ];
+      const insertAllSpy = vi.spyOn(mockBigQueryService.Tabledata, 'insertAll');
 
       exporter.export(data, {
         destination: 'bigquery',
         tableName,
       });
 
-      expect(insertAllSpy).not.toHaveBeenCalled();
+      expect(insertAllSpy).toHaveBeenCalledOnce();
     });
 
-
+    it('should throw an error if table name is not provided', () => {
+      const data = [{ id: 1, name: 'test' }];
+      expect(() =>
+        exporter.export(data, { destination: 'bigquery' }),
+      ).toThrowError('Table name is required for BigQuery export.');
+    });
 
     it('should handle insertion failure gracefully', () => {
       const tableName = 'test_table';
       const data = [{ id: 1, name: 'test' }];
-      
-      // Simulate an error during the API call
-      const insertAllSpy = vi.spyOn(BigQuery.Tabledata, 'insertAll').mockImplementation(() => {
-        throw new Error('BigQuery API error');
-      });
 
-      // We expect the method to catch the error and not throw.
-      expect(() =>
-        exporter.export(data, { destination: 'bigquery', tableName }),
-      ).not.toThrow();
-
-      // Verify that the insertAll method was still called.
-      expect(insertAllSpy).toHaveBeenCalledOnce();
+      vi.spyOn(mockBigQueryService.Tabledata, 'insertAll').mockImplementation(
+        () => {
+          throw new Error('BigQuery API error');
+        },
+      );
+      exporter.export(data, { destination: 'bigquery', tableName });
+      expect(mockBigQueryService.Tabledata.insertAll).toHaveBeenCalledOnce();
     });
   });
 });

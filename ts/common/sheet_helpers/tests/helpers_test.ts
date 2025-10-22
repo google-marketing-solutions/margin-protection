@@ -15,11 +15,10 @@
  * limitations under the License.
  */
 
-import 'mocha';
-import { expect } from 'chai';
 import { mockAppsScript } from '../../test_helpers/mock_apps_script';
 import { HELPERS } from '../helpers';
 import { scaffoldSheetWithNamedRanges } from '../../tests/helpers';
+import { describe, beforeEach, it, expect } from 'vitest';
 
 describe('HELPERS', function () {
   beforeEach(function () {
@@ -185,7 +184,7 @@ describe('BigQuery interop', function () {
 
     const result = HELPERS.bigQueryGet('stub');
 
-    expect(result).to.deep.eq(
+    expect(result).toEqual(
       [1, 2, 3].map((i) => ({
         criteria_id: `ID ${i}`,
         en_name: `English Name ${i}`,

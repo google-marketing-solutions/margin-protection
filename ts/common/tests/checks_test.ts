@@ -15,8 +15,8 @@
  * limitations under the License.
  */
 
+import { describe, expect, it } from 'vitest';
 import { equalTo, inRange, lessThanOrEqualTo } from '../checks';
-import { expect } from 'chai';
 
 describe('check range logic', function () {
   const test = { min: 1, max: 5 };

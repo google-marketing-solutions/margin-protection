@@ -15,19 +15,17 @@
  * limitations under the License.
  */
 
-import 'mocha';
-import { expect } from 'chai';
-import * as sinon from 'sinon';
-import { LEGACY_MIGRATIONS } from '../legacy_migrations';
-import { FakeClient } from '../../tests/helpers';
+import { LEGACY_MIGRATIONS } from 'common/migrations/legacy_migrations';
+import { FakeClient } from 'common/tests/helpers';
 import {
   FakePropertyStore,
   mockAppsScript,
-} from '../../test_helpers/mock_apps_script';
-import { scaffoldSheetWithNamedRanges } from '../../tests/helpers';
-import { DisplayVideoFrontend } from '../../../dv360/src/frontend';
+} from 'common/test_helpers/mock_apps_script';
+import { scaffoldSheetWithNamedRanges } from 'common/tests/helpers';
+import { DisplayVideoFrontend } from 'dv360/src/frontend';
 import { ClientInterface } from 'dv360/src/types';
 import { RuleRange } from 'dv360/src/client';
+import { describe, beforeEach, afterEach, it, expect, vi } from 'vitest';
 
 describe('Full migration path', function () {
   beforeEach(function () {
@@ -36,7 +34,7 @@ describe('Full migration path', function () {
   });
 
   afterEach(function () {
-    sinon.restore();
+    vi.restoreAllMocks();
   });
 
   it('should upgrade from 1.0 to the latest version', function () {
@@ -89,15 +87,15 @@ describe('Legacy Migrations', function () {
   });
 
   afterEach(function () {
-    sinon.restore();
+    vi.restoreAllMocks();
   });
 
   describe('Migration 1.3', function () {
     it('should create REPORT_LABEL and DRIVE_ID named ranges if they do not exist', function () {
       // Arrange
       const activeSpreadsheet = SpreadsheetApp.getActive();
-      sinon.stub(activeSpreadsheet, 'getRangeByName').returns(undefined);
-      const setNamedRangeSpy = sinon.spy(activeSpreadsheet, 'setNamedRange');
+      vi.spyOn(activeSpreadsheet, 'getRangeByName').mockReturnValue(undefined);
+      const setNamedRangeSpy = vi.spyOn(activeSpreadsheet, 'setNamedRange');
 
       // Act
       const migration = LEGACY_MIGRATIONS['1.3'] as (
@@ -106,20 +104,24 @@ describe('Legacy Migrations', function () {
       migration();
 
       // Assert
-      expect(setNamedRangeSpy.calledTwice).to.be.true;
-      expect(setNamedRangeSpy.calledWith('REPORT_LABEL')).to.be.true;
-      expect(setNamedRangeSpy.calledWith('DRIVE_ID')).to.be.true;
+      expect(setNamedRangeSpy).toHaveBeenCalledTimes(2);
+      expect(setNamedRangeSpy).toHaveBeenCalledWith('REPORT_LABEL', expect.anything);
+      expect(setNamedRangeSpy).toHaveBeenCalledWith('DRIVE_ID', expect.anything);
     });
 
     it('should not run if REPORT_LABEL named range already exists', function () {
       // Arrange
       const activeSpreadsheet = SpreadsheetApp.getActive();
       const fakeRange = activeSpreadsheet.getActiveSheet().getRange('A1');
-      sinon
-        .stub(activeSpreadsheet, 'getRangeByName')
-        .withArgs('REPORT_LABEL')
-        .returns(fakeRange);
-      const setNamedRangeSpy = sinon.spy(activeSpreadsheet, 'setNamedRange');
+     vi 
+        .spyOn(activeSpreadsheet, 'getRangeByName')
+        .mockImplementation((label) => {
+          if (label === 'REPORT_LABEL') {
+            return fakeRange;
+          }
+          return activeSpreadsheet.getRangeByName(label);
+        });
+      const setNamedRangeSpy = vi.spyOn(activeSpreadsheet, 'setNamedRange');
 
       // Act
       const migration = LEGACY_MIGRATIONS['1.3'] as (
@@ -128,7 +130,7 @@ describe('Legacy Migrations', function () {
       migration();
 
       // Assert
-      expect(setNamedRangeSpy.called).to.be.false;
+      expect(setNamedRangeSpy).not.toHaveBeenCalled();
     });
   });
 
@@ -136,11 +138,15 @@ describe('Legacy Migrations', function () {
     it('should create EXPORT_SETTINGS named range and set its value if it does not exist', function () {
       // Arrange
       const activeSpreadsheet = SpreadsheetApp.getActive();
-      sinon
-        .stub(activeSpreadsheet, 'getRangeByName')
-        .withArgs('EXPORT_SETTINGS')
-        .returns(undefined);
-      const setNamedRangeSpy = sinon.spy(activeSpreadsheet, 'setNamedRange');
+      vi
+        .spyOn(activeSpreadsheet, 'getRangeByName')
+        .mockImplementation(rangeName => {
+          if (rangeName === 'EXPORT_SETTINGS') {
+            return undefined;
+          }
+          return activeSpreadsheet.getRangeByName(rangeName);
+        });
+      const setNamedRangeSpy = vi.spyOn(activeSpreadsheet, 'setNamedRange');
 
       // Act
       const migration = LEGACY_MIGRATIONS['2.2.0'] as (
@@ -149,7 +155,7 @@ describe('Legacy Migrations', function () {
       migration();
 
       // Assert: Test the final state of the sheet, not just the calls.
-      expect(setNamedRangeSpy.calledOnceWith('EXPORT_SETTINGS')).to.be.true;
+      expect(setNamedRangeSpy).toHaveBeenCalledExactlyOnceWith('EXPORT_SETTINGS', expect.anything);
       const sheet = activeSpreadsheet.getSheetByName('General/Settings');
       expect(sheet).to.not.be.null; // Ensure the sheet was created
       expect(sheet.getRange('B8').getValue()).to.equal('drive');
@@ -159,11 +165,15 @@ describe('Legacy Migrations', function () {
       // Arrange
       const activeSpreadsheet = SpreadsheetApp.getActive();
       const fakeRange = activeSpreadsheet.getActiveSheet().getRange('A1');
-      sinon
-        .stub(activeSpreadsheet, 'getRangeByName')
-        .withArgs('EXPORT_SETTINGS')
-        .returns(fakeRange);
-      const setNamedRangeSpy = sinon.spy(activeSpreadsheet, 'setNamedRange');
+      vi
+        .spyOn(activeSpreadsheet, 'getRangeByName')
+        .mockImplementation(rangeName => {
+         if (rangeName === 'EXPORT_SETTINGS') {
+          return fakeRange;
+         }
+         return activeSpreadsheet.getRangeByName(rangeName);
+        });
+      const setNamedRangeSpy = vi.spyOn(activeSpreadsheet, 'setNamedRange');
 
       // Act
       const migration = LEGACY_MIGRATIONS['2.2.0'] as (
@@ -172,7 +182,7 @@ describe('Legacy Migrations', function () {
       migration();
 
       // Assert
-      expect(setNamedRangeSpy.called).to.be.false;
+      expect(setNamedRangeSpy).not.toHaveBeenCalled();
     });
   });
 
@@ -186,8 +196,8 @@ describe('Legacy Migrations', function () {
         'pacingPercent-789': 'not a json string',
       };
       const scriptProperties = PropertiesService.getScriptProperties();
-      sinon.stub(scriptProperties, 'getProperties').returns(properties);
-      const setPropertiesSpy = sinon.spy(scriptProperties, 'setProperties');
+      vi.spyOn(scriptProperties, 'getProperties').mockReturnValue(properties);
+      const setPropertiesSpy = vi.spyOn(scriptProperties, 'setProperties');
 
       // Act
       const migration = LEGACY_MIGRATIONS['1.2'] as (
@@ -196,18 +206,12 @@ describe('Legacy Migrations', function () {
       migration();
 
       // Assert
-      expect(setPropertiesSpy.calledOnce).to.be.true;
-      const newProperties = setPropertiesSpy.firstCall.args[0];
-
-      // The mock gzipping just prepends "gzipped:"
-      expect(newProperties['pacingDays-123']).to.equal(
-        'gzipped:{"key":"value"}',
-      );
-      expect(newProperties['impressionsByGeo-456']).to.equal(
-        'gzipped:{"foo":"bar"}',
-      );
-      expect(newProperties['notAJson']).to.equal('just a string');
-      expect(newProperties['pacingPercent-789']).to.equal('not a json string');
+      expect(setPropertiesSpy).toHaveBeenCalledExactlyOnceWith({
+        'pacingDays-123': 'gzipped:{"key":"value"}',
+        'impressionsByGeo-456': 'gzipped:{"foo":"bar"}',
+        'notAJson': 'just a string',
+        'pacingPercent-789': 'not a json string',
+      });
     });
   });
 });

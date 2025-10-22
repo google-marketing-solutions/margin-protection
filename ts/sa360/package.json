@@ -2,7 +2,6 @@
   "name": "@launch_monitor/sa360",
   "type": "module",
   "devDependencies": {
-    "@types/google-apps-script": "^1.0.56",
     "css-loader": "^6.7.3",
     "file-loader": "^6.2.0",
     "gas-webpack-plugin": "^2.3.0",
@@ -23,6 +22,8 @@
     "lint": "pnpm --filter ts lint dv360/src/**/*.ts"
   },
   "dependencies": {
+    "@types/google-apps-script": "^2.0.7",
+    "t": "^0.5.1",
     "vitest": "^3.2.4"
   }
 }

@@ -20,7 +20,7 @@ export class DriveExporter implements Exporter {
 
     Drive.Files.create(
       {
-        parents: [{ id: options.folderId }],
+        parents: [options.folderId],
         name: options.fileName,
         mimeType: 'text/csv',
       },

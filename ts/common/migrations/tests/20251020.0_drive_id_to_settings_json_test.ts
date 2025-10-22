@@ -15,11 +15,10 @@
  * limitations under the License.
  */
 
-import 'mocha';
-import { expect } from 'chai';
 import { mockAppsScript } from '../../test_helpers/mock_apps_script';
 import { migration } from '../20251020.0_drive_id_to_settings_json';
 import { scaffoldSheetWithNamedRanges } from '../../tests/helpers';
+import { describe, beforeEach, it, expect } from 'vitest';
 
 describe('DriveIdToSettingsJson Migration', function () {
   beforeEach(function () {

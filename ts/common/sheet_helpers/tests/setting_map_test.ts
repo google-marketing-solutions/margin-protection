@@ -15,10 +15,9 @@
  * limitations under the License.
  */
 
-import 'mocha';
-import { expect } from 'chai';
 import { SettingMap, transformToParamValues } from '../setting_map';
 import { mockAppsScript } from '../../test_helpers/mock_apps_script';
+import { describe, beforeEach, it, expect } from 'vitest';
 
 describe('SettingMap', function () {
   beforeEach(function () {
@@ -38,7 +37,7 @@ describe('SettingMap', function () {
     });
 
     it('transforms into a param', function () {
-      expect(transformToParamValues(array2d, params)).to.deep.eq(
+      expect(transformToParamValues(array2d, params)).toEqual(
         new SettingMap([
           ['1', { rule1: 'A', rule2: 'B' }],
           ['2', { rule1: 'C', rule2: 'D' }],

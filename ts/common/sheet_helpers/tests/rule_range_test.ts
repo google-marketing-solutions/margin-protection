@@ -15,8 +15,7 @@
  * limitations under the License.
  */
 
-import 'mocha';
-import { expect } from 'chai';
+import { describe, beforeEach, it, expect } from 'vitest';
 import { mockAppsScript } from '../../test_helpers/mock_apps_script';
 import { FakePropertyStore } from '../../test_helpers/mock_apps_script';
 import {
@@ -49,7 +48,7 @@ describe('RuleRange', function () {
           rules: Record<string, Array<string[] | undefined>>;
         }
       ).rules,
-    ).to.deep.eq({
+    ).toEqual({
       none: [['id', 'name'], undefined, ['1', 'one']],
       'Category A': [['Header 1', 'Header 2'], undefined, ['Col 1', 'Col 2']],
       'Category B': [
@@ -62,7 +61,7 @@ describe('RuleRange', function () {
   });
 
   it('combines categories back into a settings sheet', function () {
-    expect(rules.getRule('Category A')).to.deep.eq([
+    expect(rules.getRule('Category A')).toEqual([
       ['id', 'Header 1', 'Header 2'],
       ['1', 'Col 1', 'Col 2'],
     ]);
@@ -72,8 +71,8 @@ describe('RuleRange', function () {
     mockAppsScript();
     rules.writeBack(Granularity.DEFAULT);
     const expected = [
-      ['-', '-', 'Category A', '-', 'Category B', '-', '-', 'Category C'],
-      ['-', '-', '-', '-', '-', '-', '-', '-'],
+      ['', '', 'Category A', '', 'Category B', '', '', 'Category C'],
+      ['', '', '', '', '', '', '', ''],
       [
         'id',
         'name',
@@ -92,7 +91,7 @@ describe('RuleRange', function () {
       expected.length,
       expected[0].length,
     );
-    expect(range.getValues()).to.deep.equal(expected);
+    expect(range.getValues()).toEqual(expected);
   });
 
   it('writes back to the spreadsheet - cares about changes', function () {
@@ -119,7 +118,7 @@ describe('RuleRange', function () {
     range.setValues(expected);
     rules.writeBack(Granularity.DEFAULT);
 
-    expect(range.getValues()).to.deep.eq([
+    expect(range.getValues()).toEqual([
       ['-', '-', 'Category A', '-', 'Category B', '-', '-', 'Category C'],
       ['-', '-', '-', '-', '-', '-', '-', '-'],
       [

@@ -14,6 +14,8 @@ export interface Exporter {
  */
 export interface ExportOptions {
   destination: 'bigquery' | 'drive';
+  tableName?: string;
+  fileName?: string;
 }
 
 export interface BigQueryOptions extends ExportOptions {

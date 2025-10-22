@@ -15,6 +15,7 @@
  * limitations under the License.
  */
 
+import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { equalTo } from 'common/checks';
 import { mockAppsScript } from 'common/test_helpers/mock_apps_script';
 import { RecordInfo, Value } from 'common/types';
@@ -23,7 +24,6 @@ import { Client, newRule, RuleRange } from '../client';
 import { RuleGranularity } from '../types';
 
 import { generateTestClient, TestClient } from './client_helpers';
-import { expect } from 'chai';
 import {
   budgetPacingPercentageRule,
   budgetPacingRuleLineItem,
@@ -31,7 +31,7 @@ import {
 } from '../rules';
 import { scaffoldSheetWithNamedRanges } from 'common/tests/helpers';
 
-describe('Client rules are validated', function () {
+describe('Client rules are validated', () => {
   let output: string[] = [];
   const test = 42;
   let client: Client;
@@ -40,7 +40,7 @@ describe('Client rules are validated', function () {
     ['default', '1', '2'],
   ];
 
-  beforeEach(function () {
+  beforeEach(() => {
     mockAppsScript();
     client = generateTestClient({ id: '123' });
 
@@ -78,127 +78,132 @@ describe('Client rules are validated', function () {
     );
   });
 
-  afterEach(function () {
+  afterEach(() => {
     output = [];
   });
 
-  it('should not run rules until validate() is run', function () {
-    expect(output).to.eql([]);
+  it('should not run rules until validate() is run', () => {
+    expect(output).toEqual([]);
   });
 
-  it('should run rules when validate() is run', async function () {
+  it('should run rules when validate() is run', async () => {
     await client.validate();
-    expect(output).to.eql(['ruleA', 'ruleB']);
+    expect(output).toEqual(['ruleA', 'ruleB']);
   });
 
-  it('should have check results after validate() is run', async function () {
+  it('should have check results after validate() is run', async () => {
     const { results } = await client.validate();
     const ruleValues: Value[] = Object.values(results['ruleA'].values);
-    expect(ruleValues.map((value) => value.anomalous)).to.eql([true, false]);
+    expect(ruleValues.map((value) => value.anomalous)).toEqual([true, false]);
   });
 });
 
-describe('RuleRange', function () {
+describe('RuleRange', () => {
   const rules = [
     budgetPacingPercentageRule,
     budgetPacingRuleLineItem,
     geoTargetRule,
   ];
   let client: Client;
+  let ruleRange: RuleRange;
 
-  beforeEach(function () {
+  beforeEach(() => {
     mockAppsScript();
     scaffoldSheetWithNamedRanges();
     client = generateTestClient({ id: '123' });
     rules.forEach((rule) => client.addRule(rule, [['ID'], ['default']]));
-    this.ruleRange = new RuleRange([[]], this.client);
-    client.getCampaignMap = async () => {
-      return { hasAdvertiserName: true, campaignMap: { '1': {} } };
+    ruleRange = new RuleRange([[]], client);
+    client.getCampaignMap = async function () {
+      return {
+        hasAdvertiserName: true,
+        campaignMap: {
+          '1': { advertiserId: '1', id: '1', displayName: 'Campaign 1' },
+        },
+      };
     };
   });
 
-  it('covers all granularities [sanity check]', function () {
+  it('covers all granularities [sanity check]', () => {
     const ruleGranularities = new Set(
       rules.map((rule) => rule.definition.granularity),
     );
     const systemGranularities = new Set(Object.values(RuleGranularity));
 
-    expect(ruleGranularities).to.eql(systemGranularities);
+    expect(ruleGranularities).toEqual(systemGranularities);
   });
 
-  describe('getRows', function () {
-    it('loads each granularity', async function () {
+  describe('getRows', () => {
+    it('loads each granularity', async () => {
       let error: string;
       try {
-        await this.ruleRange.getRows(RuleGranularity.CAMPAIGN);
+        await ruleRange.getRows(RuleGranularity.CAMPAIGN);
       } catch (e) {
         error = String(e);
       }
-      expect(error).to.be.undefined;
+      expect(error).toBeUndefined();
     });
 
-    it('errors on unsupported granularity', async function () {
+    it('errors on unsupported granularity', async () => {
       let error: string;
       try {
-        await this.ruleRange.getRows('Failure', '1');
+        await ruleRange.getRows('Failure' as RuleGranularity);
       } catch (e) {
         error = String(e);
       }
-      expect(error).to.equal('Error: Unsupported granularity "Failure"');
+      expect(error).toEqual('Error: Unsupported granularity "Failure"');
     });
   });
 
-  describe('getMetadata', function () {
-    it('loads each granularity', async function () {
+  describe('getMetadata', () => {
+    it('loads each granularity', async () => {
       let error: string;
       try {
-        await this.ruleRange.getRuleMetadata(RuleGranularity.CAMPAIGN, '1');
+        await ruleRange.getRuleMetadata(RuleGranularity.CAMPAIGN, '1');
       } catch (e) {
         error = String(e);
       }
-      expect(error).to.be.undefined;
+      expect(error).toBeUndefined();
     });
 
-    it('errors on unsupported granularity', async function () {
+    it('errors on unsupported granularity', async () => {
       let error: string;
       try {
-        await this.ruleRange.getRuleMetadata('Failure', '1');
+        await ruleRange.getRuleMetadata('Failure' as RuleGranularity, '1');
       } catch (e) {
         error = String(e);
       }
-      expect(error).to.equal('Error: Unsupported granularity "Failure"');
+      expect(error).toEqual('Error: Unsupported granularity "Failure"');
     });
   });
 });
 
-describe('API integrations', function () {
-  // let client: Client;
+describe('API integrations', () => {
+  let client: Client;
+  beforeEach(() => {
+    mockAppsScript();
+    const testClient = new TestClient({ id: '123' });
+    UrlFetchApp.fetchAll = ((requests: any[]) => {
+      return requests.map((_, i) => ({
+        getContentText() {
+          const tpl = { ...testClient.campaignTemplate };
+          tpl['advertiserId'] = `a${i + 1}`;
+          tpl['campaignId'] = `c${i + 1}`;
+          return JSON.stringify({ campaigns: [tpl] });
+        },
+      }));
+    }) as typeof UrlFetchApp.fetchAll;
+    client = testClient.generate();
+  });
 
-  // beforeEach(function () {
-  //   mockAppsScript();
-  //   const testClient = new TestClient({ id: '123' });
-  //   UrlFetchApp.fetchAll = ((requests) => {
-  //     return requests.map((_, i) => ({
-  //       getContentText() {
-  //         const tpl = { ...testClient.campaignTemplate };
-  //         tpl['advertiserId'] = `a${i + 1}`;
-  //         tpl['campaignId'] = `c${i + 1}`;
-  //         return JSON.stringify({ campaigns: [tpl] });
-  //       },
-  //     }));
-  //   }) as typeof UrlFetchApp.fetchAll;
-  //   client = testClient.generate();
-  // });
-
-  it('grabs all records from getAllCampaignsFromAdvertisers', function () {
-    const campaigns = this.client.getAllCampaignsForAdvertisers({
+  it('grabs all records from getAllCampaignsFromAdvertisers', () => {
+    const campaigns = client.getAllCampaignsForAdvertisers({
       a1: 'Advertiser 1',
       a2: 'Advertiser 2',
     }) as RecordInfo[];
 
     expect(
       campaigns.map((c) => [c.advertiserId, c.advertiserName, c.id]),
-    ).to.eql([
+    ).toEqual([
       ['a1', 'Advertiser 1', 'c1'],
       ['a2', 'Advertiser 2', 'c2'],
     ]);

@@ -3,7 +3,7 @@
   "type": "module",
   "devDependencies": {
     "@google/clasp": "^2.4.2",
-    "@types/google-apps-script": "^1.0.56",
+    "@types/google-apps-script": "^2.0.7",
     "css-loader": "^6.7.3",
     "file-loader": "^6.2.0",
     "gas-webpack-plugin": "^2.3.0",

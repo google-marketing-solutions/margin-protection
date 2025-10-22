@@ -15,8 +15,7 @@
  * limitations under the License.
  */
 
-import 'mocha';
-import { expect } from 'vitest';
+import { beforeEach, describe, expect, it } from 'vitest';
 import {
   FakePropertyStore,
   mockAppsScript,
@@ -30,17 +29,17 @@ import {
 } from '../../tests/helpers';
 import { SettingMap } from 'common/sheet_helpers/setting_map';
 
-describe('AppsScriptFrontend', function() {
+describe('AppsScriptFrontend', function () {
   let frontend: FakeFrontend;
   let properties: FakePropertyStore;
 
-  beforeEach(function() {
+  beforeEach(function () {
     mockAppsScript();
     properties = new FakePropertyStore();
   });
 
-  describe('saveSettingsBackToSheets', function() {
-    it('saves settings correctly to properties', function() {
+  describe('saveSettingsBackToSheets', function () {
+    it('saves settings correctly to properties', function () {
       const ruleDef = {
         name: 'Test Rule',
         description: 'Test Description',

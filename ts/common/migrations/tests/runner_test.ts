@@ -15,8 +15,7 @@
  * limitations under the License.
  */
 
-import 'mocha';
-import { expect } from 'chai';
+import { describe, beforeEach, it, expect } from 'vitest';
 import {
   FakePropertyStore,
   mockAppsScript,
@@ -73,7 +72,7 @@ describe('Migration Runner', function () {
       currentAppVersion: '4.0.0',
       frontend: {} as DisplayVideoFrontend,
     });
-    expect(executedMigrations).to.deep.equal([
+    expect(executedMigrations).toEqual([
       '2.0.0',
       '2.1.0',
       '2.1.4',
@@ -93,7 +92,7 @@ describe('Migration Runner', function () {
       currentAppVersion: '4.0.0',
       frontend: {} as unknown as DisplayVideoFrontend,
     });
-    expect(executedMigrations).to.deep.equal(['2.1.4', '2.2.0', '3.0.0']);
+    expect(executedMigrations).toEqual(['2.1.4', '2.2.0', '3.0.0']);
   });
 
   it('should transition from legacy to date-based migrations', function () {
@@ -106,7 +105,7 @@ describe('Migration Runner', function () {
       currentAppVersion: '20251101.0',
       frontend: {} as unknown as DisplayVideoFrontend,
     });
-    expect(executedMigrations).to.deep.equal(['3.0.0', '20251020.0']);
+    expect(executedMigrations).toEqual(['3.0.0', '20251020.0']);
     expect(properties.getProperty('sheet_version')).to.equal('20251101.0');
   });
 
@@ -120,7 +119,7 @@ describe('Migration Runner', function () {
       currentAppVersion: '20251101.0',
       frontend: {} as unknown as DisplayVideoFrontend,
     });
-    expect(executedMigrations).to.deep.equal(['20251020.0']);
+    expect(executedMigrations).toEqual(['20251020.0']);
   });
 
   it('should not run migrations for a different platform', function () {
@@ -133,7 +132,7 @@ describe('Migration Runner', function () {
       currentAppVersion: '20251101.0',
       frontend: {} as unknown as DisplayVideoFrontend,
     });
-    expect(executedMigrations).to.deep.equal([]);
+    expect(executedMigrations).toEqual([]);
   });
 
   it('should update sheet version to app version even if no migrations are run', function () {
@@ -146,7 +145,7 @@ describe('Migration Runner', function () {
       currentAppVersion: '4.0.0',
       frontend: {} as unknown as DisplayVideoFrontend,
     });
-    expect(executedMigrations).to.deep.equal([]);
+    expect(executedMigrations).toEqual([]);
     expect(properties.getProperty('sheet_version')).to.equal('4.0.0');
   });
 });

@@ -2,8 +2,7 @@
  * @fileoverview Unit tests for the ExportContext class.
  */
 
-import { expect } from 'vitest';
-import * as sinon from 'sinon';
+import { describe, expect, it, vi } from 'vitest';
 import { ExportContext, Exporter, ExportOptions } from './exporter';
 
 class MockExporter implements Exporter {
@@ -15,7 +14,7 @@ class MockExporter implements Exporter {
 describe('ExportContext', function () {
   it('should call the export method of the strategy', function () {
     const mockExporter = new MockExporter();
-    const exportSpy = sinon.spy(mockExporter, 'export');
+    const exportSpy = vi.spyOn(mockExporter, 'export');
     const context = new ExportContext(mockExporter);
     const data = [{ id: 1, name: 'test' }];
     const options: ExportOptions = {
@@ -25,6 +24,6 @@ describe('ExportContext', function () {
 
     context.export(data, options);
 
-    expect(exportSpy.calledOnceWith(data, options)).toBeTruthy();
+    expect(exportSpy.mock.lastCall).toEqual([data, options]);
   });
 });

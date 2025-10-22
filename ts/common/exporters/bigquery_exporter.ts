@@ -28,11 +28,11 @@ export class BigQueryStrategyExporter implements Exporter {
   export<T extends Record<string, unknown>>(
     data: T[],
     options: ExportOptions,
-  ): void {
+  ): boolean {
     if (!options.tableName) {
       throw new Error('Table name is required for BigQuery export.');
     }
-    this.insertData(options.tableName, data);
+    return this.insertData(options.tableName, data);
   }
 
   private insertData<T extends Record<string, unknown>>(

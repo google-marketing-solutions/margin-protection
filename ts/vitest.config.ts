@@ -13,12 +13,12 @@ import path from 'path';
 export default defineConfig({
   test: {
     globals: true,
-    include: ['dv360/src/tests/**/*_test.ts'],
+    include: ['**/tests/**/*_test.ts'],
   },
   resolve: {
     alias: [
       {
-        find: /^(common|sa360|dv360|dv360_api|googleads)\/(.*)/,
+        find: /^(sa360|dv360|dv360_api|googleads)\/(.*)/,
         replacement: path.resolve(import.meta.dirname, './$1/$2'),
       },
     ],

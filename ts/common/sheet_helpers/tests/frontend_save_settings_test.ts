@@ -15,8 +15,6 @@
  * limitations under the License.
  */
 
-import 'mocha';
-import { expect } from 'chai';
 import {
   FakePropertyStore,
   mockAppsScript,
@@ -29,6 +27,7 @@ import {
   RuleRange,
 } from '../../tests/helpers';
 import { SettingMap } from 'common/sheet_helpers/setting_map';
+import { expect, describe, beforeEach, it } from 'vitest';
 
 describe('AppsScriptFrontend', function () {
   let frontend: FakeFrontend;
@@ -101,10 +100,10 @@ describe('AppsScriptFrontend', function () {
       );
       console.log(savedSettings);
 
-      expect(savedSettings.get('id1')).to.deep.equal({
+      expect(savedSettings.get('id1')).toEqual({
         testParam: 'value1',
       });
-      expect(savedSettings.getOrDefault('id2')).to.deep.equal({
+      expect(savedSettings.getOrDefault('id2')).toEqual({
         testParam: 'defaultValue',
       });
     });

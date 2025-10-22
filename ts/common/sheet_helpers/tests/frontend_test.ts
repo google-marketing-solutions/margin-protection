@@ -15,9 +15,6 @@
  * limitations under the License.
  */
 
-import 'mocha';
-import { expect } from 'chai';
-import * as sinon from 'sinon';
 import {
   FakePropertyStore,
   mockAppsScript,
@@ -29,10 +26,10 @@ import {
   Granularity,
   newRule,
   RuleRange,
-  tearDownStubs,
   TestClientTypes,
 } from '../../tests/helpers';
 import { equalTo } from 'common/checks';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 describe('AppsScriptFrontend', function () {
   let frontend: FakeFrontend;
@@ -102,7 +99,7 @@ describe('AppsScriptFrontend', function () {
       );
       const values = sheet.getRange(1, 1, 3, 3).getValues();
 
-      expect(values).to.deep.eq([
+      expect(values).toEqual([
         ['Rule Name', 'Description', 'Enabled'],
         ['Rule A', 'The rule for rule A', true],
         ['Rule B', 'The rule for rule B', true],
@@ -116,7 +113,7 @@ describe('AppsScriptFrontend', function () {
       );
       const values = sheet.getRange(4, 2, 1, 1).getValues();
 
-      expect(values).to.deep.eq([['This is too much HTML']]);
+      expect(values).toEqual([['This is too much HTML']]);
     });
 
     it('converts paragraph HTML tags to newlines', async function () {
@@ -126,7 +123,7 @@ describe('AppsScriptFrontend', function () {
       );
       const values = sheet.getRange(5, 2, 1, 1).getValues();
 
-      expect(values).to.deep.eq([['One line\n\nAnother line']]);
+      expect(values).toEqual([['One line\n\nAnother line']]);
     });
 
     it('returns an object of enabled / disabled rules', async function () {
@@ -147,7 +144,7 @@ describe('AppsScriptFrontend', function () {
 
       const mapObject = frontend.setUpRuleSheet();
 
-      expect(Object.fromEntries(mapObject)).to.deep.eq({
+      expect(Object.fromEntries(mapObject)).toEqual({
         'Rule A': true,
         'Rule B': false,
         'No HTML': true,
@@ -165,14 +162,14 @@ describe('AppsScriptFrontend', function () {
         'Enable/Disable Rules',
       ) as unknown as Checkboxes;
 
-      expect(sheet.getRange('A1:A5').getValues().flat(1)).to.deep.eq([
+      expect(sheet.getRange('A1:A5').getValues().flat(1)).toEqual([
         'Rule Name',
         'Rule A',
         'Rule B',
         'No HTML',
         'Paragraphs',
       ]);
-      expect(sheet.checkboxes).to.deep.eq({
+      expect(sheet.checkboxes).toEqual({
         1: { 2: true },
         2: { 2: true },
         3: { 2: true },
@@ -183,7 +180,6 @@ describe('AppsScriptFrontend', function () {
 
   describe('Test emails', function () {
     let rules: Record<string, RuleGetter>;
-    let stubs: sinon.SinonStub[];
 
     const email = (to: string) => ({
       to,
@@ -203,7 +199,6 @@ describe('AppsScriptFrontend', function () {
     });
 
     beforeEach(function () {
-      stubs = [];
       rules = {
         keyA: {
           name: 'Rule A',
@@ -259,7 +254,7 @@ describe('AppsScriptFrontend', function () {
     });
 
     afterEach(function () {
-      tearDownStubs(stubs);
+      vi.restoreAllMocks();
     });
 
     it('sends anomalies to a user whenever they are new', function () {
@@ -290,8 +285,8 @@ describe('AppsScriptFrontend', function () {
       - v5`.replace(/  +/g, '');
 
       // Assert
-      expect(messageExists).to.deep.eq([true, false, true]);
-      expect(messages).to.deep.eq([newEmail]);
+      expect(messageExists).toEqual([true, false, true]);
+      expect(messages).toEqual([newEmail]);
     });
   });
 });

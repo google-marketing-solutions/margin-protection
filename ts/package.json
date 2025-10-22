@@ -17,25 +17,26 @@
   "private": true,
   "packageManager": "pnpm@8.15.0",
   "devDependencies": {
-    "@types/google-apps-script": "^1.0.100",
     "@types/inquirer": "^8.2.12",
-    "@types/mocha": "^10.0.10",
-    "@types/node": "^24.9.0",
-    "@types/sinon-chai": "^4.0.0",
+    "@types/node": "^24.9.1",
     "@types/webpack": "^5.28.5",
     "commander": "^14.0.1",
     "css-loader": "^6.11.0",
     "file-loader": "^6.2.0",
-    "gas-webpack-plugin": "^2.6.0",
     "glob": "^11.0.3",
     "inquirer": "^8.2.7",
-    "mocha": "^10.8.2",
+    "memfs": "^4.49.0",
     "ts-loader": "^9.5.4",
     "tsconfig-paths-webpack-plugin": "^4.2.0",
+    "tsup": "^8.5.0",
     "tsx": "^4.20.6",
     "typescript": "^5.9.3",
+    "unionfs": "^4.6.0",
     "vitest": "^3.2.4",
     "webpack": "^5.102.1",
     "webpack-cli": "^5.1.4"
+  },
+  "dependencies": {
+    "@types/google-apps-script": "^2.0.7"
   }
 }
