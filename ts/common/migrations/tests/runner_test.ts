@@ -19,10 +19,10 @@ import { describe, beforeEach, it, expect } from 'vitest';
 import {
   FakePropertyStore,
   mockAppsScript,
-} from '../../test_helpers/mock_apps_script';
-import { runMigrations } from '../runner';
-import { Migration } from '../types';
-import { DisplayVideoFrontend } from 'dv360/frontend';
+} from '#common/test_helpers/mock_apps_script.js';
+import { runMigrations } from '../runner.js';
+import { Migration } from '../types.js';
+import { DisplayVideoFrontend } from '#dv360/frontend.js';
 
 describe('Migration Runner', function () {
   let properties: FakePropertyStore;

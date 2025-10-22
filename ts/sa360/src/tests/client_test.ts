@@ -15,12 +15,12 @@
  * limitations under the License.
  */
 
-import { equalTo } from 'common/checks';
-import { AppsScriptPropertyStore } from 'common/sheet_helpers';
-import { bootstrapGoogleAdsApi } from 'common/tests/helpers';
-import { mockAppsScript } from 'common/test_helpers/mock_apps_script';
-import { Client, newRule } from 'sa360/client';
-import { RuleGranularity } from 'sa360/types';
+import { equalTo } from '#common/checks.js';
+import { AppsScriptPropertyStore } from '#common/sheet_helpers/index.js';
+import { bootstrapGoogleAdsApi } from '#common/tests/helpers.js';
+import { mockAppsScript } from '#common/test_helpers/mock_apps_script.js';
+import { Client, newRule } from '#sa360/client.js';
+import { RuleGranularity } from '#sa360/types.js';
 import { describe, beforeEach, afterEach, it, expect } from 'vitest';
 
 describe('Client rules are validated', function () {

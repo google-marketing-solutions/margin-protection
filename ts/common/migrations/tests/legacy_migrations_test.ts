@@ -15,16 +15,16 @@
  * limitations under the License.
  */
 
-import { LEGACY_MIGRATIONS } from 'common/migrations/legacy_migrations';
-import { FakeClient } from 'common/tests/helpers';
+import { LEGACY_MIGRATIONS } from '#common/migrations/legacy_migrations.js';
+import { FakeClient } from '#common/tests/helpers.js';
 import {
   FakePropertyStore,
   mockAppsScript,
-} from 'common/test_helpers/mock_apps_script';
-import { scaffoldSheetWithNamedRanges } from 'common/tests/helpers';
-import { DisplayVideoFrontend } from 'dv360/frontend';
-import { ClientInterface } from 'dv360/types';
-import { RuleRange } from 'dv360/client';
+} from '#common/test_helpers/mock_apps_script.js';
+import { scaffoldSheetWithNamedRanges } from '#common/tests/helpers.js';
+import { DisplayVideoFrontend } from '#dv360/frontend.js';
+import { ClientInterface } from '#dv360/types.js';
+import { RuleRange } from '#dv360/client.js';
 import { describe, beforeEach, afterEach, it, expect, vi } from 'vitest';
 
 describe('Full migration path', function () {

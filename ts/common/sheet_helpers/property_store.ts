@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-import { PropertyStore } from 'common/types';
+import { PropertyStore } from '#common/types.js';
 
 /**
  * Provides convenience methods to manage property getters and setters.

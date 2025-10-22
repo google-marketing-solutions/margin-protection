@@ -25,8 +25,8 @@ import {
   RuleExecutorClass,
   RuleGetter,
   Value,
-} from 'common/types';
-import { runMigrations } from './migrations/runner';
+} from '#common/types.js';
+import { runMigrations } from './migrations/runner.js';
 
 /**
 ================================================================================

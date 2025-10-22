@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-import { Value } from 'common/types';
+import { Value } from '#common/types.js';
 
 /**
  * Generates an email body given a list of possibly anomalous values.

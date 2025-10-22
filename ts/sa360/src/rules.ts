@@ -19,12 +19,12 @@
  * @fileoverview General rules for SA360
  */
 
-import { equalTo, inRange } from 'common/checks';
+import { equalTo, inRange } from '#common/checks.js';
 
-import { Value, Values } from 'common/types';
+import { Value, Values } from '#common/types.js';
 
-import { newRule } from './client';
-import { RuleGranularity } from './types';
+import { newRule } from './client.js';
+import { RuleGranularity } from './types.js';
 import {
   AD_GROUP_REPORT,
   AD_GROUP_USER_LIST_REPORT,
@@ -34,7 +34,7 @@ import {
   CAMPAIGN_PACING_REPORT,
   CAMPAIGN_USER_LIST_REPORT,
   GENDER_TARGET_REPORT,
-} from './api';
+} from './api.js';
 
 const ONE_DAY = 60 * 60 * 1000 * 24;
 const NO_CHANGES = 'No Changes';

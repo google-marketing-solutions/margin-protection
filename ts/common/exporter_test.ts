@@ -3,7 +3,7 @@
  */
 
 import { describe, expect, it, vi } from 'vitest';
-import { ExportContext, Exporter, ExportOptions } from './exporter';
+import { ExportContext, Exporter, ExportOptions } from './exporter.js';
 
 class MockExporter implements Exporter {
   export(): void {

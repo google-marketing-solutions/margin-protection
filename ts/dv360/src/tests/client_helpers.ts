@@ -21,14 +21,14 @@ import {
   Campaigns,
   InsertionOrders,
   LineItems,
-} from 'dv360_api/dv360';
+} from 'dv360_api/dv360.js';
 import {
   Advertiser,
   AssignedTargetingOption,
   Campaign,
   InsertionOrder,
   LineItem,
-} from 'dv360_api/dv360_resources';
+} from 'dv360_api/dv360_resources.js';
 import {
   ApiDate,
   FrequencyCap,
@@ -43,13 +43,17 @@ import {
   PACING_PERIOD,
   Pacing,
   PacingType,
-} from 'dv360_api/dv360_types';
-import { FilterExpression } from 'dv360_api/utils';
-import { FakePropertyStore } from 'common/test_helpers/mock_apps_script';
+} from 'dv360_api/dv360_types.js';
+import { FilterExpression } from 'dv360_api/utils.js';
+import { FakePropertyStore } from '#common/test_helpers/mock_apps_script.js';
 
-import { BudgetReport, ImpressionReport, LineItemBudgetReport } from '../api';
-import { Client, DataAccessObject } from '../client';
-import { Accessors, ClientArgs, IDType } from '../types';
+import {
+  BudgetReport,
+  ImpressionReport,
+  LineItemBudgetReport,
+} from '../api.js';
+import { Client, DataAccessObject } from '../client.js';
+import { Accessors, ClientArgs, IDType } from '../types.js';
 
 type Callable<T> = (
   advertisers: T[],

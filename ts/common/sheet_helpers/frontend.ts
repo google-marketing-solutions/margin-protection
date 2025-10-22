@@ -27,19 +27,19 @@ import {
   RuleGetter,
   Value,
   Values,
-} from 'common/types';
-import { runMigrations } from 'common/migrations/runner';
+} from '#common/types.js';
+import { runMigrations } from '#common/migrations/runner.js';
 import {
   EMAIL_LIST_RANGE,
   FOLDER,
   RULE_SETTINGS_SHEET,
   EXPORT_SETTINGS_RANGE,
-} from './constants';
-import { getTemplateSetting, HELPERS } from './helpers';
-import { emailAlertBody } from './email';
-import { ExportContext, ExportOptions } from '../exporter';
-import { BigQueryStrategyExporter } from '../exporters/bigquery_exporter';
-import { DriveExporter } from '../exporters/drive_exporter';
+} from './constants.js';
+import { getTemplateSetting, HELPERS } from './helpers.js';
+import { emailAlertBody } from './email.js';
+import { ExportContext, ExportOptions } from '../exporter.js';
+import { BigQueryStrategyExporter } from '../exporters/bigquery_exporter.js';
+import { DriveExporter } from '../exporters/drive_exporter.js';
 
 /**
  * The front-end for Apps Script UIs. This is extensible for customer use-cases.

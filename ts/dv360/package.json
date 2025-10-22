@@ -5,8 +5,13 @@
     "tsup": "^8.5.0",
     "typescript": "^4.9.3"
   },
+  "paths": {
+    "#dv360_api/*": [
+      "./dv360_api/*"
+    ]
+  },
   "scripts": {
-    "build": "pnpm -w generate-version && tsup",
+    "build": "tsup",
     "push": "pnpm build && clasp push",
     "push:client": "pnpm --filter client push",
     "test": "vitest run",

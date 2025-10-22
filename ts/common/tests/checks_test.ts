@@ -16,7 +16,7 @@
  */
 
 import { describe, expect, it } from 'vitest';
-import { equalTo, inRange, lessThanOrEqualTo } from '../checks';
+import { equalTo, inRange, lessThanOrEqualTo } from '../checks.js';
 
 describe('check range logic', function () {
   const test = { min: 1, max: 5 };

@@ -1,6 +1,6 @@
 # CM360 Rule Example: Placements Without Ads
 
-This guide demonstrates how to create a custom rule to monitor for a common trafficking issue in Campaign Manager 360 (CM360): active placements that do not have any ads assigned to them.
+This html/guide demonstrates how to create a custom rule to monitor for a common trafficking issue in Campaign Manager 360 (CM360): active placements that do not have any ads assigned to them.
 
 **Goal:** Alert the user if an active placement is found without any ad rotations, as this will prevent the placement from serving impressions.
 
@@ -23,8 +23,8 @@ This logic is specific to CM360. The CM360 API provides placement and ad data. W
 ```typescript
 // In a new file ts/cm360/src/rules.ts or an existing one
 
-import {Placement} from './types'; // Assuming a type definition for CM360 placements
-import {CheckResult} from '../../common/types';
+import {Placement} from './types.js'; // Assuming a type definition for CM360 placements
+import {CheckResult} from '../common/types.js'
 
 /**
  * Checks if an active CM360 placement has any ads assigned.

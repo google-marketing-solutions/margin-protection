@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-import { ObjectUtil, UriUtil } from './utils';
+import { ObjectUtil, UriUtil } from './utils.js';
 
 /**
  * DV360 API resources contain page tokens.

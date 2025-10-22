@@ -1,4 +1,4 @@
-import { AssignedTargetingOption } from 'dv360_api/dv360_resources';
+import { AssignedTargetingOption } from 'dv360_api/dv360_resources.js';
 import {
   CampaignTemplate,
   generateTestClient,
@@ -7,18 +7,18 @@ import {
   InsertionOrderTestDataParams,
   LineItemTemplate,
   LineItemTestDataParams,
-} from './client_helpers';
-import { ApiDate, PACING_TYPE, TARGETING_TYPE } from 'dv360_api/dv360_types';
+} from './client_helpers.js';
+import { ApiDate, PACING_TYPE, TARGETING_TYPE } from 'dv360_api/dv360_types.js';
 import {
   budgetPacingPercentageRule,
   budgetPacingRuleLineItem,
   dailyBudgetRule,
   geoTargetRule,
   impressionsByGeoTarget,
-} from '../rules';
-import { RuleExecutorClass } from 'common/types';
-import { DisplayVideoClientTypes } from '../types';
-import { Client } from '../client';
+} from '../rules.js';
+import { RuleExecutorClass } from '#common/types.js';
+import { DisplayVideoClientTypes } from '../types.js';
+import { Client } from '../client.js';
 
 /**
  *

@@ -19,8 +19,8 @@
  * @fileoverview DAO for the SA360 Reporting API
  */
 
-import { makeReport } from 'common/ads_api';
-import { buildQuery } from 'common/ads_api_types';
+import { makeReport } from '#common/ads_api.js';
+import { buildQuery } from '#common/ads_api_types.js';
 
 /**
  * SA360 campaign-based report.

@@ -19,11 +19,15 @@
  * @fileoverview frontend/apps script hooks for DV360 launch monitor
  */
 
-import { ALL_MIGRATIONS } from 'common/migrations';
-import { LEGACY_MIGRATIONS } from 'common/migrations/legacy_migrations';
-import { AppsScriptFrontend, HELPERS, LABEL_RANGE } from 'common/sheet_helpers';
-import { FrontendArgs, FrontendInterface } from 'common/types';
-import { IDType, DisplayVideoClientTypes } from './types';
+import { ALL_MIGRATIONS } from '#common/migrations/index.js';
+import { LEGACY_MIGRATIONS } from '#common/migrations/legacy_migrations.js';
+import {
+  AppsScriptFrontend,
+  HELPERS,
+  LABEL_RANGE,
+} from '#common/sheet_helpers/index.js';
+import { FrontendArgs, FrontendInterface } from '#common/types.js';
+import { IDType, DisplayVideoClientTypes } from './types.js';
 
 const ENTITY_ID = 'ENTITY_ID';
 const ID_TYPE = 'ID_TYPE';

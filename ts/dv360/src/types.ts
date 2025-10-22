@@ -25,8 +25,8 @@ import {
   Campaigns,
   InsertionOrders,
   LineItems,
-} from 'dv360_api/dv360';
-import { LineItem, InsertionOrder } from 'dv360_api/dv360_resources';
+} from 'dv360_api/dv360.js';
+import { LineItem, InsertionOrder } from 'dv360_api/dv360_resources.js';
 import {
   BaseClientArgs,
   BaseClientInterface,
@@ -36,7 +36,7 @@ import {
   RuleExecutor,
   FrontendInterface,
   RecordInfo,
-} from 'common/types';
+} from '#common/types.js';
 
 /**
  * Defines the type of ID set on the client.

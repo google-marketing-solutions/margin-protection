@@ -3,8 +3,8 @@
  */
 
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { BigQueryStrategyExporter } from '../../exporters/bigquery_exporter';
-import { mockAppsScript } from '../../test_helpers/mock_apps_script';
+import { BigQueryStrategyExporter } from '../../exporters/bigquery_exporter.js';
+import { mockAppsScript } from '../../test_helpers/mock_apps_script.js';
 
 describe('BigQueryStrategyExporter', function () {
   let exporter: BigQueryStrategyExporter;

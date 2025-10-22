@@ -22,12 +22,12 @@
 import {
   FakePropertyStore,
   mockAppsScript,
-} from 'common/test_helpers/mock_apps_script';
-import { bootstrapGoogleAdsApi, iterator } from 'common/tests/helpers';
-import { ParamDefinition, RuleExecutor, Values } from 'common/types';
-import { Client } from 'sa360/client';
-import { SearchAdsClientTypes } from 'sa360/types';
-import { ReportClass } from 'common/ads_api_types';
+} from '#common/test_helpers/mock_apps_script.js';
+import { bootstrapGoogleAdsApi, iterator } from '#common/tests/helpers.js';
+import { ParamDefinition, RuleExecutor, Values } from '#common/types.js';
+import { Client } from '#sa360/client.js';
+import { SearchAdsClientTypes } from '#sa360/types.js';
+import { ReportClass } from '#common/ads_api_types.js';
 import {
   AD_GROUP_USER_LIST_REPORT,
   CAMPAIGN_TARGET_REPORT,
@@ -36,7 +36,7 @@ import {
   AD_GROUP_REPORT,
   AGE_TARGET_REPORT,
   GENDER_TARGET_REPORT,
-} from 'sa360/api';
+} from '#sa360/api.js';
 
 import {
   budgetPacingRule,
@@ -47,7 +47,7 @@ import {
   geoTargetRule,
   ageTargetRule,
   genderTargetRule,
-} from '../rules';
+} from '../rules.js';
 import { afterEach, beforeEach, describe, it, expect, vi } from 'vitest';
 
 describe('Campaign pacing rule', () => {

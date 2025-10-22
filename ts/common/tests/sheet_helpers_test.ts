@@ -22,10 +22,14 @@
 import {
   FakePropertyStore,
   mockAppsScript,
-} from '../test_helpers/mock_apps_script';
-import { ParamDefinition, RuleExecutorClass, RuleGetter } from '../types';
+} from '#common/test_helpers/mock_apps_script.js';
+import { ParamDefinition, RuleExecutorClass, RuleGetter } from '../types.js';
 
-import { HELPERS, SettingMap, transformToParamValues } from '../sheet_helpers';
+import {
+  HELPERS,
+  SettingMap,
+  transformToParamValues,
+} from '#common/sheet_helpers/index.js';
 
 import {
   FakeClient,
@@ -36,8 +40,8 @@ import {
   scaffoldSheetWithNamedRanges,
   TestClientInterface,
   TestClientTypes,
-} from './helpers';
-import { equalTo } from 'common/checks';
+} from './helpers.js';
+import { equalTo } from '#common/checks.js';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 function setUp() {

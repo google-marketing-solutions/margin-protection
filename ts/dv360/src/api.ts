@@ -24,7 +24,7 @@ import {
   IDType,
   LineItemBudgetReportInterface,
   QueryReportParams,
-} from './types';
+} from './types.js';
 
 /** The API version to use. Exposed for testing. */
 export const DBM_API_VERSION = 'v2';

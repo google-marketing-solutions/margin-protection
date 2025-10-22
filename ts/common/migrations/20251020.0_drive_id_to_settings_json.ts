@@ -19,8 +19,8 @@ import {
   addSettingWithDescription,
   GENERAL_SETTINGS_SHEET,
   HELPERS,
-} from '../sheet_helpers';
-import { Migration } from './types';
+} from '../sheet_helpers/index.js';
+import { Migration } from './types.js';
 
 /**
  * A migration to move the Drive Folder ID into a unified JSON object.

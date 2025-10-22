@@ -38,15 +38,15 @@ import {
   qlifyQuery,
   ReportFactory,
   SA360_API_ENDPOINT,
-} from '../ads_api';
-import { AdsSearchRequest, buildQuery } from '../ads_api_types';
+} from '../ads_api.js';
+import { AdsSearchRequest, buildQuery } from '../ads_api_types.js';
 import {
   FakeUrlFetchApp,
   generateFakeHttpResponse,
   mockAppsScript,
-} from '../test_helpers/mock_apps_script';
+} from '../test_helpers/mock_apps_script.js';
 
-import { bootstrapGoogleAdsApi } from './helpers';
+import { bootstrapGoogleAdsApi } from './helpers.js';
 
 import HTTPResponse = GoogleAppsScript.URL_Fetch.HTTPResponse;
 

@@ -12,7 +12,7 @@
     "webpack-cli": "^5.0.1"
   },
   "scripts": {
-    "build": "pnpm -w generate-version && pnpm install && cp -rf ../common/html . && webpack",
+    "build": "tsup",
     "build:dev": "pnpm build --mode development --devtool source-map",
     "build:prod": "pnpm build --mode production",
     "push": "pnpm build:dev && clasp push",

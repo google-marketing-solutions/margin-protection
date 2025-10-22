@@ -2,7 +2,7 @@
  * @fileoverview Implements the BigQueryStrategyExporter class for exporting data to BigQuery.
  */
 
-import { Exporter, ExportOptions } from '../exporter';
+import { Exporter, ExportOptions } from '../exporter.js';
 
 /**
  * A class for exporting data to BigQuery.

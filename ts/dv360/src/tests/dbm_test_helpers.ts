@@ -20,7 +20,7 @@
  *
  */
 
-import { DBM_API_VERSION, DBM_URL } from '../api';
+import { DBM_API_VERSION, DBM_URL } from '../api.js';
 
 interface Params {
   [parameter: string]: unknown;

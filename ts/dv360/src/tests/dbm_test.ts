@@ -1,5 +1,4 @@
 /**
- * @license
  * Copyright 2024 Google LLC.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -15,12 +14,12 @@
  * limitations under the License.
  */
 
-import { mockAppsScript } from 'common/test_helpers/mock_apps_script';
+import { mockAppsScript } from '#common/test_helpers/mock_apps_script.js';
 
-import { BudgetReport, ImpressionReport } from '../api';
-import { IDType } from '../types';
+import { BudgetReport, ImpressionReport } from '../api.js';
+import { IDType } from '../types.js';
 
-import { BudgetMatchTable, ImpressionMatchTable } from './dbm_test_helpers';
+import { BudgetMatchTable, ImpressionMatchTable } from './dbm_test_helpers.js';
 import { describe, beforeEach, it, expect } from 'vitest';
 
 class FakeScriptApp {

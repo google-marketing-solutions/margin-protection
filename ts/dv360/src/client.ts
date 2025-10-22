@@ -25,16 +25,16 @@ import {
   Campaigns,
   InsertionOrders,
   LineItems,
-} from 'dv360_api/dv360';
+} from 'dv360_api/dv360.js';
 import {
   Advertiser,
   Campaign,
   InsertionOrder,
   LineItem,
-} from 'dv360_api/dv360_resources';
-import { newRuleBuilder } from 'common/client_helpers';
+} from 'dv360_api/dv360_resources.js';
+import { newRuleBuilder } from '#common/client_helpers.js';
 
-import { AbstractRuleRange } from 'common/sheet_helpers';
+import { AbstractRuleRange } from '#common/sheet_helpers/index.js';
 import {
   DefinedParameters,
   ExecutorResult,
@@ -44,10 +44,10 @@ import {
   RuleExecutor,
   RuleExecutorClass,
   Settings,
-} from 'common/types';
+} from '#common/types.js';
 
-import { RawApiDate } from 'dv360_api/dv360_types';
-import { BudgetReport, ImpressionReport, LineItemBudgetReport } from './api';
+import { RawApiDate } from 'dv360_api/dv360_types.js';
+import { BudgetReport, ImpressionReport, LineItemBudgetReport } from './api.js';
 import {
   Accessors,
   BudgetReportInterface,
@@ -58,7 +58,7 @@ import {
   LineItemBudgetReportInterface,
   RuleGranularity,
   RuleParams,
-} from './types';
+} from './types.js';
 
 /**
  * A new rule in SA360.

@@ -3,22 +3,20 @@
     "baseUrl": "./",
     "outDir": "dist",
     "skipLibCheck": true,
-    "module": "esnext",
-    "moduleResolution": "node",
+    "module": "nodenext",
+    "moduleResolution": "nodenext",
     "target": "es2020",
     "lib": ["esnext", "dom"],
     "noImplicitThis": true,
     "useDefineForClassFields": true,
 
-    "types": [
-      "google-apps-script"
-    ],
+    "types": ["google-apps-script"],
     "paths": {
-      "common/*": ["common/*"],
-      "sa360/*": ["sa360/src/*"],
-      "dv360/*": ["dv360/src/*"],
-      "dv360_api/*": ["dv360_api/*"],
-      "googleads/*": ["googleads/src/*"]
+      "#common/*": ["common/*"],
+      "#sa360/*": ["sa360/src/*"],
+      "#dv360/*": ["dv360/src/*"],
+      "#googleads/*": ["googleads/src/*"],
+      "#dv360_api/*": ["googleads/src/*"],
     }
   },
   "include": ["**/src/**/*", "outs.d.ts", "common/**/*"],

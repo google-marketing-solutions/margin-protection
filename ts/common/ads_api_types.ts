@@ -1,5 +1,4 @@
 /**
- * @license
  * Copyright 2024 Google LLC.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -19,7 +18,7 @@
  * @fileoverview Ads API-specific types for SA360 and Google Ads
  */
 
-import { BaseClientArgs } from './types';
+import { BaseClientArgs } from './types.js';
 
 /**
  * Manages query (input) and expected output pairs for each report type.

@@ -12,24 +12,24 @@ import {
   it,
   vi,
 } from 'vitest';
-import { TARGETING_TYPE } from 'dv360_api/dv360_types';
-import { equalTo } from 'common/checks';
-import { HELPERS } from 'common/sheet_helpers';
+import { TARGETING_TYPE } from 'dv360_api/dv360_types.js';
+import { equalTo } from '#common/checks.js';
+import { HELPERS } from '#common/sheet_helpers/index.js';
 import {
   FakeHtmlOutput,
   FakePropertyStore,
   mockAppsScript,
-} from 'common/test_helpers/mock_apps_script';
-import { PropertyStore } from 'common/types';
+} from '#common/test_helpers/mock_apps_script.js';
+import { PropertyStore } from '#common/types.js';
 
-import { Client, RuleRange } from '../client';
-import { DisplayVideoFrontend } from '../frontend';
+import { Client, RuleRange } from '../client.js';
+import { DisplayVideoFrontend } from '../frontend.js';
 import {
   budgetPacingPercentageRule,
   budgetPacingRuleLineItem,
   geoTargetRule,
-} from '../rules';
-import { ClientArgs, ClientInterface, IDType } from '../types';
+} from '../rules.js';
+import { ClientArgs, ClientInterface, IDType } from '../types.js';
 
 import {
   AdvertiserTemplateConverter,
@@ -37,9 +37,9 @@ import {
   generateTestClient,
   InsertionOrderTemplateConverter,
   LineItemTemplateConverter,
-} from './client_helpers';
+} from './client_helpers.js';
 
-import { AssignedTargetingOption } from 'dv360_api/dv360_resources';
+import { AssignedTargetingOption } from 'dv360_api/dv360_resources.js';
 
 type HtmlTemplate = GoogleAppsScript.HTML.HtmlTemplate;
 

@@ -3,8 +3,8 @@
  */
 
 import { expect, afterEach, beforeEach, describe, it } from 'vitest';
-import { DriveExporter } from './drive_exporter';
-import { FOLDER, mockAppsScript } from '../test_helpers/mock_apps_script';
+import { DriveExporter } from './drive_exporter.js';
+import { FOLDER, mockAppsScript } from '../test_helpers/mock_apps_script.js';
 
 describe('DriveExporter', () => {
   let exporter: DriveExporter;

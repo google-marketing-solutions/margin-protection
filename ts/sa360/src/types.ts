@@ -19,14 +19,14 @@
  * @fileoverview types for Google Ads
  */
 
-import * as AdTypes from 'common/ads_api_types';
+import * as AdTypes from '#common/ads_api_types.js';
 
 import {
   BaseClientInterface,
   ClientTypes,
   RecordInfo,
   FrontendInterface,
-} from 'common/types';
+} from '#common/types.js';
 
 /**
  * Represents the related interfaces for SA360.

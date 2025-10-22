@@ -15,10 +15,13 @@
  * limitations under the License.
  */
 
-import { addSettingWithDescription, HELPERS } from 'common/sheet_helpers';
-import { RuleRange } from 'dv360/client';
-import { RuleGranularity } from 'dv360/types';
-import { DisplayVideoFrontend } from 'dv360/frontend';
+import {
+  addSettingWithDescription,
+  HELPERS,
+} from '#common/sheet_helpers/index.js';
+import { RuleRange } from '#dv360/client.js';
+import { RuleGranularity } from '#dv360/types.js';
+import { DisplayVideoFrontend } from '#dv360/frontend.js';
 
 const REPORT_LABEL = 'REPORT_LABEL';
 const DRIVE_ID = 'DRIVE_ID';

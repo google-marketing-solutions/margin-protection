@@ -19,14 +19,14 @@
  * @fileoverview frontend/apps script hooks for SA360 launch monitor
  */
 
-import { ALL_MIGRATIONS } from 'common/migrations';
+import { ALL_MIGRATIONS } from '#common/migrations/index.js';
 import {
   AppsScriptFrontend,
   getTemplateSetting,
   HELPERS,
-} from 'common/sheet_helpers';
-import { FrontendArgs, ParamDefinition, RuleExecutor } from 'common/types';
-import { SearchAdsClientTypes } from 'sa360/types';
+} from '#common/sheet_helpers/index.js';
+import { FrontendArgs, ParamDefinition, RuleExecutor } from '#common/types.js';
+import { SearchAdsClientTypes } from '#sa360/types.js';
 
 /**
  * The name of the general settings sheet.

@@ -15,7 +15,8 @@
  * limitations under the License.
  */
 
-import { defineConfig } from 'tsup';
-import { getTsupConfig } from 'common/build';
+import { getTsupConfig, preBuild } from '../common/build.js';
+import path from 'path';
 
-export default defineConfig(getTsupConfig(__dirname, 'dist'));
+await preBuild('dv360', path.resolve('..'));
+export default getTsupConfig(__dirname, 'dist');

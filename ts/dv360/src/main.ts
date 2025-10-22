@@ -19,19 +19,20 @@
  * @fileoverview Apps Script handlers.
  */
 
-import { PropertyStore } from 'common/types';
+import { PropertyStore } from '#common/types.js';
 
-import { Client, RuleRange } from './client';
-import { DisplayVideoFrontend } from './frontend';
+import { Client, RuleRange } from './client.js';
+import { DisplayVideoFrontend } from './frontend.js';
 import {
   budgetPacingRuleLineItem,
   budgetPacingPercentageRule,
   geoTargetRule,
   impressionsByGeoTarget,
   dailyBudgetRule,
-} from './rules';
-import { AppsScriptPropertyStore } from 'common/sheet_helpers';
+} from './rules.js';
+import { AppsScriptPropertyStore } from '#common/sheet_helpers/index.js';
 const CURRENT_SHEET_VERSION = global.CURRENT_SHEET_VERSION || '';
+global.CURRENT_SHEET_VERSION = CURRENT_SHEET_VERSION;
 
 /**
  * Retrieves the front-end as a function.

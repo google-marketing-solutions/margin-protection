@@ -16,20 +16,20 @@
  */
 
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
-import { equalTo } from 'common/checks';
-import { mockAppsScript } from 'common/test_helpers/mock_apps_script';
-import { RecordInfo, Value } from 'common/types';
+import { equalTo } from '#common/checks.js';
+import { mockAppsScript } from '#common/test_helpers/mock_apps_script.js';
+import { RecordInfo, Value } from '#common/types.js';
 
-import { Client, newRule, RuleRange } from '../client';
-import { RuleGranularity } from '../types';
+import { Client, newRule, RuleRange } from '../client.js';
+import { RuleGranularity } from '../types.js';
 
-import { generateTestClient, TestClient } from './client_helpers';
+import { generateTestClient, TestClient } from './client_helpers.js';
 import {
   budgetPacingPercentageRule,
   budgetPacingRuleLineItem,
   geoTargetRule,
-} from '../rules';
-import { scaffoldSheetWithNamedRanges } from 'common/tests/helpers';
+} from '../rules.js';
+import { scaffoldSheetWithNamedRanges } from '#common/tests/helpers.js';
 
 describe('Client rules are validated', () => {
   let output: string[] = [];

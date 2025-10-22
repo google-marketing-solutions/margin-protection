@@ -60,8 +60,8 @@ import {
   StatusMapper,
   TargetingType,
   TargetingTypeMapper,
-} from './dv360_types';
-import { ObjectUtil } from './utils';
+} from './dv360_types.js';
+import { ObjectUtil } from './utils.js';
 
 /** A base class for DV360 resources that are accessible via the API. */
 export class DisplayVideoResource {

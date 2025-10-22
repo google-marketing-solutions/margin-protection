@@ -23,19 +23,19 @@ import {
   AssignedTargetingOption,
   InsertionOrder,
   LineItem,
-} from 'dv360_api/dv360_resources';
+} from 'dv360_api/dv360_resources.js';
 import {
   InsertionOrderBudgetSegment,
   PACING_TYPE,
   PacingType,
   TARGETING_TYPE,
-} from 'dv360_api/dv360_types';
-import { equalTo, inRange, lessThanOrEqualTo } from 'common/checks';
-import { Settings, Values } from 'common/types';
+} from 'dv360_api/dv360_types.js';
+import { equalTo, inRange, lessThanOrEqualTo } from '#common/checks.js';
+import { Settings, Values } from '#common/types.js';
 
-import { getDate, newRule } from './client';
-import { ClientInterface, RuleGranularity } from './types';
-import { DailyBudget } from './rule_types';
+import { getDate, newRule } from './client.js';
+import { ClientInterface, RuleGranularity } from './types.js';
+import { DailyBudget } from './rule_types.js';
 
 const DAY_DENOMINATOR = 1000 * 24 * 60 * 60;
 

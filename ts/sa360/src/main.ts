@@ -24,10 +24,10 @@ import {
   GoogleAdsApiFactory,
   ReportFactory,
   SA360_API_ENDPOINT,
-} from 'common/ads_api';
-import { AppsScriptPropertyStore } from 'common/sheet_helpers';
-import { PropertyStore } from 'common/types';
-import { Client, RuleRange } from 'sa360/client';
+} from '#common/ads_api.js';
+import { AppsScriptPropertyStore } from '#common/sheet_helpers/index.js';
+import { PropertyStore } from '#common/types.js';
+import { Client, RuleRange } from '#sa360/client.js';
 import {
   budgetPacingRule,
   campaignStatusRule,
@@ -37,9 +37,9 @@ import {
   genderTargetRule,
   geoTargetRule,
   campaignAudienceTargetRule,
-} from 'sa360/rules';
+} from '#sa360/rules.js';
 
-import { SearchAdsFrontend } from './frontend';
+import { SearchAdsFrontend } from './frontend.js';
 
 const CURRENT_SHEET_VERSION = global.CURRENT_SHEET_VERSION || '';
 

@@ -15,9 +15,9 @@
  * limitations under the License.
  */
 
-import { mockAppsScript } from '../../test_helpers/mock_apps_script';
-import { migration } from '../20251020.0_drive_id_to_settings_json';
-import { scaffoldSheetWithNamedRanges } from '../../tests/helpers';
+import { mockAppsScript } from '../../test_helpers/mock_apps_script.js';
+import { migration } from '../20251020.0_drive_id_to_settings_json.js';
+import { scaffoldSheetWithNamedRanges } from '../../tests/helpers.js';
 import { describe, beforeEach, it, expect } from 'vitest';
 
 describe('DriveIdToSettingsJson Migration', function () {

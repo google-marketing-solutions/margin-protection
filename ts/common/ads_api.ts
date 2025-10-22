@@ -19,7 +19,7 @@
  * @fileoverview DAO for the Google Ads API and SA360 API
  */
 
-import * as AdTypes from './ads_api_types';
+import * as AdTypes from './ads_api_types.js';
 
 // type boilerplate - separated out for readability
 type DefinedJoin<Joins> = Exclude<Joins, undefined>;

@@ -22,7 +22,7 @@
  * libraries (e.g. 'DisplayVideo.Advertisers.list()').
  */
 
-import { BaseApiClient } from './base';
+import { BaseApiClient } from './base.js';
 import {
   Advertiser,
   AssignedTargetingOption,
@@ -32,11 +32,11 @@ import {
   InventorySource,
   LineItem,
   TargetingOption,
-} from './dv360_resources';
-import { TargetingType, TARGETING_TYPE } from './dv360_types';
-import { ObjectUtil, UriUtil } from './utils';
-import { FilterExpression, ListParams, Rule, RuleOperator } from './utils';
-import { STATUS } from './dv360_types';
+} from './dv360_resources.js';
+import { TargetingType, TARGETING_TYPE } from './dv360_types.js';
+import { ObjectUtil, UriUtil } from './utils.js';
+import { FilterExpression, ListParams, Rule, RuleOperator } from './utils.js';
+import { STATUS } from './dv360_types.js';
 const API_SCOPE: string = 'displayvideo';
 
 const API_VERSION: string = 'v4';

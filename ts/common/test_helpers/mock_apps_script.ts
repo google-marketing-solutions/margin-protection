@@ -19,7 +19,7 @@
  * @fileoverview Mocked classes for Apps Script to help with unit tests.
  */
 
-import { PropertyStore } from 'common/types';
+import { PropertyStore } from '#common/types.js';
 
 import BigQuery = GoogleAppsScript.BigQuery;
 import Properties = GoogleAppsScript.Properties;
@@ -313,6 +313,7 @@ class FakeSpreadsheet {
   private lastActive = 'Sheet1';
 
   insertSheet(sheetName: string) {
+    console.debug(`Creating sheet ${sheetName}`);
     const computedSheetName = sheetName || `Sheet${++FakeSpreadsheet.lastNum}`;
     this.sheets[computedSheetName] = new FakeSheet();
     return this.sheets[computedSheetName];
@@ -327,6 +328,10 @@ class FakeSpreadsheet {
   }
 
   getSheetByName(sheetName: keyof typeof this.sheets) {
+    console.log(`accessing sheet ${sheetName}`);
+    if (sheetName in this.sheets) {
+      console.warn(`No sheet named ${sheetName}`);
+    }
     return this.sheets[sheetName];
   }
 

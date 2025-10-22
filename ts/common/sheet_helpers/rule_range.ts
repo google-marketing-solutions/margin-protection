@@ -1,5 +1,4 @@
 /**
- * @license
  * Copyright 2024 Google LLC.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -21,10 +20,10 @@ import {
   RecordInfo,
   RuleDefinition,
   RuleRangeInterface,
-} from 'common/types';
-import { HEADER_RULE_NAME_INDEX, SHEET_TOP_PADDING } from './constants';
-import { HELPERS } from './helpers';
-import { makeCampaignIndexedSettings } from './setting_map';
+} from '#common/types.js';
+import { HEADER_RULE_NAME_INDEX, SHEET_TOP_PADDING } from './constants.js';
+import { HELPERS } from './helpers.js';
+import { makeCampaignIndexedSettings } from './setting_map.js';
 
 /**
  * Rule split according to the name of the rule in a dictionary.

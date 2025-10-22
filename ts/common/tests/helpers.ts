@@ -26,16 +26,19 @@ import {
   PropertyStore,
   RuleExecutorClass,
   RuleParams,
-} from '../types';
+} from '../types.js';
 
 import {
   CredentialManager,
   GoogleAdsApi,
   GoogleAdsApiFactory,
   ReportFactory,
-} from '../ads_api';
-import { AbstractRuleRange, AppsScriptFrontend } from '../sheet_helpers';
-import { newRuleBuilder } from 'common/client_helpers';
+} from '../ads_api.js';
+import {
+  AbstractRuleRange,
+  AppsScriptFrontend,
+} from '#common/sheet_helpers/index.js';
+import { newRuleBuilder } from '#common/client_helpers.js';
 import {
   AppsScriptFunctions,
   BaseClientArgs,
@@ -46,7 +49,7 @@ import {
   RecordInfo,
   RuleExecutor,
   RuleGetter,
-} from '../types';
+} from '../types.js';
 import { vi, type MockInstance } from 'vitest';
 
 /**
@@ -300,3 +303,20 @@ export const newRule = newRuleBuilder<TestClientTypes>() as <
 >(
   p: RuleParams<TestClientTypes, P>,
 ) => RuleExecutorClass<TestClientTypes>;
+
+/**
+ * Stubs named ranges in the active spreadsheet with given values.
+ * This is a helper for setting up test environments that rely on named ranges.
+ *
+ * @param namedRanges An object where keys are the names of the ranges and
+ *   values are the values to set for those ranges.
+ */
+export function stubNamedRanges(namedRanges: Record<string, string>) {
+  const active = SpreadsheetApp.getActive();
+  const sheet = active.getActiveSheet();
+  Object.entries(namedRanges).forEach(([name, value], i) => {
+    const range = sheet.getRange(i + 1, 1); // A1, A2, A3...
+    range.setValue(value);
+    active.setNamedRange(name, range);
+  });
+}

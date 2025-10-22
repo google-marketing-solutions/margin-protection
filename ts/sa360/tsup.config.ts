@@ -1,26 +1,5 @@
-import { defineConfig } from 'tsup';
+import * as path from 'path';
+import { getTsupConfig, preBuild } from '../common/build.js';
 
-export default defineConfig({
-  entry: ['src/main.ts'],
-  format: 'iife',
-  clean: true,
-  outExtension() {
-    return {
-      js: '.js',
-    };
-  },
-  publicDir: '../common/html',
-  esbuildOptions(options) {
-    options.banner = {
-      js: `var global = this || globalThis;
-function onOpen() {}
-function initializeSheets() {}
-function initializeRules() {}
-function preLaunchQa() {}
-function launchMonitor() {}
-function displaySetupModal() {}
-function displayGlossary() {} 
-      `,
-    };
-  },
-});
+await preBuild('sa360', path.resolve('..'));
+export default getTsupConfig(__dirname, 'dist');

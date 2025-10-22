@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 /**
  * Copyright 2024 Google LLC.
  *
@@ -7,18 +8,24 @@
  *
  *     https://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software
+ * Unless required by applicable law of agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
 
-export * from './constants.js';
-export * from './email.js';
-export * from './frontend.js';
-export * from './helpers.js';
-export * from './property_store.js';
-export * from './rule_range.js';
-export * from './setting_map.js';
-export * from './ui.js';
+/**
+ * @fileoverview Defines the top-level functions and globals.
+ */
+
+var global = this || globalThis;
+var CURRENT_SHEET_VERSION = '';
+
+function onOpen() {}
+function initializeSheets() {}
+function initializeRules() {}
+function preLaunchQa() {}
+function launchMonitor() {}
+function displaySetupModal() {}
+function displayGlossary() {}

@@ -16,15 +16,15 @@
  */
 
 import { describe, beforeEach, it, expect } from 'vitest';
-import { mockAppsScript } from '../../test_helpers/mock_apps_script';
-import { FakePropertyStore } from '../../test_helpers/mock_apps_script';
+import { mockAppsScript } from '#common/test_helpers/mock_apps_script.js';
+import { FakePropertyStore } from '#common/test_helpers/mock_apps_script.js';
 import {
   FakeClient,
   Granularity,
   RuleRange,
   TestClientInterface,
-} from '../../tests/helpers';
-import { HELPERS } from '../helpers';
+} from '#common/tests/helpers.js';
+import { HELPERS } from '../helpers.js';
 
 describe('RuleRange', function () {
   let rules: RuleRange;

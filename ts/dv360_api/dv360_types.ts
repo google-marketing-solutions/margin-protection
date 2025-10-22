@@ -22,7 +22,7 @@
  * type for an exhaustive and up-to-date list of properties.
  */
 
-import { ObjectUtil } from './utils';
+import { ObjectUtil } from './utils.js';
 
 /**
  * Defines the `*Mapper` contract.

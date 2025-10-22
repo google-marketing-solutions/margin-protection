@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-import { migration as m20251020_0 } from './20251020.0_drive_id_to_settings_json';
-import { Migration } from './types';
+import { migration as m20251020_0 } from './20251020.0_drive_id_to_settings_json.js';
+import { Migration } from './types.js';
 
 export const ALL_MIGRATIONS: Migration[] = [m20251020_0];

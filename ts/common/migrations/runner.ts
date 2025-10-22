@@ -15,9 +15,9 @@
  * limitations under the License.
  */
 
-import { ClientTypes, PropertyStore } from '../types';
-import { Migration } from './types';
-import { sortMigrations } from './utils';
+import { ClientTypes, PropertyStore } from '../types.js';
+import { Migration } from './types.js';
+import { sortMigrations } from './utils.js';
 
 /**
  * Configuration for the migration runner.

@@ -15,8 +15,8 @@
  * limitations under the License.
  */
 
-import { SettingMap, transformToParamValues } from '../setting_map';
-import { mockAppsScript } from '../../test_helpers/mock_apps_script';
+import { SettingMap, transformToParamValues } from '../setting_map.js';
+import { mockAppsScript } from '../../test_helpers/mock_apps_script.js';
 import { describe, beforeEach, it, expect } from 'vitest';
 
 describe('SettingMap', function () {

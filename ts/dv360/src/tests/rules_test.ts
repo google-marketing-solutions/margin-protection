@@ -15,10 +15,13 @@
  * limitations under the License.
  */
 
-import { ApiDate } from 'dv360_api/dv360_types';
-import { AppsScriptPropertyStore } from 'common/sheet_helpers';
-import { mockAppsScript } from 'common/test_helpers/mock_apps_script';
-import { budgetPacingPercentageRule, impressionsByGeoTarget } from '../rules';
+import { ApiDate } from 'dv360_api/dv360_types.js';
+import { AppsScriptPropertyStore } from '#common/sheet_helpers/index.js';
+import { mockAppsScript } from '#common/test_helpers/mock_apps_script.js';
+import {
+  budgetPacingPercentageRule,
+  impressionsByGeoTarget,
+} from '../rules.js';
 import {
   dailyBudgetRuleTestData,
   generateGeoTestData,
@@ -29,7 +32,7 @@ import {
   lineItemPacingRuleTestData,
   generateLineItemReport,
   generateInsertionOrderReportWithDateValues,
-} from './rules_test_helpers';
+} from './rules_test_helpers.js';
 import { afterEach, beforeEach, describe, it, vi, expect } from 'vitest';
 
 describe('Geo targeting Rule', () => {

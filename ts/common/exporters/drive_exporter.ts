@@ -2,7 +2,7 @@
  * @fileoverview Implements the DriveExporter class for exporting data to Google Drive.
  */
 
-import { DriveExportOptions, Exporter } from '../exporter';
+import { DriveExportOptions, Exporter } from '../exporter.js';
 
 /**
  * A class for exporting data to Google Drive.

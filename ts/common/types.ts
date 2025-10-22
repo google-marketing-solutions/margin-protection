@@ -1,5 +1,4 @@
 /**
- * @license
  * Copyright 2024 Google LLC.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -305,7 +304,7 @@ export interface FrontendArgs<T extends ClientTypes<T>> {
   readonly properties: PropertyStore;
 }
 
-import { Migration } from './migrations/types';
+import { Migration } from './migrations/types.js';
 
 // ...
 
@@ -376,3 +375,8 @@ export type Check = (
  * in a rule.
  */
 export type DefinedParameters<P> = Record<keyof P, ParamDefinition>;
+
+/**
+ * A list of buildable packages using the build mechanism `pnpm build`.
+ */
+export type BuildablePackage = 'sa360' | 'dv360';

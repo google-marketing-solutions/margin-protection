@@ -19,7 +19,7 @@
  * @fileoverview Client helpers - frontend agnostic.
  */
 
-import { transformToParamValues } from './sheet_helpers';
+import { transformToParamValues } from './sheet_helpers/index.js';
 import {
   ClientTypes,
   ParamDefinition,
@@ -27,7 +27,7 @@ import {
   RuleExecutorClass,
   RuleParams,
   Settings,
-} from './types';
+} from './types.js';
 
 /**
  * Creates new rule with the metadata needed to generate settings.

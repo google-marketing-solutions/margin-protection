@@ -19,10 +19,10 @@
  * @fileoverview Client for SA360.
  */
 
-import { ReportFactory } from 'common/ads_api';
-import { Query, QueryBuilder } from 'common/ads_api_types';
-import { newRuleBuilder } from 'common/client_helpers';
-import { AbstractRuleRange } from 'common/sheet_helpers';
+import { ReportFactory } from '#common/ads_api.js';
+import { Query, QueryBuilder } from '#common/ads_api_types.js';
+import { newRuleBuilder } from '#common/client_helpers.js';
+import { AbstractRuleRange } from '#common/sheet_helpers/index.js';
 import {
   ExecutorResult,
   ParamDefinition,
@@ -31,7 +31,7 @@ import {
   RuleExecutor,
   RuleExecutorClass,
   RuleParams,
-} from 'common/types';
+} from '#common/types.js';
 import {
   ClientArgs,
   ClientInterface,
@@ -39,9 +39,9 @@ import {
   ReportInterface,
   RuleGranularity,
   SearchAdsClientTypes,
-} from 'sa360/types';
+} from '#sa360/types.js';
 
-import { AD_GROUP_REPORT, CAMPAIGN_REPORT } from './api';
+import { AD_GROUP_REPORT, CAMPAIGN_REPORT } from './api.js';
 
 /**
  * Creates a new rule for the new SA360.

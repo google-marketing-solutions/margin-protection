@@ -7,9 +7,24 @@
   "scripts": {
     "push": "npx clasp push",
     "test": "vitest run",
+    "test:watch": "vitest",
     "gas:init": "tsx scripts/init.ts",
     "migrate": "node scripts/run-migrations.mjs",
     "postinstall": "node scripts/run-migrations.mjs"
+  },
+  "paths": {
+    "#common/*": [
+      "./common/src/*"
+    ],
+    "#dv360/*": [
+      "./dv360/src/*"
+    ],
+    "#sa360/*": [
+      "./sa360/src/*"
+    ],
+    "#dv360_api/*": [
+      "./dv360_api/*"
+    ]
   },
   "author": "Sean Capaloff-Jones <seancjones@google.com>",
   "license": "MIT",
@@ -17,6 +32,9 @@
   "private": true,
   "packageManager": "pnpm@8.15.0",
   "devDependencies": {
+    "@file-services/memory": "^11.0.1",
+    "@file-services/node": "^11.0.1",
+    "@file-services/overlay": "^11.0.1",
     "@types/inquirer": "^8.2.12",
     "@types/node": "^24.9.1",
     "@types/webpack": "^5.28.5",
@@ -25,13 +43,11 @@
     "file-loader": "^6.2.0",
     "glob": "^11.0.3",
     "inquirer": "^8.2.7",
-    "memfs": "^4.49.0",
     "ts-loader": "^9.5.4",
     "tsconfig-paths-webpack-plugin": "^4.2.0",
     "tsup": "^8.5.0",
     "tsx": "^4.20.6",
     "typescript": "^5.9.3",
-    "unionfs": "^4.6.0",
     "vitest": "^3.2.4",
     "webpack": "^5.102.1",
     "webpack-cli": "^5.1.4"

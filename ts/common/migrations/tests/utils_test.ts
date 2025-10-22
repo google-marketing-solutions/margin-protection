@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-import { sortMigrations } from '../utils';
+import { sortMigrations } from '../utils.js';
 import { describe, expect, it } from 'vitest';
 
 describe('sortMigrations', function () {

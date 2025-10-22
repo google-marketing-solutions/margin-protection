@@ -15,19 +15,19 @@
  * limitations under the License.
  */
 
+import { beforeEach, describe, expect, it } from 'vitest';
 import {
   FakePropertyStore,
   mockAppsScript,
-} from '#common/test_helpers/mock_apps_script.js';
+} from '../../test_helpers/mock_apps_script.js';
 import {
   FakeClient,
   FakeFrontend,
   Granularity,
   newRule,
   RuleRange,
-} from '#common/tests/helpers.js';
+} from '../../tests/helpers.js';
 import { SettingMap } from '#common/sheet_helpers/setting_map.js';
-import { expect, describe, beforeEach, it } from 'vitest';
 
 describe('AppsScriptFrontend', function () {
   let frontend: FakeFrontend;
@@ -35,6 +35,7 @@ describe('AppsScriptFrontend', function () {
 
   beforeEach(function () {
     mockAppsScript();
+    FakePropertyStore.clearCache();
     properties = new FakePropertyStore();
   });
 

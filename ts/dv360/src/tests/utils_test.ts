@@ -15,11 +15,14 @@
  * limitations under the License.
  */
 
-import { SettingMap, transformToParamValues } from 'common/sheet_helpers';
-import { RuleRange, getDate } from '../client';
+import {
+  SettingMap,
+  transformToParamValues,
+} from '#common/sheet_helpers/index.js';
+import { RuleRange, getDate } from '../client.js';
 
-import { mockAppsScript } from 'common/test_helpers/mock_apps_script';
-import { generateTestClient } from './client_helpers';
+import { mockAppsScript } from '#common/test_helpers/mock_apps_script.js';
+import { generateTestClient } from './client_helpers.js';
 import { describe, beforeEach, it, expect } from 'vitest';
 
 describe('transformToParamValues', function () {

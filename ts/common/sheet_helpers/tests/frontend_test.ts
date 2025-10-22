@@ -18,8 +18,8 @@
 import {
   FakePropertyStore,
   mockAppsScript,
-} from '../../test_helpers/mock_apps_script';
-import { RuleExecutorClass, RuleGetter } from '../../types';
+} from '../../test_helpers/mock_apps_script.js';
+import { RuleExecutorClass, RuleGetter } from '../../types.js';
 import {
   FakeClient,
   FakeFrontend,
@@ -27,8 +27,8 @@ import {
   newRule,
   RuleRange,
   TestClientTypes,
-} from '../../tests/helpers';
-import { equalTo } from 'common/checks';
+} from '../../tests/helpers.js';
+import { equalTo } from '#common/checks.js';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 describe('AppsScriptFrontend', function () {

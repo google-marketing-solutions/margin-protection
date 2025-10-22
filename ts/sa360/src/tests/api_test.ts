@@ -26,8 +26,8 @@ import {
   Report,
   ReportFactory,
   SA360_API_ENDPOINT,
-} from 'common/ads_api';
-import { ReportResponse, buildQuery } from 'common/ads_api_types';
+} from '#common/ads_api.js';
+import { ReportResponse, buildQuery } from '#common/ads_api_types.js';
 import {
   AD_GROUP_REPORT,
   AD_GROUP_USER_LIST_REPORT,
@@ -36,7 +36,7 @@ import {
   CAMPAIGN_TARGET_REPORT,
   CAMPAIGN_USER_LIST_REPORT,
   GENDER_TARGET_REPORT,
-} from 'sa360/api';
+} from '#sa360/api.js';
 import { expect, describe, beforeEach, it, vi, MockInstance } from 'vitest';
 
 describe('API Queries', function () {

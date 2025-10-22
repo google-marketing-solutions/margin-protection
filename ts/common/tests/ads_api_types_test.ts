@@ -21,7 +21,7 @@ import {
   CamelCase,
   DotsToObject,
   ReportInterface,
-} from '../ads_api_types';
+} from '../ads_api_types.js';
 
 type AssertSubtype<TestType, End> = End extends TestType ? true : false;
 

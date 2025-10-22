@@ -1,19 +1,19 @@
 import {
   FakePropertyStore,
   mockAppsScript,
-} from 'common/test_helpers/mock_apps_script';
-import { SearchAdsFrontend } from 'sa360/frontend';
-import { ClientInterface, ReportClass, ReportInterface } from '../types';
-import { PropertyStore, RecordInfo } from 'common/types';
-import { Client, RuleRange } from '../client';
-import { ageTargetRule, geoTargetRule } from '../rules';
+} from '#common/test_helpers/mock_apps_script.js';
+import { SearchAdsFrontend } from '#sa360/frontend.js';
+import { ClientInterface, ReportClass, ReportInterface } from '../types.js';
+import { PropertyStore, RecordInfo } from '#common/types.js';
+import { Client, RuleRange } from '../client.js';
+import { ageTargetRule, geoTargetRule } from '../rules.js';
 import {
   CredentialManager,
   GoogleAdsApiFactory,
   ReportFactory,
   SA360_API_ENDPOINT,
-} from 'common/ads_api';
-import { Query, QueryBuilder } from 'common/ads_api_types';
+} from '#common/ads_api.js';
+import { Query, QueryBuilder } from '#common/ads_api_types.js';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 describe('initializeSheets', () => {
