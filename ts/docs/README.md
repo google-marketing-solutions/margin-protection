@@ -2,6 +2,10 @@
 
 This section provides in-depth guides and examples for developers working on the Margin Protection TypeScript codebase.
 
+## Architecture
+
+- **[Build Process](./build_process.md):** An overview of how `tsup` and `esbuild` are used to create Apps Script-ready deployment files.
+
 ## Custom Rule Examples
 
 For a practical guide on how to implement new monitoring rules, please see the platform-specific examples below. Each document provides a complete, step-by-step walkthrough of creating a real-world rule.

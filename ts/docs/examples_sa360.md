@@ -29,7 +29,6 @@ import {CheckResult} from '../../common/types';
 /**
  * Checks if an SA360 keyword's Quality Score is below a minimum.
  * @param {Keyword} keyword The keyword to check.
- *- `google-ads-rule-example.md`
  * @param {number} minQualityScore The minimum allowed Quality Score (1-10).
  * @return {CheckResult} The result of the check.
  */

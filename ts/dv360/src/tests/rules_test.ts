@@ -30,8 +30,7 @@ import {
   generateLineItemReport,
   generateInsertionOrderReportWithDateValues,
 } from './rules_test_helpers';
-import { expect } from 'chai';
-import { afterEach, beforeEach, describe, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, it, vi, expect } from 'vitest';
 
 describe('Geo targeting Rule', () => {
   beforeEach(() => {
