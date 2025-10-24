@@ -85,6 +85,7 @@ export class DisplayVideoFrontend
   }
 
   override displaySetupGuide() {
+    this.migrate();
     const template = HtmlService.createTemplateFromFile('html/setup');
     template['id'] = HELPERS.getRangeByName(ENTITY_ID).getValue() || '';
     template['idType'] = HELPERS.getRangeByName(ID_TYPE).getValue() || '';

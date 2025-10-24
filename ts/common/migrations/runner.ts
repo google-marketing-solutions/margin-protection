@@ -49,7 +49,9 @@ export function runMigrations<T extends ClientTypes<T>>(
     currentAppVersion,
     frontend,
   } = config;
-  let sheetVersion = properties.getProperty('sheet_version') ?? '0';
+
+  // Special migration to decompress sheet_version.
+  let sheetVersion = getSheetVersion(properties);
   let numberOfMigrations = 0;
 
   console.log(
@@ -99,4 +101,24 @@ export function runMigrations<T extends ClientTypes<T>>(
     `Migrations complete. Ran ${numberOfMigrations} migration(s). Final sheet version: ${properties.getProperty('sheet_version')}`,
   );
   return numberOfMigrations;
+}
+
+function getSheetVersion(properties: PropertyStore) {
+  const rawSheetVersion = properties.getProperty('sheet_version');
+  if (!rawSheetVersion) {
+    return '0';
+  }
+  if (rawSheetVersion && !/^[0-9.]+$/.test(rawSheetVersion)) {
+    const decompressedSheetVersion = properties.getProperty(
+      'sheet_version',
+      true,
+    );
+    if (decompressedSheetVersion) {
+      properties.setProperty('sheet_version', decompressedSheetVersion);
+      return decompressedSheetVersion;
+    } else {
+      return '0';
+    }
+  }
+  return rawSheetVersion;
 }

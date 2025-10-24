@@ -20,28 +20,114 @@ import { migration } from '../20251020.0_drive_id_to_settings_json.js';
 import { scaffoldSheetWithNamedRanges } from '../../tests/helpers.js';
 import { describe, beforeEach, it, expect } from 'vitest';
 
-describe('DriveIdToSettingsJson Migration', function () {
-  beforeEach(function () {
+describe('DriveIdToSettingsJson Migration', () => {
+  let activeSpreadsheet: GoogleAppsScript.Spreadsheet.Spreadsheet;
+
+  beforeEach(() => {
     mockAppsScript();
-    scaffoldSheetWithNamedRanges();
+    activeSpreadsheet = SpreadsheetApp.getActive();
   });
 
-  it('should migrate the drive ID to the new settings JSON', function () {
+  it('should migrate a drive ID to the settings JSON and remove the old range', () => {
     // Arrange
-    const activeSpreadsheet = SpreadsheetApp.getActive();
-    const driveIdRange = activeSpreadsheet.getRangeByName('DRIVE_ID');
-    driveIdRange!.setValue('old-drive-folder-id');
+    scaffoldSheetWithNamedRanges({
+      namedRanges: [
+        ['DRIVE_ID', 'old-drive-id'],
+        ['SETTINGS', ''],
+      ],
+    });
     const settingsRange = activeSpreadsheet.getRangeByName('SETTINGS');
-    settingsRange!.setValue(''); // Ensure it's empty to start
 
     // Act
     migration.apply();
 
     // Assert
     const newSettings = JSON.parse(settingsRange!.getValue());
-    expect(newSettings).to.deep.equal({
-      driveFolderId: 'old-drive-folder-id',
+    expect(newSettings).toEqual({
+      exportTarget: {
+        type: 'drive',
+        config: { folder: 'old-drive-id' },
+      },
     });
-    expect(driveIdRange!.getValue()).to.equal('');
+    expect(activeSpreadsheet.getRangeByName('DRIVE_ID')).toBeUndefined();
+  });
+
+  it('should remove the old range if it exists but is empty', () => {
+    // Arrange
+    scaffoldSheetWithNamedRanges({
+      namedRanges: [
+        ['DRIVE_ID', ''],
+        ['SETTINGS', ''],
+      ],
+    });
+    const settingsRange = activeSpreadsheet.getRangeByName('SETTINGS');
+
+    // Act
+    migration.apply();
+
+    // Assert
+    expect(settingsRange!.getValue()).toBe('');
+    expect(activeSpreadsheet.getRangeByName('DRIVE_ID')).toBeUndefined();
+  });
+
+  it('should preserve existing settings when migrating', () => {
+    // Arrange
+    scaffoldSheetWithNamedRanges({
+      namedRanges: [
+        ['DRIVE_ID', 'new-drive-id'],
+        ['SETTINGS', JSON.stringify({ someOtherSetting: 'value' })],
+      ],
+    });
+    const settingsRange = activeSpreadsheet.getRangeByName('SETTINGS');
+
+    // Act
+    migration.apply();
+
+    // Assert
+    const newSettings = JSON.parse(settingsRange!.getValue());
+    expect(newSettings).toEqual({
+      someOtherSetting: 'value',
+      exportTarget: {
+        type: 'drive',
+        config: { folder: 'new-drive-id' },
+      },
+    });
+    expect(activeSpreadsheet.getRangeByName('DRIVE_ID')).toBeUndefined();
+  });
+
+  it('should do nothing if the DRIVE_ID named range does not exist', () => {
+    // Arrange
+    scaffoldSheetWithNamedRanges({
+      namedRanges: [['SETTINGS', '']],
+    });
+    const settingsRange = activeSpreadsheet.getRangeByName('SETTINGS');
+    const initialSettings = settingsRange!.getValue();
+
+    // Act
+    migration.apply();
+
+    // Assert
+    expect(settingsRange!.getValue()).toBe(initialSettings);
+  });
+
+  it('should remove the old range even if the new setting already exists', () => {
+    // Arrange
+    const settings = {
+      exportTarget: { type: 'drive', config: { folder: 'existing-id' } },
+    };
+    scaffoldSheetWithNamedRanges({
+      namedRanges: [
+        ['DRIVE_ID', 'existing-id'],
+        ['SETTINGS', JSON.stringify(settings)],
+      ],
+    });
+    const settingsRange = activeSpreadsheet.getRangeByName('SETTINGS');
+
+    // Act
+    migration.apply();
+
+    // Assert
+    expect(JSON.parse(settingsRange!.getValue())).toEqual(settings);
+    expect(activeSpreadsheet.getRangeByName('DRIVE_ID')).toBeUndefined();
   });
 });

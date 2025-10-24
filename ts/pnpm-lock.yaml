@@ -38,9 +38,15 @@ importers:
       '@types/inquirer':
         specifier: ^8.2.12
         version: 8.2.12
+      '@types/jsdom':
+        specifier: ^27.0.0
+        version: 27.0.0
       '@types/node':
         specifier: ^24.9.1
         version: 24.9.1
+      '@types/testing-library__jest-dom':
+        specifier: ^6.0.0
+        version: 6.0.0
       '@types/webpack':
         specifier: ^5.28.5
         version: 5.28.5(esbuild@0.25.11)(webpack-cli@5.1.4)
@@ -80,6 +86,9 @@ importers:
       vitest:
         specifier: ^3.2.4
         version: 3.2.4(@types/node@24.9.1)(jsdom@27.0.1)(tsx@4.20.6)
+      vitest-dom:
+        specifier: ^0.1.1
+        version: 0.1.1(vitest@3.2.4)
       webpack:
         specifier: ^5.102.1
         version: 5.102.1(esbuild@0.25.11)(webpack-cli@5.1.4)
@@ -136,9 +145,6 @@ importers:
       '@types/google-apps-script':
         specifier: ^2.0.7
         version: 2.0.7
-      t:
-        specifier: ^0.5.1
-        version: 0.5.1
       vitest:
         specifier: ^3.2.4
         version: 3.2.4(@types/node@24.9.1)(jsdom@27.0.1)(tsx@4.20.6)
@@ -1430,6 +1436,17 @@ packages:
       '@types/istanbul-lib-report': 3.0.3
     dev: true
 
+  /@types/jsdom@27.0.0:
+    resolution:
+      {
+        integrity: sha512-NZyFl/PViwKzdEkQg96gtnB8wm+1ljhdDay9ahn4hgb+SfVtPCbm3TlmDUFXTA+MGN3CijicnMhG18SI5H3rFw==,
+      }
+    dependencies:
+      '@types/node': 24.9.1
+      '@types/tough-cookie': 4.0.5
+      parse5: 7.3.0
+    dev: true
+
   /@types/json-schema@7.0.15:
     resolution:
       {
@@ -1574,6 +1591,16 @@ packages:
       '@types/send': 0.17.5
     dev: true
 
+  /@types/testing-library__jest-dom@6.0.0:
+    resolution:
+      {
+        integrity: sha512-bnreXCgus6IIadyHNlN/oI5FfX4dWgvGhOPvpr7zzCYDGAPIfvyIoAozMBINmhmsVuqV0cncejF2y5KC7ScqOg==,
+      }
+    deprecated: This is a stub types definition. @testing-library/jest-dom provides its own type definitions, so you do not need this installed.
+    dependencies:
+      '@testing-library/jest-dom': 6.9.1
+    dev: true
+
   /@types/through@0.0.33:
     resolution:
       {
@@ -1581,6 +1608,13 @@ packages:
       }
     dependencies:
       '@types/node': 24.9.1
+    dev: true
+
+  /@types/tough-cookie@4.0.5:
+    resolution:
+      {
+        integrity: sha512-/Ad8+nIOV7Rl++6f1BdKxFSMgmoqEoYbHRpPcx3JEfv8VRsQe9Z4mCXeJBzxs7mbHY/XOZZuXlRNfhpVPbs6ZA==,
+      }
     dev: true
 
   /@types/webpack@5.28.5(esbuild@0.25.11)(webpack-cli@5.1.4):
@@ -5641,6 +5675,13 @@ packages:
       p-locate: 6.0.0
     dev: true
 
+  /lodash-es@4.17.21:
+    resolution:
+      {
+        integrity: sha512-mKnC+QJ9pWVzv+C4/U3rRsHapFfHvQFoFB92e52xeyGMcX6/OlIl78je1u8vePzYZSkkogMPJ2yjxxsb89cxyw==,
+      }
+    dev: true
+
   /lodash.camelcase@4.3.0:
     resolution:
       {
@@ -6430,6 +6471,15 @@ packages:
       }
     dev: true
 
+  /parse5@7.3.0:
+    resolution:
+      {
+        integrity: sha512-IInvU7fabl34qmi9gY8XOVxhYyMyuH2xUNpb2q8/Y+7552KlejkRvqvD19nMoUW/uQGGbqNpA6Tufu5FL5BZgw==,
+      }
+    dependencies:
+      entities: 6.0.1
+    dev: true
+
   /parse5@8.0.0:
     resolution:
       {
@@ -6943,6 +6993,17 @@ packages:
     dependencies:
       indent-string: 4.0.0
       strip-indent: 3.0.0
+    dev: true
+
+  /redent@4.0.0:
+    resolution:
+      {
+        integrity: sha512-tYkDkVVtYkSVhuQ4zBgfvciymHaeuel+zFKXShfDnFP5SyVEP7qo70Rf1jTOTCx3vGNAbnEi/xFkcfQVMIBWag==,
+      }
+    engines: { node: '>=12' }
+    dependencies:
+      indent-string: 5.0.0
+      strip-indent: 4.1.1
     dev: true
 
   /replace-buffer@1.2.1:
@@ -7647,6 +7708,14 @@ packages:
     engines: { node: '>=8' }
     dependencies:
       min-indent: 1.0.1
+    dev: true
+
+  /strip-indent@4.1.1:
+    resolution:
+      {
+        integrity: sha512-SlyRoSkdh1dYP0PzclLE7r0M9sgbFKKMFXpFRUMNuKhQSbC6VQIGzq3E0qsfvGJaUFJPGv6Ws1NZ/haTAjfbMA==,
+      }
+    engines: { node: '>=12' }
     dev: true
 
   /strip-literal@3.1.0:
@@ -8482,6 +8551,23 @@ packages:
       tsx: 4.20.6
     optionalDependencies:
       fsevents: 2.3.3
+
+  /vitest-dom@0.1.1(vitest@3.2.4):
+    resolution:
+      {
+        integrity: sha512-n/bonR2hcRHCE5hlzG/P0yTXTUXx/gPtsaeUWP86ADfwo/+dHDpnTTV14qY7+kevsUbOZFYECu77MXY7AA0QSA==,
+      }
+    peerDependencies:
+      vitest: '>=0.31.0'
+    dependencies:
+      aria-query: 5.3.0
+      chalk: 5.6.2
+      css.escape: 1.5.1
+      dom-accessibility-api: 0.6.3
+      lodash-es: 4.17.21
+      redent: 4.0.0
+      vitest: 3.2.4(@types/node@24.9.1)(jsdom@27.0.1)(tsx@4.20.6)
+    dev: true
 
   /vitest@3.2.4(@types/node@24.9.1)(jsdom@27.0.1)(tsx@4.20.6):
     resolution:

@@ -152,14 +152,14 @@ describe('validate/launchMonitor functions', () => {
     await frontend.launchMonitor();
 
     // first perform sanity checks
-    expect(budgetPacingRuleName).to.equal(ageTargetRule.name);
-    expect(geoTargetRuleName).to.equal(geoTargetRule.name);
+    expect(budgetPacingRuleName).toBe(ageTargetRule.name);
+    expect(geoTargetRuleName).toBe(geoTargetRule.name);
     // then validate that pacing doesn't work (it's disabled).
     expect(
       SpreadsheetApp.getActive().getSheetByName(
         `${ageTargetRule.name} - Results`,
       ),
-    ).to.exist;
+    ).toBeDefined();
     expect(
       SpreadsheetApp.getActive()
         .getSheetByName(`${geoTargetRule.name} - Results`)
@@ -233,15 +233,15 @@ describe('getIdentityFields', () => {
 
     const identityFields = frontend.getIdentityFields();
 
-    expect(identityFields['loginCustomerId']).toEqual({
+    expect(identityFields['LOGIN_CUSTOMER_ID']).toEqual({
       label: 'Login Customer ID',
       value: '123-456-7890',
     });
-    expect(identityFields['customerIds']).toEqual({
+    expect(identityFields['CUSTOMER_IDS']).toEqual({
       label: 'Customer IDs',
       value: '987-654-3210',
     });
-    expect(identityFields['label']).toEqual({
+    expect(identityFields['LABEL']).toEqual({
       label: 'Label',
       value: 'SA360 Test Label',
     });

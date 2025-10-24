@@ -14,9 +14,23 @@
  * limitations under the License.
  */
 
-import { GCP_PROJECT_RANGE } from './constants.js';
+import { AppSettings } from '../types.js';
 
 const SCRIPT_PULL = 'scriptPull';
+
+/**
+ * Gets the saved settings from the sheet.
+ * @returns The parsed settings object.
+ */
+export function getSettings(): AppSettings {
+  const spreadsheet = SpreadsheetApp.getActive();
+  const settingsRange = spreadsheet.getRangeByName('SETTINGS');
+  if (!settingsRange) {
+    return {};
+  }
+  const settingsStr = settingsRange.getValue();
+  return settingsStr ? JSON.parse(settingsStr) : {};
+}
 
 /**
  * Helpers that can be stubbed in tests for migrations.
@@ -53,10 +67,15 @@ export const HELPERS = {
    * @returns An array of objects where each object is keyed to the query's column labels.
    */
   bigQueryGet(query: string): Array<Record<string, unknown>> {
-    const projectId = this.getValueFromRangeByName({
-      name: GCP_PROJECT_RANGE,
-      allowEmpty: false,
-    }) as string;
+    const settings = getSettings();
+    if (
+      !settings.exportTarget ||
+      settings.exportTarget.type !== 'bigquery' ||
+      !settings.exportTarget.config.projectId
+    ) {
+      throw new Error('BigQuery Project ID is not set in the settings.');
+    }
+    const projectId = settings.exportTarget.config.projectId;
     const result = BigQuery.Jobs.query(
       {
         query,
@@ -71,11 +90,10 @@ export const HELPERS = {
     return rows;
   },
   isBigQueryEnabled() {
-    return Boolean(
-      this.getValueFromRangeByName({
-        name: GCP_PROJECT_RANGE,
-        allowEmpty: true,
-      }),
+    const settings = getSettings();
+    return (
+      settings.exportTarget?.type === 'bigquery' &&
+      !!settings.exportTarget.config.projectId
     );
   },
 
@@ -111,32 +129,15 @@ export const HELPERS = {
   },
 
   getDriveFolderId(): string {
-    const active = SpreadsheetApp.getActive();
-    // Try new way first
-    try {
-      const settingsRange = active.getRangeByName('SETTINGS');
-      if (settingsRange && settingsRange.getValue()) {
-        const settings = JSON.parse(settingsRange.getValue());
-        if (settings.driveFolderId) {
-          return settings.driveFolderId;
-        }
-      }
-    } catch (_e) {
-      // Fall through to legacy
+    const settings = getSettings();
+    if (
+      settings.exportTarget?.type === 'drive' &&
+      settings.exportTarget.config.folder
+    ) {
+      return settings.exportTarget.config.folder;
     }
-
-    // Fallback to legacy named range
-    try {
-      const driveIdRange = active.getRangeByName('DRIVE_ID');
-      if (driveIdRange && driveIdRange.getValue()) {
-        return driveIdRange.getValue().trim();
-      }
-    } catch (_e) {
-      // Fall through to error
-    }
-
     throw new Error(
-      'Missing Google Drive Folder ID. Please check the "SETTINGS" or "DRIVE_ID" named range in the General/Settings sheet.',
+      'Missing Google Drive Folder ID. Please check the "SETTINGS" named range in the General/Settings sheet.',
     );
   },
 };

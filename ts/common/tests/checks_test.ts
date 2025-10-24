@@ -22,13 +22,13 @@ describe('check range logic', function () {
   const test = { min: 1, max: 5 };
   for (const i of [1, 2, 3, 4, 5]) {
     it(`${i} in range of ${test.min} and ${test.max}`, function () {
-      expect(inRange(test, i, {}).anomalous).to.be.false;
+      expect(inRange(test, i, {}).anomalous).toBe(false);
     });
   }
 
   for (const i of [0, 6]) {
     it(`${i} outside of range ${test.min} and ${test.max}`, function () {
-      [0, 6].forEach((i) => expect(inRange(test, i, {}).anomalous).to.be.true);
+      [0, 6].forEach((i) => expect(inRange(test, i, {}).anomalous).toBe(true));
     });
   }
 });
@@ -37,12 +37,12 @@ describe('equalTo', function () {
   const test = 2;
 
   it('happy path', function () {
-    expect(equalTo(test, 2, {}).anomalous).to.be.false;
+    expect(equalTo(test, 2, {}).anomalous).toBe(false);
   });
 
   it('sad path', function () {
-    [1, '2', 2.1, 3].forEach(
-      (i) => expect(equalTo(test, i, {}).anomalous).to.be.true,
+    [1, '2', 2.1, 3].forEach((i) =>
+      expect(equalTo(test, i, {}).anomalous).toBe(true),
     );
   });
 });
@@ -57,8 +57,8 @@ describe('lessThanOrEqualTo', function () {
   });
 
   it('sad path', function () {
-    [2.1, 3].forEach(
-      (i) => expect(lessThanOrEqualTo(test, i, {}).anomalous).to.be.true,
+    [2.1, 3].forEach((i) =>
+      expect(lessThanOrEqualTo(test, i, {}).anomalous).toBe(true),
     );
   });
 });

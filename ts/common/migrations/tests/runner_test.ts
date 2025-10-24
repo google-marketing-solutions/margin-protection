@@ -79,7 +79,7 @@ describe('Migration Runner', function () {
       '2.2.0',
       '3.0.0',
     ]);
-    expect(properties.getProperty('sheet_version')).to.equal('4.0.0');
+    expect(properties.getProperty('sheet_version')).toBe('4.0.0');
   });
 
   it('should run only newer legacy migrations', function () {
@@ -106,7 +106,7 @@ describe('Migration Runner', function () {
       frontend: {} as unknown as DisplayVideoFrontend,
     });
     expect(executedMigrations).toEqual(['3.0.0', '20251020.0']);
-    expect(properties.getProperty('sheet_version')).to.equal('20251101.0');
+    expect(properties.getProperty('sheet_version')).toBe('20251101.0');
   });
 
   it('should not run legacy migrations if sheet version is already date-based', function () {
@@ -146,6 +146,6 @@ describe('Migration Runner', function () {
       frontend: {} as unknown as DisplayVideoFrontend,
     });
     expect(executedMigrations).toEqual([]);
-    expect(properties.getProperty('sheet_version')).to.equal('4.0.0');
+    expect(properties.getProperty('sheet_version')).toBe('4.0.0');
   });
 });

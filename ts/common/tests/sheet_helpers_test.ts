@@ -168,11 +168,9 @@ describe('Sheet helpers', () => {
       const error = new Error(
         'Expected a grid with row and column headers of at least size 2',
       );
-      expect(() => transformToParamValues([], params)).to.throw(error.message);
-      expect(() => transformToParamValues([[]], params)).to.throw(
-        error.message,
-      );
-      expect(() => transformToParamValues([['']], params)).to.throw(
+      expect(() => transformToParamValues([], params)).toThrow(error.message);
+      expect(() => transformToParamValues([[]], params)).toThrow(error.message);
+      expect(() => transformToParamValues([['']], params)).toThrow(
         error.message,
       );
     });
@@ -291,7 +289,7 @@ describe('Sheet helpers', () => {
         ['default', { rule1: 'A' }],
         ['1', { rule1: 'C' }],
       ]);
-      expect(settingMap.getOrDefault('1').rule1).to.equal('C');
+      expect(settingMap.getOrDefault('1').rule1).toBe('C');
     });
 
     it('returns defaults when value is blank', function () {
@@ -299,7 +297,7 @@ describe('Sheet helpers', () => {
         ['default', { rule1: 'A' }],
         ['1', { rule1: '' }],
       ]);
-      expect(settingMap.getOrDefault('1').rule1).to.equal('A');
+      expect(settingMap.getOrDefault('1').rule1).toBe('A');
     });
 
     it('returns value when value is 0', function () {
@@ -307,12 +305,12 @@ describe('Sheet helpers', () => {
         ['default', { rule1: 'A' }],
         ['1', { rule1: '0' }],
       ]);
-      expect(settingMap.getOrDefault('1').rule1).to.equal('0');
+      expect(settingMap.getOrDefault('1').rule1).toBe('0');
     });
 
     it('returns blank when default is undefined and value is blank', function () {
       const settingMap = new SettingMap([['1', { rule1: '' }]]);
-      expect(settingMap.getOrDefault('1').rule1).to.equal('');
+      expect(settingMap.getOrDefault('1').rule1).toBe('');
     });
   });
 
@@ -482,18 +480,18 @@ describe('Sheet helpers', () => {
 
     it('saveLastReportPull', function () {
       HELPERS.saveLastReportPull(1);
-      expect(CacheService.getScriptCache().get('scriptPull')).to.equal('1');
+      expect(CacheService.getScriptCache().get('scriptPull')).toBe('1');
       const expirationInSeconds = (
         CacheService.getScriptCache() as unknown as {
           expirationInSeconds: number | undefined;
         }
       ).expirationInSeconds;
-      expect(expirationInSeconds).to.be.undefined;
+      expect(expirationInSeconds).toBeUndefined();
     });
 
     it('getLastReportPull', function () {
       CacheService.getScriptCache().put('scriptPull', '10');
-      expect(HELPERS.getLastReportPull()).to.equal(10);
+      expect(HELPERS.getLastReportPull()).toBe(10);
     });
   });
 
@@ -537,7 +535,19 @@ describe('Sheet helpers', () => {
     });
 
     it('converts a BigQuery object into the desired output', function () {
-      scaffoldSheetWithNamedRanges();
+      scaffoldSheetWithNamedRanges({
+        namedRanges: [
+          [
+            'SETTINGS',
+            JSON.stringify({
+              exportTarget: {
+                type: 'bigquery',
+                config: { projectId: 'myproject' },
+              },
+            }),
+          ],
+        ],
+      });
       globalThis.BigQuery.Jobs.query = () => ({
         kind: 'bigquery#queryResponse',
         schema: {
@@ -688,9 +698,11 @@ describe('Sheet helpers', () => {
 
     it('fails with no GCP project ID set', function () {
       mockAppsScript();
-      scaffoldSheetWithNamedRanges({ blanks: ['GCP_PROJECT_ID'] });
-      expect(() => HELPERS.bigQueryGet('stub')).to.throw(
-        "Require a value in named range 'GCP_PROJECT_ID'",
+      scaffoldSheetWithNamedRanges({
+        namedRanges: [['SETTINGS', JSON.stringify({})]],
+      });
+      expect(() => HELPERS.bigQueryGet('stub')).toThrow(
+        'BigQuery Project ID is not set in the settings.',
       );
     });
   });

@@ -34,13 +34,13 @@ type AssertEqual<TestType, End> = End extends TestType
 describe('Ads API Types', function () {
   it('adjusts underscores to camel cases', function () {
     const test1: AssertEqual<CamelCase<'my_underscore'>, 'myUnderscore'> = true;
-    expect(test1).to.exist;
+    expect(test1).toBeDefined();
   });
 
   it('does not camel case where not necessary', function () {
     // @ts-expect-error This type should not Assert<> to true.
     const test1: AssertEqual<CamelCase<'myunderscore'>, 'myUnderscore'> = true;
-    expect(test1).to.exist;
+    expect(test1).toBeDefined();
   });
 
   it('handles dot notation', function () {
@@ -50,7 +50,7 @@ describe('Ads API Types', function () {
         my: { dotNotation: { worksWell: '' } };
       }
     > = true;
-    expect(test1).to.exist;
+    expect(test1).toBeDefined();
   });
 
   it('handles blanks', function () {

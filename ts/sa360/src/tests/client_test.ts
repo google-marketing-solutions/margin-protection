@@ -73,19 +73,19 @@ describe('Client rules are validated', function () {
   });
 
   it('should not run rules until validate() is run', function () {
-    expect(output).to.eql([]);
+    expect(output).toEqual([]);
   });
 
   it('should run rules when validate() is run', async function () {
     await client.validate();
-    expect(output).to.deep.eq(['ruleA', 'ruleB']);
+    expect(output).toEqual(['ruleA', 'ruleB']);
   });
 
   it('should have check results after validate() is run', async function () {
     const { results } = await client.validate();
     expect(
       Object.values(results['ruleA'].values).map((value) => value.anomalous),
-    ).to.eql([true, false]);
+    ).toEqual([true, false]);
   });
 });
 

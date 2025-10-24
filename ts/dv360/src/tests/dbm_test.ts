@@ -55,7 +55,7 @@ describe('BudgetReport#getSpendForInsertionOrder', function () {
       startDate,
       endDate,
     }).getSpendForInsertionOrder('IO2', startDate.getTime(), endDate.getTime());
-    expect(result).to.eql(0.02002);
+    expect(result).toBe(0.02002);
   });
 
   it('only pulls report once.', function () {
@@ -82,14 +82,14 @@ describe('BudgetReport#getSpendForInsertionOrder', function () {
     );
     const hits2 = { ...router.getHits() };
 
-    expect(hits1).to.eql({
+    expect(hits1).toEqual({
       queryPostHits: 1,
       queryGetHits: 1,
       runPostHits: 1,
       reportGetHits: 1,
     });
-    expect(hits2).to.eql(hits1);
-    expect(result2).to.eql(0.03003);
+    expect(hits2).toEqual(hits1);
+    expect(result2).toBe(0.03003);
   });
 });
 
@@ -114,7 +114,7 @@ describe('ImpressionReport#getImpressionPercentOutsideOfGeos', function () {
       startDate,
       endDate,
     }).getImpressionPercentOutsideOfGeos('1', ['US', 'UK']);
-    expect(result).to.eql(12 / 14);
+    expect(result).toBe(12 / 14);
   });
 
   it('handles empty results', function () {
@@ -129,7 +129,7 @@ describe('ImpressionReport#getImpressionPercentOutsideOfGeos', function () {
       startDate,
       endDate,
     }).getImpressionPercentOutsideOfGeos('1', ['US', 'UK', 'IT', 'CN']);
-    expect(result).to.eql(0);
+    expect(result).toBe(0);
   });
 });
 
@@ -149,8 +149,8 @@ describe('BudgetReport#fetchQueryId()', function () {
       startDate: new Date(1, 0, 1),
       endDate: new Date(1, 1, 2),
     });
-    expect(budgetReport.fetchQueryId()).to.eql('query1');
-    expect(router.getHits().queryPostHits).to.eql(1);
+    expect(budgetReport.fetchQueryId()).toBe('query1');
+    expect(router.getHits().queryPostHits).toBe(1);
   });
 
   it('returns a query ID from cache', function () {
@@ -166,15 +166,15 @@ describe('BudgetReport#fetchQueryId()', function () {
     const queryResult2 = budgetReport.fetchQueryId();
     const hits2 = router.getHits();
 
-    expect(queryResult1).to.eql('query1');
-    expect(queryResult2).to.eql('query1');
-    expect(hits1).to.eql({
+    expect(queryResult1).toBe('query1');
+    expect(queryResult2).toBe('query1');
+    expect(hits1).toEqual({
       queryPostHits: 1,
       queryGetHits: 1,
       runPostHits: 1,
       reportGetHits: 1,
     });
-    expect(hits2).to.eql({
+    expect(hits2).toEqual({
       queryPostHits: 1,
       queryGetHits: 1,
       runPostHits: 1,
@@ -196,8 +196,8 @@ describe('BudgetReport#fetchQueryId()', function () {
       },
     });
 
-    expect(budgetReport.fetchQueryId()).to.eql('query1');
-    expect(router.getHits()).to.eql({
+    expect(budgetReport.fetchQueryId()).toBe('query1');
+    expect(router.getHits()).toEqual({
       queryPostHits: 1,
       queryGetHits: 1,
       runPostHits: 1,
@@ -223,15 +223,15 @@ describe('BudgetReport#fetchQueryId()', function () {
     budgetReport2.fetchQueryId();
     const hits2 = { ...router.getHits() };
 
-    expect(budgetReport1.fetchQueryId()).to.eql('query1');
-    expect(budgetReport2.fetchQueryId()).to.eql('query1');
-    expect(hits1).to.eql({
+    expect(budgetReport1.fetchQueryId()).toBe('query1');
+    expect(budgetReport2.fetchQueryId()).toBe('query1');
+    expect(hits1).toEqual({
       queryPostHits: 1,
       queryGetHits: 1,
       runPostHits: 1,
       reportGetHits: 1,
     });
-    expect(hits2).to.eql({
+    expect(hits2).toEqual({
       queryPostHits: 1,
       queryGetHits: 1,
       runPostHits: 1,

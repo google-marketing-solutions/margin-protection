@@ -29,6 +29,8 @@ import {
 import { SettingMap } from '#common/sheet_helpers/setting_map.js';
 import { expect, describe, beforeEach, it } from 'vitest';
 
+import { scaffoldSheetWithNamedRanges } from '#common/tests/helpers.js';
+
 describe('AppsScriptFrontend', function () {
   let frontend: FakeFrontend;
   let properties: FakePropertyStore;
@@ -36,10 +38,11 @@ describe('AppsScriptFrontend', function () {
   beforeEach(function () {
     mockAppsScript();
     properties = new FakePropertyStore();
+    scaffoldSheetWithNamedRanges();
   });
 
   describe('saveSettingsBackToSheets', function () {
-    it('saves settings correctly to properties', function () {
+    it('saves settings correctly to the sheet', function () {
       const ruleDef = {
         name: 'Test Rule',
         description: 'Test Description',
@@ -93,12 +96,16 @@ describe('AppsScriptFrontend', function () {
         }
       ).saveSettingsBackToSheets([ruleInstance]);
 
-      const json = properties.getProperty('Test Rule') || '{}';
+      const json =
+        SpreadsheetApp.getActive().getRangeByName('SETTINGS')?.getValue() ||
+        '{}';
       const parsed = JSON.parse(json);
       const savedSettings = new SettingMap(
-        Object.entries(parsed) as [string, { testParam: string }][],
+        Object.entries(parsed['Test Rule']) as [
+          string,
+          { testParam: string },
+        ][],
       );
-      console.log(savedSettings);
 
       expect(savedSettings.get('id1')).toEqual({
         testParam: 'value1',

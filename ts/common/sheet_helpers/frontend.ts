@@ -80,7 +80,7 @@ export abstract class AppsScriptFrontend<T extends ClientTypes<T>> {
       .addItem('Fetch Data', 'initializeSheets')
       .addItem('Pre-Launch QA', 'preLaunchQa')
       .addItem('Show Glossary', 'displayGlossary')
-      .addItem('Setup', 'displaySetupGuide')
+      .addItem('Settings', 'displaySetupGuide')
       .addToUi();
   }
 
@@ -302,21 +302,13 @@ export abstract class AppsScriptFrontend<T extends ClientTypes<T>> {
   }
 
   displaySetupGuide() {
+    this.migrate();
     const template = HtmlService.createTemplateFromFile('html/setup');
     const dynamicFields = this.getIdentityFields();
     template['dynamicFields'] = JSON.stringify(dynamicFields);
+    template['settings'] = this.getSettings() || 'null';
     const htmlOutput = template.evaluate().setWidth(450).setHeight(600);
     SpreadsheetApp.getUi().showModalDialog(htmlOutput, 'Export Settings');
-  }
-
-  /**
-   * Returns a list of dynamic fields for the setup modal.
-   * @returns An array of strings.
-   */
-  getDynamicFieldNames(): string[] {
-    // In a real scenario, this could come from a configuration sheet or be
-    // based on the rules that are currently enabled.
-    return ['file_one', 'file_two'];
   }
 
   /**
@@ -326,10 +318,13 @@ export abstract class AppsScriptFrontend<T extends ClientTypes<T>> {
    */
   handleInput(key: string, payload: object) {
     if (key === 'update:settings') {
-      this.injectedArgs.properties.setProperty(
-        'settings',
-        JSON.stringify(payload),
-      );
+      const spreadsheet = SpreadsheetApp.getActive();
+
+      const settingsRange = spreadsheet.getRangeByName('SETTINGS');
+      if (settingsRange) {
+        settingsRange.clearContent();
+        settingsRange.setValue(JSON.stringify(payload));
+      }
     } else {
       // In the future, other keys could be handled here.
       console.warn(`Unknown key received in handleInput: ${key}`);
@@ -341,7 +336,12 @@ export abstract class AppsScriptFrontend<T extends ClientTypes<T>> {
    * @returns The settings JSON string or null if not found.
    */
   getSettings(): string | null {
-    return this.injectedArgs.properties.getProperty('settings');
+    const spreadsheet = SpreadsheetApp.getActive();
+    const settingsRange = spreadsheet.getRangeByName('SETTINGS');
+    if (!settingsRange) {
+      return null;
+    }
+    return settingsRange.getValue() || null;
   }
 
   getFrontendDefinitions() {
@@ -600,15 +600,17 @@ export abstract class AppsScriptFrontend<T extends ClientTypes<T>> {
     const SEND_DATE_KEY = 'email_send_dates';
     const ANOMALY_SEND_DATE_KEY = 'anomaly_send_dates';
 
+    const spreadsheet = SpreadsheetApp.getActive();
+    const settingsRange = spreadsheet.getRangeByName('SETTINGS');
+    if (!settingsRange) {
+      return;
+    }
+    const settings = JSON.parse(settingsRange.getValue() || '{}');
+
     const updateTime = Date.now();
-    const emailSendDates = JSON.parse(
-      this.client.properties.getProperty(SEND_DATE_KEY) || '{}',
-    ) as { [author: string]: number };
-    // never reuse anomaly dates. We should use newAnomalySendDates so we
-    // get rid of no-longer-anomalous values.
-    const anomalySendDates: { readonly [id: string]: number } = JSON.parse(
-      this.client.properties.getProperty(ANOMALY_SEND_DATE_KEY) || '{}',
-    ) as { [id: string]: number };
+    const emailSendDates = settings[SEND_DATE_KEY] || {};
+    const anomalySendDates: { readonly [id: string]: number } =
+      settings[ANOMALY_SEND_DATE_KEY] || {};
     const newAnomalySendDates: { [id: string]: number } = {};
     let emailSent = false;
 
@@ -671,15 +673,10 @@ export abstract class AppsScriptFrontend<T extends ClientTypes<T>> {
           : anomalySendDates[key];
       }
     }
-    this.client.properties.setProperty(
-      ANOMALY_SEND_DATE_KEY,
-      JSON.stringify(newAnomalySendDates),
-    );
-
-    this.client.properties.setProperty(
-      SEND_DATE_KEY,
-      JSON.stringify(emailSendDates),
-    );
+    settings[ANOMALY_SEND_DATE_KEY] = newAnomalySendDates;
+    settings[SEND_DATE_KEY] = emailSendDates;
+    settingsRange.clearContent();
+    settingsRange.setValue(JSON.stringify(settings));
   }
 
   /**
@@ -720,11 +717,16 @@ export abstract class AppsScriptFrontend<T extends ClientTypes<T>> {
   }
 
   protected saveSettingsBackToSheets(rules: Array<RuleExecutor<T>>) {
-    for (const rule of rules) {
-      this.client.properties.setProperty(
-        rule.name,
-        JSON.stringify(rule.settings),
-      );
+    const spreadsheet = SpreadsheetApp.getActive();
+    const settingsRange = spreadsheet.getRangeByName('SETTINGS');
+    if (!settingsRange) {
+      return;
     }
+    const settings = JSON.parse(settingsRange.getValue() || '{}');
+    for (const rule of rules) {
+      settings[rule.name] = rule.settings;
+    }
+    settingsRange.clearContent();
+    settingsRange.setValue(JSON.stringify(settings));
   }
 }

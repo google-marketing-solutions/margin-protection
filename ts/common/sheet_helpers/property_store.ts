@@ -29,17 +29,17 @@ export class AppsScriptPropertyStore implements PropertyStore {
     private readonly properties = PropertiesService.getScriptProperties(),
   ) {}
 
-  setProperty(key: string, value: string) {
-    this.properties.setProperty(key, compress(value));
+  setProperty(key: string, value: string, compressed: boolean = false) {
+    this.properties.setProperty(key, compressed ? compress(value) : value);
     AppsScriptPropertyStore.cache[key] = value;
   }
 
-  getProperty(key: string) {
+  getProperty(key: string, compressed: boolean = false) {
     if (AppsScriptPropertyStore.cache[key]) {
       return AppsScriptPropertyStore.cache[key];
     }
     const property = this.properties.getProperty(key);
-    return property ? extract(property) : null;
+    return property ? (compressed ? extract(property) : property) : null;
   }
 
   getProperties() {

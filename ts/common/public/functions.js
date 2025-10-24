@@ -31,3 +31,4 @@ function displaySetupGuide() {}
 function displayGlossary() {}
 function dynamicFields() {}
 function getSettings() {}
+function handleInput() {}

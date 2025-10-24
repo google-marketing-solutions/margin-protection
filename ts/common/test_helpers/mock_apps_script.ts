@@ -361,6 +361,10 @@ class FakeSpreadsheet {
     this.namedRange[rangeName] = range;
   }
 
+  removeNamedRange(rangeName: string) {
+    delete this.namedRange[rangeName];
+  }
+
   getSheetByName(sheetName: keyof typeof this.sheets) {
     console.log(`accessing sheet ${sheetName}`);
     if (sheetName in this.sheets) {

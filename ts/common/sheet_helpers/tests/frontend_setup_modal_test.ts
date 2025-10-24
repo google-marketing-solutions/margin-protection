@@ -33,35 +33,30 @@ vi.mock('../../exporter.js');
 vi.mock('../../exporters/drive_exporter.js');
 vi.mock('../../exporters/bigquery_exporter.js');
 
+import { scaffoldSheetWithNamedRanges } from '../../tests/helpers.js';
+import { FakePropertyStore } from '#common/test_helpers/mock_apps_script.js';
+
 describe('AppsScriptFrontend Setup Modal', () => {
-  let properties: Record<string, string>;
   let frontend: FakeFrontend;
 
   beforeEach(() => {
     vi.clearAllMocks();
-    properties = {};
+    scaffoldSheetWithNamedRanges();
     frontend = FakeFrontend.withIdentity({
       clientInitializer: vi.fn(),
       ruleRangeClass: RuleRange,
       rules: [],
-      properties: {
-        setProperty: (key, value) => (properties[key] = value),
-        getProperty: (key) => properties[key] || null,
-        getProperties: () => properties,
-      },
+      properties: new FakePropertyStore(),
       migrations: [],
       version: '1',
     });
   });
 
-  it('getDynamicFieldNames returns the correct hardcoded array', () => {
-    const fields = frontend.getDynamicFieldNames();
-    expect(fields).toEqual(['file_one', 'file_two']);
-  });
-
   it('getSettings retrieves from property store', () => {
     const mockSettings = { foo: 'bar' };
-    properties['settings'] = JSON.stringify(mockSettings);
+    SpreadsheetApp.getActive()
+      .getRangeByName('SETTINGS')!
+      .setValue(JSON.stringify(mockSettings));
     const settings = frontend.getSettings();
     expect(settings).toEqual(JSON.stringify(mockSettings));
   });
@@ -69,7 +64,10 @@ describe('AppsScriptFrontend Setup Modal', () => {
   it('handleInput saves settings to the property store', () => {
     const mockPayload = { dynamicData: { file_one: 'test' } };
     frontend.handleInput('update:settings', mockPayload);
-    expect(properties['settings']).toEqual(JSON.stringify(mockPayload));
+    const settings = SpreadsheetApp.getActive()
+      .getRangeByName('SETTINGS')!
+      .getValue();
+    expect(settings).toEqual(JSON.stringify(mockPayload));
   });
 
   describe('displaySetupGuide', () => {
@@ -106,10 +104,8 @@ describe('AppsScriptFrontend Setup Modal', () => {
         JSON.stringify(dynamicFields),
       );
 
-      const expectedJs = 'const dynamicFields = ["file_one","file_two"];';
-      expect(populatedContent.replace(/\s/g, '')).toContain(
-        expectedJs.replace(/\s/g, ''),
-      );
+      const expectedJs = 'const dynamicFields = ["file_one","file_two"] || {};';
+      expect(populatedContent).toContain(expectedJs);
     });
   });
 
@@ -123,7 +119,9 @@ describe('AppsScriptFrontend Setup Modal', () => {
       const settings = {
         exportTarget: { type: 'drive', config: { folder: 'MyFolder' } },
       };
-      properties['settings'] = JSON.stringify(settings);
+      SpreadsheetApp.getActive()
+        .getRangeByName('SETTINGS')!
+        .setValue(JSON.stringify(settings));
       frontend.exportData('MyRule', [['header'], ['data']]);
       expect(ExportContext).toHaveBeenCalledWith(expect.any(DriveExporter));
     });
@@ -135,7 +133,9 @@ describe('AppsScriptFrontend Setup Modal', () => {
           config: { projectId: 'gcp-1', datasetId: 'my_set' },
         },
       };
-      properties['settings'] = JSON.stringify(settings);
+      SpreadsheetApp.getActive()
+        .getRangeByName('SETTINGS')!
+        .setValue(JSON.stringify(settings));
       frontend.exportData('MyRule', [['header'], ['data']]);
       expect(ExportContext).toHaveBeenCalledWith(
         expect.any(BigQueryStrategyExporter),

@@ -49,11 +49,9 @@ describe('SettingMap', function () {
       const error = new Error(
         'Expected a grid with row and column headers of at least size 2',
       );
-      expect(() => transformToParamValues([], params)).to.throw(error.message);
-      expect(() => transformToParamValues([[]], params)).to.throw(
-        error.message,
-      );
-      expect(() => transformToParamValues([['']], params)).to.throw(
+      expect(() => transformToParamValues([], params)).toThrow(error.message);
+      expect(() => transformToParamValues([[]], params)).toThrow(error.message);
+      expect(() => transformToParamValues([['']], params)).toThrow(
         error.message,
       );
     });
@@ -65,7 +63,7 @@ describe('SettingMap', function () {
         ['default', { rule1: 'A' }],
         ['1', { rule1: 'C' }],
       ]);
-      expect(settingMap.getOrDefault('1').rule1).to.equal('C');
+      expect(settingMap.getOrDefault('1').rule1).toBe('C');
     });
 
     it('returns defaults when value is blank', function () {
@@ -73,7 +71,7 @@ describe('SettingMap', function () {
         ['default', { rule1: 'A' }],
         ['1', { rule1: '' }],
       ]);
-      expect(settingMap.getOrDefault('1').rule1).to.equal('A');
+      expect(settingMap.getOrDefault('1').rule1).toBe('A');
     });
 
     it('returns value when value is 0', function () {
@@ -81,12 +79,12 @@ describe('SettingMap', function () {
         ['default', { rule1: 'A' }],
         ['1', { rule1: '0' }],
       ]);
-      expect(settingMap.getOrDefault('1').rule1).to.equal('0');
+      expect(settingMap.getOrDefault('1').rule1).toBe('0');
     });
 
     it('returns blank when default is undefined and value is blank', function () {
       const settingMap = new SettingMap([['1', { rule1: '' }]]);
-      expect(settingMap.getOrDefault('1').rule1).to.equal('');
+      expect(settingMap.getOrDefault('1').rule1).toBe('');
     });
   });
 });

@@ -70,24 +70,27 @@ export class SearchAdsFrontend extends AppsScriptFrontend<SearchAdsClientTypes> 
 
   override getIdentityFields() {
     return {
-      loginCustomerId: {
+      [LOGIN_CUSTOMER_ID]: {
         label: 'Login Customer ID',
         value: this.getIdentityFieldValue(LOGIN_CUSTOMER_ID),
       },
-      customerIds: {
+      [CUSTOMER_IDS]: {
         label: 'Customer IDs',
         value: this.getIdentityFieldValue(CUSTOMER_IDS),
       },
-      label: { label: 'Label', value: this.getIdentityFieldValue(LABEL_RANGE) },
+      [LABEL_RANGE]: {
+        label: 'Label',
+        value: this.getIdentityFieldValue(LABEL_RANGE),
+      },
       ...super.getIdentityFields(),
     };
   }
 
   override getIdentity() {
     const {
-      loginCustomerId: { value: loginCustomerId },
-      customerIds: { value: customerIdsDirty },
-      label: { value: label },
+      [LOGIN_CUSTOMER_ID]: { value: loginCustomerId },
+      [CUSTOMER_IDS]: { value: customerIdsDirty },
+      [LABEL_RANGE]: { value: label },
     } = this.getIdentityFields();
 
     const customerIds = this.cleanCid(customerIdsDirty);
@@ -102,12 +105,14 @@ export class SearchAdsFrontend extends AppsScriptFrontend<SearchAdsClientTypes> 
   }
 
   override displaySetupGuide() {
+    this.migrate();
     const template = HtmlService.createTemplateFromFile('html/setup');
     template['agencyId'] =
       HELPERS.getRangeByName(LOGIN_CUSTOMER_ID).getValue() || '';
     template['advertiserId'] =
       HELPERS.getRangeByName(CUSTOMER_IDS).getValue() || '';
     template['dynamicFields'] = JSON.stringify(this.getIdentityFields());
+    template['settings'] = this.getSettings();
     const htmlOutput = template.evaluate().setWidth(450).setHeight(600);
     SpreadsheetApp.getUi().showModalDialog(htmlOutput, 'Set up');
 

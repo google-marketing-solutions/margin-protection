@@ -39,7 +39,9 @@
     "@testing-library/jest-dom": "^6.9.1",
     "@testing-library/user-event": "^14.6.1",
     "@types/inquirer": "^8.2.12",
+    "@types/jsdom": "^27.0.0",
     "@types/node": "^24.9.1",
+    "@types/testing-library__jest-dom": "^6.0.0",
     "@types/webpack": "^5.28.5",
     "commander": "^14.0.1",
     "css-loader": "^6.11.0",
@@ -53,6 +55,7 @@
     "tsx": "^4.20.6",
     "typescript": "^5.9.3",
     "vitest": "^3.2.4",
+    "vitest-dom": "^0.1.1",
     "webpack": "^5.102.1",
     "webpack-cli": "^5.1.4"
   },

@@ -35,7 +35,6 @@ class DriveIdToSettingsJson implements Migration {
   apply() {
     const active = SpreadsheetApp.getActive();
     let driveIdRange: GoogleAppsScript.Spreadsheet.Range | null = null;
-
     try {
       driveIdRange = active.getRangeByName('DRIVE_ID');
     } catch (_e) {
@@ -45,13 +44,14 @@ class DriveIdToSettingsJson implements Migration {
       return;
     }
 
-    if (!driveIdRange || !driveIdRange.getValue()) {
-      console.log('Skipping Drive ID migration: No old value to migrate.');
-      return;
-    }
-    const driveId = String(driveIdRange.getValue());
-
+    const driveId =
+      driveIdRange && driveIdRange.getValue()
+        ? String(driveIdRange.getValue())
+        : '';
     const sheet = HELPERS.getOrCreateSheet(GENERAL_SETTINGS_SHEET);
+    const insertRow = driveIdRange
+      ? driveIdRange.getRow()
+      : sheet.getLastRow() + 1;
     let settingsRange: GoogleAppsScript.Spreadsheet.Range | null = null;
     try {
       settingsRange = active.getRangeByName('SETTINGS');
@@ -60,18 +60,20 @@ class DriveIdToSettingsJson implements Migration {
     }
 
     if (!settingsRange) {
-      const lastRow = sheet.getLastRow();
-      const newRow = lastRow + 1;
-      const newSettingsCell = sheet.getRange(`B${newRow}:C${newRow}`).merge();
+      // Insert a row at the position of the old DRIVE_ID range.
+      sheet.getRange(insertRow, 1).insertCells(SpreadsheetApp.Dimension.ROWS);
+
+      // Now create the new SETTINGS range in this row.
+      const newSettingsCell = sheet.getRange(`B${insertRow}`);
       active.setNamedRange('SETTINGS', newSettingsCell);
-      addSettingWithDescription(sheet, `A${newRow}`, [
+      addSettingWithDescription(sheet, `A${insertRow}`, [
         'Settings',
         'A JSON object for storing various configurations.',
       ]);
       settingsRange = newSettingsCell;
     }
 
-    let settings: { driveFolderId?: string } = {};
+    let settings: AppSettings = {};
     const existingSettingsJson = settingsRange.getValue();
     if (existingSettingsJson && typeof existingSettingsJson === 'string') {
       try {
@@ -83,21 +85,33 @@ class DriveIdToSettingsJson implements Migration {
       }
     }
 
-    if (settings.driveFolderId === driveId) {
-      console.log(
-        'Skipping Drive ID migration: New setting already exists and matches.',
-      );
-      driveIdRange.clear(); // Clean up old value if it still exists
-      return;
+    if (driveId) {
+      if (
+        settings.exportTarget?.type === 'drive' &&
+        settings.exportTarget.config.folder === driveId
+      ) {
+        console.log(
+          'Skipping Drive ID migration: New setting already exists and matches.',
+        );
+      } else {
+        settings.exportTarget = {
+          type: 'drive',
+          config: { folder: driveId },
+        };
+        settingsRange.setValue(JSON.stringify(settings, null, 2));
+        console.log(
+          `Successfully migrated Drive ID '${driveId}' to settings JSON.`,
+        );
+      }
+    } else {
+      console.log('Skipping Drive ID migration: No old value to migrate.');
     }
 
-    settings.driveFolderId = driveId;
-    settingsRange.setValue(JSON.stringify(settings, null, 2));
-    driveIdRange.clear();
-    console.log(
-      `Successfully migrated Drive ID '${driveId}' to settings JSON.`,
-    );
+    active.removeNamedRange('DRIVE_ID');
+    console.log("Cleaned up and removed old 'DRIVE_ID' named range.");
   }
 }
+
+import { AppSettings } from '../types.js';
 
 export const migration = new DriveIdToSettingsJson();

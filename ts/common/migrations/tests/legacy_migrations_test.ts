@@ -30,7 +30,14 @@ import { describe, beforeEach, afterEach, it, expect, vi } from 'vitest';
 describe('Full migration path', function () {
   beforeEach(function () {
     mockAppsScript();
-    scaffoldSheetWithNamedRanges();
+    scaffoldSheetWithNamedRanges({
+      namedRanges: [
+        ['DRIVE_ID', ''],
+        ['SETTINGS', ''],
+        ['ENTITY_ID', '123'],
+        ['ID_TYPE', 'Advertiser'],
+      ],
+    });
   });
 
   afterEach(function () {
@@ -66,17 +73,20 @@ describe('Full migration path', function () {
     // Assert
     // Check that the date-based migration ran by verifying the final state
     const settingsRange = activeSpreadsheet.getRangeByName('SETTINGS');
-    expect(settingsRange).to.exist;
+    expect(settingsRange).toBeDefined();
     const newSettings = JSON.parse(
       SpreadsheetApp.getActive().getRangeByName('SETTINGS')!.getValue(),
     );
-    expect(newSettings.driveFolderId).to.equal('old-drive-folder-id');
+    expect(newSettings.exportTarget).toEqual({
+      type: 'drive',
+      config: { folder: 'old-drive-folder-id' },
+    });
     // Check that the version is updated
-    expect(properties.getProperty('sheet_version')).to.equal('20251020.0');
+    expect(properties.getProperty('sheet_version')).toEqual('20251020.0');
     // Check that legacy migrations ran by checking for a created sheet.
     const generalSettingsSheet =
       activeSpreadsheet.getSheetByName('General/Settings');
-    expect(generalSettingsSheet).to.exist;
+    expect(generalSettingsSheet).toBeDefined();
   });
 });
 
@@ -166,8 +176,8 @@ describe('Legacy Migrations', function () {
         expect.any(Object),
       );
       const sheet = activeSpreadsheet.getSheetByName('General/Settings');
-      expect(sheet).to.not.be.null; // Ensure the sheet was created
-      expect(sheet.getRange('B8').getValue()).to.equal('drive');
+      expect(sheet).not.toBeNull(); // Ensure the sheet was created
+      expect(sheet.getRange('B8').getValue()).toBe('drive');
     });
 
     it('should not run if EXPORT_SETTINGS named range already exists', function () {

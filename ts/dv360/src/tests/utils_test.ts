@@ -38,7 +38,7 @@ describe('transformToParamValues', function () {
   });
 
   it('returns expected SettingMap', function () {
-    expect(transformToParamValues(array2d, params)).to.eql(
+    expect(transformToParamValues(array2d, params)).toEqual(
       new SettingMap([
         ['1', { rule1: 'A', rule2: 'B' }],
         ['2', { rule1: 'C', rule2: 'D' }],
@@ -50,11 +50,9 @@ describe('transformToParamValues', function () {
     const error = new Error(
       'Expected a grid with row and column headers of at least size 2',
     );
-    expect(() => transformToParamValues([], params)).to.throw(error.message);
-    expect(() => transformToParamValues([[]], params)).to.throw(error.message);
-    expect(() => transformToParamValues([['']], params)).to.throw(
-      error.message,
-    );
+    expect(() => transformToParamValues([], params)).toThrow(error.message);
+    expect(() => transformToParamValues([[]], params)).toThrow(error.message);
+    expect(() => transformToParamValues([['']], params)).toThrow(error.message);
   });
 });
 
@@ -64,7 +62,7 @@ describe('SettingMap#getOrDefault', function () {
       ['default', { rule1: 'A' }],
       ['1', { rule1: 'C' }],
     ]);
-    expect(settingMap.getOrDefault('1').rule1).to.eql('C');
+    expect(settingMap.getOrDefault('1').rule1).toBe('C');
   });
 
   it('returns defaults when value is blank', function () {
@@ -72,7 +70,7 @@ describe('SettingMap#getOrDefault', function () {
       ['default', { rule1: 'A' }],
       ['1', { rule1: '' }],
     ]);
-    expect(settingMap.getOrDefault('1').rule1).to.eql('A');
+    expect(settingMap.getOrDefault('1').rule1).toBe('A');
   });
 
   it('returns value when value is 0', function () {
@@ -80,12 +78,12 @@ describe('SettingMap#getOrDefault', function () {
       ['default', { rule1: 'A' }],
       ['1', { rule1: '0' }],
     ]);
-    expect(settingMap.getOrDefault('1').rule1).to.eql('0');
+    expect(settingMap.getOrDefault('1').rule1).toBe('0');
   });
 
   it('returns blank when default is undefined and value is blank', function () {
     const settingMap = new SettingMap([['1', { rule1: '' }]]);
-    expect(settingMap.getOrDefault('1').rule1).to.eql('');
+    expect(settingMap.getOrDefault('1').rule1).toBe('');
   });
 });
 
@@ -136,7 +134,7 @@ describe('Rule Settings helper functions', function () {
         })
         .filter((r) => r),
     );
-    expect(rule).to.eql({
+    expect(rule).toEqual({
       none: [
         ['id', 'name'],
         ['1', 'one'],
@@ -158,7 +156,7 @@ describe('Rule Settings helper functions', function () {
       rules
         .getValues()
         .filter((row, i) => i < 2 || row.filter((c) => c).length > 1),
-    ).to.eql([
+    ).toEqual([
       ['', '', 'Category A', '', 'Category B', '', '', 'Category C'],
       ['', '', '', '', '', '', '', ''],
       [
@@ -179,6 +177,6 @@ describe('Rule Settings helper functions', function () {
 describe('date function', function () {
   it('converts raw API date to real date with month correct', function () {
     const date = getDate({ year: 2022, month: 2, day: 1 });
-    expect(date).to.eql(new Date('February 1, 2022'));
+    expect(date).toEqual(new Date('February 1, 2022'));
   });
 });

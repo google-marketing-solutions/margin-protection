@@ -20,7 +20,7 @@ import { describe, expect, it } from 'vitest';
 
 describe('sortMigrations', function () {
   it('sorts migrations as expected', function () {
-    expect(['0.6', '1.2', '1.0'].sort(sortMigrations)).to.deep.eq([
+    expect(['0.6', '1.2', '1.0'].sort(sortMigrations)).toEqual([
       '0.6',
       '1.0',
       '1.2',
@@ -28,7 +28,7 @@ describe('sortMigrations', function () {
   });
 
   it('manages incremental versions', function () {
-    expect(['0.6.1', '0.6', '1.0'].sort(sortMigrations)).to.deep.eq([
+    expect(['0.6.1', '0.6', '1.0'].sort(sortMigrations)).toEqual([
       '0.6',
       '0.6.1',
       '1.0',
@@ -40,7 +40,7 @@ describe('sortMigrations', function () {
       Object.entries({ '0.1': 'b', '0.0.1': 'a' }).sort((e1, e2) =>
         sortMigrations(e1[0], e2[0]),
       ),
-    ).to.deep.eq([
+    ).toEqual([
       ['0.0.1', 'a'],
       ['0.1', 'b'],
     ]);

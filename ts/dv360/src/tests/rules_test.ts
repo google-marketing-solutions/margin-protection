@@ -238,7 +238,7 @@ describe('Percentage Budget Pacing Rule (Line Item)', () => {
   for (const [startDate, endDate] of parameters) {
     it(`skips rule when out of date range (${startDate} < 4 < ${endDate})`, async () => {
       const values = await generateLineItemReport(startDate, endDate);
-      expect(values).to.eql({});
+      expect(values).toEqual({});
     });
   }
 
@@ -357,7 +357,7 @@ describe('Daily Budgets Rule', () => {
   it('skips rules when out of date range', async () => {
     vi.setSystemTime(new Date('3000-01-01'));
     const values = await generateInsertionOrderReportWithDateValues(1, 1);
-    expect(values).to.eql({});
+    expect(values).toEqual({});
   });
 });
 

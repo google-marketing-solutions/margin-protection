@@ -77,7 +77,7 @@ describe('Campaign pacing rule', () => {
       ['C1', '', '0.5', '1'],
       ['C2', '', '0.95', '1'],
     ]);
-    expect(value['C1'].anomalous).to.be.false;
+    expect(value['C1'].anomalous).toBe(false);
     expect(value['C2'].anomalous).toBe(true);
   });
 
@@ -94,7 +94,7 @@ describe('Campaign pacing rule', () => {
       ['C1', '', '0.5', '1'],
       ['C2', '', '0.95', '1'],
     ]);
-    expect(value['C1'].fields['spend']).to.equal('0');
+    expect(value['C1'].fields['spend']).toBe('0');
   });
 });
 
@@ -198,7 +198,7 @@ describe('Campaign Status rule', () => {
           ['default', '', '1'],
         ],
       );
-      expect(value['C1'].anomalous).to.be.false;
+      expect(value['C1'].anomalous).toBe(false);
     });
   }
   for (const statuses of [
@@ -266,7 +266,7 @@ describe('Ad Group status rule', () => {
         ['default', ''],
       ],
     );
-    expect(value['AG1'].anomalous).to.be.false;
+    expect(value['AG1'].anomalous).toBe(false);
   });
 
   it('Status "Active" is not anomalous', async function () {
@@ -277,7 +277,7 @@ describe('Ad Group status rule', () => {
         ['default', ''],
       ],
     );
-    expect(value['AG1'].anomalous).to.be.false;
+    expect(value['AG1'].anomalous).toBe(false);
   });
 
   it('Status "Paused" is anomalous if it follows an "Active" state', async function () {
@@ -319,7 +319,7 @@ describe('Ad Group target rule', function () {
         ['default', ''],
       ],
     );
-    expect(value['AG1'].anomalous).to.be.false;
+    expect(value['AG1'].anomalous).toBe(false);
   });
 
   it('has a legible value change value', async function () {
@@ -334,7 +334,7 @@ describe('Ad Group target rule', function () {
         ['AG1', '', '', '', ''],
       ],
     );
-    expect(value['AG1'].value).to.equal(
+    expect(value['AG1'].value).toBe(
       'User List 1 DELETED, User List 2 DELETED, User List 4 ADDED',
     );
   });
@@ -352,7 +352,7 @@ describe('Ad Group target rule', function () {
       ],
     );
 
-    expect(value['AG1'].value).to.equal('User List 3 ADDED');
+    expect(value['AG1'].value).toBe('User List 3 ADDED');
   });
 });
 
@@ -377,7 +377,7 @@ describe('Campaign user list', function () {
       ],
     );
 
-    expect(value['C1'].anomalous).to.be.false;
+    expect(value['C1'].anomalous).toBe(false);
   });
 
   it('has a legible value change value', async function () {
@@ -393,7 +393,7 @@ describe('Campaign user list', function () {
       ],
     );
 
-    expect(value['C1'].value).to.equal(
+    expect(value['C1'].value).toBe(
       'User List 1 DELETED, User List 2 DELETED, User List 4 ADDED',
     );
   });
@@ -421,7 +421,7 @@ describe('Geo target change', function () {
       ],
     );
 
-    expect(value['C1'].anomalous).to.be.false;
+    expect(value['C1'].anomalous).toBe(false);
   });
 
   it('has a legible value change value', async function () {
@@ -433,9 +433,7 @@ describe('Geo target change', function () {
       ],
     );
 
-    expect(value['C1'].value).to.equal(
-      'criterion/1 DELETED, criterion/2 ADDED',
-    );
+    expect(value['C1'].value).toBe('criterion/1 DELETED, criterion/2 ADDED');
   });
 });
 
@@ -461,7 +459,7 @@ describe('Ad group status change', function () {
       ],
     );
 
-    expect(value['AG1'].anomalous).to.be.false;
+    expect(value['AG1'].anomalous).toBe(false);
   });
 
   it('has a legible value change value', async function () {
@@ -473,8 +471,8 @@ describe('Ad group status change', function () {
       ],
     );
 
-    expect(value['AG1'].value).to.equal('0');
-    expect(value['AG1'].anomalous).to.equal(true);
+    expect(value['AG1'].value).toBe('0');
+    expect(value['AG1'].anomalous).toBe(true);
   });
 });
 
@@ -507,7 +505,7 @@ describe('Age target rule', function () {
         ['AG1', ''],
       ],
     );
-    expect(value['AG1'].anomalous).to.be.false;
+    expect(value['AG1'].anomalous).toBe(false);
   });
 
   it('has a legible value change value', async function () {
@@ -519,7 +517,7 @@ describe('Age target rule', function () {
         ['AG1', '', '', '', ''],
       ],
     );
-    expect(value['AG1'].value).to.equal(
+    expect(value['AG1'].value).toBe(
       '18-24 DELETED, 35-44 DELETED, 25-34 ADDED, 45-54 ADDED',
     );
   });
@@ -534,7 +532,7 @@ describe('Age target rule', function () {
       ],
     );
 
-    expect(value['AG1'].value).to.equal('25-34 ADDED');
+    expect(value['AG1'].value).toBe('25-34 ADDED');
   });
 });
 
@@ -566,7 +564,7 @@ describe('Gender target rule', function () {
         ['default', ''],
       ],
     );
-    expect(value['AG1'].anomalous).to.be.false;
+    expect(value['AG1'].anomalous).toBe(false);
   });
 
   it('has a legible value change value', async function () {
@@ -578,7 +576,7 @@ describe('Gender target rule', function () {
         ['AG1', '', '', '', ''],
       ],
     );
-    expect(value['AG1'].value).to.equal(
+    expect(value['AG1'].value).toBe(
       'MALE DELETED, UNKNOWN DELETED, FEMALE ADDED',
     );
   });
@@ -593,7 +591,7 @@ describe('Gender target rule', function () {
       ],
     );
 
-    expect(value['AG1'].value).to.equal('FEMALE ADDED');
+    expect(value['AG1'].value).toBe('FEMALE ADDED');
   });
 });
 
@@ -974,6 +972,6 @@ function queryEquals(
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   query2: ReportClass<any, any>,
 ) {
-  expect(query1.query.queryParams).to.equal(query2.query.queryParams);
-  expect(query1.query.queryFrom).to.equal(query2.query.queryFrom);
+  expect(query1.query.queryParams).toBe(query2.query.queryParams);
+  expect(query1.query.queryFrom).toBe(query2.query.queryFrom);
 }

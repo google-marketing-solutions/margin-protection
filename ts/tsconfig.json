@@ -9,7 +9,7 @@
     "lib": ["esnext", "dom"],
     "noImplicitThis": true,
     "useDefineForClassFields": true,
-    "types": ["google-apps-script"],
+    "types": ["google-apps-script", "@testing-library/jest-dom"],
     "paths": {
       "#common/*": ["common/*"],
       "#sa360/*": ["sa360/src/*"],

@@ -27,18 +27,18 @@ describe('HELPERS', function () {
 
   it('saveLastReportPull', function () {
     HELPERS.saveLastReportPull(1);
-    expect(CacheService.getScriptCache().get('scriptPull')).to.equal('1');
+    expect(CacheService.getScriptCache().get('scriptPull')).toBe('1');
     const expirationInSeconds = (
       CacheService.getScriptCache() as unknown as {
         expirationInSeconds: number | undefined;
       }
     ).expirationInSeconds;
-    expect(expirationInSeconds).to.be.undefined;
+    expect(expirationInSeconds).toBeUndefined();
   });
 
   it('getLastReportPull', function () {
     CacheService.getScriptCache().put('scriptPull', '10');
-    expect(HELPERS.getLastReportPull()).to.equal(10);
+    expect(HELPERS.getLastReportPull()).toBe(10);
   });
 });
 
@@ -48,7 +48,19 @@ describe('BigQuery interop', function () {
   });
 
   it('converts a BigQuery object into the desired output', function () {
-    scaffoldSheetWithNamedRanges();
+    scaffoldSheetWithNamedRanges({
+      namedRanges: [
+        [
+          'SETTINGS',
+          JSON.stringify({
+            exportTarget: {
+              type: 'bigquery',
+              config: { projectId: 'myproject' },
+            },
+          }),
+        ],
+      ],
+    });
     globalThis.BigQuery.Jobs.query = () => ({
       kind: 'bigquery#queryResponse',
       schema: {
@@ -199,9 +211,11 @@ describe('BigQuery interop', function () {
 
   it('fails with no GCP project ID set', function () {
     mockAppsScript();
-    scaffoldSheetWithNamedRanges({ blanks: ['GCP_PROJECT_ID'] });
-    expect(() => HELPERS.bigQueryGet('stub')).to.throw(
-      "Require a value in named range 'GCP_PROJECT_ID'",
+    scaffoldSheetWithNamedRanges({
+      namedRanges: [['SETTINGS', JSON.stringify({})]],
+    });
+    expect(() => HELPERS.bigQueryGet('stub')).toThrow(
+      'BigQuery Project ID is not set in the settings.',
     );
   });
 });

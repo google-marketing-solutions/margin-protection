@@ -18,8 +18,8 @@
  * An abstraction for retrieving properties.
  */
 export interface PropertyStore {
-  setProperty(propertyName: string, value: string): void;
-  getProperty(propertyName: string): string | null;
+  setProperty(propertyName: string, value: string, compressed?: boolean): void;
+  getProperty(propertyName: string, compressed?: boolean): string | null;
   getProperties(): Record<string, string>;
 }
 
@@ -66,6 +66,18 @@ export interface SettingMapInterface<
 export type Settings<Params> = SettingMapInterface<{
   [Property in keyof Params]: Params[keyof Params];
 }>;
+
+/**
+ * Defines the structure for the application's settings.
+ */
+export interface AppSettings {
+  exportTarget?:
+    | { type: 'drive'; config: { folder: string } }
+    | {
+        type: 'bigquery';
+        config: { projectId: string; datasetId: string; tablePrefix?: string };
+      };
+}
 
 /**
  * Defines a client object, which is responsible for wrapping.
