@@ -170,7 +170,6 @@ export class FakeFrontend extends AppsScriptFrontend<TestClientTypes> {
   private constructor(
     args: FrontendArgs<TestClientTypes> & MigrationArgs<TestClientTypes>,
   ) {
-    scaffoldSheetWithNamedRanges();
     super('Fake', {
       ...args,
       clientInitializer: (clientArgs, properties) =>
@@ -243,10 +242,8 @@ export function scaffoldSheetWithNamedRanges(
     const range = SpreadsheetApp.getActive()
       .getActiveSheet()
       .getRange(`$A$${i + 1}`);
+    range.setValue(blank.indexOf(constName) < 0 ? value : '');
     SpreadsheetApp.getActive().setNamedRange(constName, range);
-    SpreadsheetApp.getActive()
-      .getRangeByName(constName)!
-      .setValue(blank.indexOf(constName) < 0 ? value : '');
   }
 }
 

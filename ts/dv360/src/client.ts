@@ -25,13 +25,13 @@ import {
   Campaigns,
   InsertionOrders,
   LineItems,
-} from 'dv360_api/dv360.js';
+} from '#dv360_api/dv360.js';
 import {
   Advertiser,
   Campaign,
   InsertionOrder,
   LineItem,
-} from 'dv360_api/dv360_resources.js';
+} from '#dv360_api/dv360_resources.js';
 import { newRuleBuilder } from '#common/client_helpers.js';
 
 import { AbstractRuleRange } from '#common/sheet_helpers/index.js';
@@ -46,7 +46,7 @@ import {
   Settings,
 } from '#common/types.js';
 
-import { RawApiDate } from 'dv360_api/dv360_types.js';
+import { RawApiDate } from '#dv360_api/dv360_types.js';
 import { BudgetReport, ImpressionReport, LineItemBudgetReport } from './api.js';
 import {
   Accessors,

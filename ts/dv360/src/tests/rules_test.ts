@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-import { ApiDate } from 'dv360_api/dv360_types.js';
+import { ApiDate } from '#dv360_api/dv360_types.js';
 import { AppsScriptPropertyStore } from '#common/sheet_helpers/index.js';
 import { mockAppsScript } from '#common/test_helpers/mock_apps_script.js';
 import {

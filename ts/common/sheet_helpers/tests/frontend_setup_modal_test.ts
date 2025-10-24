@@ -41,7 +41,12 @@ describe('AppsScriptFrontend Setup Modal', () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
-    scaffoldSheetWithNamedRanges();
+    scaffoldSheetWithNamedRanges({
+      namedRanges: [
+        ['file_one', ''],
+        ['SETTINGS', ''],
+      ],
+    });
     frontend = FakeFrontend.withIdentity({
       clientInitializer: vi.fn(),
       ruleRangeClass: RuleRange,
@@ -58,16 +63,30 @@ describe('AppsScriptFrontend Setup Modal', () => {
       .getRangeByName('SETTINGS')!
       .setValue(JSON.stringify(mockSettings));
     const settings = frontend.getSettings();
-    expect(settings).toEqual(JSON.stringify(mockSettings));
+    expect(settings).toEqual(
+      JSON.stringify({ ...mockSettings, dynamicData: {} }),
+    );
   });
 
-  it('handleInput saves settings to the property store', () => {
-    const mockPayload = { dynamicData: { file_one: 'test' } };
+  it('handleInput saves settings to named ranges and property store', () => {
+    // Arrange
+    const mockPayload = {
+      dynamicData: { file_one: 'test' },
+      exportTarget: { type: 'drive' },
+    };
+
+    // Act
     frontend.handleInput('update:settings', mockPayload);
-    const settings = SpreadsheetApp.getActive()
-      .getRangeByName('SETTINGS')!
-      .getValue();
-    expect(settings).toEqual(JSON.stringify(mockPayload));
+
+    // Assert
+    const spreadsheet = SpreadsheetApp.getActive();
+    const fileOneValue = spreadsheet.getRangeByName('file_one')!.getValue();
+    const settingsValue = spreadsheet.getRangeByName('SETTINGS')!.getValue();
+
+    expect(fileOneValue).toBe('test');
+    expect(settingsValue).toBe(
+      JSON.stringify({ exportTarget: { type: 'drive' } }),
+    );
   });
 
   describe('displaySetupGuide', () => {
@@ -111,6 +130,7 @@ describe('AppsScriptFrontend Setup Modal', () => {
 
   describe('exportData with new settings', () => {
     it('defaults to DriveExporter when no settings are present', () => {
+      SpreadsheetApp.getActive().getRangeByName('SETTINGS')!.clearContent();
       frontend.exportData('MyRule', [['header'], ['data']]);
       expect(ExportContext).toHaveBeenCalledWith(expect.any(DriveExporter));
     });
@@ -141,6 +161,17 @@ describe('AppsScriptFrontend Setup Modal', () => {
         expect.any(BigQueryStrategyExporter),
       );
       expect(BigQueryStrategyExporter).toHaveBeenCalledWith('gcp-1', 'my_set');
+    });
+
+    it('does not call any exporter when type is "none"', () => {
+      const settings = {
+        exportTarget: { type: 'none' },
+      };
+      SpreadsheetApp.getActive()
+        .getRangeByName('SETTINGS')!
+        .setValue(JSON.stringify(settings));
+      frontend.exportData('MyRule', [['header'], ['data']]);
+      expect(ExportContext).not.toHaveBeenCalled();
     });
   });
 });

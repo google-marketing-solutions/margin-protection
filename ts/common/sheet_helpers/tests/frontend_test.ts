@@ -26,6 +26,7 @@ import {
   Granularity,
   newRule,
   RuleRange,
+  scaffoldSheetWithNamedRanges,
   TestClientTypes,
 } from '../../tests/helpers.js';
 import { equalTo } from '#common/checks.js';
@@ -199,6 +200,7 @@ describe('AppsScriptFrontend', function () {
     });
 
     beforeEach(function () {
+      scaffoldSheetWithNamedRanges();
       rules = {
         keyA: {
           name: 'Rule A',

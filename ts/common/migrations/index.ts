@@ -16,6 +16,7 @@
  */
 
 import { migration as m20251020_0 } from './20251020.0_drive_id_to_settings_json.js';
+import { migration as m20251024_0 } from './20251024.0_remove_unused_sa360_columns.js';
 import { Migration } from './types.js';
 
-export const ALL_MIGRATIONS: Migration[] = [m20251020_0];
+export const ALL_MIGRATIONS: Migration[] = [m20251020_0, m20251024_0];

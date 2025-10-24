@@ -201,7 +201,6 @@ describe('E2E Build Tests', () => {
           LOGIN_CUSTOMER_ID: '12345',
           CUSTOMER_IDS: '111,222,333',
           LABEL: 'label',
-          FULL_FETCH: '',
           EMAIL_LIST: '',
         });
       });

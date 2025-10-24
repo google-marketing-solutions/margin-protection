@@ -15,11 +15,11 @@
     "push": "pnpm build && clasp push",
     "push:client": "pnpm --filter client push",
     "test": "vitest run",
+    "test:watch": "vitest",
     "lint": "pnpm --filter ts lint dv360/src/**/*.ts"
   },
   "dependencies": {
     "@types/google-apps-script": "^2.0.7",
-    "t": "^0.5.1",
     "vitest": "^3.2.4"
   }
 }

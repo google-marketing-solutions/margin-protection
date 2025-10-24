@@ -25,8 +25,8 @@ import {
   Campaigns,
   InsertionOrders,
   LineItems,
-} from 'dv360_api/dv360.js';
-import { LineItem, InsertionOrder } from 'dv360_api/dv360_resources.js';
+} from '#dv360_api/dv360.js';
+import { LineItem, InsertionOrder } from '#dv360_api/dv360_resources.js';
 import {
   BaseClientArgs,
   BaseClientInterface,

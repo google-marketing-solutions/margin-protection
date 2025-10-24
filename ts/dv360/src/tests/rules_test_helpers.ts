@@ -1,4 +1,4 @@
-import { AssignedTargetingOption } from 'dv360_api/dv360_resources.js';
+import { AssignedTargetingOption } from '#dv360_api/dv360_resources.js';
 import {
   CampaignTemplate,
   generateTestClient,
@@ -8,7 +8,11 @@ import {
   LineItemTemplate,
   LineItemTestDataParams,
 } from './client_helpers.js';
-import { ApiDate, PACING_TYPE, TARGETING_TYPE } from 'dv360_api/dv360_types.js';
+import {
+  ApiDate,
+  PACING_TYPE,
+  TARGETING_TYPE,
+} from '#dv360_api/dv360_types.js';
 import {
   budgetPacingPercentageRule,
   budgetPacingRuleLineItem,

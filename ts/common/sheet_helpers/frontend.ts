@@ -52,7 +52,7 @@ export abstract class AppsScriptFrontend<T extends ClientTypes<T>> {
    */
   protected constructor(
     private readonly category: string,
-    private readonly injectedArgs: FrontendArgs<T> & MigrationArgs<T>,
+    protected readonly injectedArgs: FrontendArgs<T> & MigrationArgs<T>,
   ) {
     this.rules = injectedArgs.rules;
   }
@@ -316,14 +316,32 @@ export abstract class AppsScriptFrontend<T extends ClientTypes<T>> {
    * @param key The action key.
    * @param payload The data payload.
    */
-  handleInput(key: string, payload: object) {
+  handleInput(
+    key: string,
+    payload: {
+      dynamicData?: Record<string, string>;
+      exportTarget?: unknown;
+    },
+  ) {
     if (key === 'update:settings') {
       const spreadsheet = SpreadsheetApp.getActive();
 
+      // Handle dynamicData by saving to named ranges
+      if (payload.dynamicData) {
+        for (const [rangeName, value] of Object.entries(payload.dynamicData)) {
+          const range = spreadsheet.getRangeByName(rangeName);
+          if (range) {
+            range.setValue(value);
+          }
+        }
+      }
+
+      // Handle exportTarget by saving to SETTINGS
       const settingsRange = spreadsheet.getRangeByName('SETTINGS');
       if (settingsRange) {
+        const settingsToSave = { exportTarget: payload.exportTarget };
         settingsRange.clearContent();
-        settingsRange.setValue(JSON.stringify(payload));
+        settingsRange.setValue(JSON.stringify(settingsToSave));
       }
     } else {
       // In the future, other keys could be handled here.
@@ -338,10 +356,21 @@ export abstract class AppsScriptFrontend<T extends ClientTypes<T>> {
   getSettings(): string | null {
     const spreadsheet = SpreadsheetApp.getActive();
     const settingsRange = spreadsheet.getRangeByName('SETTINGS');
-    if (!settingsRange) {
-      return null;
+    const settings = JSON.parse(settingsRange?.getValue() || '{}');
+
+    const dynamicData: Record<string, string> = {};
+    const identityFields = this.getIdentityFields();
+    for (const key of Object.keys(identityFields)) {
+      const range = spreadsheet.getRangeByName(key);
+      if (range) {
+        dynamicData[key] = range.getValue();
+      }
     }
-    return settingsRange.getValue() || null;
+
+    return JSON.stringify({
+      ...settings,
+      dynamicData,
+    });
   }
 
   getFrontendDefinitions() {
@@ -375,25 +404,17 @@ export abstract class AppsScriptFrontend<T extends ClientTypes<T>> {
    */
   exportData(ruleName: string, matrix: string[][]) {
     const settingsStr = this.getSettings();
-    if (!settingsStr) {
-      // Default to Drive if no settings are configured
-      new ExportContext(new DriveExporter()).export(matrix, {
-        destination: 'drive',
-        fileName: `${this.category}_${
-          this.getIdentity()?.label
-        }_${ruleName}_${HELPERS.getSheetId()}_${new Date().toISOString()}.csv`,
-      });
+    const settings = JSON.parse(settingsStr ?? '{}');
+    const exportTarget = settings.exportTarget;
+
+    if (exportTarget?.type === 'none') {
       return;
     }
-
-    const settings = JSON.parse(settingsStr);
-    const exportTarget = settings.exportTarget;
-    if (!exportTarget) return;
 
     let exporter;
     let options: ExportOptions;
 
-    if (exportTarget.type === 'bigquery' && exportTarget.config) {
+    if (exportTarget?.type === 'bigquery' && exportTarget.config) {
       const config = exportTarget.config;
       exporter = new BigQueryStrategyExporter(
         config.projectId || '',
@@ -503,10 +524,8 @@ export abstract class AppsScriptFrontend<T extends ClientTypes<T>> {
           .getRange(2, 1, matrix.length - 1, 1)
           .setNumberFormat(rule.valueFormat.numberFormat);
       }
-
-      if (
-        getTemplateSetting('LAUNCH_MONITOR_OPTION').getValue() === 'CSV Back-Up'
-      ) {
+      const settings = JSON.parse(this.getSettings() ?? '{}');
+      if (settings.exportTarget?.type === 'drive') {
         this.exportData(rule.name, matrix);
       }
     }

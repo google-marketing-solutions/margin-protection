@@ -12,7 +12,7 @@ import {
   it,
   vi,
 } from 'vitest';
-import { TARGETING_TYPE } from 'dv360_api/dv360_types.js';
+import { TARGETING_TYPE } from '#dv360_api/dv360_types.js';
 import { equalTo } from '#common/checks.js';
 import { HELPERS } from '#common/sheet_helpers/index.js';
 import {
@@ -39,7 +39,7 @@ import {
   LineItemTemplateConverter,
 } from './client_helpers.js';
 
-import { AssignedTargetingOption } from 'dv360_api/dv360_resources.js';
+import { AssignedTargetingOption } from '#dv360_api/dv360_resources.js';
 
 type HtmlTemplate = GoogleAppsScript.HTML.HtmlTemplate;
 

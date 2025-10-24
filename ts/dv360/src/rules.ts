@@ -23,13 +23,13 @@ import {
   AssignedTargetingOption,
   InsertionOrder,
   LineItem,
-} from 'dv360_api/dv360_resources.js';
+} from '#dv360_api/dv360_resources.js';
 import {
   InsertionOrderBudgetSegment,
   PACING_TYPE,
   PacingType,
   TARGETING_TYPE,
-} from 'dv360_api/dv360_types.js';
+} from '#dv360_api/dv360_types.js';
 import { equalTo, inRange, lessThanOrEqualTo } from '#common/checks.js';
 import { Settings, Values } from '#common/types.js';
 

@@ -14,6 +14,9 @@ process.env['DEBUG_PRINT_LIMIT'] = '120';
 
 export default defineConfig({
   test: {
+    typecheck: {
+      tsconfig: 'tsconfig.spec.json',
+    },
     setupFiles: ['./vitest.setup.ts'],
     globals: true,
     include: ['**/tests/**/*_test.ts'],

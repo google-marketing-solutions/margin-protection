@@ -229,6 +229,14 @@ class FakeSheet {
   readonly checkboxes: Record<number, Record<number, boolean>> = {};
   private readonly bandings: FakeBandings[] = [];
 
+  deleteColumn(column: number) {
+    this.cells.forEach((row) => row.splice(column - 1, 1));
+  }
+
+  deleteRow(row: number) {
+    this.cells.splice(row - 1, 1);
+  }
+
   getRange(a1Notation: string): FakeRange;
   getRange(row: number, column: number): FakeRange;
   getRange(row: number, column: number, numRows: number): FakeRange;

@@ -68,7 +68,8 @@ class DriveIdToSettingsJson implements Migration {
       active.setNamedRange('SETTINGS', newSettingsCell);
       addSettingWithDescription(sheet, `A${insertRow}`, [
         'Settings',
-        'A JSON object for storing various configurations.',
+        `A JSON object for storing various configurations. It\'s STRONGLY recommended that you 
+        use Launch Monitor > Settings to modify this field.`,
       ]);
       settingsRange = newSettingsCell;
     }

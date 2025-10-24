@@ -19,6 +19,7 @@
     "push:prod": "pnpm build:prod && clasp push -P .clasp.production.json",
     "push:client": "pnpm --filter client push",
     "test": "vitest run",
+    "test:watch": "vitest",
     "lint": "pnpm --filter ts lint dv360/src/**/*.ts"
   },
   "dependencies": {

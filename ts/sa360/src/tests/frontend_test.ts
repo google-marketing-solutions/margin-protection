@@ -176,7 +176,6 @@ function scaffoldSheetWithNamedRanges() {
     ['EMAIL_LIST', ''],
     ['LABEL', 'Acme Inc.'],
     ['LAUNCH_MONITOR_OPTION', 'Sheets only'],
-    ['FULL_FETCH', 'true'],
   ].entries()) {
     const range = SpreadsheetApp.getActive()
       .getActiveSheet()

@@ -117,6 +117,7 @@ describe('setup.html client-side behavior', () => {
       domWindow.document.body,
       'Login Customer ID',
     ).value = 'new-login';
+    fireEvent.click(getByLabelText(domWindow.document.body, 'Google Drive'));
     getByLabelText<HTMLFormElement>(
       domWindow.document.body,
       'Folder to Use (Optional)',

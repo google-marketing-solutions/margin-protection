@@ -20,11 +20,7 @@
  */
 
 import { ALL_MIGRATIONS } from '#common/migrations/index.js';
-import {
-  AppsScriptFrontend,
-  getTemplateSetting,
-  HELPERS,
-} from '#common/sheet_helpers/index.js';
+import { AppsScriptFrontend, HELPERS } from '#common/sheet_helpers/index.js';
 import { FrontendArgs, ParamDefinition, RuleExecutor } from '#common/types.js';
 import { SearchAdsClientTypes } from '#sa360/types.js';
 
@@ -46,9 +42,6 @@ export const EMAIL_LIST_RANGE = 'EMAIL_LIST';
 // NEW SA360 API variables
 const LOGIN_CUSTOMER_ID = 'LOGIN_CUSTOMER_ID';
 const CUSTOMER_IDS = 'CUSTOMER_IDS';
-
-// Common variables
-const FULL_FETCH_RANGE = 'FULL_FETCH';
 
 /**
  * Front-end configuration for the new SA360 (our V2) Apps Script.
@@ -133,7 +126,6 @@ export class SearchAdsFrontend extends AppsScriptFrontend<SearchAdsClientTypes> 
     >,
   ) {
     super.saveSettingsBackToSheets(rules);
-    getTemplateSetting(FULL_FETCH_RANGE).setValue('FALSE');
     this.client.args.fullFetch = false;
   }
 }

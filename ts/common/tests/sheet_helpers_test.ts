@@ -496,6 +496,10 @@ describe('Sheet helpers', () => {
   });
 
   describe('Test emails', function () {
+    beforeEach(() => {
+      scaffoldSheetWithNamedRanges();
+    });
+
     it('sends anomalies to a user whenever they are new', function () {
       SpreadsheetApp.getActive()
         .getRangeByName('EMAIL_LIST')!
