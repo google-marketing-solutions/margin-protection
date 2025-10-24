@@ -21,7 +21,7 @@ function initializeSheets() {}
 function initializeRules() {}
 function preLaunchQa() {}
 function launchMonitor() {}
-function displaySetupModal() {}
+function displaySetupGuide() {}
 function displayGlossary() {}
       `,
     };

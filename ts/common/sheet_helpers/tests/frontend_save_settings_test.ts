@@ -71,7 +71,7 @@ describe('AppsScriptFrontend', function () {
         .getRange(1, 1, nonEmptyRows.length, nonEmptyRows[0].length)
         .setValues(nonEmptyRows);
 
-      frontend = new FakeFrontend({
+      frontend = FakeFrontend.withIdentity({
         ruleRangeClass: RuleRange,
         rules: [rule],
         version: '1.0',

@@ -57,7 +57,6 @@ export async function getNextVersion(
     const match = content.match(
       /global\.CURRENT_SHEET_VERSION = '(\d{8}\.\d+).(\d+)'/,
     );
-    console.trace({ match });
     if (match) {
       const lastDateAndHourPart = match[1];
       const lastVersionPatch = Number(match[2]);

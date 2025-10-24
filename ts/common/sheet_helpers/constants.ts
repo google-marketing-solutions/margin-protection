@@ -49,8 +49,3 @@ export const GENERAL_SETTINGS_SHEET = 'General/Settings';
  * Used to figure out the GCP project name. May be blank (if BigQuery isn't used).
  */
 export const GCP_PROJECT_RANGE = 'GCP_PROJECT_ID';
-
-/**
- * The named range for the export settings.
- */
-export const EXPORT_SETTINGS_RANGE = 'EXPORT_SETTINGS';

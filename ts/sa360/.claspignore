@@ -16,3 +16,4 @@
 !html/*.html
 !main.js
 !appsscript.json
+!functions.js

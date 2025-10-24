@@ -167,7 +167,7 @@ export class FakeFrontend extends AppsScriptFrontend<TestClientTypes> {
     [];
   private readonly old: GoogleAppsScript.Mail.MailAdvancedParameters[] = [];
 
-  constructor(
+  private constructor(
     args: FrontendArgs<TestClientTypes> & MigrationArgs<TestClientTypes>,
   ) {
     scaffoldSheetWithNamedRanges();
@@ -176,6 +176,14 @@ export class FakeFrontend extends AppsScriptFrontend<TestClientTypes> {
       clientInitializer: (clientArgs, properties) =>
         new FakeClient(clientArgs.label, properties),
     });
+  }
+
+  static withIdentity(
+    args: FrontendArgs<TestClientTypes> & MigrationArgs<TestClientTypes>,
+  ) {
+    const frontend = new FakeFrontend(args);
+    frontend.initialize();
+    return frontend;
   }
 
   getIdentity(): ClientArgs {

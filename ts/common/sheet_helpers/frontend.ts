@@ -29,12 +29,7 @@ import {
   Values,
 } from '#common/types.js';
 import { runMigrations } from '#common/migrations/runner.js';
-import {
-  EMAIL_LIST_RANGE,
-  FOLDER,
-  RULE_SETTINGS_SHEET,
-  EXPORT_SETTINGS_RANGE,
-} from './constants.js';
+import { EMAIL_LIST_RANGE, FOLDER, RULE_SETTINGS_SHEET } from './constants.js';
 import { getTemplateSetting, HELPERS } from './helpers.js';
 import { emailAlertBody } from './email.js';
 import { ExportContext, ExportOptions } from '../exporter.js';
@@ -48,7 +43,7 @@ import { DriveExporter } from '../exporters/drive_exporter.js';
  * It is also possible to extend this class for more in-depth changes.
  */
 export abstract class AppsScriptFrontend<T extends ClientTypes<T>> {
-  readonly client: T['client'];
+  client!: T['client'];
   readonly rules: ReadonlyArray<RuleExecutorClass<T>>;
 
   /**
@@ -59,15 +54,18 @@ export abstract class AppsScriptFrontend<T extends ClientTypes<T>> {
     private readonly category: string,
     private readonly injectedArgs: FrontendArgs<T> & MigrationArgs<T>,
   ) {
+    this.rules = injectedArgs.rules;
+  }
+
+  initialize() {
     const clientArgs = this.getIdentity();
     if (!clientArgs) {
       throw new Error('Cannot initialize front-end without client ID(s)');
     }
-    this.client = injectedArgs.clientInitializer(
+    this.client = this.injectedArgs.clientInitializer(
       clientArgs,
-      injectedArgs.properties,
+      this.injectedArgs.properties,
     );
-    this.rules = injectedArgs.rules;
   }
 
   /**
@@ -82,6 +80,7 @@ export abstract class AppsScriptFrontend<T extends ClientTypes<T>> {
       .addItem('Fetch Data', 'initializeSheets')
       .addItem('Pre-Launch QA', 'preLaunchQa')
       .addItem('Show Glossary', 'displayGlossary')
+      .addItem('Setup', 'displaySetupGuide')
       .addToUi();
   }
 
@@ -193,6 +192,22 @@ export abstract class AppsScriptFrontend<T extends ClientTypes<T>> {
 
   abstract getIdentity(): T['clientArgs'] | null;
 
+  getIdentityFields(): Record<string, { label: string; value: string }> {
+    return {};
+  }
+
+  protected getIdentityFieldValue(rangeName: string) {
+    const spreadsheet = SpreadsheetApp.getActive();
+    if (!spreadsheet) {
+      return '';
+    }
+    const range = spreadsheet.getRangeByName(rangeName);
+    if (!range) {
+      return '';
+    }
+    return range.getValue() || '';
+  }
+
   /**
    * Runs rules for all campaigns/insertion orders and returns a scorecard.
    */
@@ -281,15 +296,52 @@ export abstract class AppsScriptFrontend<T extends ClientTypes<T>> {
   }
 
   displayGlossary() {
-    const template = HtmlService.createTemplateFromFile('glossary');
+    const template = HtmlService.createTemplateFromFile('html/glossary');
     template['rules'] = this.getFrontendDefinitions();
     SpreadsheetApp.getUi().showSidebar(template.evaluate());
   }
 
   displaySetupGuide() {
-    SpreadsheetApp.getUi().showSidebar(
-      HtmlService.createHtmlOutputFromFile('guide'),
-    );
+    const template = HtmlService.createTemplateFromFile('html/setup');
+    const dynamicFields = this.getIdentityFields();
+    template['dynamicFields'] = JSON.stringify(dynamicFields);
+    const htmlOutput = template.evaluate().setWidth(450).setHeight(600);
+    SpreadsheetApp.getUi().showModalDialog(htmlOutput, 'Export Settings');
+  }
+
+  /**
+   * Returns a list of dynamic fields for the setup modal.
+   * @returns An array of strings.
+   */
+  getDynamicFieldNames(): string[] {
+    // In a real scenario, this could come from a configuration sheet or be
+    // based on the rules that are currently enabled.
+    return ['file_one', 'file_two'];
+  }
+
+  /**
+   * Handles various inputs from the client-side modal.
+   * @param key The action key.
+   * @param payload The data payload.
+   */
+  handleInput(key: string, payload: object) {
+    if (key === 'update:settings') {
+      this.injectedArgs.properties.setProperty(
+        'settings',
+        JSON.stringify(payload),
+      );
+    } else {
+      // In the future, other keys could be handled here.
+      console.warn(`Unknown key received in handleInput: ${key}`);
+    }
+  }
+
+  /**
+   * Gets the saved settings from script properties.
+   * @returns The settings JSON string or null if not found.
+   */
+  getSettings(): string | null {
+    return this.injectedArgs.properties.getProperty('settings');
   }
 
   getFrontendDefinitions() {
@@ -322,41 +374,46 @@ export abstract class AppsScriptFrontend<T extends ClientTypes<T>> {
    * Exports rules as a CSV.
    */
   exportData(ruleName: string, matrix: string[][]) {
-    const options = this.getExportOptions();
-    const exportContext = new ExportContext(
-      options.destination === 'bigquery'
-        ? new BigQueryStrategyExporter('your_project_id', 'your_dataset_id') // TODO: Get from settings
-        : new DriveExporter(),
-    );
-
-    exportContext.export(matrix, {
-      ...options,
-      tableName: ruleName,
-      fileName: `${this.category}_${
-        this.getIdentity()?.label
-      }_${ruleName}_${HELPERS.getSheetId()}_${new Date().toISOString()}.csv`,
-    });
-  }
-
-  /**
-   * Retrieves the export options from the sheet.
-   */
-  getExportOptions(): ExportOptions {
-    const range = HELPERS.getRangeByName(EXPORT_SETTINGS_RANGE);
-    const values = range.getValues();
-    const options: ExportOptions = {
-      destination: 'drive', // Default to drive
-    };
-    if (values && values.length > 0) {
-      for (const row of values) {
-        const key = row[0];
-        const value = row[1];
-        if (key === 'destination') {
-          options.destination = value as 'bigquery' | 'drive';
-        }
-      }
+    const settingsStr = this.getSettings();
+    if (!settingsStr) {
+      // Default to Drive if no settings are configured
+      new ExportContext(new DriveExporter()).export(matrix, {
+        destination: 'drive',
+        fileName: `${this.category}_${
+          this.getIdentity()?.label
+        }_${ruleName}_${HELPERS.getSheetId()}_${new Date().toISOString()}.csv`,
+      });
+      return;
     }
-    return options;
+
+    const settings = JSON.parse(settingsStr);
+    const exportTarget = settings.exportTarget;
+    if (!exportTarget) return;
+
+    let exporter;
+    let options: ExportOptions;
+
+    if (exportTarget.type === 'bigquery' && exportTarget.config) {
+      const config = exportTarget.config;
+      exporter = new BigQueryStrategyExporter(
+        config.projectId || '',
+        config.datasetId || '',
+      );
+      options = {
+        destination: 'bigquery',
+        tableName: `${config.tablePrefix || ''}${ruleName}`,
+      };
+    } else {
+      exporter = new DriveExporter();
+      options = {
+        destination: 'drive',
+        fileName: `${this.category}_${
+          this.getIdentity()?.label
+        }_${ruleName}_${HELPERS.getSheetId()}_${new Date().toISOString()}.csv`,
+      };
+    }
+
+    new ExportContext(exporter).export(matrix, options);
   }
 
   /**
@@ -465,8 +522,6 @@ export abstract class AppsScriptFrontend<T extends ClientTypes<T>> {
         ]),
       );
   }
-
-  displaySetupModal() {}
 
   /**
    * Validates settings sheets exist and that they are up-to-date.

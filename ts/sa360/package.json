@@ -13,17 +13,16 @@
   },
   "scripts": {
     "build": "tsup",
-    "build:dev": "pnpm build --mode development --devtool source-map",
-    "build:prod": "pnpm build --mode production",
-    "push": "pnpm build:dev && clasp push",
-    "push:prod": "pnpm build:prod && clasp push",
+    "build:dev": "pnpm build",
+    "build:prod": "pnpm build",
+    "push": "pnpm build:dev && clasp push -P .clasp.development.json",
+    "push:prod": "pnpm build:prod && clasp push -P .clasp.production.json",
     "push:client": "pnpm --filter client push",
     "test": "vitest run",
     "lint": "pnpm --filter ts lint dv360/src/**/*.ts"
   },
   "dependencies": {
     "@types/google-apps-script": "^2.0.7",
-    "t": "^0.5.1",
     "vitest": "^3.2.4"
   }
 }

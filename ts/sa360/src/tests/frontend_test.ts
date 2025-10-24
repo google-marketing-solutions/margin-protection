@@ -186,6 +186,68 @@ function scaffoldSheetWithNamedRanges() {
   }
 }
 
+describe('withIdentity', () => {
+  it('constructs a frontend', () => {
+    setUp();
+    const frontend = SearchAdsFrontend.withIdentity({
+      ruleRangeClass: RuleRange,
+      rules: [],
+      version: '3.0',
+      clientInitializer: () => ({}) as never,
+      properties: new FakePropertyStore(),
+    });
+    expect(frontend).toBeInstanceOf(SearchAdsFrontend);
+  });
+});
+
+describe('getIdentity', () => {
+  it('is called once on construction', () => {
+    setUp();
+    const getIdentityFieldsSpy = vi.spyOn(
+      SearchAdsFrontend.prototype,
+      'getIdentityFields',
+    );
+    getFrontend();
+    expect(getIdentityFieldsSpy).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe('getIdentityFields', () => {
+  it('returns the correct identity fields from named ranges', () => {
+    setUp();
+    const frontend = getFrontend();
+    const spreadsheet = SpreadsheetApp.getActive();
+    const sheet = spreadsheet.getActiveSheet();
+
+    const loginCustomerIdRange = sheet.getRange('A1');
+    loginCustomerIdRange.setValue('123-456-7890');
+    spreadsheet.setNamedRange('LOGIN_CUSTOMER_ID', loginCustomerIdRange);
+
+    const customerIdsRange = sheet.getRange('B1');
+    customerIdsRange.setValue('987-654-3210');
+    spreadsheet.setNamedRange('CUSTOMER_IDS', customerIdsRange);
+
+    const labelRange = sheet.getRange('C1');
+    labelRange.setValue('SA360 Test Label');
+    spreadsheet.setNamedRange('LABEL', labelRange);
+
+    const identityFields = frontend.getIdentityFields();
+
+    expect(identityFields['loginCustomerId']).toEqual({
+      label: 'Login Customer ID',
+      value: '123-456-7890',
+    });
+    expect(identityFields['customerIds']).toEqual({
+      label: 'Customer IDs',
+      value: '987-654-3210',
+    });
+    expect(identityFields['label']).toEqual({
+      label: 'Label',
+      value: 'SA360 Test Label',
+    });
+  });
+});
+
 function setUp() {
   mockAppsScript();
   scaffoldSheetWithNamedRanges();
@@ -206,7 +268,7 @@ function getFrontend(
     customerIds: '1',
     label: 'test',
   });
-  return new SearchAdsFrontend({
+  return SearchAdsFrontend.withIdentity({
     ruleRangeClass: RuleRange,
     rules: [geoTargetRule, ageTargetRule],
     version: '3.0',

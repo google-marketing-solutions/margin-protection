@@ -82,34 +82,22 @@ The tests for the business logic in DV360 are excellent examples of this.
 - Functions like `generateGeoTestData` and `insertionOrderPacingRuleTestData` accept a few key parameters and return a fully realized, complex test environment.
 - This keeps the actual test cases (`it(...)` blocks) short, clean, and focused on the specific assertion being made. It's immediately clear what is being tested.
 
-### 4. Mocha-Specific Conventions
+### 4. Vitest-Specific Conventions
 
-#### Use `function()` for Mocha Hooks and Tests
+#### Setting Timeouts
 
-When writing `describe`, `it`, `beforeEach`, etc., use the `function() {}` syntax instead of arrow functions `() => {}`.
+Vitest provides a default timeout of 5 seconds per test. You can override this for specific tests that might take longer.
 
-**Why:** Mocha uses the `this` context to provide useful methods like `this.timeout()`. Arrow functions do not have their own `this` context (they inherit it from the enclosing scope), so you will not be able to access these Mocha features if you use them.
+**Why:** To prevent long-running tests from being prematurely aborted.
 
 **Correct:**
 
 ```typescript
-describe('My Feature', function() {
-  it('should do something time-intensive', function() {
-    this.timeout(5000); // This only works with function()
-    // ...
-  });
-});
-```
+import { test, expect } from 'vitest';
 
-**Incorrect:**
-
-```typescript
-describe('My Feature', () => {
-  it('should do something time-intensive', () => {
-    this.timeout(5000); // 'this' is undefined or the wrong context, this will fail.
-    // ...
-  });
-});
+test('should do something time-intensive', async () => {
+  // ... long-running logic
+}, 10000); // 10 second timeout for this test
 ```
 
 ### Summary of Mandates
@@ -118,6 +106,5 @@ describe('My Feature', () => {
 2.  **Always** test the final, observable state of the system (e.g., the value in a cell, the files in the fake Drive, the data in the cache).
 3.  **Never** write a test that only checks if a function was called without also checking the arguments it was called with.
 4.  **Always** encapsulate complex test setup into helper functions.
-5.  **Always** use `function() {}` for Mocha's `describe`, `it`, and hook functions.
 
 Adherence to these principles is not optional. It is the minimum standard for professional software engineering in this project.

@@ -9,7 +9,6 @@
     "lib": ["esnext", "dom"],
     "noImplicitThis": true,
     "useDefineForClassFields": true,
-
     "types": ["google-apps-script"],
     "paths": {
       "#common/*": ["common/*"],
@@ -19,6 +18,6 @@
       "#dv360_api/*": ["googleads/src/*"],
     }
   },
-  "include": ["**/src/**/*", "outs.d.ts", "common/**/*"],
+  "include": ["**/src/**/*", "outs.d.ts", "common/**/*", "client/**/*"],
   "exclude": ["**/node_modules/**/*", "**/dist/**/*"]
 }

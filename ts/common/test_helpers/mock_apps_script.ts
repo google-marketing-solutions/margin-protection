@@ -19,6 +19,7 @@
  * @fileoverview Mocked classes for Apps Script to help with unit tests.
  */
 
+import { vi } from 'vitest';
 import { PropertyStore } from '#common/types.js';
 
 import BigQuery = GoogleAppsScript.BigQuery;
@@ -298,9 +299,38 @@ class FakeSheet {
   }
 }
 
+class FakeTemplate {
+  private evaluated: boolean = false;
+  private width: number = 0;
+  private height: number = 0;
+
+  evaluate() {
+    this.evaluated = true;
+    return this;
+  }
+
+  setWidth(width: number) {
+    this.width = width;
+    return this;
+  }
+
+  setHeight(height: number) {
+    this.height = height;
+    return this;
+  }
+
+  getWidth() {
+    return this.width;
+  }
+
+  getHeight() {
+    return this.height;
+  }
+}
+
 class FakeHtmlService {
   createTemplateFromFile() {
-    throw new Error('Not implemented. Stub me.');
+    return new FakeTemplate();
   }
 }
 
@@ -311,6 +341,10 @@ class FakeSpreadsheet {
     Sheet1: new FakeSheet(),
   };
   private lastActive = 'Sheet1';
+
+  getId() {
+    return 'test-id';
+  }
 
   insertSheet(sheetName: string) {
     console.debug(`Creating sheet ${sheetName}`);
@@ -349,6 +383,12 @@ class FakeSpreadsheetApp {
     ROWS: 1,
     COLUMNS: 2,
   };
+
+  getUi() {
+    return {
+      showModalDialog: vi.fn(),
+    };
+  }
 
   getActive() {
     return this.fakeSpreadsheet;
@@ -618,7 +658,25 @@ export class FakePropertyStore implements PropertyStore {
 /**
  * Stub for HTML output
  */
-export class FakeHtmlOutput {}
+export class FakeHtmlOutput {
+  content = '';
+  private width = 0;
+  private height = 0;
+  setWidth(width: number) {
+    this.width = width;
+    return this;
+  }
+  setHeight(height: number) {
+    this.height = height;
+    return this;
+  }
+  getWidth() {
+    return this.width;
+  }
+  getHeight() {
+    return this.height;
+  }
+}
 
 /**
  * Stub for Drive testing, implementing a fake in-memory file system aligned with V3 API.
@@ -831,6 +889,7 @@ class FakeBigQueryJobs {
 class FakeBigQueryTabledata {
   insertAll() {
     console.log('FakeBigQueryTabledata.insertAll called');
+    return { insertErrors: [] };
   }
 }
 

@@ -88,7 +88,7 @@ describe('E2E Build Tests', () => {
       const includedValues = [
         'main.js',
         'appsscript.json',
-        'functions.mjs',
+        'functions.js',
         'html',
         'version.js',
       ];
@@ -126,12 +126,12 @@ describe('E2E Build Tests', () => {
         expect(context.initializeRules).toBeInstanceOf(Function);
         expect(context.preLaunchQa).toBeInstanceOf(Function);
         expect(context.launchMonitor).toBeInstanceOf(Function);
-        expect(context.displaySetupModal).toBeInstanceOf(Function);
+        expect(context.displaySetupGuide).toBeInstanceOf(Function);
         expect(context.displayGlossary).toBeInstanceOf(Function);
         expect(context.CURRENT_SHEET_VERSION).toBeTruthy();
       });
 
-      it('should call real functions, not the empty function in functions.mjs', async () => {
+      it('should call real functions, not the empty function in functions.js', async () => {
         context = await bootstrapE2eTest(distPath, 'DisplayVideoFrontend');
         const consoleLogSpy = vi.spyOn(console, 'log');
 
@@ -182,7 +182,7 @@ describe('E2E Build Tests', () => {
         'main.js',
         'appsscript.json',
         'html',
-        'functions.mjs',
+        'functions.js',
         'version.js',
       ];
       expect(files.sort()).toEqual(includedValues.sort());
@@ -214,7 +214,7 @@ describe('E2E Build Tests', () => {
         expect(context.initializeRules).toBeInstanceOf(Function);
         expect(context.preLaunchQa).toBeInstanceOf(Function);
         expect(context.launchMonitor).toBeInstanceOf(Function);
-        expect(context.displaySetupModal).toBeInstanceOf(Function);
+        expect(context.displaySetupGuide).toBeInstanceOf(Function);
         expect(context.displayGlossary).toBeInstanceOf(Function);
       });
 
@@ -222,7 +222,7 @@ describe('E2E Build Tests', () => {
         expect(context.CURRENT_SHEET_VERSION).toEqual('20250101.14.0');
       });
 
-      it('should call real functions, not the empty function in functions.mjs', async () => {
+      it('should call real functions, not the empty function in functions.js', async () => {
         const consoleLogSpy = vi.spyOn(console, 'log');
         context = await bootstrapE2eTest(distPath, 'SearchAdsFrontend');
 
@@ -288,13 +288,13 @@ async function bootstrapE2eTest(distDir: string, frontendClassName: string) {
     content.push(await fs.readFile(file, 'utf-8'));
   }
   const concatenatedContent = content.join('\n');
-  expect(concatenatedContent).toContain(
-    `var ${frontendClassName} = class extends AppsScriptFrontend {`,
+  expect(concatenatedContent).toMatch(
+    `var ${frontendClassName} = class _${frontendClassName} extends AppsScriptFrontend {`,
   );
   const finalContent = concatenatedContent.replace(
-    `var ${frontendClassName} = class extends AppsScriptFrontend {`,
+    `var ${frontendClassName} = class _${frontendClassName} extends AppsScriptFrontend {`,
     getFakeClass().concat(
-      `\n\nvar ${frontendClassName} = class extends FakeFrontend {`,
+      `\n\nvar ${frontendClassName} = class _${frontendClassName} extends FakeFrontend {`,
     ),
   );
   const context = Object.assign({}, globalThis);

@@ -43,7 +43,7 @@ global.CURRENT_SHEET_VERSION = CURRENT_SHEET_VERSION;
 export function getFrontend(
   properties: PropertyStore = new AppsScriptPropertyStore(),
 ) {
-  return new DisplayVideoFrontend({
+  return DisplayVideoFrontend.withIdentity({
     ruleRangeClass: RuleRange,
     rules: [
       budgetPacingRuleLineItem,
@@ -95,11 +95,11 @@ async function launchMonitor(
   await getFrontend(properties).launchMonitor();
 }
 
-async function displaySetupModal(
+async function displaySetupGuide(
   _: GoogleAppsScript.Events.TimeDriven,
   properties = new AppsScriptPropertyStore(),
 ) {
-  await getFrontend(properties).displaySetupModal();
+  await getFrontend(properties).displaySetupGuide();
 }
 
 function displayGlossary(
@@ -109,10 +109,21 @@ function displayGlossary(
   getFrontend(properties).displayGlossary();
 }
 
+function getSettings(properties = new AppsScriptPropertyStore()) {
+  return getFrontend(properties).getSettings();
+}
+
+function dynamicFields() {
+  const { id, idType } = getFrontend().getIdentity() ?? {};
+  return { id, idType };
+}
+
 global.onOpen = onOpen;
 global.initializeSheets = initializeSheets;
 global.initializeRules = initializeRules;
 global.preLaunchQa = preLaunchQa;
 global.launchMonitor = launchMonitor;
-global.displaySetupModal = displaySetupModal;
+global.displaySetupGuide = displaySetupGuide;
 global.displayGlossary = displayGlossary;
+global.getSettings = getSettings;
+global.dynamicFields = dynamicFields;

@@ -81,7 +81,7 @@ describe('AppsScriptFrontend', function () {
       },
     });
     mockAppsScript();
-    frontend = new FakeFrontend({
+    frontend = FakeFrontend.withIdentity({
       ruleRangeClass: RuleRange,
       rules: Object.values(rules),
       version: '1.0',

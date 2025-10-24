@@ -54,27 +54,42 @@ const FULL_FETCH_RANGE = 'FULL_FETCH';
  * Front-end configuration for the new SA360 (our V2) Apps Script.
  */
 export class SearchAdsFrontend extends AppsScriptFrontend<SearchAdsClientTypes> {
-  constructor(args: FrontendArgs<SearchAdsClientTypes>) {
+  private constructor(args: FrontendArgs<SearchAdsClientTypes>) {
     super('sa360', { ...args, migrations: ALL_MIGRATIONS });
+  }
+
+  static withIdentity(args: FrontendArgs<SearchAdsClientTypes>) {
+    const frontend = new SearchAdsFrontend(args);
+    frontend.initialize();
+    return frontend;
   }
 
   private cleanCid(cid: string | number) {
     return String(cid).replace(/[- ]/g, '');
   }
 
+  override getIdentityFields() {
+    return {
+      loginCustomerId: {
+        label: 'Login Customer ID',
+        value: this.getIdentityFieldValue(LOGIN_CUSTOMER_ID),
+      },
+      customerIds: {
+        label: 'Customer IDs',
+        value: this.getIdentityFieldValue(CUSTOMER_IDS),
+      },
+      label: { label: 'Label', value: this.getIdentityFieldValue(LABEL_RANGE) },
+      ...super.getIdentityFields(),
+    };
+  }
+
   override getIdentity() {
-    const loginCustomerId = HELPERS.getValueFromRangeByName({
-      name: LOGIN_CUSTOMER_ID,
-      allowEmpty: true,
-    });
-    const customerIdsDirty = HELPERS.getValueFromRangeByName({
-      name: CUSTOMER_IDS,
-      allowEmpty: false,
-    });
-    const label = HELPERS.getValueFromRangeByName({
-      name: LABEL_RANGE,
-      allowEmpty: true,
-    });
+    const {
+      loginCustomerId: { value: loginCustomerId },
+      customerIds: { value: customerIdsDirty },
+      label: { value: label },
+    } = this.getIdentityFields();
+
     const customerIds = this.cleanCid(customerIdsDirty);
 
     return {
@@ -86,13 +101,14 @@ export class SearchAdsFrontend extends AppsScriptFrontend<SearchAdsClientTypes> 
     };
   }
 
-  override displaySetupModal() {
-    const template = HtmlService.createTemplateFromFile('setup');
+  override displaySetupGuide() {
+    const template = HtmlService.createTemplateFromFile('html/setup');
     template['agencyId'] =
       HELPERS.getRangeByName(LOGIN_CUSTOMER_ID).getValue() || '';
     template['advertiserId'] =
       HELPERS.getRangeByName(CUSTOMER_IDS).getValue() || '';
-    const htmlOutput = template.evaluate().setWidth(350).setHeight(400);
+    template['dynamicFields'] = JSON.stringify(this.getIdentityFields());
+    const htmlOutput = template.evaluate().setWidth(450).setHeight(600);
     SpreadsheetApp.getUi().showModalDialog(htmlOutput, 'Set up');
 
     return template['advertiserID'];

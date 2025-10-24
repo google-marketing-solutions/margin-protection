@@ -313,7 +313,7 @@ function getFrontend(
   overrides: (client: ClientInterface) => ClientInterface = (client) => client,
   properties: PropertyStore = new FakePropertyStore(),
 ) {
-  return new DisplayVideoFrontend({
+  return DisplayVideoFrontend.withIdentity({
     ruleRangeClass: RuleRange,
     rules: [
       geoTargetRule,
@@ -608,6 +608,68 @@ describe('initializeRules', () => {
   it('creates a settings page', () => {
     const sheet = HELPERS.getOrCreateSheet('Rule Settings - Insertion Order');
     expect(sheet).toBeDefined();
+  });
+});
+
+describe('withIdentity', () => {
+  it('constructs a frontend', () => {
+    setUp();
+    const frontend = DisplayVideoFrontend.withIdentity({
+      ruleRangeClass: RuleRange,
+      rules: [],
+      version: '3.0',
+      clientInitializer: () => ({}) as never,
+      properties: new FakePropertyStore(),
+    });
+    expect(frontend).toBeInstanceOf(DisplayVideoFrontend);
+  });
+});
+
+describe('getIdentity', () => {
+  it('is called once on construction', () => {
+    setUp();
+    const getIdentityFieldsSpy = vi.spyOn(
+      DisplayVideoFrontend.prototype,
+      'getIdentityFields',
+    );
+    getFrontend(() => testData({}));
+    expect(getIdentityFieldsSpy).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe('getIdentityFields', () => {
+  it('returns the correct identity fields from named ranges', () => {
+    setUp();
+    const frontend = getFrontend(() => testData({}));
+    const spreadsheet = SpreadsheetApp.getActive();
+    const sheet = spreadsheet.getActiveSheet();
+
+    const idRange = sheet.getRange('A1');
+    idRange.setValue('12345');
+    spreadsheet.setNamedRange('ENTITY_ID', idRange);
+
+    const idTypeRange = sheet.getRange('B1');
+    idTypeRange.setValue('Advertiser');
+    spreadsheet.setNamedRange('ID_TYPE', idTypeRange);
+
+    const labelRange = sheet.getRange('C1');
+    labelRange.setValue('Test Label');
+    spreadsheet.setNamedRange('LABEL', labelRange);
+
+    const identityFields = frontend.getIdentityFields();
+
+    expect(identityFields['id']).toEqual({
+      label: 'Entity ID',
+      value: '12345',
+    });
+    expect(identityFields['idType']).toEqual({
+      label: 'ID Type',
+      value: 'Advertiser',
+    });
+    expect(identityFields['label']).toEqual({
+      label: 'Label',
+      value: 'Test Label',
+    });
   });
 });
 

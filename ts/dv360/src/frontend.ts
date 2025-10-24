@@ -44,7 +44,7 @@ export class DisplayVideoFrontend
   extends AppsScriptFrontend<DisplayVideoClientTypes>
   implements FrontendInterface<DisplayVideoClientTypes>
 {
-  constructor(args: FrontendArgs<DisplayVideoClientTypes>) {
+  private constructor(args: FrontendArgs<DisplayVideoClientTypes>) {
     super('dv360', {
       ...args,
       migrations: ALL_MIGRATIONS,
@@ -52,31 +52,44 @@ export class DisplayVideoFrontend
     });
   }
 
-  override getIdentity() {
-    const sheet = SpreadsheetApp.getActive();
-    if (!sheet) {
-      throw new Error('There is no active spreadsheet.');
-    }
-    const label = sheet.getRangeByName(LABEL_RANGE);
-    const idRange = sheet.getRangeByName(ENTITY_ID);
-    const idTypeRange = sheet.getRangeByName(ID_TYPE);
-    if (!idRange || !idTypeRange) {
-      return null;
-    }
-    const idType = idTypeRange.getValue();
+  static withIdentity(args: FrontendArgs<DisplayVideoClientTypes>) {
+    const frontend = new DisplayVideoFrontend(args);
+    frontend.initialize();
+    return frontend;
+  }
+
+  override getIdentityFields() {
     return {
-      id: idRange.getValue(),
-      idType: idType === 'Advertiser' ? IDType.ADVERTISER : IDType.PARTNER,
-      label: label?.getValue() || `${idType} ${idRange.getValue()}`,
-      name: label?.getValue(),
+      label: { label: 'Label', value: this.getIdentityFieldValue(LABEL_RANGE) },
+      id: { label: 'Entity ID', value: this.getIdentityFieldValue(ENTITY_ID) },
+      idType: { label: 'ID Type', value: this.getIdentityFieldValue(ID_TYPE) },
+      ...super.getIdentityFields(),
     };
   }
 
-  override displaySetupModal() {
-    const template = HtmlService.createTemplateFromFile('setup');
+  override getIdentity() {
+    const {
+      id: { value: id },
+      idType: { value: idType },
+      label: { value: label },
+    } = this.getIdentityFields();
+    if (!id || !idType) {
+      return null;
+    }
+    return {
+      id,
+      idType: idType === 'Advertiser' ? IDType.ADVERTISER : IDType.PARTNER,
+      label: label || `${idType} ${id}`,
+      name: label,
+    };
+  }
+
+  override displaySetupGuide() {
+    const template = HtmlService.createTemplateFromFile('html/setup');
     template['id'] = HELPERS.getRangeByName(ENTITY_ID).getValue() || '';
     template['idType'] = HELPERS.getRangeByName(ID_TYPE).getValue() || '';
-    const htmlOutput = template.evaluate().setWidth(350).setHeight(400);
+    template['dynamicFields'] = JSON.stringify(this.getIdentityFields());
+    const htmlOutput = template.evaluate().setWidth(450).setHeight(600);
     SpreadsheetApp.getUi().showModalDialog(htmlOutput, 'Set up');
     return template['id'];
   }

@@ -128,7 +128,7 @@ describe('Sheet helpers', () => {
         },
       },
     };
-    frontend = new FakeFrontend({
+    frontend = FakeFrontend.withIdentity({
       ruleRangeClass: RuleRange,
       rules: [],
       version: '1.0',
@@ -366,7 +366,7 @@ describe('Sheet helpers', () => {
         },
       });
       mockAppsScript();
-      frontend = new FakeFrontend({
+      frontend = FakeFrontend.withIdentity({
         ruleRangeClass: RuleRange,
         rules: [],
         version: '1.0',

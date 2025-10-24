@@ -25,17 +25,20 @@ declare global {
   const LaunchMonitor: Exported;
 }
 
-import { PropertyStore } from 'common/types';
+import { PropertyStore } from '#common/types.js';
 
-import { AppsScriptPropertyStore } from 'common/sheet_helpers';
+import { AppsScriptPropertyStore } from '#common/sheet_helpers/index.js';
 
 interface Exported {
   onOpen(properties: PropertyStore): void;
   initializeSheets(properties: PropertyStore): void;
+  initializeRules(properties: PropertyStore): void;
   preLaunchQa(properties: PropertyStore): void;
   launchMonitor(properties: PropertyStore): void;
   displayGlossary(properties: PropertyStore): void;
   displaySetupGuide(properties: PropertyStore): void;
+  dynamicFields(): Record<string, unknown>;
+  getSettings(properties: PropertyStore): string | undefined;
 }
 
 function onOpen() {
@@ -44,6 +47,10 @@ function onOpen() {
 
 function initializeSheets() {
   LaunchMonitor.initializeSheets(new AppsScriptPropertyStore());
+}
+
+function initializeRules() {
+  LaunchMonitor.initializeRules(new AppsScriptPropertyStore());
 }
 
 function preLaunchQa() {
@@ -62,9 +69,20 @@ function displaySetupGuide() {
   LaunchMonitor.displaySetupGuide(new AppsScriptPropertyStore());
 }
 
+function dynamicFields() {
+  return LaunchMonitor.dynamicFields();
+}
+
+function getSettings() {
+  return LaunchMonitor.getSettings(new AppsScriptPropertyStore());
+}
+
 global.onOpen = onOpen;
 global.initializeSheets = initializeSheets;
+global.initializeRules = initializeRules;
 global.launchMonitor = launchMonitor;
 global.preLaunchQa = preLaunchQa;
 global.displayGlossary = displayGlossary;
 global.displaySetupGuide = displaySetupGuide;
+global.dynamicFields = dynamicFields;
+global.getSettings = getSettings;

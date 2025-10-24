@@ -47,7 +47,7 @@ const CURRENT_SHEET_VERSION = global.CURRENT_SHEET_VERSION || '';
  * Generate a front-end object for lazy loading.
  */
 export function getFrontend(properties: PropertyStore) {
-  return new SearchAdsFrontend({
+  return SearchAdsFrontend.withIdentity({
     ruleRangeClass: RuleRange,
     rules: [
       budgetPacingRule,
@@ -108,11 +108,11 @@ async function launchMonitor(
   await getFrontend(properties).launchMonitor();
 }
 
-async function displaySetupModal(
+async function displaySetupGuide(
   _: GoogleAppsScript.Events.TimeDriven,
   properties = new AppsScriptPropertyStore(),
 ) {
-  await getFrontend(properties).displaySetupModal();
+  await getFrontend(properties).displaySetupGuide();
 }
 
 function displayGlossary(
@@ -122,10 +122,30 @@ function displayGlossary(
   getFrontend(properties).displayGlossary();
 }
 
+function getSettings(properties = new AppsScriptPropertyStore()) {
+  return getFrontend(properties).getSettings();
+}
+
+function dynamicFields(properties = new AppsScriptPropertyStore()) {
+  const { loginCustomerId, customerIds } =
+    getFrontend(properties).getIdentity() ?? {};
+  return { loginCustomerId, customerIds };
+}
+
+function handleInput(
+  key: string,
+  payload: object,
+  properties = new AppsScriptPropertyStore(),
+) {
+  return getFrontend(properties).handleInput(key, payload);
+}
 global.onOpen = onOpen;
 global.initializeSheets = initializeSheets;
 global.initializeRules = initializeRules;
 global.preLaunchQa = preLaunchQa;
 global.launchMonitor = launchMonitor;
-global.displaySetupModal = displaySetupModal;
+global.displaySetupGuide = displaySetupGuide;
 global.displayGlossary = displayGlossary;
+global.getSettings = getSettings;
+global.dynamicFields = dynamicFields;
+global.handleInput = handleInput;

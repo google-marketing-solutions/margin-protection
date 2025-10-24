@@ -48,7 +48,7 @@ describe('Full migration path', function () {
     SpreadsheetApp.getActive().getRangeByName('SETTINGS')!.setValue('{}');
     SpreadsheetApp.getActive().getRangeByName('SETTINGS')!.setValue('{}');
 
-    const frontend = new DisplayVideoFrontend({
+    const frontend = DisplayVideoFrontend.withIdentity({
       properties,
       rules: [],
       ruleRangeClass: RuleRange,
