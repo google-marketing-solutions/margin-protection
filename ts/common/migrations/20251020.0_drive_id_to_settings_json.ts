@@ -61,7 +61,9 @@ class DriveIdToSettingsJson implements Migration {
 
     if (!settingsRange) {
       // Insert a row at the position of the old DRIVE_ID range.
-      sheet.getRange(insertRow, 1).insertCells(SpreadsheetApp.Dimension.ROWS);
+      sheet
+        .getRange(insertRow, 1, 1, 2)
+        .insertCells(SpreadsheetApp.Dimension.ROWS);
 
       // Now create the new SETTINGS range in this row.
       const newSettingsCell = sheet.getRange(`B${insertRow}`);

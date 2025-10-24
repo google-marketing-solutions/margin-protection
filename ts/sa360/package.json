@@ -13,9 +13,8 @@
   },
   "scripts": {
     "build": "tsup",
-    "build:dev": "pnpm build",
     "build:prod": "pnpm build",
-    "push": "pnpm build:dev && clasp push -P .clasp.development.json",
+    "push": "pnpm build && clasp push -P .clasp.development.json",
     "push:prod": "pnpm build:prod && clasp push -P .clasp.production.json",
     "push:client": "pnpm --filter client push",
     "test": "vitest run",

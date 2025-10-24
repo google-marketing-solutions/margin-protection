@@ -158,13 +158,9 @@ async function main() {
   // --- Command Execution ---
   let buildCommand = '';
   if (environment === 'development') {
-    buildCommand =
-      project === 'googleads'
-        ? 'build --mode development --devtool source-map'
-        : 'build:dev';
+    buildCommand = 'build';
   } else {
-    buildCommand =
-      project === 'googleads' ? 'build --mode production' : 'build:prod';
+    buildCommand = 'build:prod';
   }
 
   const buildFullCommand = `pnpm ${buildCommand}`;

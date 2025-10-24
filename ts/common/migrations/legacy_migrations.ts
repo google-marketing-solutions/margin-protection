@@ -88,10 +88,10 @@ export const LEGACY_MIGRATIONS: Record<
       return;
     }
     const sheet = HELPERS.getOrCreateSheet('General/Settings');
-    const range = sheet.getRange('A6:C7');
+    const range = sheet.getRange('A6:B7');
     HELPERS.insertRows(range);
-    const reportLabel = sheet.getRange('B6:C6').merge();
-    const driveId = sheet.getRange('B7:C7').merge();
+    const reportLabel = sheet.getRange('B6');
+    const driveId = sheet.getRange('B7');
     active.setNamedRange(REPORT_LABEL, reportLabel);
     active.setNamedRange(DRIVE_ID, driveId);
 
@@ -133,9 +133,9 @@ export const LEGACY_MIGRATIONS: Record<
       return;
     }
     const sheet = HELPERS.getOrCreateSheet('General/Settings');
-    const range = sheet.getRange('A8:C8');
+    const range = sheet.getRange('A8:B8');
     HELPERS.insertRows(range);
-    const exportSettings = sheet.getRange('B8:C8').merge();
+    const exportSettings = sheet.getRange('B8');
     active.setNamedRange(EXPORT_SETTINGS, exportSettings);
 
     addSettingWithDescription(sheet, 'A8', [

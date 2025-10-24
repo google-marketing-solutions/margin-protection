@@ -90,6 +90,7 @@ export class DisplayVideoFrontend
     template['id'] = HELPERS.getRangeByName(ENTITY_ID).getValue() || '';
     template['idType'] = HELPERS.getRangeByName(ID_TYPE).getValue() || '';
     template['dynamicFields'] = JSON.stringify(this.getIdentityFields());
+    template['settings'] = this.getSettings();
     const htmlOutput = template.evaluate().setWidth(450).setHeight(600);
     SpreadsheetApp.getUi().showModalDialog(htmlOutput, 'Set up');
     return template['id'];
