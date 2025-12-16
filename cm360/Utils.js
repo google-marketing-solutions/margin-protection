@@ -211,34 +211,37 @@ function getEmailParameters(
   { issues },
 ) {
   const reportHeaderHtml = reportHeader
-    .map((cell) => `<th>${cell}</th>`)
+    .map((cell) => `<th style="border: 1px solid black; background-color: #4285f4; color: white;">${cell}</th>`)
     .join('\n');
   function column(cell) {
-    return `<td>${cell}</td>`;
+    return `<td style="border: 1px solid black;">${cell}</td>`;
   }
   const reportRows = issues
     .map((row) => `<tr>${row.map(column).join('\n')}</tr>`)
     .join('\n');
   const table = `
-    <table>
-      <tr>${reportHeaderHtml}</tr>
-      ${reportRows}
+    <table style="border-collapse: collapse;">
+      <thead>
+        <tr>${reportHeaderHtml}</tr>
+      </thead>
+      <tbody>
+        ${reportRows}
+      </tbody>
     </table>
   `;
   message = message
     ? message
     : `This is an automated email to let you know that ${useCase} issues have been identified for CM360 Account ${accountId}.`;
 
-  const url = `${SpreadsheetApp.getActive().getUrl()}?gid=${SpreadsheetApp.getActive()
-    .getActiveSheet()
-    .getSheetId()}`;
+  const sheetName = `${useCase}-${profileId}-${accountId}-${reportId}`;
+  const url = getUrl(SpreadsheetApp.getActive().getUrl(), SpreadsheetApp.getActive().getSheetByName(sheetName).getSheetId());
 
   return {
     subject: `[ACTION REQUIRED] CM360 ${useCase} Issues identified for account ${accountId}`,
     body: `<div style='font-size:16px;'>
       <p>Hi,</p>
       <p>${message}</p>
-      <p>For more details, please review the tab <a href="${url}">'${useCase}-${profileId}-${accountId}-${reportId}' in the ${useCase} Monitor</a> Google Spreadsheet.</p>
+      <p>For more details, please review the tab <a href="${url}">'${sheetName}' in the ${useCase} Monitor</a> Google Spreadsheet.</p>
       <div style='overflow-y: scroll; max-height: 70vh'>
       ${table}
       </div>
@@ -288,3 +291,15 @@ function logExecutionStatus(row, executionStatus, executionTimestamp) {
     .getRange(row + 2, REPORTS_CONFIG_LAST_EXECUTION_COLUMN)
     .setValue(executionTimestamp);
 }
+
+/**
+ * Appends gid to a URL that might have parameters.
+ */
+function getUrl(url, gid) {
+  const [urlPart, paramString] = url.split('?');
+  const params = paramString ? `${paramString}&gid=${gid}` : `gid=${gid}`;
+  return `${urlPart}?${params}`;
+}
+
+// exposed for testing
+globalThis.getUrl = getUrl;

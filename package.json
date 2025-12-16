@@ -8,7 +8,8 @@
     "doc": "docs"
   },
   "scripts": {
-    "test": "yarn --cwd ./ts test",
+    "test": "yarn --cwd ./ts test && yarn test:js",
+    "test:js": "mocha",
     "lint": "eslint -c eslint.config.js",
     "prepare": "husky",
     "check-deps": "(yarn clasp --help && yarn mocha --help && yarn eslint --help && yarn prettier --help && yarn lint-staged --help) > /dev/null"
