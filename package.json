@@ -18,7 +18,7 @@
   "repository": "git@github.com:google-marketing-solutions/margin-protection",
   "private": true,
   "devDependencies": {
-    "@google/clasp": "^2.4.2",
+    "@google/clasp": "^3.2.0",
     "@types/eslint-config-prettier": "^6.11.3",
     "chai": "^5.1.1",
     "eslint": "^9.12.0",
