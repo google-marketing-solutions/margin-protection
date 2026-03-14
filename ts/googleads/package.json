@@ -2,7 +2,7 @@
   "name": "launch_monitor",
   "type": "module",
   "devDependencies": {
-    "@google/clasp": "^2.4.2",
+    "@google/clasp": "^3.2.0",
     "@types/google-apps-script": "^1.0.56",
     "css-loader": "^6.7.3",
     "file-loader": "^6.2.0",
